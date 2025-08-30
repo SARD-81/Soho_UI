@@ -5,9 +5,13 @@
 :root {
     --font-vazir: 'Vazirmatn', sans-serif;
 
-    --color-primary: #3f51b5;
-    --color-primary-light: #6573c3;
-    --color-primary-dark: #2c387e;
+    --color-primary: #00c6a9;
+    --color-primary-light: #3ec6b6;
+    --color-secondary: #ffd86b;
+    --color-secondary-dark: #e6c344;
+
+    --color-bg: #000000;
+    --color-text: #ffffff;       /* default white text */
 
     --color-text: #1f1f1f;
     --color-bg: #ffffff;
