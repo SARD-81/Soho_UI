@@ -1,206 +1,360 @@
-import React, { useEffect, useState } from "react";
 import {
-    TextField,
-    Button,
-    Card,
-    CardContent,
-    Typography,
-    Box,
-    CircularProgress,
-    InputAdornment,
-    IconButton,
-    Stack,
-    FormControlLabel,
-    Checkbox,
-    // Link,
-    // Divider,
-} from "@mui/material";
-import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
-import { useLogin } from "../hooks/useLogin";
-import "../index.css";
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Toaster, toast } from 'react-hot-toast';
+import { FaEye, FaEyeSlash, FaLock, FaUser } from 'react-icons/fa';
+import { LuLogIn } from 'react-icons/lu';
+import ThemeToggle from '../components/ThemeToggle.tsx';
+import { useLogin } from '../hooks/useLogin';
+import '../index.css';
 
 export default function LoginPage() {
-    const [username, setUsername] = useState<string>("");
-    const [password, setPassword] = useState<string>("");
-    const [showPassword, setShowPassword] = useState<boolean>(false);
-    const [rememberMe, setRememberMe] = useState<boolean>(() => localStorage.getItem("rememberMe") === "true");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(
+    () => localStorage.getItem('rememberMe') === 'true'
+  );
+  const [focusedUsername, setFocusedUsername] = useState(false);
 
-    const { mutate: login, isPending } = useLogin();
+  const { mutate: login, isPending, isError, error, isSuccess } = useLogin();
 
+  useEffect(() => {
+    const savedUsername = localStorage.getItem('savedUsername');
+    const savedPassword = sessionStorage.getItem('savedPassword');
+    if (savedUsername) setUsername(savedUsername);
+    if (savedPassword) setPassword(savedPassword);
+  }, []);
 
-    useEffect(() => {
-        const savedUsername = localStorage.getItem("savedUsername");
-        const savedPassword = sessionStorage.getItem("savedPassword");
-        if (savedUsername) setUsername(savedUsername);
-        if (savedPassword) setPassword(savedPassword);
-    }, []);
+  useEffect(() => {
+    localStorage.setItem('rememberMe', String(rememberMe));
+    if (rememberMe) {
+      if (username) localStorage.setItem('savedUsername', username);
+      if (password) sessionStorage.setItem('savedPassword', password);
+    } else {
+      localStorage.removeItem('savedUsername');
+      sessionStorage.removeItem('savedPassword');
+    }
+  }, [rememberMe, username, password]);
 
+  // Show toast based on login status
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success('ورود موفقیت‌آمیز بود!');
+    } else if (isError) {
+      toast.error(
+        error?.message || 'ورود ناموفق! لطفا اطلاعات خود را بررسی کنید.'
+      );
+    }
+  }, [isSuccess, isError, error]);
 
-    useEffect(() => {
-        localStorage.setItem("rememberMe", String(rememberMe));
-        if (rememberMe) {
-            localStorage.setItem("savedUsername", username);
-            sessionStorage.setItem("savedPassword", password);
-        } else {
-            localStorage.removeItem("savedUsername");
-            sessionStorage.removeItem("savedPassword");
-        }
-    }, [rememberMe, username, password]);
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    login({ username, password });
+  };
 
-
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        login({ username, password });
-    };
-
-    return (
-        <Box
-            component="main"
-            sx={{
-                minHeight: "100svh",
-                display: "grid",
-                placeItems: "center",
-                position: "relative",
-                overflow: "hidden",
-                px: 2,
-                py: { xs: 6, md: 8 },
-                fontFamily: "var(--font-vazir)",
-                bgcolor: "background.default",
-            }}
-            className="bg-[radial-gradient(1000px_500px_at_-10%_-10%,rgba(99,102,241,0.15),transparent_60%),radial-gradient(1000px_500px_at_110%_110%,rgba(236,72,153,0.15),transparent_60%)]"
+  return (
+    <>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: 'var(--color-card-bg)',
+            color: 'var(--color-text)',
+            border: '1px solid var(--color-primary)',
+            borderRadius: '8px',
+            fontFamily: 'var(--font-vazir)',
+            direction: 'rtl',
+          },
+          success: {
+            iconTheme: {
+              primary: 'var(--color-primary)',
+              secondary: 'white',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: 'white',
+            },
+          },
+        }}
+      />
+      <Box
+        component="main"
+        sx={{
+          minHeight: '100svh',
+          display: 'grid',
+          placeItems: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+          px: 2,
+          py: { xs: 6, md: 8 },
+          fontFamily: 'var(--font-vazir)',
+          bgcolor: 'var(--color-primary)',
+        }}
+      >
+        <Card
+          elevation={10}
+          sx={{
+            width: '100%',
+            maxWidth: 440,
+            borderRadius: 4,
+            backdropFilter: 'saturate(140%) blur(8px)',
+            bgcolor: 'var(--color-card-bg)',
+            boxShadow: (theme) =>
+              `0 10px 30px ${
+                theme.palette.mode === 'dark' ? '#00000066' : '#00000022'
+              }`,
+            transition: 'transform 250ms ease, box-shadow 250ms ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: (theme) =>
+                `0 14px 38px ${
+                  theme.palette.mode === 'dark' ? '#00000088' : '#00000033'
+                }`,
+            },
+            fontFamily: 'var(--font-vazir)',
+          }}
+          className="shadow-2xl"
         >
-            <div className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full opacity-40 blur-3xl bg-gradient-to-tr from-indigo-400 to-pink-300 animate-pulse" />
-            <div className="pointer-events-none absolute -bottom-32 -right-24 h-80 w-80 rounded-full opacity-40 blur-3xl bg-gradient-to-br from-blue-300 to-fuchsia-300 animate-pulse" />
+          <ThemeToggle />
+          <CardContent sx={{ p: { xs: 4, md: 5 } }}>
+            <Stack spacing={3} alignItems="center">
+              <Box sx={{ width: 100, height: 100 }}>
+                <img
+                  src="/logo/Logo.png"
+                  alt="لوگو"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                  }}
+                />
+              </Box>
 
-            <Card
-                elevation={10}
-                sx={{
-                    width: "100%",
-                    maxWidth: 440,
-                    borderRadius: 4,
-                    backdropFilter: "saturate(140%) blur(8px)",
-                    boxShadow: (theme) => `0 10px 30px ${theme.palette.mode === "dark" ? "#00000066" : "#00000022"}`,
-                    transition: "transform 250ms ease, box-shadow 250ms ease",
-                    "&:hover": {
-                        transform: "translateY(-2px)",
-                        boxShadow: (theme) => `0 14px 38px ${theme.palette.mode === "dark" ? "#00000088" : "#00000033"}`,
-                    },
-                    fontFamily: "var(--font-vazir)",
-                }}
-                className="shadow-2xl"
-            >
-                <CardContent sx={{ p: { xs: 4, md: 5 } }}>
-                    <Stack spacing={3} alignItems="center">
-                        <Box sx={{ width: 72, height: 72, borderRadius: 2, overflow: "hidden", boxShadow: 3 }}>
-                            <img src="/logo/Logo.png" alt="لوگو" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                        </Box>
+              <Box textAlign="center">
+                <Typography
+                  variant="h4"
+                  fontWeight={800}
+                  letterSpacing={0.4}
+                  sx={{ color: 'var(--color-primary)' }}
+                >
+                  خوش آمدید
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ mt: 0.5, color: 'var(--color-secondary)' }}
+                >
+                  لطفا برای ادامه وارد شوید
+                </Typography>
+              </Box>
 
-                        <Box textAlign="center">
-                            <Typography variant="h4" fontWeight={800} letterSpacing={0.4}>
-                                خوش آمدید
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                                لطفا برای ادامه وارد شوید
-                            </Typography>
-                        </Box>
+              <Box
+                component="form"
+                onSubmit={handleSubmit}
+                sx={{ width: '100%' }}
+              >
+                <Stack spacing={2.25}>
+                  <TextField
+                    placeholder={
+                      focusedUsername ? 'behrooz mohammadi nasab' : 'نام کاربری'
+                    }
+                    autoComplete="username"
+                    fullWidth
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    onFocus={() => setFocusedUsername(true)}
+                    onBlur={() => setFocusedUsername(false)}
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <FaUser size={16} color="var(--color-primary)" />
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2.5,
+                        color: 'var(--color-text)',
+                        backgroundColor: 'var(--color-input-bg)',
+                        border: '1px solid var(--color-input-border)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          backgroundColor: 'var(--color-input-bg)',
+                          borderColor: 'var(--color-primary-light)',
+                        },
+                        '&.Mui-focused': {
+                          backgroundColor: 'var(--color-input-bg)',
+                          borderColor: 'var(--color-primary)',
+                          boxShadow: '0 0 0 3px rgba(126, 87, 194, 0.1)',
+                        },
+                      },
+                      '& .MuiOutlinedInput-input': {
+                        padding: '12px 14px',
+                      },
+                      '& label': {
+                        color: 'var(--color-secondary)',
+                        fontWeight: 500,
+                      },
+                      '& label.Mui-focused': {
+                        color: 'var(--color-primary)',
+                      },
+                    }}
+                  />
 
-                        <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
-                            <Stack spacing={2.25}>
-                                <TextField
-                                    label="نام کاربری"
-                                    placeholder="behrooz mohammadi nasab"
-                                    autoComplete="username"
-                                    fullWidth
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    slotProps={{
-                                        input: {
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <FaUser size={16} />
-                                                </InputAdornment>
-                                            ),
-                                        },
-                                    }}
-                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
+                  <TextField
+                    placeholder="رمز عبور"
+                    fullWidth
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <FaLock size={16} color="var(--color-primary)" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label={
+                                showPassword ? 'مخفی کردن رمز' : 'نمایش رمز'
+                              }
+                              onClick={() => setShowPassword((s) => !s)}
+                              edge="end"
+                              size="small"
+                            >
+                              {showPassword ? (
+                                <FaEyeSlash
+                                  size={16}
+                                  color="var(--color-secondary)"
                                 />
-
-                                <TextField
-                                    label="رمز عبور"
-                                    placeholder="••••••••"
-                                    fullWidth
-                                    type={showPassword ? "text" : "password"}
-                                    autoComplete="current-password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    slotProps={{
-                                        input: {
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <FaLock size={16} />
-                                                </InputAdornment>
-                                            ),
-                                            endAdornment: (
-                                                <InputAdornment position="end">
-                                                    <IconButton
-                                                        aria-label={showPassword ? "مخفی کردن رمز" : "نمایش رمز"}
-                                                        onClick={() => setShowPassword((s) => !s)}
-                                                        edge="end"
-                                                        size="small"
-                                                    >
-                                                        {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
-                                                    </IconButton>
-                                                </InputAdornment>
-                                            ),
-                                        },
-                                    }}
-                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5 } }}
+                              ) : (
+                                <FaEye
+                                  size={16}
+                                  color="var(--color-secondary)"
                                 />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2.5,
+                        color: 'var(--color-text)',
+                        backgroundColor: 'var(--color-input-bg)',
+                        border: '1px solid var(--color-input-border)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          backgroundColor: 'var(--color-input-bg)',
+                          borderColor: 'var(--color-primary-light)',
+                        },
+                        '&.Mui-focused': {
+                          backgroundColor: 'var(--color-input-bg)',
+                          borderColor: 'var(--color-primary)',
+                          boxShadow: '0 0 0 3px rgba(126, 87, 194, 0.1)',
+                        },
+                      },
+                      '& .MuiOutlinedInput-input': {
+                        padding: '12px 14px',
+                      },
+                      '& label': {
+                        color: 'var(--color-secondary-dark)',
+                        fontWeight: 500,
+                      },
+                      '& label.Mui-focused': {
+                        color: 'var(--color-primary)',
+                      },
+                    }}
+                  />
 
-                                <Stack direction="row" alignItems="center" justifyContent="space-between">
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={rememberMe}
-                                                onChange={(e) => setRememberMe(e.target.checked)}
-                                            />
-                                        }
-                                        label={<Typography variant="body2">مرا به خاطر بسپار</Typography>}
-                                    />
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={rememberMe}
+                          onChange={(e) => setRememberMe(e.target.checked)}
+                          sx={{
+                            color: 'var(--color-secondary)',
+                            '&.Mui-checked': { color: 'var(--color-primary)' },
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography
+                          variant="body2"
+                          color="var(--color-secondary)"
+                        >
+                          مرا به خاطر بسپار
+                        </Typography>
+                      }
+                    />
+                  </Stack>
 
-                                </Stack>
-
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    size="large"
-                                    disabled={isPending}
-                                    fullWidth
-                                    startIcon={isPending ? <CircularProgress size={18} /> : undefined}
-                                    sx={{
-                                        py: 1.2,
-                                        borderRadius: 2.5,
-                                        textTransform: "none",
-                                        fontWeight: 700,
-                                        letterSpacing: 0.2,
-                                        boxShadow: "none",
-                                        "&:hover": { boxShadow: "none", transform: "translateY(-1px)" },
-                                        transition: "transform 180ms ease",
-                                    }}
-                                >
-                                    {isPending ? "در حال ورود..." : "ورود"}
-                                </Button>
-
-                                {/*<Divider flexItem />*/}
-                                {/*<Typography variant="body2" color="text.secondary" textAlign="center">*/}
-                                {/*    حساب کاربری ندارید؟ {" "}*/}
-                                {/*    <Link href="#" underline="hover">ایجاد کنید</Link>*/}
-                                {/*</Typography>*/}
-                            </Stack>
-                        </Box>
-                    </Stack>
-                </CardContent>
-            </Card>
-        </Box>
-    );
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    disabled={isPending}
+                    fullWidth
+                    startIcon={
+                      isPending ? (
+                        <CircularProgress
+                          size={18}
+                          sx={{ color: 'var(--color-secondary)' }}
+                        />
+                      ) : (
+                        <LuLogIn />
+                      )
+                    }
+                    sx={{
+                      py: 1.2,
+                      borderRadius: 2.5,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      letterSpacing: 0.2,
+                      boxShadow: 'none',
+                      color: 'var(--color-text)',
+                      background: 'var(--color-primary-light)',
+                      '&:hover': {
+                        boxShadow: 'none',
+                        transform: 'translateY(-2px)',
+                      },
+                      transition: 'transform 180ms ease',
+                    }}
+                  >
+                    {isPending ? 'در حال ورود...' : 'ورود'}
+                  </Button>
+                </Stack>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Box>
+    </>
+  );
 }
