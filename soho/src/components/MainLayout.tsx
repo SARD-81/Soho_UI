@@ -1,7 +1,7 @@
 import { AppBar, Box, Button, Toolbar, Typography } from '@mui/material';
 import React from 'react';
 import { Outlet } from 'react-router';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../../src/contexts/AuthContext';
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
