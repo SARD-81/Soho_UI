@@ -12,7 +12,7 @@ function AppContent() {
   return (
     <MUIThemeProvider theme={theme}>
       <AppToaster />
-      <RouterProvider router={router} />;
+      <RouterProvider router={router} />
     </MUIThemeProvider>
   );
 }
