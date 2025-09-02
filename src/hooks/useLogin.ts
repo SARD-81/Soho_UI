@@ -24,7 +24,5 @@ const loginApi = async ({
 export const useLogin = () => {
   return useMutation<LoginResponse, Error, LoginPayload>({
     mutationFn: loginApi,
-    onSuccess: () => {},
-    onError: () => {},
   });
 };
