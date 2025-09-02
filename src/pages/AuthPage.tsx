@@ -18,7 +18,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { FaEye, FaEyeSlash, FaLock, FaUser } from 'react-icons/fa';
 import { LuLogIn } from 'react-icons/lu';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle.tsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useLogin } from '../hooks/useLogin';
