@@ -4,6 +4,8 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useCallback,
+  useMemo,
 } from 'react';
 
 interface AuthContextType {
@@ -42,24 +44,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const loginAction = (token: string, username: string) => {
+  const loginAction = useCallback((token: string, username: string) => {
     localStorage.setItem('authToken', token);
     sessionStorage.setItem('username', username);
     setIsAuthenticated(true);
     setUsername(username);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('authToken');
     sessionStorage.removeItem('username');
     setIsAuthenticated(false);
     setUsername(null);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ isAuthenticated, loginAction, logout, username }),
+    [isAuthenticated, loginAction, logout, username],
+  );
 
   return (
-    <AuthContext.Provider
-      value={{ isAuthenticated, loginAction, logout, username }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
