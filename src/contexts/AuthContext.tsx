@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Check if user is already logged in on app initialization
     const token = localStorage.getItem('authToken');
-    const savedUsername = sessionStorage.getItem('username');
+    const savedUsername = localStorage.getItem('username');
 
     if (token) {
       setIsAuthenticated(true);
@@ -46,14 +46,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loginAction = useCallback((token: string, username: string) => {
     localStorage.setItem('authToken', token);
-    sessionStorage.setItem('username', username);
+    localStorage.setItem('username', username);
     setIsAuthenticated(true);
     setUsername(username);
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('authToken');
-    sessionStorage.removeItem('username');
+    localStorage.removeItem('username');
     setIsAuthenticated(false);
     setUsername(null);
   }, []);
