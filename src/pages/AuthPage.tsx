@@ -48,27 +48,22 @@ export default function LoginPage() {
 
   const rememberMe = watch('rememberMe');
   const username = watch('username');
-  const password = watch('password');
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('savedUsername');
-    const savedPassword = sessionStorage.getItem('savedPassword');
-    if (savedUsername) setValue('username', savedUsername);
-    if (savedPassword) setValue('password', savedPassword);
-    if (savedUsername || savedPassword) {
+    if (savedUsername) {
+      setValue('username', savedUsername);
       setValue('rememberMe', true);
     }
   }, [setValue]);
 
   useEffect(() => {
-    if (rememberMe) {
-      if (username) localStorage.setItem('savedUsername', username);
-      if (password) sessionStorage.setItem('savedPassword', password);
+    if (rememberMe && username) {
+      localStorage.setItem('savedUsername', username);
     } else {
       localStorage.removeItem('savedUsername');
-      sessionStorage.removeItem('savedPassword');
     }
-  }, [rememberMe, username, password]);
+  }, [rememberMe, username]);
 
   const onSubmit = (data: LoginFormData) => {
     login(
