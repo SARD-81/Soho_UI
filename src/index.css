@@ -1,12 +1,12 @@
 @import "tailwindcss";
 @import 'vazirmatn/Vazirmatn-font-face.css';
-@import "../public/fonts/Vazir/font-face-UI.css";
+@import "/fonts/Vazir/font-face-UI.css";
 
 @font-face {
     font-family: 'Didot';
     font-weight: 100 900;
     font-display: swap;
-    src: url(../public/fonts/GFSDidot-Regular.ttf) format('truetype');
+    src: url("/fonts/GFSDidot-Regular.ttf") format('truetype');
 }
 
 :root {
