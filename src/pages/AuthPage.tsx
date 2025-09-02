@@ -47,6 +47,8 @@ export default function LoginPage() {
   });
 
   const rememberMe = watch('rememberMe');
+  const username = watch('username');
+  const password = watch('password');
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('savedUsername');
@@ -59,9 +61,6 @@ export default function LoginPage() {
   }, [setValue]);
 
   useEffect(() => {
-    const username = watch('username');
-    const password = watch('password');
-
     if (rememberMe) {
       if (username) localStorage.setItem('savedUsername', username);
       if (password) sessionStorage.setItem('savedPassword', password);
@@ -69,7 +68,7 @@ export default function LoginPage() {
       localStorage.removeItem('savedUsername');
       sessionStorage.removeItem('savedPassword');
     }
-  }, [rememberMe, watch]);
+  }, [rememberMe, username, password]);
 
   const onSubmit = (data: LoginFormData) => {
     login(
