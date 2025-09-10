@@ -7,6 +7,7 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
+import axiosInstance from '../lib/axiosInstance';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -17,6 +18,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -51,11 +53,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUsername(username);
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('username');
-    setIsAuthenticated(false);
-    setUsername(null);
+  const logout = useCallback(async () => {
+    try {
+      await axiosInstance.post('/logout/');
+    } catch (error) {
+      console.error('Logout failed', error);
+    } finally {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('username');
+      setIsAuthenticated(false);
+      setUsername(null);
+    }
   }, []);
 
   const value = useMemo(

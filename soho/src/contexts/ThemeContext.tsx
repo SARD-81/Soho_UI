@@ -10,6 +10,7 @@ const ThemeContext = createContext<ThemeContextType>({
     toggleTheme: () => {},
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -31,3 +32,4 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         </ThemeContext.Provider>
     );
 };
+
