@@ -17,6 +17,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -30,8 +31,9 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [username, setUsername] = useState<string | null>(null);
+  // Temporary bypass authentication for development purposes
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [username, setUsername] = useState<string | null>('Developer');
 
   useEffect(() => {
     // Check if user is already logged in on app initialization
