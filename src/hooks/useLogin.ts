@@ -23,6 +23,7 @@ const loginApi = async ({
       return { token: 'mock-token' };
     }
     throw new Error('Invalid credentials');
+
   }
 
   const { data } = await axiosInstance.post('/auth-token/', {
