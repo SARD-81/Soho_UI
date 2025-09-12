@@ -19,14 +19,12 @@ import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
 import { MdClose, MdMenu, MdSearch } from 'react-icons/md';
 
-
 const drawerWidth = 240;
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
-
 
   const navItems = [
     { text: 'داشبورد', path: '/dashboard' },
@@ -69,10 +67,10 @@ const MainLayout: React.FC = () => {
       >
         <Toolbar sx={{ gap: 2 }}>
           <IconButton
-            onClick={() => setDrawerOpen(true)}
+            onClick={() => setDrawerOpen((prev) => !prev)}
             sx={{ color: 'var(--color-bg-primary)' }}
           >
-            <MdMenu />
+            {drawerOpen ? <MdClose /> : <MdMenu />}
           </IconButton>
           <Box component="img" src="/logo/Logo.png" alt="لوگو" sx={{ height: 40 }} />
 
@@ -117,9 +115,10 @@ const MainLayout: React.FC = () => {
         </Toolbar>
       </AppBar>
       <Drawer
-        anchor="left"
+        anchor="right"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        SlideProps={{ direction: 'left' }}
         sx={{
 
           '& .MuiDrawer-paper': {
