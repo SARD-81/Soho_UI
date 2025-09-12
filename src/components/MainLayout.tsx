@@ -117,7 +117,7 @@ const MainLayout: React.FC = () => {
         </Toolbar>
       </AppBar>
       <Drawer
-        anchor="right"
+        anchor="left"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         sx={{
