@@ -30,6 +30,7 @@ const MainLayout: React.FC = () => {
     { text: 'داشبورد', path: '/dashboard' },
     { text: 'کاربران', path: '/users' },
     { text: 'تنظیمات', path: '/settings' },
+
   ];
 
   const handleLogout = async () => {
@@ -72,6 +73,7 @@ const MainLayout: React.FC = () => {
             {drawerOpen ? <MdClose /> : <MdMenu />}
           </IconButton>
           <Box component="img" src="/logo/Logo.png" alt="لوگو" sx={{ height: 40 }} />
+
           <Typography
             variant="h6"
             component="div"
@@ -91,6 +93,7 @@ const MainLayout: React.FC = () => {
                 </IconButton>
               ),
             }}
+
             sx={{
               '& .MuiOutlinedInput-root': {
                 backgroundColor: 'var(--color-input-bg)',
@@ -106,6 +109,7 @@ const MainLayout: React.FC = () => {
             sx={{ color: 'var(--color-bg-primary)' }}
           >
             خروج
+
           </Button>
           <ThemeToggle fixed={false} />
         </Toolbar>
@@ -116,6 +120,7 @@ const MainLayout: React.FC = () => {
         onClose={() => setDrawerOpen(false)}
         SlideProps={{ direction: 'left' }}
         sx={{
+
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
@@ -144,16 +149,19 @@ const MainLayout: React.FC = () => {
                   '&:hover': { backgroundColor: 'var(--color-input-bg)' },
                 }}
               >
+
                 <ListItemText
                   primary={item.text}
                   primaryTypographyProps={{ fontFamily: 'var(--font-vazir)' }}
                 />
+
               </ListItemButton>
             </ListItem>
           ))}
         </List>
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+
         <Toolbar />
         <Outlet />
       </Box>
