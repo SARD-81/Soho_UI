@@ -115,7 +115,7 @@ const MainLayout: React.FC = () => {
         </Toolbar>
       </AppBar>
       <Drawer
-        anchor="right"
+        anchor="left"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         SlideProps={{ direction: 'left' }}
@@ -144,6 +144,7 @@ const MainLayout: React.FC = () => {
               <ListItemButton
                 component={Link}
                 to={item.path}
+                onClick={() => setDrawerOpen(false)}
                 sx={{
                   color: 'var(--color-bg-primary)',
                   '&:hover': { backgroundColor: 'var(--color-input-bg)' },
