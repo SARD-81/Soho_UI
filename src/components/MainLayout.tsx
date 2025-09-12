@@ -86,14 +86,15 @@ const MainLayout: React.FC = () => {
             placeholder="جستجو..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              endAdornment: (
-                <IconButton sx={{ color: 'var(--color-bg-primary)' }}>
-                  <MdSearch />
-                </IconButton>
-              ),
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <IconButton sx={{ color: 'var(--color-bg-primary)' }}>
+                    <MdSearch />
+                  </IconButton>
+                ),
+              },
             }}
-
             sx={{
               '& .MuiOutlinedInput-root': {
                 backgroundColor: 'var(--color-input-bg)',
@@ -118,7 +119,7 @@ const MainLayout: React.FC = () => {
         anchor="left"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        SlideProps={{ direction: 'left' }}
+        slotProps={{ transition: { direction: 'left' } }}
         sx={{
 
           '& .MuiDrawer-paper': {
@@ -153,7 +154,7 @@ const MainLayout: React.FC = () => {
 
                 <ListItemText
                   primary={item.text}
-                  primaryTypographyProps={{ fontFamily: 'var(--font-vazir)' }}
+                  slotProps={{ primary: { sx: { fontFamily: 'var(--font-vazir)' } } }}
                 />
 
               </ListItemButton>
