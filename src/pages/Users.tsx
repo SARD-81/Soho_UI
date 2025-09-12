@@ -8,6 +8,5 @@ const Users = () => (
   </Box>
 );
 
-
 export default Users;
 

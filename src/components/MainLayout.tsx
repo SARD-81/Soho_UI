@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Drawer,
+  IconButton,
   List,
   ListItem,
   ListItemButton,
@@ -16,14 +17,16 @@ import { Outlet } from 'react-router';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
+import { MdClose, MdMenu, MdSearch } from 'react-icons/md';
 
-const drawerWidth = 240;
 
 const drawerWidth = 240;
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
 
   const navItems = [
     { text: 'داشبورد', path: '/dashboard' },
@@ -65,6 +68,14 @@ const MainLayout: React.FC = () => {
         }}
       >
         <Toolbar sx={{ gap: 2 }}>
+          <IconButton
+            onClick={() => setDrawerOpen(true)}
+            sx={{ color: 'var(--color-bg-primary)' }}
+          >
+            <MdMenu />
+          </IconButton>
+          <Box component="img" src="/logo/Logo.png" alt="لوگو" sx={{ height: 40 }} />
+
           <Typography
             variant="h6"
             component="div"
@@ -77,6 +88,14 @@ const MainLayout: React.FC = () => {
             placeholder="جستجو..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              endAdornment: (
+                <IconButton sx={{ color: 'var(--color-bg-primary)' }}>
+                  <MdSearch />
+                </IconButton>
+              ),
+            }}
+
             sx={{
               '& .MuiOutlinedInput-root': {
                 backgroundColor: 'var(--color-input-bg)',
@@ -98,25 +117,40 @@ const MainLayout: React.FC = () => {
         </Toolbar>
       </AppBar>
       <Drawer
-        variant="permanent"
         anchor="right"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
         sx={{
-          width: drawerWidth,
-          flexShrink: 0,
+
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
             backgroundColor: 'var(--color-card-bg)',
             backdropFilter: 'saturate(140%) blur(8px)',
-
           },
         }}
       >
-        <Toolbar />
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <Box component="img" src="/logo/Logo.png" alt="لوگو" sx={{ height: 40 }} />
+          <IconButton
+            onClick={() => setDrawerOpen(false)}
+            sx={{ color: 'var(--color-bg-primary)' }}
+          >
+            <MdClose />
+          </IconButton>
+        </Toolbar>
         <List>
           {navItems.map((item) => (
             <ListItem key={item.text} disablePadding>
-              <ListItemButton component={Link} to={item.path}>
+              <ListItemButton
+                component={Link}
+                to={item.path}
+                sx={{
+                  color: 'var(--color-bg-primary)',
+                  '&:hover': { backgroundColor: 'var(--color-input-bg)' },
+                }}
+              >
+
                 <ListItemText
                   primary={item.text}
                   primaryTypographyProps={{ fontFamily: 'var(--font-vazir)' }}
@@ -127,10 +161,7 @@ const MainLayout: React.FC = () => {
           ))}
         </List>
       </Drawer>
-      <Box
-        component="main"
-        sx={{ flexGrow: 1, p: 3, mr: `${drawerWidth}px` }}
-      >
+      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
 
         <Toolbar />
         <Outlet />
