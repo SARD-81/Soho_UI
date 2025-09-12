@@ -11,7 +11,7 @@ import React, {
 interface AuthContextType {
   isAuthenticated: boolean;
   loginAction: (token: string, username: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   username: string | null;
 }
 
@@ -53,7 +53,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUsername(username);
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      // Ignore network errors for logout
+    }
     localStorage.removeItem('authToken');
     localStorage.removeItem('username');
     setIsAuthenticated(false);
