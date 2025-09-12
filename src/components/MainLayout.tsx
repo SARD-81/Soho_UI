@@ -19,6 +19,8 @@ import ThemeToggle from './ThemeToggle';
 
 const drawerWidth = 240;
 
+const drawerWidth = 240;
+
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,6 +29,7 @@ const MainLayout: React.FC = () => {
     { text: 'داشبورد', path: '/dashboard' },
     { text: 'کاربران', path: '/users' },
     { text: 'تنظیمات', path: '/settings' },
+
   ];
 
   const handleLogout = async () => {
@@ -89,6 +92,7 @@ const MainLayout: React.FC = () => {
             sx={{ color: 'var(--color-bg-primary)' }}
           >
             خروج
+
           </Button>
           <ThemeToggle fixed={false} />
         </Toolbar>
@@ -104,6 +108,7 @@ const MainLayout: React.FC = () => {
             boxSizing: 'border-box',
             backgroundColor: 'var(--color-card-bg)',
             backdropFilter: 'saturate(140%) blur(8px)',
+
           },
         }}
       >
@@ -116,6 +121,7 @@ const MainLayout: React.FC = () => {
                   primary={item.text}
                   primaryTypographyProps={{ fontFamily: 'var(--font-vazir)' }}
                 />
+
               </ListItemButton>
             </ListItem>
           ))}
@@ -125,6 +131,7 @@ const MainLayout: React.FC = () => {
         component="main"
         sx={{ flexGrow: 1, p: 3, mr: `${drawerWidth}px` }}
       >
+
         <Toolbar />
         <Outlet />
       </Box>
