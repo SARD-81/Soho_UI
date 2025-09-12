@@ -6,6 +6,24 @@ This project uses token-based authentication. User passwords are **never** store
 browser storage. When the "remember me" option is enabled, only non-sensitive
 information such as the username may be stored locally.
 
+## Local development with a mock backend
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start the mock API server:
+   ```bash
+   npm run mock-server
+   ```
+   The server responds to `/auth-token/` on `http://localhost:8000`.
+3. In a new terminal, copy the example environment file and run the app:
+   ```bash
+   cp .env.example .env
+   npm run dev
+   ```
+   The UI will open at `http://localhost:5173` and use the mock backend for login.
+
 ## Getting started
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
