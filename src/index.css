@@ -14,6 +14,8 @@
     --font-didot: 'Didot', serif;
 
     /* Light theme variables */
+
+    --color-background : #e9e9e9;
     --color-primary: #00c6a9;
     --color-primary-light: #23a7d5;
     --color-secondary: #a3924b;
@@ -28,6 +30,7 @@
 }
 
 [data-theme="dark"] {
+    --color-background : #222222;
     --color-primary: #00c6a9;
     --color-primary-light: #23a7d5;
     --color-secondary: #a3924b;
