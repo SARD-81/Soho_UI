@@ -7,19 +7,25 @@ import {
   List,
   ListItem,
   ListItemButton,
+  ListItemIcon,
   ListItemText,
   TextField,
   Toolbar,
   Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
-import { MdClose, MdMenu, MdSearch } from 'react-icons/md';
+import { FiUsers } from 'react-icons/fi';
+import { MdClose, MdMenu, MdSearch, MdSpaceDashboard } from 'react-icons/md';
+import { RiSettings3Fill } from 'react-icons/ri';
 import { Outlet } from 'react-router';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import '../index.css';
 import ThemeToggle from './ThemeToggle';
+// import { BiHistory } from "react-icons/bi";
+// import { FaShare } from "react-icons/fa";
 
-const drawerWidth = 240;
+const drawerWidth = 200;
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
@@ -27,9 +33,9 @@ const MainLayout: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const navItems = [
-    { text: 'داشبورد', path: '/dashboard' },
-    { text: 'کاربران', path: '/users' },
-    { text: 'تنظیمات', path: '/settings' },
+    { text: 'داشبورد', icon: <MdSpaceDashboard />, path: '/dashboard' },
+    { text: 'کاربران', icon: <FiUsers />, path: '/users' },
+    { text: 'تنظیمات', icon: <RiSettings3Fill />, path: '/settings' },
   ];
 
   const handleLogout = async () => {
@@ -75,7 +81,7 @@ const MainLayout: React.FC = () => {
           <Typography
             variant="h6"
             component="div"
-            sx={{ flexGrow: 1, color: 'var(--color-primary)' }}
+            sx={{ flexGrow: 0.1, color: 'var(--color-primary)' }}
           >
             سوهو
           </Typography>
@@ -111,6 +117,8 @@ const MainLayout: React.FC = () => {
               },
             }}
             sx={{
+              flexGrow: 1,
+              marginRight: 125,
               '& .MuiOutlinedInput-input::placeholder': {
                 color: 'var(--color-bg-primary)',
               },
@@ -128,7 +136,16 @@ const MainLayout: React.FC = () => {
           </Typography>
           <Button
             onClick={handleLogout}
-            sx={{ color: 'var(--color-bg-primary)' }}
+            sx={{
+              color: 'var(--color-bg-primary)',
+              backgroundColor: 'var(--color-primary)',
+              borderRadius: '10px',
+              '&:hover': {
+                backgroundColor: 'unset',
+                border: '2px solid var(--color-primary)',
+                borderRadius: '10px',
+              },
+            }}
           >
             خروج
           </Button>
@@ -166,9 +183,10 @@ const MainLayout: React.FC = () => {
                 onClick={() => setDrawerOpen(false)}
                 sx={{
                   color: 'var(--color-bg-primary)',
-                  '&:hover': { backgroundColor: 'var(--color-input-bg)' },
+                  '&:hover': { backgroundColor: 'var(--color-primary)' },
                 }}
               >
+                <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText
                   primary={item.text}
                   slotProps={{

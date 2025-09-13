@@ -1,18 +1,15 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout.tsx';
 import Dashboard from '../pages/Dashboard.tsx';
+import LoginPage from '../pages/LoginPage.tsx';
 import Settings from '../pages/Settings.tsx';
 import Users from '../pages/Users.tsx';
 import ProtectedRoute from '../routes/ProtectedRoute.tsx';
 
 const router = createBrowserRouter([
   {
-    path: '/',
-    element: <Navigate to="/dashboard" replace />,
-  },
-  {
     path: '/login',
-    element: <Navigate to="/dashboard" replace />,
+    element: <LoginPage />,
   },
   {
     path: '/',
@@ -22,6 +19,7 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'users', element: <Users /> },
       { path: 'settings', element: <Settings /> },

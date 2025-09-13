@@ -4,6 +4,7 @@ import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { ScatterChart } from '@mui/x-charts/ScatterChart';
+import { useEffect, useState } from 'react';
 
 const Dashboard = () => {
   const pieData = [
@@ -18,8 +19,10 @@ const Dashboard = () => {
     { month: 'خرداد', value: 25 },
   ];
 
-  const lineSeries1 = [20, 35, 40, 32, 52, 41, 55];
+  const [lineSeries1, setLineSeries1] = useState([20, 35, 40]);
   const lineSeries2 = [15, 25, 30, 45, 35, 50, 60];
+  const [gaugeValue, setGaugeValue] = useState(60);
+  // Repeat for barData, pieData, scatterData…
 
   const scatterData = [
     { x: 1, y: 5 },
@@ -29,15 +32,17 @@ const Dashboard = () => {
     { x: 5, y: 12 },
   ];
 
+  useEffect(() => {
+    const id = setInterval(() => {
+      setLineSeries1((prev) => [...prev.slice(-9), Math.random() * 100]);
+      setGaugeValue(() => Math.round(Math.random() * 100));
+    }, 1000);
+    return () => clearInterval(id); // cleanup on unmount
+  }, []);
+
   return (
     <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
       <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <Typography variant="h5" sx={{ color: 'var(--color-primary)' }}>
-            داشبورد
-          </Typography>
-        </Grid>
-
         <Grid item xs={12} md={3}>
           <Paper sx={{ p: 2, bgcolor: 'var(--color-card-bg)' }}>
             <Typography
@@ -79,7 +84,7 @@ const Dashboard = () => {
               گیج
             </Typography>
             <Gauge
-              value={60}
+              value={gaugeValue}
               startAngle={-90}
               endAngle={90}
               height={200}
