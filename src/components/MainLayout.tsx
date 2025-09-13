@@ -12,10 +12,8 @@ import { MdClose, MdMenu, MdSearch } from 'react-icons/md';
 import { Outlet } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import '../index.css';
-import ThemeToggle from './ThemeToggle';
 import NavigationDrawer from './NavigationDrawer';
-// import { BiHistory } from "react-icons/bi";
-// import { FaShare } from "react-icons/fa";
+import ThemeToggle from './ThemeToggle';
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
