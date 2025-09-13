@@ -1,6 +1,10 @@
 # soho_ui_react
 
+## Authentication
 
+This project uses token-based authentication. User passwords are **never** stored in
+browser storage. When the "remember me" option is enabled, only non-sensitive
+information such as the username may be stored locally.
 
 ## Getting started
 

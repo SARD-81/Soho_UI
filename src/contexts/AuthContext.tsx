@@ -1,8 +1,10 @@
 import React, {
   createContext,
   type ReactNode,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -28,13 +30,16 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [username, setUsername] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
+    () => !!localStorage.getItem('authToken')
+  );
+  const [username, setUsername] = useState<string | null>(() =>
+    localStorage.getItem('username')
+  );
 
   useEffect(() => {
-    // Check if user is already logged in on app initialization
     const token = localStorage.getItem('authToken');
-    const savedUsername = sessionStorage.getItem('username');
+    const savedUsername = localStorage.getItem('username');
 
     if (token) {
       setIsAuthenticated(true);
@@ -42,25 +47,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const loginAction = (token: string, username: string) => {
+  const loginAction = useCallback((token: string, username: string) => {
     localStorage.setItem('authToken', token);
-    sessionStorage.setItem('username', username);
+    localStorage.setItem('username', username);
     setIsAuthenticated(true);
     setUsername(username);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('authToken');
-    sessionStorage.removeItem('username');
+    localStorage.removeItem('username');
     setIsAuthenticated(false);
     setUsername(null);
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{ isAuthenticated, loginAction, logout, username }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ isAuthenticated, loginAction, logout, username }),
+    [isAuthenticated, loginAction, logout, username]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

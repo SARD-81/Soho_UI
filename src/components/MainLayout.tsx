@@ -1,27 +1,187 @@
-import { AppBar, Box, Button, Toolbar, Typography } from '@mui/material';
-import React from 'react';
+import {
+  AppBar,
+  Box,
+  Button,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  TextField,
+  Toolbar,
+  Typography,
+} from '@mui/material';
+import React, { useState } from 'react';
+import { MdClose, MdMenu, MdSearch } from 'react-icons/md';
 import { Outlet } from 'react-router';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import ThemeToggle from './ThemeToggle';
+
+const drawerWidth = 240;
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const navItems = [
+    { text: 'داشبورد', path: '/dashboard' },
+    { text: 'کاربران', path: '/users' },
+    { text: 'تنظیمات', path: '/settings' },
+  ];
+
+  const handleLogout = async () => {
+    await logout();
+  };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Soho Dashboard
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100svh',
+        fontFamily: 'var(--font-vazir)',
+        background: 'var(--color-background)',
+        backgroundSize: '400% 400%',
+      }}
+    >
+      <AppBar
+        position="fixed"
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          backgroundColor: 'var(--color-card-bg)',
+          backdropFilter: 'saturate(140%) blur(8px)',
+          boxShadow: (theme) =>
+            `0 4px 20px ${
+              theme.palette.mode === 'dark' ? '#00000066' : '#00000022'
+            }`,
+        }}
+      >
+        <Toolbar variant="dense" sx={{ gap: 2, minHeight: '40px' }}>
+          <IconButton
+            onClick={() => setDrawerOpen((prev) => !prev)}
+            sx={{ color: 'var(--color-bg-primary)' }}
+          >
+            {drawerOpen ? <MdClose /> : <MdMenu />}
+          </IconButton>
+          <Box
+            component="img"
+            src="/logo/Logo.png"
+            alt="لوگو"
+            sx={{ height: 30 }}
+          />
+
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ flexGrow: 1, color: 'var(--color-primary)' }}
+          >
+            سوهو
           </Typography>
-          <Typography variant="body1" sx={{ marginRight: 2 }}>
-            Welcome, {username}
+          <TextField
+            placeholder="جستجو..."
+            size={'small'}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            slotProps={{
+              input: {
+                sx: {
+                  padding: '6px 8px',
+                  height: '28px',
+                  fontSize: '0.8rem',
+                  color: 'var(--color-bg-primary)',
+                  '&::placeholder': {
+                    color: 'var(--color-bg-primary)',
+                    opacity: 0.7,
+                  },
+                },
+                endAdornment: (
+                  <IconButton
+                    size="small"
+                    sx={{
+                      color: 'var(--color-bg-primary)',
+                      padding: '4px',
+                      marginRight: '-4px',
+                    }}
+                  >
+                    <MdSearch />
+                  </IconButton>
+                ),
+              },
+            }}
+            sx={{
+              '& .MuiOutlinedInput-input::placeholder': {
+                color: 'var(--color-bg-primary)',
+              },
+              '& .MuiOutlinedInput-input': {
+                height: 1,
+              },
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'var(--color-input-bg)',
+                borderRadius: '10px',
+              },
+            }}
+          />
+          <Typography sx={{ mx: 2, color: 'var(--color-bg-primary)' }}>
+            خوش آمدید، {username}
           </Typography>
-          <Button color="inherit" onClick={logout}>
-            Logout
+          <Button
+            onClick={handleLogout}
+            sx={{ color: 'var(--color-bg-primary)' }}
+          >
+            خروج
           </Button>
+          <ThemeToggle fixed={false} />
         </Toolbar>
       </AppBar>
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        slotProps={{ transition: { direction: 'left' } }}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+            backgroundColor: 'var(--color-card-bg)',
+            backdropFilter: 'saturate(140%) blur(8px)',
+          },
+        }}
+      >
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <IconButton
+            onClick={() => setDrawerOpen(false)}
+            sx={{ color: 'var(--color-bg-primary)' }}
+          >
+            <MdClose />
+          </IconButton>
+        </Toolbar>
+        <List>
+          {navItems.map((item) => (
+            <ListItem key={item.text} disablePadding>
+              <ListItemButton
+                component={Link}
+                to={item.path}
+                onClick={() => setDrawerOpen(false)}
+                sx={{
+                  color: 'var(--color-bg-primary)',
+                  '&:hover': { backgroundColor: 'var(--color-input-bg)' },
+                }}
+              >
+                <ListItemText
+                  primary={item.text}
+                  slotProps={{
+                    primary: { sx: { fontFamily: 'var(--font-vazir)' } },
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <Toolbar />
         <Outlet />
       </Box>
     </Box>
