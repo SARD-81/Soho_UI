@@ -1,0 +1,63 @@
+@import "tailwindcss";
+@import 'vazirmatn/Vazirmatn-font-face.css';
+@import "/fonts/Vazir/font-face-UI.css";
+
+@font-face {
+    font-family: 'Didot';
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("/fonts/GFSDidot-Regular.ttf") format('truetype');
+}
+
+:root {
+    --font-vazir: 'Vazirmatn', sans-serif;
+    --font-didot: 'Didot', serif;
+
+    /* Light theme variables */
+
+    --color-background : #e9e9e9;
+    --color-primary: #00c6a9;
+    --color-primary-light: #23a7d5;
+    --color-secondary: #a3924b;
+    --color-bg-primary: #000000;
+    --color-text: #1f1f1f;
+    --color-bg: #ffffff;
+    --color-card-bg: rgba(255, 255, 255, 0.92);
+    --color-input-bg: rgba(255, 255, 255, 0.95);
+    --color-input-border: rgba(0, 0, 0, 0.12);
+    --color-input-focus-border: var(--color-primary);
+    --color-error : #ef4444
+}
+
+[data-theme="dark"] {
+    --color-background : #222222;
+    --color-primary: #00c6a9;
+    --color-primary-light: #23a7d5;
+    --color-secondary: #a3924b;
+    --color-bg-primary: #ffffff;
+    --color-text: #e0e0e0;
+    --color-bg: #121212;
+    --color-card-bg: rgba(30, 30, 30, 0.92);
+    --color-input-bg: rgba(45, 45, 45, 0.95);
+    --color-input-border: rgba(255, 255, 255, 0.12);
+    --color-input-focus-border: var(--color-primary);
+    --color-error : #ef4444
+}
+
+html {
+    direction: rtl;
+}
+
+body {
+    font-family: var(--font-vazir);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.auth-gradient { animation: gradientMove 15s ease infinite; background-size: 400% 400%; }
+@keyframes gradientMove {
+    0% { background-position: 0% 50% }
+    50% { background-position: 100% 50% }
+    100% { background-position: 0% 50% }
+}
