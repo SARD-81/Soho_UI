@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Drawer,
   IconButton,
@@ -9,6 +8,9 @@ import {
   ListItemText,
   Toolbar,
 } from '@mui/material';
+import React from 'react';
+import { BiHistory } from 'react-icons/bi';
+import { FaShare } from 'react-icons/fa';
 import { FiUsers } from 'react-icons/fi';
 import { MdClose, MdSpaceDashboard } from 'react-icons/md';
 import { RiSettings3Fill } from 'react-icons/ri';
@@ -24,10 +26,15 @@ const drawerWidth = 200;
 const navItems = [
   { text: 'داشبورد', icon: <MdSpaceDashboard />, path: '/dashboard' },
   { text: 'کاربران', icon: <FiUsers />, path: '/users' },
+  { text: 'تاریخچه', icon: <BiHistory />, path: '/history' },
+  { text: 'اشتراک گذاری', icon: <FaShare />, path: '/share' },
   { text: 'تنظیمات', icon: <RiSettings3Fill />, path: '/settings' },
 ];
 
-const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ open, onClose }) => (
+const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
+  open,
+  onClose,
+}) => (
   <Drawer
     anchor="left"
     open={open}
@@ -74,4 +81,3 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ open, onClose }) =>
 );
 
 export default NavigationDrawer;
-
