@@ -20,6 +20,7 @@ interface RememberUsernameFields {
 export function useRememberUsername<T extends RememberUsernameFields>(
   watch: UseFormWatch<T>,
   setValue: UseFormSetValue<T>,
+
 ) {
   const rememberMe = watch('rememberMe' as Path<T>);
   const username = watch('username' as Path<T>);
