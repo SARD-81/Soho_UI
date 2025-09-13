@@ -13,11 +13,11 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
+import { MdClose, MdMenu, MdSearch } from 'react-icons/md';
 import { Outlet } from 'react-router';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
-import { MdClose, MdMenu, MdSearch } from 'react-icons/md';
 
 const drawerWidth = 240;
 
@@ -30,7 +30,6 @@ const MainLayout: React.FC = () => {
     { text: 'داشبورد', path: '/dashboard' },
     { text: 'کاربران', path: '/users' },
     { text: 'تنظیمات', path: '/settings' },
-
   ];
 
   const handleLogout = async () => {
@@ -43,14 +42,8 @@ const MainLayout: React.FC = () => {
         display: 'flex',
         minHeight: '100svh',
         fontFamily: 'var(--font-vazir)',
-        background: 'linear-gradient(-45deg,#4f85bb,#63b6db,#23a6d5,#23d5ab)',
+        background: 'var(--color-background)',
         backgroundSize: '400% 400%',
-        animation: 'gradientMove 15s ease infinite',
-        '@keyframes gradientMove': {
-          '0%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
-          '100%': { backgroundPosition: '0% 50%' },
-        },
       }}
     >
       <AppBar
@@ -65,40 +58,68 @@ const MainLayout: React.FC = () => {
             }`,
         }}
       >
-        <Toolbar sx={{ gap: 2 }}>
+        <Toolbar variant="dense" sx={{ gap: 2, minHeight: '40px' }}>
           <IconButton
             onClick={() => setDrawerOpen((prev) => !prev)}
             sx={{ color: 'var(--color-bg-primary)' }}
           >
             {drawerOpen ? <MdClose /> : <MdMenu />}
           </IconButton>
-          <Box component="img" src="/logo/Logo.png" alt="لوگو" sx={{ height: 40 }} />
+          <Box
+            component="img"
+            src="/logo/Logo.png"
+            alt="لوگو"
+            sx={{ height: 30 }}
+          />
 
           <Typography
             variant="h6"
             component="div"
             sx={{ flexGrow: 1, color: 'var(--color-primary)' }}
           >
-            داشبورد سوهو
+            سوهو
           </Typography>
           <TextField
-            size="small"
             placeholder="جستجو..."
+            size={'small'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             slotProps={{
               input: {
+                sx: {
+                  padding: '6px 8px',
+                  height: '28px',
+                  fontSize: '0.8rem',
+                  color: 'var(--color-bg-primary)',
+                  '&::placeholder': {
+                    color: 'var(--color-bg-primary)',
+                    opacity: 0.7,
+                  },
+                },
                 endAdornment: (
-                  <IconButton sx={{ color: 'var(--color-bg-primary)' }}>
+                  <IconButton
+                    size="small"
+                    sx={{
+                      color: 'var(--color-bg-primary)',
+                      padding: '4px',
+                      marginRight: '-4px',
+                    }}
+                  >
                     <MdSearch />
                   </IconButton>
                 ),
               },
             }}
             sx={{
+              '& .MuiOutlinedInput-input::placeholder': {
+                color: 'var(--color-bg-primary)',
+              },
+              '& .MuiOutlinedInput-input': {
+                height: 1,
+              },
               '& .MuiOutlinedInput-root': {
                 backgroundColor: 'var(--color-input-bg)',
-                borderRadius: 1,
+                borderRadius: '10px',
               },
             }}
           />
@@ -110,7 +131,6 @@ const MainLayout: React.FC = () => {
             sx={{ color: 'var(--color-bg-primary)' }}
           >
             خروج
-
           </Button>
           <ThemeToggle fixed={false} />
         </Toolbar>
@@ -121,7 +141,6 @@ const MainLayout: React.FC = () => {
         onClose={() => setDrawerOpen(false)}
         slotProps={{ transition: { direction: 'left' } }}
         sx={{
-
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
@@ -131,7 +150,6 @@ const MainLayout: React.FC = () => {
         }}
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Box component="img" src="/logo/Logo.png" alt="لوگو" sx={{ height: 40 }} />
           <IconButton
             onClick={() => setDrawerOpen(false)}
             sx={{ color: 'var(--color-bg-primary)' }}
@@ -151,19 +169,18 @@ const MainLayout: React.FC = () => {
                   '&:hover': { backgroundColor: 'var(--color-input-bg)' },
                 }}
               >
-
                 <ListItemText
                   primary={item.text}
-                  slotProps={{ primary: { sx: { fontFamily: 'var(--font-vazir)' } } }}
+                  slotProps={{
+                    primary: { sx: { fontFamily: 'var(--font-vazir)' } },
+                  }}
                 />
-
               </ListItemButton>
             </ListItem>
           ))}
         </List>
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-
         <Toolbar />
         <Outlet />
       </Box>

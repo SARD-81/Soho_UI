@@ -1,5 +1,5 @@
-import React from 'react';
 import { IconButton, type SxProps, type Theme } from '@mui/material';
+import React from 'react';
 import { LuMoon, LuSun } from 'react-icons/lu';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -30,7 +30,11 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ fixed = true, sx }) => {
         ...sx,
       }}
     >
-      {isDark ? <LuSun size={20} color="#fff" /> : <LuMoon size={20} color="#000" />}
+      {isDark ? (
+        <LuSun size={20} color="#fff" />
+      ) : (
+        <LuMoon size={20} color="#000" />
+      )}
     </IconButton>
   );
 };

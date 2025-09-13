@@ -83,7 +83,11 @@ const Dashboard = () => {
               startAngle={-90}
               endAngle={90}
               height={200}
-              sx={{ [`& .${gaugeClasses.valueText}`]: { fill: 'var(--color-primary)' } }}
+              sx={{
+                [`& .${gaugeClasses.valueText}`]: {
+                  fill: 'var(--color-primary)',
+                },
+              }}
             />
           </Paper>
         </Grid>

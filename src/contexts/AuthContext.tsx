@@ -1,23 +1,22 @@
 import React, {
   createContext,
   type ReactNode,
+  useCallback,
   useContext,
   useEffect,
-  useState,
-  useCallback,
   useMemo,
+  useState,
 } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   loginAction: (token: string, username: string) => void;
-  logout: () => Promise<void>;
+  logout: () => void;
   username: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -31,12 +30,14 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  // Temporary bypass authentication for development purposes
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-  const [username, setUsername] = useState<string | null>('Developer');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
+    () => !!localStorage.getItem('authToken')
+  );
+  const [username, setUsername] = useState<string | null>(() =>
+    localStorage.getItem('username')
+  );
 
   useEffect(() => {
-    // Check if user is already logged in on app initialization
     const token = localStorage.getItem('authToken');
     const savedUsername = localStorage.getItem('username');
 
@@ -53,12 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUsername(username);
   }, []);
 
-  const logout = useCallback(async () => {
-    try {
-      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-    } catch {
-      // Ignore network errors for logout
-    }
+  const logout = useCallback(() => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('username');
     setIsAuthenticated(false);
@@ -67,12 +63,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const value = useMemo(
     () => ({ isAuthenticated, loginAction, logout, username }),
-    [isAuthenticated, loginAction, logout, username],
+    [isAuthenticated, loginAction, logout, username]
   );
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
