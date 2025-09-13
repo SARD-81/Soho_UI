@@ -2,41 +2,25 @@ import {
   AppBar,
   Box,
   Button,
-  Drawer,
   IconButton,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
   TextField,
   Toolbar,
   Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
-import { FiUsers } from 'react-icons/fi';
-import { MdClose, MdMenu, MdSearch, MdSpaceDashboard } from 'react-icons/md';
-import { RiSettings3Fill } from 'react-icons/ri';
+import { MdClose, MdMenu, MdSearch } from 'react-icons/md';
 import { Outlet } from 'react-router';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import '../index.css';
 import ThemeToggle from './ThemeToggle';
+import NavigationDrawer from './NavigationDrawer';
 // import { BiHistory } from "react-icons/bi";
 // import { FaShare } from "react-icons/fa";
-
-const drawerWidth = 200;
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  const navItems = [
-    { text: 'داشبورد', icon: <MdSpaceDashboard />, path: '/dashboard' },
-    { text: 'کاربران', icon: <FiUsers />, path: '/users' },
-    { text: 'تنظیمات', icon: <RiSettings3Fill />, path: '/settings' },
-  ];
 
   const handleLogout = async () => {
     await logout();
@@ -152,52 +136,10 @@ const MainLayout: React.FC = () => {
           <ThemeToggle fixed={false} />
         </Toolbar>
       </AppBar>
-      <Drawer
-        anchor="left"
+      <NavigationDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        slotProps={{ transition: { direction: 'left' } }}
-        sx={{
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-            backgroundColor: 'var(--color-card-bg)',
-            backdropFilter: 'saturate(140%) blur(8px)',
-          },
-        }}
-      >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <IconButton
-            onClick={() => setDrawerOpen(false)}
-            sx={{ color: 'var(--color-bg-primary)' }}
-          >
-            <MdClose />
-          </IconButton>
-        </Toolbar>
-        <List>
-          {navItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
-              <ListItemButton
-                component={Link}
-                to={item.path}
-                onClick={() => setDrawerOpen(false)}
-                sx={{
-                  color: 'var(--color-bg-primary)',
-                  '&:hover': { backgroundColor: 'var(--color-primary)' },
-                }}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  slotProps={{
-                    primary: { sx: { fontFamily: 'var(--font-vazir)' } },
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Drawer>
+      />
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />
         <Outlet />
