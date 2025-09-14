@@ -1,5 +1,5 @@
-import LoadingPage from './LoadingPage.tsx';
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
+import LoadingPage from './LoadingPage.tsx';
 
 export default function GlobalLoader() {
   const isFetching = useIsFetching({
@@ -7,7 +7,6 @@ export default function GlobalLoader() {
       !query.meta?.skipGlobalLoader &&
       query.state.fetchStatus === 'fetching' &&
       query.state.data === undefined,
-
   });
   const isMutating = useIsMutating({
     predicate: (mutation) => !mutation.meta?.skipGlobalLoader,

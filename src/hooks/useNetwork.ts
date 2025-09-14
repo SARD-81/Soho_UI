@@ -26,6 +26,5 @@ export const useNetwork = (enabled = true) => {
     queryFn: fetchNetwork,
     refetchInterval: enabled ? 1000 : false,
     enabled,
-
   });
 };
