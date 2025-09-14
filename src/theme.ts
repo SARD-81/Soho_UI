@@ -1,5 +1,6 @@
 import { createTheme } from '@mui/material/styles';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
+import { legendClasses } from '@mui/x-charts/ChartsLegend';
 import '@mui/x-charts/themeAugmentation';
 
 function readCssVar(name: string, fallback: string) {
@@ -70,14 +71,11 @@ export const getTheme = (isDark: boolean) => {
           },
         },
       },
-      MuiChartsLabel: {
-        styleOverrides: {
-          root: { fill: 'var(--color-text)' },
-        },
-      },
       MuiChartsLegend: {
         styleOverrides: {
-          label: { fill: 'var(--color-text)' },
+          root: {
+            [`& .${legendClasses.label}`]: { fill: 'var(--color-text)' },
+          },
         },
       },
     },

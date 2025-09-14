@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 
 import { LineChart } from '@mui/x-charts';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNetwork } from '../hooks/useNetwork';
 import '../index.css';
 
@@ -11,25 +11,28 @@ type History = Record<
   Array<{ time: number; upload: number; download: number }>
 >;
 
-const MAX_POINTS = 100;
+const MAX_HISTORY_MS = 90 * 1000; // 1 minute 30 seconds
 
 const Network = () => {
   const { data, isLoading, error } = useNetwork();
 
   const [history, setHistory] = useState<History>({});
+  const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     if (!data?.interfaces) return;
     setHistory((prev) => {
+      const now = Date.now();
       const next: History = { ...prev };
       Object.entries(data.interfaces).forEach(([name, { bandwidth }]) => {
-        const points = next[name] ? [...next[name]] : [];
+        const points = next[name]
+          ? next[name].filter((p) => now - p.time <= MAX_HISTORY_MS)
+          : [];
         points.push({
-          time: Date.now(),
+          time: now,
           upload: bandwidth.upload,
           download: bandwidth.download,
         });
-        if (points.length > MAX_POINTS) points.shift();
         next[name] = points;
       });
       return next;
@@ -79,6 +82,10 @@ const Network = () => {
       ) : (
         names.map((name) => {
           const unit = interfaces[name]?.bandwidth.unit ?? '';
+          const now = Date.now();
+          const elapsed = now - startTimeRef.current;
+          const min = elapsed < MAX_HISTORY_MS ? startTimeRef.current : now - MAX_HISTORY_MS;
+          const max = min + MAX_HISTORY_MS;
           return (
             <Box
               key={name}
@@ -106,6 +113,8 @@ const Network = () => {
                     valueFormatter: (value) =>
                       new Date(value).toLocaleTimeString(),
                     scaleType: 'time',
+                    min,
+                    max,
                   },
                 ]}
                 yAxis={[
