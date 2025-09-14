@@ -1,14 +1,30 @@
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '../lib/axiosInstance';
 
+interface Bandwidth {
+  download: number;
+  upload: number;
+  unit: string;
+}
+
+interface NetworkInterface {
+  bandwidth: Bandwidth;
+}
+
+export interface NetworkData {
+  interfaces: Record<string, NetworkInterface>;
+}
+
 const fetchNetwork = async () => {
-  const { data } = await axiosInstance.get('/network');
+  const { data } = await axiosInstance.get<NetworkData>('/network');
   return data;
 };
 
-export const useNetwork = () => {
-  return useQuery<unknown, Error>({
+export const useNetwork = (enabled = true) => {
+  return useQuery<NetworkData, Error>({
     queryKey: ['network'],
     queryFn: fetchNetwork,
+    refetchInterval: enabled ? 1000 : false,
+    enabled,
   });
 };
