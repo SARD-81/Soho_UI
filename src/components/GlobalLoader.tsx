@@ -3,7 +3,11 @@ import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 
 export default function GlobalLoader() {
   const isFetching = useIsFetching({
-    predicate: (query) => !query.meta?.skipGlobalLoader,
+    predicate: (query) =>
+      !query.meta?.skipGlobalLoader &&
+      query.state.fetchStatus === 'fetching' &&
+      query.state.data === undefined,
+
   });
   const isMutating = useIsMutating({
     predicate: (mutation) => !mutation.meta?.skipGlobalLoader,
