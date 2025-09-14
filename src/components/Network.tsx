@@ -86,6 +86,7 @@ const Network = () => {
           const elapsed = now - startTimeRef.current;
           const min = elapsed < MAX_HISTORY_MS ? startTimeRef.current : now - MAX_HISTORY_MS;
           const max = min + MAX_HISTORY_MS;
+
           return (
             <Box
               key={name}
@@ -115,6 +116,7 @@ const Network = () => {
                     scaleType: 'time',
                     min,
                     max,
+
                   },
                 ]}
                 yAxis={[
