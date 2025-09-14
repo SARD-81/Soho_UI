@@ -120,6 +120,7 @@ const MainLayout: React.FC = () => {
             onClick={handleLogout}
             sx={{
               color: 'var(--color-bg-primary)',
+              height: 30,
               backgroundColor: 'var(--color-primary)',
               borderRadius: '10px',
               '&:hover': {
