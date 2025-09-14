@@ -84,6 +84,7 @@ const Network = () => {
         ))
       )}
     </Box>
+
   );
 };
 
