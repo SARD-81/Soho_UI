@@ -3,6 +3,15 @@ import { LineChart } from '@mui/x-charts';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { useEffect, useState } from 'react';
 import { useNetwork } from '../hooks/useNetwork';
+import '../index.css';
+
+type History = Record<
+  string,
+  Array<{ time: number; upload: number; download: number }>
+>;
+
+const MAX_POINTS = 60;
+const axisColor = 'var(--color-text)';
 
 type History = Record<string, Array<{ time: number; upload: number; download: number }>>;
 
@@ -111,6 +120,7 @@ const Network = () => {
             </Box>
           );
         })
+
       )}
     </Box>
   );
