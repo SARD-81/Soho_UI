@@ -7,6 +7,7 @@ export default function GlobalLoader() {
       !query.meta?.skipGlobalLoader &&
       query.state.fetchStatus === 'fetching' &&
       query.state.data === undefined,
+
   });
   const isMutating = useIsMutating({
     predicate: (mutation) => !mutation.meta?.skipGlobalLoader,
