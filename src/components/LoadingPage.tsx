@@ -6,6 +6,7 @@ function LoadingPage() {
     <Box
       component="main"
       sx={{
+        zIndex: '9999',
         minHeight: '100svh',
         display: 'grid',
         placeItems: 'center',

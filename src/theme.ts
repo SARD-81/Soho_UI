@@ -1,6 +1,8 @@
 import { createTheme } from '@mui/material/styles';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
+import { labelClasses } from '@mui/x-charts/ChartsLabel';
 import { legendClasses } from '@mui/x-charts/ChartsLegend';
+
 import '@mui/x-charts/themeAugmentation';
 
 function readCssVar(name: string, fallback: string) {
@@ -45,6 +47,7 @@ export const getTheme = (isDark: boolean) => {
             [`& .${axisClasses.tickLabel}`]: { fill: 'var(--color-text)' },
             [`& .${axisClasses.line}`]: { stroke: 'var(--color-text)' },
             [`& .${axisClasses.label}`]: { fill: 'var(--color-text)' },
+            [`& .${labelClasses.root}`]: { fill: 'var(--color-text)' },
           },
         },
       },

@@ -54,7 +54,6 @@ const Network = () => {
           height={250}
           dataset={[]}
           loading={isLoading}
-          skipAnimation
           xAxis={[{ dataKey: 'time', scaleType: 'time' }]}
           series={[
             {
@@ -71,6 +70,7 @@ const Network = () => {
             },
           ]}
           slotProps={{
+            line: { style: { transitionDuration: '400ms' } },
             noDataOverlay: { message: 'No network data' },
           }}
           sx={{
@@ -84,7 +84,10 @@ const Network = () => {
           const unit = interfaces[name]?.bandwidth.unit ?? '';
           const now = Date.now();
           const elapsed = now - startTimeRef.current;
-          const min = elapsed < MAX_HISTORY_MS ? startTimeRef.current : now - MAX_HISTORY_MS;
+          const min =
+            elapsed < MAX_HISTORY_MS
+              ? startTimeRef.current
+              : now - MAX_HISTORY_MS;
           const max = min + MAX_HISTORY_MS;
 
           return (
@@ -107,7 +110,6 @@ const Network = () => {
                 height={250}
                 dataset={history[name] ?? []}
                 loading={isLoading}
-                skipAnimation
                 xAxis={[
                   {
                     dataKey: 'time',
@@ -116,7 +118,6 @@ const Network = () => {
                     scaleType: 'time',
                     min,
                     max,
-
                   },
                 ]}
                 yAxis={[
@@ -143,6 +144,7 @@ const Network = () => {
                 ]}
                 margin={{ left: 40, right: 24, top: 20, bottom: 20 }}
                 slotProps={{
+                  line: { style: { transitionDuration: '400ms' } },
                   legend: {
                     position: { vertical: 'top', horizontal: 'center' },
                   },
