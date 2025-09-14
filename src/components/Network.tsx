@@ -29,38 +29,62 @@ const Network = () => {
     });
   }, [data]);
 
-  if (isLoading) return <Typography>Loading Network...</Typography>;
   if (error) return <Typography>Error: {error.message}</Typography>;
 
-  if (!data?.interfaces) return null;
+  const interfaces = data?.interfaces ?? {};
+  const names = Object.keys(interfaces);
 
   return (
-    <>
-      {Object.entries(history).map(([name, dataset]) => (
-        <Box key={name} sx={{ p: 2, bgcolor: 'var(--color-card-bg)', mb: 2 }}>
-          <Typography variant="h6" sx={{ mb: 1, color: 'var(--color-primary)' }}>
-            {name}
-          </Typography>
-          <LineChart
-            height={250}
-            dataset={dataset}
-            xAxis={[
-              {
-                dataKey: 'time',
-                valueFormatter: (value) => new Date(value).toLocaleTimeString(),
-                scaleType: 'time',
-              },
-            ]}
-            series={[
-              { dataKey: 'download', label: 'دانلود', color: '#00bcd4' },
-              { dataKey: 'upload', label: 'آپلود', color: '#ff4d94' },
-            ]}
-            margin={{ left: 40, right: 20, top: 20, bottom: 20 }}
-            slotProps={{ legend: { position: { vertical: 'top', horizontal: 'center' } } }}
-          />
-        </Box>
-      ))}
-    </>
+    <Box sx={{ p: 2 }}>
+      <Typography variant="h5" sx={{ mb: 2, color: 'var(--color-primary)' }}>
+        Network
+      </Typography>
+      {names.length === 0 ? (
+        <LineChart
+          height={250}
+          dataset={[]}
+          loading={isLoading}
+          xAxis={[{ dataKey: 'time', scaleType: 'time' }]}
+          series={[
+            { dataKey: 'download', label: 'دانلود', color: '#00bcd4' },
+            { dataKey: 'upload', label: 'آپلود', color: '#ff4d94' },
+          ]}
+          slotProps={{
+            noDataOverlay: { message: 'No network data' },
+          }}
+        />
+      ) : (
+        names.map((name) => (
+          <Box key={name} sx={{ p: 2, bgcolor: 'var(--color-card-bg)', mb: 2, borderRadius: 1 }}>
+            <Typography variant="h6" sx={{ mb: 1, color: 'var(--color-primary)' }}>
+              {name}
+            </Typography>
+            <LineChart
+              height={250}
+              dataset={history[name] ?? []}
+              loading={isLoading}
+              xAxis={[
+                {
+                  dataKey: 'time',
+                  valueFormatter: (value) => new Date(value).toLocaleTimeString(),
+                  scaleType: 'time',
+                },
+              ]}
+              series={[
+                { dataKey: 'download', label: 'دانلود', color: '#00bcd4' },
+                { dataKey: 'upload', label: 'آپلود', color: '#ff4d94' },
+              ]}
+              margin={{ left: 40, right: 20, top: 20, bottom: 20 }}
+              slotProps={{
+                legend: { position: { vertical: 'top', horizontal: 'center' } },
+                noDataOverlay: { message: 'No network data' },
+              }}
+            />
+          </Box>
+        ))
+      )}
+    </Box>
+
   );
 };
 
