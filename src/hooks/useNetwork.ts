@@ -20,10 +20,12 @@ const fetchNetwork = async () => {
   return data;
 };
 
-export const useNetwork = () => {
+export const useNetwork = (enabled = true) => {
   return useQuery<NetworkData, Error>({
     queryKey: ['network'],
     queryFn: fetchNetwork,
-    refetchInterval: 1000,
+    refetchInterval: enabled ? 1000 : false,
+    enabled,
+
   });
 };

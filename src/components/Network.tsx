@@ -1,4 +1,5 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Button, Stack, Typography } from '@mui/material';
+
 import { LineChart } from '@mui/x-charts';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { useEffect, useState } from 'react';
@@ -17,8 +18,14 @@ type History = Record<string, Array<{ time: number; upload: number; download: nu
 
 const MAX_POINTS = 60;
 
+type History = Record<string, Array<{ time: number; upload: number; download: number }>>;
+
+const MAX_POINTS = 60;
+
 const Network = () => {
-  const { data, isLoading, error } = useNetwork();
+  const [running, setRunning] = useState(true);
+  const { data, isLoading, error } = useNetwork(running);
+
   const [history, setHistory] = useState<History>({});
 
   useEffect(() => {
@@ -39,6 +46,9 @@ const Network = () => {
     });
   }, [data]);
 
+  const handleReset = () => setHistory({});
+
+
   if (error) return <Typography>Error: {error.message}</Typography>;
 
   const interfaces = data?.interfaces ?? {};
@@ -54,10 +64,12 @@ const Network = () => {
           height={250}
           dataset={[]}
           loading={isLoading}
+          skipAnimation
           xAxis={[{ dataKey: 'time', scaleType: 'time' }]}
           series={[
-            { dataKey: 'download', label: 'دانلود', color: '#00bcd4' },
-            { dataKey: 'upload', label: 'آپلود', color: '#ff4d94' },
+            { dataKey: 'download', label: 'دانلود', color: '#00bcd4', showMark: false },
+            { dataKey: 'upload', label: 'آپلود', color: '#ff4d94', showMark: false },
+
           ]}
           slotProps={{
             noDataOverlay: { message: 'No network data' },
@@ -80,6 +92,8 @@ const Network = () => {
                 height={250}
                 dataset={history[name] ?? []}
                 loading={isLoading}
+                skipAnimation
+
                 xAxis={[
                   {
                     dataKey: 'time',
@@ -98,15 +112,19 @@ const Network = () => {
                     label: `دانلود (${unit})`,
                     color: '#00bcd4',
                     valueFormatter: (value) => `${value} ${unit}`,
+                    showMark: false,
+
                   },
                   {
                     dataKey: 'upload',
                     label: `آپلود (${unit})`,
                     color: '#ff4d94',
                     valueFormatter: (value) => `${value} ${unit}`,
+                    showMark: false,
                   },
                 ]}
-                margin={{ left: 40, right: 20, top: 20, bottom: 20 }}
+                margin={{ left: 40, right: 24, top: 20, bottom: 20 }}
+
                 slotProps={{
                   legend: { position: { vertical: 'top', horizontal: 'center' } },
                   noDataOverlay: { message: 'No network data' },
@@ -120,8 +138,16 @@ const Network = () => {
             </Box>
           );
         })
-
       )}
+      <Stack direction="row" spacing={1.5} sx={{ mt: 1 }}>
+        <Button size="small" variant="contained" onClick={() => setRunning((p) => !p)}>
+          {running ? 'Stop' : 'Start'}
+        </Button>
+        <Button size="small" variant="outlined" onClick={handleReset}>
+          Reset
+        </Button>
+      </Stack>
+
     </Box>
   );
 };
