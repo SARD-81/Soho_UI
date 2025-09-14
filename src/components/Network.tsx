@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 
 import { LineChart } from '@mui/x-charts';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNetwork } from '../hooks/useNetwork';
 import '../index.css';
 
@@ -17,6 +17,7 @@ const Network = () => {
   const { data, isLoading, error } = useNetwork();
 
   const [history, setHistory] = useState<History>({});
+  const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     if (!data?.interfaces) return;
@@ -82,6 +83,10 @@ const Network = () => {
         names.map((name) => {
           const unit = interfaces[name]?.bandwidth.unit ?? '';
           const now = Date.now();
+          const elapsed = now - startTimeRef.current;
+          const min = elapsed < MAX_HISTORY_MS ? startTimeRef.current : now - MAX_HISTORY_MS;
+          const max = min + MAX_HISTORY_MS;
+
           return (
             <Box
               key={name}
@@ -109,8 +114,9 @@ const Network = () => {
                     valueFormatter: (value) =>
                       new Date(value).toLocaleTimeString(),
                     scaleType: 'time',
-                    min: now - MAX_HISTORY_MS,
-                    max: now,
+                    min,
+                    max,
+
                   },
                 ]}
                 yAxis={[
