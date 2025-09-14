@@ -2,10 +2,15 @@ import { Box, Typography } from '@mui/material';
 import { LineChart } from '@mui/x-charts';
 import { useEffect, useState } from 'react';
 import { useNetwork } from '../hooks/useNetwork';
+import '../index.css';
 
-type History = Record<string, Array<{ time: number; upload: number; download: number }>>;
+type History = Record<
+  string,
+  Array<{ time: number; upload: number; download: number }>
+>;
 
 const MAX_POINTS = 60;
+const axisColor = 'var(--color-text)';
 
 const Network = () => {
   const { data, isLoading, error } = useNetwork();
@@ -49,14 +54,30 @@ const Network = () => {
             { dataKey: 'download', label: 'دانلود', color: '#00bcd4' },
             { dataKey: 'upload', label: 'آپلود', color: '#ff4d94' },
           ]}
+          sx={{
+            '& .MuiChartsXAxis-line': { stroke: axisColor }, // axis line
+            '& .MuiChartsXAxis-tick': { stroke: axisColor }, // small tick marks
+            '& .MuiChartsXAxis-tickLabel': { fill: axisColor }, // (alternative to tickLabelStyle)
+          }}
           slotProps={{
             noDataOverlay: { message: 'No network data' },
           }}
         />
       ) : (
         names.map((name) => (
-          <Box key={name} sx={{ p: 2, bgcolor: 'var(--color-card-bg)', mb: 2, borderRadius: 1 }}>
-            <Typography variant="h6" sx={{ mb: 1, color: 'var(--color-primary)' }}>
+          <Box
+            key={name}
+            sx={{
+              p: 2,
+              bgcolor: 'var(--color-card-bg)',
+              mb: 2,
+              borderRadius: 1,
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{ mb: 1, color: 'var(--color-primary)' }}
+            >
               {name}
             </Typography>
             <LineChart
@@ -66,7 +87,8 @@ const Network = () => {
               xAxis={[
                 {
                   dataKey: 'time',
-                  valueFormatter: (value) => new Date(value).toLocaleTimeString(),
+                  valueFormatter: (value) =>
+                    new Date(value).toLocaleTimeString(),
                   scaleType: 'time',
                 },
               ]}
@@ -75,6 +97,11 @@ const Network = () => {
                 { dataKey: 'upload', label: 'آپلود', color: '#ff4d94' },
               ]}
               margin={{ left: 40, right: 20, top: 20, bottom: 20 }}
+              sx={{
+                '& .MuiChartsXAxis-line': { stroke: axisColor }, // axis line
+                '& .MuiChartsXAxis-tick': { stroke: axisColor }, // small tick marks
+                '& .MuiChartsXAxis-tickLabel': { fill: axisColor }, // (alternative to tickLabelStyle)
+              }}
               slotProps={{
                 legend: { position: { vertical: 'top', horizontal: 'center' } },
                 noDataOverlay: { message: 'No network data' },
@@ -84,7 +111,6 @@ const Network = () => {
         ))
       )}
     </Box>
-
   );
 };
 
