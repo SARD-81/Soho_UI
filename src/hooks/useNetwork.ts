@@ -4,6 +4,7 @@ import axiosInstance from '../lib/axiosInstance';
 interface Bandwidth {
   download: number;
   upload: number;
+  unit: string;
 }
 
 interface NetworkInterface {
