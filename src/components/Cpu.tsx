@@ -21,6 +21,7 @@ const ALERT_COLOR: RgbColor = { r: 255, g: 0, b: 0 };
 const getGaugeColor = (value: number) => {
   const ratio = clampPercent(value) / 100;
   return formatRgb(interpolateColor(START_COLOR, ALERT_COLOR, ratio));
+
 };
 
 const Cpu = () => {
@@ -43,6 +44,7 @@ const Cpu = () => {
   const safePercent = Number.isFinite(rawPercent) ? rawPercent : 0;
   const cpuPercent = clampPercent(safePercent);
   const gaugeColor = useMemo(() => getGaugeColor(cpuPercent), [cpuPercent]);
+
 
   const frequencyCurrent =
     data?.cpu_frequency?.current != null ? Number(data.cpu_frequency.current) : null;
@@ -144,6 +146,7 @@ const Cpu = () => {
             `${percentFormatter.format(Math.round(value ?? 0))}٪`
           }
           sx={(theme) => ({
+
             [`& .${gaugeClasses.valueArc}`]: {
               fill: gaugeColor,
             },
@@ -152,6 +155,7 @@ const Cpu = () => {
             },
             [`& .${gaugeClasses.valueText}`]: {
               fontSize: 40,
+
               fontFamily: 'var(--font-vazir)',
               fontWeight: 700,
               fill: 'var(--color-bg-primary)',
@@ -159,6 +163,7 @@ const Cpu = () => {
           })}
           width={200}
           height={200}
+
         />
       </Box>
 
