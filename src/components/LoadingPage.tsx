@@ -7,11 +7,16 @@ function LoadingPage() {
       component="main"
       sx={{
         zIndex: '9999',
+        position: 'fixed',
+        inset: 0,
+        width: '100%',
+        height: '100svh',
         minHeight: '100svh',
         display: 'grid',
         placeItems: 'center',
         px: 2,
         fontFamily: 'var(--font-vazir)',
+        bgcolor: 'var(--color-bg)',
       }}
     >
       <Paper
