@@ -19,6 +19,6 @@ export const useMemory = () => {
   return useQuery<MemoryResponse, Error>({
     queryKey: ['memory'],
     queryFn: fetchMemory,
-    refetchInterval: 3000,
+    refetchInterval: 1000,
   });
 };

@@ -21,7 +21,6 @@ const ALERT_COLOR: RgbColor = { r: 255, g: 0, b: 0 };
 const getGaugeColor = (value: number) => {
   const ratio = clampPercent(value) / 100;
   return formatRgb(interpolateColor(START_COLOR, ALERT_COLOR, ratio));
-
 };
 
 const Cpu = () => {
@@ -45,15 +44,17 @@ const Cpu = () => {
   const cpuPercent = clampPercent(safePercent);
   const gaugeColor = useMemo(() => getGaugeColor(cpuPercent), [cpuPercent]);
 
-
   const frequencyCurrent =
-    data?.cpu_frequency?.current != null ? Number(data.cpu_frequency.current) : null;
+    data?.cpu_frequency?.current != null
+      ? Number(data.cpu_frequency.current)
+      : null;
 
   const hasPhysical = data?.cpu_cores?.physical != null;
   const hasLogical = data?.cpu_cores?.logical != null;
   const totalCores =
     hasPhysical || hasLogical
-      ? Number(data?.cpu_cores?.physical ?? 0) + Number(data?.cpu_cores?.logical ?? 0)
+      ? Number(data?.cpu_cores?.physical ?? 0) +
+        Number(data?.cpu_cores?.logical ?? 0)
       : null;
 
   const frequencyText =
@@ -77,7 +78,9 @@ const Cpu = () => {
           color: 'var(--color-bg-primary)',
         }}
       >
-        <Typography variant="body2">در حال بارگذاری اطلاعات پردازنده...</Typography>
+        <Typography variant="body2">
+          در حال بارگذاری اطلاعات پردازنده...
+        </Typography>
       </Box>
     );
   }
@@ -103,6 +106,7 @@ const Cpu = () => {
   return (
     <Box
       sx={{
+        width: 'fit-content',
         p: 3,
         bgcolor: 'var(--color-card-bg)',
         borderRadius: 3,
@@ -118,7 +122,6 @@ const Cpu = () => {
       <Typography
         variant="subtitle2"
         sx={{
-          width: '100%',
           display: 'flex',
           alignItems: 'center',
           gap: 1,
@@ -132,13 +135,13 @@ const Cpu = () => {
         استفاده پردازنده (بر حسب درصد)
       </Typography>
 
-      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
         <Gauge
           value={cpuPercent}
           min={0}
           max={100}
-          startAngle={-140}
-          endAngle={140}
+          startAngle={-180}
+          endAngle={180}
           innerRadius="60%"
           outerRadius="100%"
           cornerRadius="50%"
@@ -146,7 +149,6 @@ const Cpu = () => {
             `${percentFormatter.format(Math.round(value ?? 0))}٪`
           }
           sx={(theme) => ({
-
             [`& .${gaugeClasses.valueArc}`]: {
               fill: gaugeColor,
             },
@@ -158,19 +160,18 @@ const Cpu = () => {
 
               fontFamily: 'var(--font-vazir)',
               fontWeight: 700,
-              fill: 'var(--color-bg-primary)',
+              fill: 'var(--color-text)',
             },
           })}
           width={200}
           height={200}
-
         />
       </Box>
 
       <Stack
         spacing={1}
         sx={{
-          width: '100%',
+          // width: '100%',
           bgcolor: 'rgba(255, 255, 255, 0.08)',
           borderRadius: 2,
           p: 2,
@@ -179,7 +180,12 @@ const Cpu = () => {
       >
         <Typography
           variant="body2"
-          sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 500 }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            fontWeight: 500,
+          }}
         >
           <Box component="span" sx={{ color: 'var(--color-primary)' }}>
             فرکانس:
@@ -188,7 +194,12 @@ const Cpu = () => {
         </Typography>
         <Typography
           variant="body2"
-          sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 500 }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            fontWeight: 500,
+          }}
         >
           <Box component="span" sx={{ color: 'var(--color-primary)' }}>
             مجموع هسته‌های فیزیکی و منطقی:

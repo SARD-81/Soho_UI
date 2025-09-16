@@ -6,11 +6,26 @@ import Network from '../components/Network';
 
 const Dashboard = () => {
   return (
-    <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
-      <Cpu />
-      <Disk />
-      <Memory />
-      <Network />
+    <Box
+      sx={{
+        p: 3,
+        fontFamily: 'var(--font-vazir)',
+        display: 'flex',
+        // flexDirection: 'column',
+      }}
+    >
+      <Box>
+        <Cpu />
+      </Box>
+      <Box>
+        <Memory />
+      </Box>
+      <Box sx={{ width: '100%', flexGrow: 1 }}>
+        <Network />
+      </Box>
+      <Box>
+        <Disk />
+      </Box>
     </Box>
   );
 };

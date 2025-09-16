@@ -1,7 +1,6 @@
 import { Box, Typography } from '@mui/material';
 
 import { LineChart } from '@mui/x-charts';
-import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { useEffect, useRef, useState } from 'react';
 import { useNetwork } from '../hooks/useNetwork';
 import '../index.css';
@@ -45,15 +44,42 @@ const Network = () => {
   const names = Object.keys(interfaces);
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 2, color: 'var(--color-primary)' }}>
-        Network
+    <Box
+      sx={{
+        p: 3,
+        bgcolor: 'var(--color-card-bg)',
+        borderRadius: 3,
+        mb: 3,
+        color: 'var(--color-bg-primary)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 3,
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
+      }}
+    >
+      <Typography
+        variant="subtitle2"
+        sx={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          fontWeight: 600,
+          color: 'var(--color-bg-primary)',
+        }}
+      >
+        <Box component="span" sx={{ fontSize: 20 }}>
+          📊
+        </Box>
+        نمودار های شبکه
       </Typography>
       {names.length === 0 ? (
         <LineChart
           height={250}
           dataset={[]}
           loading={isLoading}
+          skipAnimation
           xAxis={[{ dataKey: 'time', scaleType: 'time' }]}
           series={[
             {
@@ -70,13 +96,7 @@ const Network = () => {
             },
           ]}
           slotProps={{
-            line: { style: { transitionDuration: '400ms' } },
             noDataOverlay: { message: 'No network data' },
-          }}
-          sx={{
-            [`& .${axisClasses.tickLabel}`]: { fill: 'var(--color-text)' },
-            [`& .${axisClasses.line}`]: { stroke: 'var(--color-text)' },
-            [`& .${axisClasses.label}`]: { fill: 'var(--color-text)' },
           }}
         />
       ) : (
@@ -89,6 +109,11 @@ const Network = () => {
               ? startTimeRef.current
               : now - MAX_HISTORY_MS;
           const max = min + MAX_HISTORY_MS;
+          const interfaceHistory = history[name] ?? [];
+          const maxCombinedValue = interfaceHistory.reduce((acc, point) => {
+            const total = point.download + point.upload;
+            return total > acc ? total : acc;
+          }, 0);
 
           return (
             <Box
@@ -97,7 +122,9 @@ const Network = () => {
                 p: 2,
                 bgcolor: 'var(--color-card-bg)',
                 mb: 2,
-                borderRadius: 1,
+                borderRadius: '10px',
+                border: '2px solid var(--color-primary)',
+                width: '100%',
               }}
             >
               <Typography
@@ -108,7 +135,8 @@ const Network = () => {
               </Typography>
               <LineChart
                 height={250}
-                dataset={history[name] ?? []}
+                dataset={interfaceHistory}
+                skipAnimation
                 loading={isLoading}
                 xAxis={[
                   {
@@ -123,7 +151,7 @@ const Network = () => {
                 yAxis={[
                   {
                     label: unit,
-                    max: 15,
+                    max: maxCombinedValue || 15,
                   },
                 ]}
                 series={[
@@ -144,18 +172,10 @@ const Network = () => {
                 ]}
                 margin={{ left: 40, right: 24, top: 20, bottom: 20 }}
                 slotProps={{
-                  line: { style: { transitionDuration: '400ms' } },
                   legend: {
                     position: { vertical: 'top', horizontal: 'center' },
                   },
                   noDataOverlay: { message: 'No network data' },
-                }}
-                sx={{
-                  [`& .${axisClasses.tickLabel}`]: {
-                    fill: 'var(--color-text)',
-                  },
-                  [`& .${axisClasses.line}`]: { stroke: 'var(--color-text)' },
-                  [`& .${axisClasses.label}`]: { fill: 'var(--color-text)' },
                 }}
               />
             </Box>

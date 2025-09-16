@@ -100,7 +100,7 @@ const MainLayout: React.FC = () => {
             }}
             sx={{
               flexGrow: 1,
-              marginRight: 125,
+              marginRight: 100,
               '& .MuiOutlinedInput-input::placeholder': {
                 color: 'var(--color-bg-primary)',
               },

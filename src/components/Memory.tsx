@@ -3,7 +3,7 @@ import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import { useMemory } from '../hooks/useMemory';
 
-const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'] as const;
+const BYTE_UNITS = ['B', 'KB', 'MB', 'GB'] as const;
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
@@ -76,6 +76,7 @@ const Memory = () => {
       : 'rgba(0, 0, 0, 0.08)';
 
   const cardSx = {
+    width: 'fit-content',
     p: 3,
     bgcolor: 'var(--color-card-bg)',
     borderRadius: 3,
@@ -92,7 +93,10 @@ const Memory = () => {
   if (isLoading) {
     return (
       <Box sx={cardSx}>
-        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.text.secondary }}
+        >
           در حال بارگذاری اطلاعات حافظه...
         </Typography>
       </Box>
@@ -201,7 +205,11 @@ const Memory = () => {
       value: formatBytesForDisplay(safeAvailable),
     },
     { key: 'percent', label: 'درصد استفاده', value: percentDisplay },
-    { key: 'used', label: 'استفاده‌شده', value: formatBytesForDisplay(safeUsed) },
+    {
+      key: 'used',
+      label: 'استفاده‌شده',
+      value: formatBytesForDisplay(safeUsed),
+    },
     { key: 'free', label: 'آزاد', value: formatBytesForDisplay(safeFree) },
   ];
 
@@ -247,9 +255,6 @@ const Memory = () => {
         >
           {percentDisplay}
         </Typography>
-        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-          به‌روزرسانی هر ۳ ثانیه
-        </Typography>
       </Box>
 
       <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
@@ -278,7 +283,11 @@ const Memory = () => {
               startAngle: -90,
               endAngle: 270,
               highlightScope: { fade: 'global', highlight: 'item' },
-              faded: { innerRadius: 70, additionalRadius: -18, color: fadedArcColor },
+              faded: {
+                innerRadius: 70,
+                additionalRadius: -18,
+                color: fadedArcColor,
+              },
               valueFormatter: (item) => {
                 if (item.id === 'used') {
                   const lines = [
@@ -349,7 +358,10 @@ const Memory = () => {
             >
               {stat.label}
             </Typography>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'var(--color-primary)' }}>
+            <Typography
+              variant="subtitle2"
+              sx={{ fontWeight: 700, color: 'var(--color-primary)' }}
+            >
               {stat.value}
             </Typography>
           </Box>
