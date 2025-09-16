@@ -7,6 +7,8 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import React from 'react';
 import { BiHistory } from 'react-icons/bi';
@@ -21,8 +23,6 @@ interface NavigationDrawerProps {
   onClose: () => void;
 }
 
-const drawerWidth = 200;
-
 const navItems = [
   { text: 'داشبورد', icon: <MdSpaceDashboard />, path: '/dashboard' },
   { text: 'کاربران', icon: <FiUsers />, path: '/users' },
@@ -31,53 +31,67 @@ const navItems = [
   { text: 'تنظیمات', icon: <RiSettings3Fill />, path: '/settings' },
 ];
 
-const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
-  open,
-  onClose,
-}) => (
-  <Drawer
-    anchor="left"
-    open={open}
-    onClose={onClose}
-    slotProps={{ transition: { direction: 'left' } }}
-    sx={{
-      '& .MuiDrawer-paper': {
-        width: drawerWidth,
-        boxSizing: 'border-box',
-        backgroundColor: 'var(--color-card-bg)',
-        backdropFilter: 'saturate(140%) blur(8px)',
-      },
-    }}
-  >
-    <Toolbar sx={{ justifyContent: 'space-between' }}>
-      <IconButton onClick={onClose} sx={{ color: 'var(--color-bg-primary)' }}>
-        <MdClose />
-      </IconButton>
-    </Toolbar>
-    <List>
-      {navItems.map((item) => (
-        <ListItem key={item.text} disablePadding>
-          <ListItemButton
-            component={Link}
-            to={item.path}
-            onClick={onClose}
-            sx={{
-              color: 'var(--color-bg-primary)',
-              '&:hover': { backgroundColor: 'var(--color-primary)' },
-            }}
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText
-              primary={item.text}
-              slotProps={{
-                primary: { sx: { fontFamily: 'var(--font-vazir)' } },
+const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ open, onClose }) => {
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  const drawerWidth = isSmall ? '75%' : 200;
+
+  return (
+    <Drawer
+      anchor="left"
+      variant={isSmall ? 'temporary' : 'permanent'}
+      open={isSmall ? open : true}
+      onClose={onClose}
+      slotProps={{ transition: { direction: 'left' } }}
+      sx={{
+        '& .MuiDrawer-paper': {
+          width: drawerWidth,
+          boxSizing: 'border-box',
+          backgroundColor: 'var(--color-card-bg)',
+          backdropFilter: 'saturate(140%) blur(8px)',
+          height: '100%',
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: theme.transitions.create(['transform', 'width'], {
+            duration: theme.transitions.duration.standard,
+            easing: theme.transitions.easing.easeInOut,
+          }),
+        },
+      }}
+    >
+      {isSmall && (
+        <Toolbar sx={{ justifyContent: 'flex-end' }}>
+          <IconButton onClick={onClose} sx={{ color: 'var(--color-bg-primary)' }}>
+            <MdClose />
+          </IconButton>
+        </Toolbar>
+      )}
+      <List sx={{ flexGrow: 1 }}>
+        {navItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={item.path}
+              onClick={onClose}
+              sx={{
+                color: 'var(--color-bg-primary)',
+                '&:hover': { backgroundColor: 'var(--color-primary)' },
               }}
-            />
-          </ListItemButton>
-        </ListItem>
-      ))}
-    </List>
-  </Drawer>
-);
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                slotProps={{
+                  primary: { sx: { fontFamily: 'var(--font-vazir)' } },
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </Drawer>
+  );
+};
 
 export default NavigationDrawer;
