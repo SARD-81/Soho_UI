@@ -1,5 +1,4 @@
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
-
 import { LineChart } from '@mui/x-charts';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNetwork } from '../hooks/useNetwork';
@@ -121,6 +120,11 @@ const Network = () => {
     },
   } as const;
 
+  const cardBorderColor =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.12)'
+      : 'rgba(0, 0, 0, 0.08)';
+
   return (
     <Box
       sx={{
@@ -133,6 +137,7 @@ const Network = () => {
         flexDirection: 'column',
         alignItems: 'stretch',
         gap: 3,
+        border: `1px solid ${cardBorderColor}`,
         boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
         width: '100%',
         height: '100%',
@@ -150,7 +155,7 @@ const Network = () => {
         }}
       >
         <Box component="span" sx={{ fontSize: 20 }}>
-          📊
+          📉
         </Box>
         نمودار های شبکه
       </Typography>
@@ -262,6 +267,10 @@ const Network = () => {
                     margin={{ left: 40, right: 24, top: 20, bottom: 20 }}
                     slotProps={{
                       legend: {
+                        sx: {
+                          color: 'var(--color-text)',
+                          fontFamily: 'var(--font-vazir)',
+                        },
                         position: { vertical: 'top', horizontal: 'center' },
                       },
                       noDataOverlay: { message: 'No network data' },

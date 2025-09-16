@@ -1,4 +1,3 @@
-import { BarChart } from '@mui/x-charts/BarChart';
 import {
   Box,
   Divider,
@@ -7,9 +6,11 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
+import { BarChart } from '@mui/x-charts/BarChart';
 import { useMemo } from 'react';
+import type { DiskIOStats } from '../@types/disk';
 import { useDisk } from '../hooks/useDisk';
-import type { DiskIOStats } from '../types/disk';
+import '../index.css';
 
 const BYTES_IN_GB = 1024 ** 3;
 const METRIC_KEYS: Array<keyof DiskIOStats> = [
@@ -72,7 +73,7 @@ const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
       acc[key] = Number(metrics?.[key] ?? 0);
       return acc;
     },
-    {} as Record<keyof DiskIOStats, number>,
+    {} as Record<keyof DiskIOStats, number>
   );
 };
 
@@ -134,7 +135,7 @@ const ParallelCoordinatesChart = ({
       ? 'rgba(255, 255, 255, 0.25)'
       : 'rgba(0, 0, 0, 0.35)';
 
-  const textColor = theme.palette.text.secondary;
+  const textColor = 'var(--color-text)';
 
   const mapToY = (value: number, scale: { min: number; max: number }) => {
     if (scale.max === scale.min) {
@@ -187,7 +188,7 @@ const ParallelCoordinatesChart = ({
                 x={x}
                 y={height - 12}
                 textAnchor="middle"
-                fill={theme.palette.text.primary}
+                fill={textColor}
                 fontSize={12}
                 fontWeight={500}
               >
@@ -222,7 +223,9 @@ const ParallelCoordinatesChart = ({
                 const x = axisPositions[index];
                 const y = mapToY(value, axisScales[index]);
 
-                return <circle key={metric.key} cx={x} cy={y} r={4} fill={color} />;
+                return (
+                  <circle key={metric.key} cx={x} cy={y} r={4} fill={color} />
+                );
               })}
             </g>
           );
@@ -256,7 +259,10 @@ const ParallelCoordinatesChart = ({
                   border: '1px solid rgba(0,0,0,0.2)',
                 }}
               />
-              <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+              <Typography
+                variant="caption"
+                sx={{ color: theme.palette.text.secondary }}
+              >
                 {item.name}
               </Typography>
             </Stack>
@@ -292,9 +298,30 @@ const Disk = () => {
     height: '100%',
   } as const;
 
+  const tooltipSx = {
+    direction: 'rtl',
+    '& .MuiChartsTooltip-table': {
+      direction: 'rtl',
+      color: 'var(--color-text)',
+    },
+    '& .MuiChartsTooltip-label': {
+      color: 'var(--color-text)',
+      fontFamily: 'var(--font-vazir)',
+    },
+    '& .MuiChartsTooltip-value': {
+      color: 'var(--color-text)',
+      fontFamily: 'var(--font-vazir)',
+    },
+    '& .MuiChartsTooltip-cell': {
+      color: 'var(--color-text)',
+      fontFamily: 'var(--font-vazir)',
+    },
+  } as const;
+
   const disksWithUsage = useMemo(
-    () => (data?.disks ?? []).filter((disk) => disk.usage && disk.usage.total > 0),
-    [data?.disks],
+    () =>
+      (data?.disks ?? []).filter((disk) => disk.usage && disk.usage.total > 0),
+    [data?.disks]
   );
 
   const ioSummary = useMemo<ParallelDatum[]>(() => {
@@ -308,7 +335,7 @@ const Disk = () => {
         metrics: normalizeMetrics(metrics),
       }))
       .filter((entry) =>
-        PARALLEL_METRICS.some((metric) => entry.metrics[metric.key] > 0),
+        PARALLEL_METRICS.some((metric) => entry.metrics[metric.key] > 0)
       );
   }, [data?.summary?.disk_io_summary]);
 
@@ -335,7 +362,7 @@ const Disk = () => {
         readGB: item.metrics.read_bytes / BYTES_IN_GB,
         writeGB: item.metrics.write_bytes / BYTES_IN_GB,
       })),
-    [topDevices],
+    [topDevices]
   );
 
   const chartColors = useMemo(
@@ -354,7 +381,7 @@ const Disk = () => {
       theme.palette.warning.main,
       theme.palette.info.main,
       theme.palette.error.main,
-    ],
+    ]
   );
 
   if (isLoading) {
@@ -425,7 +452,10 @@ const Disk = () => {
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {disk.device} ({disk.mountpoint || 'نامشخص'})
                     </Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: 'text.secondary' }}
+                    >
                       {(disk.fstype || '-').toUpperCase()}
                     </Typography>
                   </Stack>
@@ -522,7 +552,16 @@ const Disk = () => {
               ]}
               height={280}
               margin={{ top: 60, right: 40, left: 40 }}
-              slotProps={{ legend: { position: { vertical: 'top', horizontal: 'middle' } } }}
+              slotProps={{
+                tooltip: { sx: tooltipSx },
+                legend: {
+                  sx: {
+                    color: 'var(--color-text)',
+                    fontFamily: 'var(--font-vazir)',
+                  },
+                  position: { vertical: 'top', horizontal: 'center' },
+                },
+              }}
             />
           </Box>
         ) : (

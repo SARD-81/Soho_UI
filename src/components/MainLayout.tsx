@@ -53,8 +53,8 @@ const MainLayout: React.FC = () => {
         <Toolbar
           variant="dense"
           sx={{
-            gap: { xs: 1, sm: 2 },
-            minHeight: '40px',
+            gap: { xs: 1, sm: 3 },
+            // minHeight: '50px',
             flexWrap: { xs: 'wrap', sm: 'nowrap' },
             alignItems: 'center',
             width: '100%',
@@ -113,7 +113,7 @@ const MainLayout: React.FC = () => {
             }}
             sx={{
               order: { xs: 4, sm: 'initial' },
-              flexGrow: { xs: 1, md: 0 },
+              flexGrow: { xs: 1, md: 0.3 },
               width: { xs: '100%', md: 'auto' },
               mr: { xs: 0, md: 4 },
               mt: { xs: 1, sm: 0 },
@@ -133,7 +133,7 @@ const MainLayout: React.FC = () => {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: { xs: 0.5, sm: 1 },
+              gap: { xs: 1, sm: 4 },
               ml: 'auto',
               order: { xs: 3, sm: 'initial' },
             }}

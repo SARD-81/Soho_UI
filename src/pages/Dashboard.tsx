@@ -20,7 +20,7 @@ const Dashboard = () => {
     >
       <Box
         sx={{
-          gridColumn: { xs: '1 / -1', md: 'span 6', lg: 'span 4' },
+          gridColumn: { xs: '1 / -1', md: 'span 6', lg: 'span 2' },
           display: 'flex',
           width: '100%',
         }}
@@ -29,21 +29,12 @@ const Dashboard = () => {
       </Box>
       <Box
         sx={{
-          gridColumn: { xs: '1 / -1', md: 'span 6', lg: 'span 4' },
+          gridColumn: { xs: '1 / -1', md: 'span 6', lg: 'span 2' },
           display: 'flex',
           width: '100%',
         }}
       >
         <Memory />
-      </Box>
-      <Box
-        sx={{
-          gridColumn: { xs: '1 / -1', md: 'span 6', lg: 'span 4' },
-          display: 'flex',
-          width: '100%',
-        }}
-      >
-        <Disk />
       </Box>
       <Box
         sx={{
@@ -53,6 +44,15 @@ const Dashboard = () => {
         }}
       >
         <Network />
+      </Box>
+      <Box
+        sx={{
+          gridColumn: '1 / -1',
+          display: 'flex',
+          width: '100%',
+        }}
+      >
+        <Disk />
       </Box>
     </Box>
   );

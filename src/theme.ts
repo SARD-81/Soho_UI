@@ -2,7 +2,7 @@ import { createTheme } from '@mui/material/styles';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { labelClasses } from '@mui/x-charts/ChartsLabel';
 import { legendClasses } from '@mui/x-charts/ChartsLegend';
-import '@mui/x-charts/themeAugmentation';
+import type {} from '@mui/x-charts/themeAugmentation';
 
 function readCssVar(name: string, fallback: string) {
   if (typeof window === 'undefined') return fallback;
@@ -40,6 +40,20 @@ export const getTheme = (isDark: boolean) => {
       fontFamily,
     },
     components: {
+      MuiChartsTooltip: {
+        styleOverrides: {
+          // affect both the "key" and "value" cells
+          cell: {
+            '&.MuiChartsTooltip-labelCell, &.MuiChartsTooltip-valueCell': {
+              color: 'var(--color-text)',
+              // optional:
+              // fontFamily: 'var(--font-vazir)',
+            },
+          },
+          // header value for axis tooltips
+          axisValueCell: { color: 'var(--color-text)' },
+        },
+      },
       MuiChartsAxis: {
         styleOverrides: {
           root: {
@@ -76,7 +90,12 @@ export const getTheme = (isDark: boolean) => {
       MuiChartsLegend: {
         styleOverrides: {
           root: {
-            [`& .${legendClasses.label}`]: { fill: 'var(--color-text)' },
+            [`& .${legendClasses.label}`]: {
+              fill: 'var(--color-text)',
+              fontSize: '14px',
+              fontFamily: fontFamily,
+            },
+            [`& .${legendClasses.mark}`]: {},
           },
         },
       },

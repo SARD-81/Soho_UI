@@ -1,4 +1,10 @@
-import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Box,
+  GlobalStyles,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 import { useMemo } from 'react';
 import { useCpu } from '../hooks/useCpu';
@@ -173,12 +179,21 @@ const Cpu = () => {
           justifyContent: 'center',
         }}
       >
+        <GlobalStyles
+          styles={{
+            // Force the center number in the Gauge to your token, including split tspans
+            '.MuiGauge-valueText, .MuiGauge-valueText tspan': {
+              fill: 'var(--color-text) !important',
+              color: 'var(--color-text) !important',
+            },
+          }}
+        />
         <Gauge
           value={cpuPercent}
           min={0}
           max={100}
-          startAngle={-180}
-          endAngle={180}
+          startAngle={0}
+          endAngle={360}
           innerRadius="60%"
           outerRadius="100%"
           cornerRadius="50%"

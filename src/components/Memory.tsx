@@ -283,8 +283,8 @@ const Memory = () => {
               outerRadius: 120,
               paddingAngle: 2,
               cornerRadius: 6,
-              startAngle: -90,
-              endAngle: 270,
+              startAngle: 0,
+              endAngle: 360,
               highlightScope: { fade: 'global', highlight: 'item' },
               faded: {
                 innerRadius: 70,
@@ -294,15 +294,15 @@ const Memory = () => {
               valueFormatter: (item) => {
                 if (item.id === 'used') {
                   const lines = [
-                    `استفاده‌شده: ${formatBytesForDisplay(safeUsed)}`,
-                    `کل: ${formatBytesForDisplay(safeTotal)}`,
-                    `در دسترس: ${formatBytesForDisplay(safeAvailable)}`,
-                    `آزاد: ${formatBytesForDisplay(safeFree)}`,
-                    `درصد استفاده: ${percentDisplay}`,
+                    `${formatBytesForDisplay(safeUsed)} : استفاده‌شده `,
+                    `${formatBytesForDisplay(safeTotal)} : کل `,
+                    `${formatBytesForDisplay(safeAvailable)} : در دسترس `,
+                    `${formatBytesForDisplay(safeFree)} : آزاد `,
+                    `${percentDisplay} : درصد استفاده `,
                   ];
                   return lines.join('\n');
                 }
-                return `${item.label ?? 'باقی‌مانده'}: ${formatBytesForDisplay(chartRemaining)}`;
+                return `${formatBytesForDisplay(chartRemaining)}`;
               },
             },
           ]}

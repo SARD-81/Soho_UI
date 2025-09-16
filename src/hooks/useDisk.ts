@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import type { DiskResponse } from '../@types/disk';
 import axiosInstance from '../lib/axiosInstance';
-import type { DiskResponse } from '../types/disk';
 
 const fetchDisk = async (): Promise<DiskResponse> => {
   const { data } = await axiosInstance.get<DiskResponse>('/disk');
@@ -8,19 +8,14 @@ const fetchDisk = async (): Promise<DiskResponse> => {
 };
 
 interface UseDiskOptions {
-  /**
-   * Interval in milliseconds for background refetches.
-   * Defaults to 5000 (5 seconds).
-   */
   refetchInterval?: number;
 }
 
 export const useDisk = (options?: UseDiskOptions) => {
-
   return useQuery<DiskResponse, Error>({
     queryKey: ['disk'],
     queryFn: fetchDisk,
-    refetchInterval: options?.refetchInterval ?? 5000,
+    refetchInterval: options?.refetchInterval ?? 1000,
     refetchIntervalInBackground: true,
   });
 };
