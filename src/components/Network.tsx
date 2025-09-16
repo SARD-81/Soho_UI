@@ -1,9 +1,64 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 
 import { LineChart } from '@mui/x-charts';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNetwork } from '../hooks/useNetwork';
 import '../index.css';
+
+type ResponsiveChartContainerProps = {
+  height: number;
+  children: (width: number) => ReactNode;
+};
+
+const ResponsiveChartContainer = ({
+  height,
+  children,
+}: ResponsiveChartContainerProps) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) {
+      return;
+    }
+
+    const updateWidth = () => {
+      setWidth(element.getBoundingClientRect().width);
+    };
+
+    if (typeof ResizeObserver === 'undefined') {
+      updateWidth();
+      return;
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setWidth(entry.contentRect.width);
+      }
+    });
+
+    observer.observe(element);
+    updateWidth();
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  return (
+    <Box
+      ref={containerRef}
+      sx={{
+        width: '100%',
+        minHeight: height,
+      }}
+    >
+      {width > 0 && children(width)}
+    </Box>
+  );
+};
 
 type History = Record<
   string,
@@ -14,6 +69,9 @@ const MAX_HISTORY_MS = 90 * 1000; // 1 minute 30 seconds
 
 const Network = () => {
   const { data, isLoading, error } = useNetwork();
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const chartSize = isSmallScreen ? 150 : 260;
 
   const [history, setHistory] = useState<History>({});
   const startTimeRef = useRef<number>(Date.now());
@@ -97,31 +155,36 @@ const Network = () => {
         نمودار های شبکه
       </Typography>
       {names.length === 0 ? (
-        <LineChart
-          height={250}
-          dataset={[]}
-          loading={isLoading}
-          skipAnimation
-          xAxis={[{ dataKey: 'time', scaleType: 'time' }]}
-          series={[
-            {
-              dataKey: 'download',
-              label: 'دانلود',
-              color: '#00bcd4',
-              showMark: false,
-            },
-            {
-              dataKey: 'upload',
-              label: 'آپلود',
-              color: '#ff4d94',
-              showMark: false,
-            },
-          ]}
-          slotProps={{
-            noDataOverlay: { message: 'No network data' },
-            tooltip: { sx: tooltipSx },
-          }}
-        />
+        <ResponsiveChartContainer height={chartSize}>
+          {(width) => (
+            <LineChart
+              width={width}
+              height={chartSize}
+              dataset={[]}
+              loading={isLoading}
+              skipAnimation
+              xAxis={[{ dataKey: 'time', scaleType: 'time' }]}
+              series={[
+                {
+                  dataKey: 'download',
+                  label: 'دانلود',
+                  color: '#00bcd4',
+                  showMark: false,
+                },
+                {
+                  dataKey: 'upload',
+                  label: 'آپلود',
+                  color: '#ff4d94',
+                  showMark: false,
+                },
+              ]}
+              slotProps={{
+                noDataOverlay: { message: 'No network data' },
+                tooltip: { sx: tooltipSx },
+              }}
+            />
+          )}
+        </ResponsiveChartContainer>
       ) : (
         names.map((name) => {
           const unit = interfaces[name]?.bandwidth.unit ?? '';
@@ -156,52 +219,57 @@ const Network = () => {
               >
                 {name}
               </Typography>
-              <LineChart
-                height={250}
-                dataset={interfaceHistory}
-                skipAnimation
-                loading={isLoading}
-                xAxis={[
-                  {
-                    dataKey: 'time',
-                    valueFormatter: (value) =>
-                      new Date(value).toLocaleTimeString(),
-                    scaleType: 'time',
-                    min,
-                    max,
-                  },
-                ]}
-                yAxis={[
-                  {
-                    label: unit,
-                    max: maxCombinedValue || 15,
-                  },
-                ]}
-                series={[
-                  {
-                    dataKey: 'download',
-                    label: `دانلود (${unit})`,
-                    color: '#00bcd4',
-                    valueFormatter: (value) => `${value} ${unit}`,
-                    showMark: false,
-                  },
-                  {
-                    dataKey: 'upload',
-                    label: `آپلود (${unit})`,
-                    color: '#ff4d94',
-                    valueFormatter: (value) => `${value} ${unit}`,
-                    showMark: false,
-                  },
-                ]}
-                margin={{ left: 40, right: 24, top: 20, bottom: 20 }}
-                slotProps={{
-                  legend: {
-                    position: { vertical: 'top', horizontal: 'center' },
-                  },
-                  noDataOverlay: { message: 'No network data' },
-                  tooltip: { sx: tooltipSx },
-                }}
-              />
+              <ResponsiveChartContainer height={chartSize}>
+                {(width) => (
+                  <LineChart
+                    width={width}
+                    height={chartSize}
+                    dataset={interfaceHistory}
+                    skipAnimation
+                    loading={isLoading}
+                    xAxis={[
+                      {
+                        dataKey: 'time',
+                        valueFormatter: (value) =>
+                          new Date(value).toLocaleTimeString(),
+                        scaleType: 'time',
+                        min,
+                        max,
+                      },
+                    ]}
+                    yAxis={[
+                      {
+                        label: unit,
+                        max: maxCombinedValue || 15,
+                      },
+                    ]}
+                    series={[
+                      {
+                        dataKey: 'download',
+                        label: `دانلود (${unit})`,
+                        color: '#00bcd4',
+                        valueFormatter: (value) => `${value} ${unit}`,
+                        showMark: false,
+                      },
+                      {
+                        dataKey: 'upload',
+                        label: `آپلود (${unit})`,
+                        color: '#ff4d94',
+                        valueFormatter: (value) => `${value} ${unit}`,
+                        showMark: false,
+                      },
+                    ]}
+                    margin={{ left: 40, right: 24, top: 20, bottom: 20 }}
+                    slotProps={{
+                      legend: {
+                        position: { vertical: 'top', horizontal: 'center' },
+                      },
+                      noDataOverlay: { message: 'No network data' },
+                      tooltip: { sx: tooltipSx },
+                    }}
+                  />
+                )}
+              </ResponsiveChartContainer>
             </Box>
           );
         })
