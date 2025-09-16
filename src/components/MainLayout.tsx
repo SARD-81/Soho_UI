@@ -6,9 +6,11 @@ import {
   TextField,
   Toolbar,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import React, { useState } from 'react';
-import { MdClose, MdMenu, MdSearch } from 'react-icons/md';
+import { MdClose, MdLogout, MdMenu, MdSearch } from 'react-icons/md';
 import { Outlet } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import '../index.css';
@@ -19,6 +21,8 @@ const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleLogout = async () => {
     await logout();
@@ -46,7 +50,16 @@ const MainLayout: React.FC = () => {
             }`,
         }}
       >
-        <Toolbar variant="dense" sx={{ gap: 2, minHeight: '40px' }}>
+        <Toolbar
+          variant="dense"
+          sx={{
+            gap: { xs: 1, sm: 2 },
+            minHeight: '40px',
+            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
           <IconButton
             onClick={() => setDrawerOpen((prev) => !prev)}
             sx={{ color: 'var(--color-bg-primary)' }}
@@ -63,7 +76,7 @@ const MainLayout: React.FC = () => {
           <Typography
             variant="h6"
             component="div"
-            sx={{ flexGrow: 0.1, color: 'var(--color-primary)' }}
+            sx={{ color: 'var(--color-primary)', flexShrink: 0 }}
           >
             سوهو
           </Typography>
@@ -99,8 +112,11 @@ const MainLayout: React.FC = () => {
               },
             }}
             sx={{
-              flexGrow: 1,
-              marginRight: 100,
+              order: { xs: 4, sm: 'initial' },
+              flexGrow: { xs: 1, md: 0 },
+              width: { xs: '100%', md: 'auto' },
+              mr: { xs: 0, md: 4 },
+              mt: { xs: 1, sm: 0 },
               '& .MuiOutlinedInput-input::placeholder': {
                 color: 'var(--color-bg-primary)',
               },
@@ -113,26 +129,49 @@ const MainLayout: React.FC = () => {
               },
             }}
           />
-          <Typography sx={{ mx: 2, color: 'var(--color-bg-primary)' }}>
-            خوش آمدید، {username}
-          </Typography>
-          <Button
-            onClick={handleLogout}
+          <Box
             sx={{
-              color: 'var(--color-bg-primary)',
-              height: 30,
-              backgroundColor: 'var(--color-primary)',
-              borderRadius: '10px',
-              '&:hover': {
-                backgroundColor: 'unset',
-                border: '2px solid var(--color-primary)',
-                borderRadius: '10px',
-              },
+              display: 'flex',
+              alignItems: 'center',
+              gap: { xs: 0.5, sm: 1 },
+              ml: 'auto',
+              order: { xs: 3, sm: 'initial' },
             }}
           >
-            خروج
-          </Button>
-          <ThemeToggle fixed={false} />
+            {!isMobile && (
+              <Typography sx={{ color: 'var(--color-bg-primary)' }}>
+                خوش آمدید، {username}
+              </Typography>
+            )}
+            {isMobile ? (
+              <IconButton
+                aria-label="خروج"
+                onClick={handleLogout}
+                size="small"
+                sx={{ color: 'var(--color-bg-primary)' }}
+              >
+                <MdLogout />
+              </IconButton>
+            ) : (
+              <Button
+                onClick={handleLogout}
+                sx={{
+                  color: 'var(--color-bg-primary)',
+                  height: 30,
+                  backgroundColor: 'var(--color-primary)',
+                  borderRadius: '10px',
+                  '&:hover': {
+                    backgroundColor: 'unset',
+                    border: '2px solid var(--color-primary)',
+                    borderRadius: '10px',
+                  },
+                }}
+              >
+                خروج
+              </Button>
+            )}
+            <ThemeToggle fixed={false} />
+          </Box>
         </Toolbar>
       </AppBar>
       <NavigationDrawer

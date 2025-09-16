@@ -2,7 +2,6 @@ import { createTheme } from '@mui/material/styles';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { labelClasses } from '@mui/x-charts/ChartsLabel';
 import { legendClasses } from '@mui/x-charts/ChartsLegend';
-import { gaugeClasses } from '@mui/x-charts/Gauge';
 import '@mui/x-charts/themeAugmentation';
 
 function readCssVar(name: string, fallback: string) {
@@ -41,15 +40,6 @@ export const getTheme = (isDark: boolean) => {
       fontFamily,
     },
     components: {
-      MuiGauge: {
-        styleOverrides: {
-          root: {
-            [`& .${gaugeClasses.valueText}`]: {
-              fill: 'var(--color-text)',
-            },
-          },
-        },
-      },
       MuiChartsAxis: {
         styleOverrides: {
           root: {
@@ -85,9 +75,6 @@ export const getTheme = (isDark: boolean) => {
       },
       MuiChartsLegend: {
         styleOverrides: {
-          label: {
-            fill: 'var(--color-text)',
-          },
           root: {
             [`& .${legendClasses.label}`]: { fill: 'var(--color-text)' },
           },

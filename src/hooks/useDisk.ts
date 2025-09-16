@@ -16,6 +16,7 @@ interface UseDiskOptions {
 }
 
 export const useDisk = (options?: UseDiskOptions) => {
+
   return useQuery<DiskResponse, Error>({
     queryKey: ['disk'],
     queryFn: fetchDisk,
