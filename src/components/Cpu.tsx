@@ -5,11 +5,23 @@ import { useCpu } from '../hooks/useCpu';
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
+type RgbColor = { r: number; g: number; b: number };
+
+const formatRgb = ({ r, g, b }: RgbColor) => `rgb(${r}, ${g}, ${b})`;
+
+const interpolateColor = (start: RgbColor, end: RgbColor, ratio: number) => ({
+  r: Math.round(start.r + (end.r - start.r) * ratio),
+  g: Math.round(start.g + (end.g - start.g) * ratio),
+  b: Math.round(start.b + (end.b - start.b) * ratio),
+});
+
+const START_COLOR: RgbColor = { r: 0, g: 255, b: 0 };
+const ALERT_COLOR: RgbColor = { r: 255, g: 0, b: 0 };
+
 const getGaugeColor = (value: number) => {
   const ratio = clampPercent(value) / 100;
-  const red = Math.round(ratio * 255);
-  const green = Math.round((1 - ratio) * 255);
-  return `rgb(${red}, ${green}, 0)`;
+  return formatRgb(interpolateColor(START_COLOR, ALERT_COLOR, ratio));
+
 };
 
 const Cpu = () => {
@@ -31,7 +43,8 @@ const Cpu = () => {
   const rawPercent = Number(data?.cpu_percent ?? 0);
   const safePercent = Number.isFinite(rawPercent) ? rawPercent : 0;
   const cpuPercent = clampPercent(safePercent);
-  const gaugeColor = getGaugeColor(cpuPercent);
+  const gaugeColor = useMemo(() => getGaugeColor(cpuPercent), [cpuPercent]);
+
 
   const frequencyCurrent =
     data?.cpu_frequency?.current != null ? Number(data.cpu_frequency.current) : null;
@@ -132,22 +145,25 @@ const Cpu = () => {
           valueFormatter={(value) =>
             `${percentFormatter.format(Math.round(value ?? 0))}٪`
           }
-          sx={{
+          sx={(theme) => ({
+
             [`& .${gaugeClasses.valueArc}`]: {
               fill: gaugeColor,
             },
             [`& .${gaugeClasses.referenceArc}`]: {
-              fill: 'rgba(255, 255, 255, 0.12)',
+              fill: theme.palette.text.disabled,
             },
             [`& .${gaugeClasses.valueText}`]: {
-              fontSize: 36,
+              fontSize: 40,
+
               fontFamily: 'var(--font-vazir)',
               fontWeight: 700,
               fill: 'var(--color-bg-primary)',
             },
-          }}
-          width={220}
-          height={220}
+          })}
+          width={200}
+          height={200}
+
         />
       </Box>
 
