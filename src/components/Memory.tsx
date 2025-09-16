@@ -1,4 +1,4 @@
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import { useMemory } from '../hooks/useMemory';
@@ -15,6 +15,8 @@ const parseNumeric = (value: unknown): number | null => {
 const Memory = () => {
   const { data, isLoading, error } = useMemory();
   const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const chartSize = isSmallScreen ? 150 : 260;
 
   const percentFormatter = useMemo(
     () =>
@@ -304,8 +306,8 @@ const Memory = () => {
               },
             },
           ]}
-          width={260}
-          height={260}
+          width={chartSize}
+          height={chartSize}
           margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
           hideLegend
           slotProps={{

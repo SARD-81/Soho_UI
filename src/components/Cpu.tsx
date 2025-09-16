@@ -1,4 +1,4 @@
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 import { useMemo } from 'react';
 import { useCpu } from '../hooks/useCpu';
@@ -26,6 +26,8 @@ const getGaugeColor = (value: number) => {
 const Cpu = () => {
   const { data, isLoading, error } = useCpu();
   const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const chartSize = isSmallScreen ? 150 : 260;
 
   const percentFormatter = useMemo(
     () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }),
@@ -164,7 +166,13 @@ const Cpu = () => {
         استفاده پردازنده (بر حسب درصد)
       </Typography>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
         <Gauge
           value={cpuPercent}
           min={0}
@@ -174,7 +182,7 @@ const Cpu = () => {
           innerRadius="60%"
           outerRadius="100%"
           cornerRadius="50%"
-          valueFormatter={(value) =>
+          text={({ value }) =>
             `${percentFormatter.format(Math.round(value ?? 0))}٪`
           }
           sx={(theme) => ({
@@ -192,8 +200,8 @@ const Cpu = () => {
               fill: 'var(--color-text)',
             },
           })}
-          width={200}
-          height={200}
+          width={chartSize}
+          height={chartSize}
         />
       </Box>
 
