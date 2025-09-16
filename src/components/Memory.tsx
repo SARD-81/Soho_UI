@@ -76,7 +76,7 @@ const Memory = () => {
       : 'rgba(0, 0, 0, 0.08)';
 
   const cardSx = {
-    width: 'fit-content',
+    width: '100%',
     p: 3,
     bgcolor: 'var(--color-card-bg)',
     borderRadius: 3,
@@ -88,6 +88,7 @@ const Memory = () => {
     boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
     border: `1px solid ${containerBorderColor}`,
     backdropFilter: 'blur(14px)',
+    height: '100%',
   };
 
   if (isLoading) {
@@ -313,10 +314,18 @@ const Memory = () => {
                 direction: 'rtl',
                 '& .MuiChartsTooltip-table': {
                   direction: 'rtl',
+                  color: 'var(--color-text)',
                 },
                 '& .MuiChartsTooltip-cell': {
                   whiteSpace: 'pre-line',
                   fontFamily: 'var(--font-vazir)',
+                  color: 'var(--color-text)',
+                },
+                '& .MuiChartsTooltip-label': {
+                  color: 'var(--color-text)',
+                },
+                '& .MuiChartsTooltip-value': {
+                  color: 'var(--color-text)',
                 },
               },
             },

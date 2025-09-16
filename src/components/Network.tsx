@@ -43,6 +43,26 @@ const Network = () => {
   const interfaces = data?.interfaces ?? {};
   const names = Object.keys(interfaces);
 
+  const tooltipSx = {
+    direction: 'rtl',
+    '& .MuiChartsTooltip-table': {
+      direction: 'rtl',
+      color: 'var(--color-text)',
+    },
+    '& .MuiChartsTooltip-label': {
+      color: 'var(--color-text)',
+      fontFamily: 'var(--font-vazir)',
+    },
+    '& .MuiChartsTooltip-value': {
+      color: 'var(--color-text)',
+      fontFamily: 'var(--font-vazir)',
+    },
+    '& .MuiChartsTooltip-cell': {
+      color: 'var(--color-text)',
+      fontFamily: 'var(--font-vazir)',
+    },
+  } as const;
+
   return (
     <Box
       sx={{
@@ -53,9 +73,11 @@ const Network = () => {
         color: 'var(--color-bg-primary)',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
+        alignItems: 'stretch',
         gap: 3,
         boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
+        width: '100%',
+        height: '100%',
       }}
     >
       <Typography
@@ -97,6 +119,7 @@ const Network = () => {
           ]}
           slotProps={{
             noDataOverlay: { message: 'No network data' },
+            tooltip: { sx: tooltipSx },
           }}
         />
       ) : (
@@ -176,6 +199,7 @@ const Network = () => {
                     position: { vertical: 'top', horizontal: 'center' },
                   },
                   noDataOverlay: { message: 'No network data' },
+                  tooltip: { sx: tooltipSx },
                 }}
               />
             </Box>
