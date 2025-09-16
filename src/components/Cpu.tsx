@@ -1,4 +1,4 @@
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 import { useMemo } from 'react';
 import { useCpu } from '../hooks/useCpu';
@@ -25,6 +25,7 @@ const getGaugeColor = (value: number) => {
 
 const Cpu = () => {
   const { data, isLoading, error } = useCpu();
+  const theme = useTheme();
 
   const percentFormatter = useMemo(
     () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }),
@@ -48,6 +49,10 @@ const Cpu = () => {
     data?.cpu_frequency?.current != null
       ? Number(data.cpu_frequency.current)
       : null;
+  const frequencyMin =
+    data?.cpu_frequency?.min != null ? Number(data.cpu_frequency.min) : null;
+  const frequencyMax =
+    data?.cpu_frequency?.max != null ? Number(data.cpu_frequency.max) : null;
 
   const hasPhysical = data?.cpu_cores?.physical != null;
   const hasLogical = data?.cpu_cores?.logical != null;
@@ -57,27 +62,73 @@ const Cpu = () => {
         Number(data?.cpu_cores?.logical ?? 0)
       : null;
 
-  const frequencyText =
-    frequencyCurrent != null && Number.isFinite(frequencyCurrent)
-      ? `${frequencyFormatter.format(frequencyCurrent)} MHz`
+  const formatFrequency = (value: number | null) =>
+    value != null && Number.isFinite(value)
+      ? `${frequencyFormatter.format(value)} MHz`
       : '—';
 
-  const totalCoresText =
-    totalCores != null && Number.isFinite(totalCores)
-      ? integerFormatter.format(totalCores)
+  const frequencyText = formatFrequency(frequencyCurrent);
+  const frequencyMinText = formatFrequency(frequencyMin);
+  const frequencyMaxText = formatFrequency(frequencyMax);
+
+  const formatInteger = (value: number | null | undefined) =>
+    value != null && Number.isFinite(value)
+      ? integerFormatter.format(Number(value))
       : '—';
+
+  const totalCoresText = formatInteger(totalCores);
+  const physicalCoresText = formatInteger(data?.cpu_cores?.physical);
+  const logicalCoresText = formatInteger(data?.cpu_cores?.logical);
+
+  const statsDividerColor =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.08)'
+      : 'rgba(0, 0, 0, 0.08)';
+
+  const statsBackground =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.04)'
+      : 'rgba(0, 0, 0, 0.03)';
+
+  const cardBorderColor =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.12)'
+      : 'rgba(0, 0, 0, 0.08)';
+
+  const cardSx = {
+    width: '100%',
+    p: 3,
+    bgcolor: 'var(--color-card-bg)',
+    borderRadius: 3,
+    mb: 3,
+    color: 'var(--color-bg-primary)',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: 3,
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
+    border: `1px solid ${cardBorderColor}`,
+    backdropFilter: 'blur(14px)',
+    height: '100%',
+  };
+
+  const stats = [
+    {
+      key: 'percent',
+      label: 'درصد استفاده',
+      value: `${percentFormatter.format(Math.round(cpuPercent))}٪`,
+    },
+    { key: 'freq-current', label: 'فرکانس فعلی', value: frequencyText },
+    { key: 'freq-min', label: 'کمینه فرکانس', value: frequencyMinText },
+    { key: 'freq-max', label: 'بیشینه فرکانس', value: frequencyMaxText },
+    { key: 'physical', label: 'هسته‌های فیزیکی', value: physicalCoresText },
+    { key: 'logical', label: 'هسته‌های منطقی', value: logicalCoresText },
+    { key: 'total', label: 'مجموع هسته‌ها', value: totalCoresText },
+  ];
 
   if (isLoading) {
     return (
-      <Box
-        sx={{
-          p: 3,
-          bgcolor: 'var(--color-card-bg)',
-          borderRadius: 3,
-          mb: 3,
-          color: 'var(--color-bg-primary)',
-        }}
-      >
+      <Box sx={cardSx}>
         <Typography variant="body2">
           در حال بارگذاری اطلاعات پردازنده...
         </Typography>
@@ -87,15 +138,7 @@ const Cpu = () => {
 
   if (error) {
     return (
-      <Box
-        sx={{
-          p: 3,
-          bgcolor: 'var(--color-card-bg)',
-          borderRadius: 3,
-          mb: 3,
-          color: 'var(--color-bg-primary)',
-        }}
-      >
+      <Box sx={cardSx}>
         <Typography variant="body2" sx={{ color: 'var(--color-error)' }}>
           خطا در دریافت داده‌های پردازنده: {error.message}
         </Typography>
@@ -104,21 +147,7 @@ const Cpu = () => {
   }
 
   return (
-    <Box
-      sx={{
-        width: 'fit-content',
-        p: 3,
-        bgcolor: 'var(--color-card-bg)',
-        borderRadius: 3,
-        mb: 3,
-        color: 'var(--color-bg-primary)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 3,
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
-      }}
-    >
+    <Box sx={cardSx}>
       <Typography
         variant="subtitle2"
         sx={{
@@ -168,45 +197,49 @@ const Cpu = () => {
         />
       </Box>
 
-      <Stack
-        spacing={1}
+      <Box
         sx={{
-          // width: '100%',
-          bgcolor: 'rgba(255, 255, 255, 0.08)',
+          width: '100%',
+          bgcolor: statsBackground,
           borderRadius: 2,
-          p: 2,
-          backdropFilter: 'blur(10px)',
+          px: 2,
+          py: 2,
+          border: `1px solid ${statsDividerColor}`,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
         }}
       >
-        <Typography
-          variant="body2"
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            fontWeight: 500,
-          }}
-        >
-          <Box component="span" sx={{ color: 'var(--color-primary)' }}>
-            فرکانس:
+        {stats.map((stat, index) => (
+          <Box
+            key={stat.key}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+              py: 0.75,
+              borderBottom:
+                index === stats.length - 1
+                  ? 'none'
+                  : `1px dashed ${statsDividerColor}`,
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 500, color: theme.palette.text.secondary }}
+            >
+              {stat.label}
+            </Typography>
+            <Typography
+              variant="subtitle2"
+              sx={{ fontWeight: 700, color: 'var(--color-primary)' }}
+            >
+              {stat.value}
+            </Typography>
           </Box>
-          <Box component="span">{frequencyText}</Box>
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            fontWeight: 500,
-          }}
-        >
-          <Box component="span" sx={{ color: 'var(--color-primary)' }}>
-            مجموع هسته‌های فیزیکی و منطقی:
-          </Box>
-          <Box component="span">{totalCoresText}</Box>
-        </Typography>
-      </Stack>
+        ))}
+      </Box>
     </Box>
   );
 };

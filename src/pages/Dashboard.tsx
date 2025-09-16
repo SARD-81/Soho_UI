@@ -10,21 +10,49 @@ const Dashboard = () => {
       sx={{
         p: 3,
         fontFamily: 'var(--font-vazir)',
-        display: 'flex',
-        // flexDirection: 'column',
+        display: 'grid',
+        gap: 3,
+        gridTemplateColumns: {
+          xs: 'repeat(1, minmax(0, 1fr))',
+          md: 'repeat(12, minmax(0, 1fr))',
+        },
       }}
     >
-      <Box>
+      <Box
+        sx={{
+          gridColumn: { xs: '1 / -1', md: 'span 6', lg: 'span 4' },
+          display: 'flex',
+          width: '100%',
+        }}
+      >
         <Cpu />
       </Box>
-      <Box>
+      <Box
+        sx={{
+          gridColumn: { xs: '1 / -1', md: 'span 6', lg: 'span 4' },
+          display: 'flex',
+          width: '100%',
+        }}
+      >
         <Memory />
       </Box>
-      <Box sx={{ width: '100%', flexGrow: 1 }}>
-        <Network />
-      </Box>
-      <Box>
+      <Box
+        sx={{
+          gridColumn: { xs: '1 / -1', md: 'span 6', lg: 'span 4' },
+          display: 'flex',
+          width: '100%',
+        }}
+      >
         <Disk />
+      </Box>
+      <Box
+        sx={{
+          gridColumn: '1 / -1',
+          display: 'flex',
+          width: '100%',
+        }}
+      >
+        <Network />
       </Box>
     </Box>
   );
