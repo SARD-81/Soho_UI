@@ -155,8 +155,76 @@ const formatLargeNumber = (value: number) => {
   return value.toFixed(0);
 };
 
-const formatBusyTime = (value: number) =>
-  BUSY_TIME_METRIC.format(Math.max(value, 0));
+const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'] as const;
+
+const determineByteUnitIndex = (value: number) => {
+  let unitIndex = 0;
+  let normalized = Math.max(value, 0);
+
+  while (normalized >= 1024 && unitIndex < BYTE_UNITS.length - 1) {
+    normalized /= 1024;
+    unitIndex += 1;
+  }
+
+  return unitIndex;
+};
+
+const createByteAxisValueFormatter = (unitIndex: number) => {
+  const divisor = 1024 ** unitIndex;
+
+  return (value: number) => {
+    if (!Number.isFinite(value)) {
+      return `0 ${BYTE_UNITS[unitIndex]}`;
+    }
+
+    const normalized = divisor > 0 ? Math.max(value, 0) / divisor : Math.max(value, 0);
+    const formatter = new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: normalized >= 100 ? 0 : normalized >= 10 ? 1 : 2,
+    });
+
+    return `${formatter.format(normalized)} ${BYTE_UNITS[unitIndex]}`;
+  };
+};
+
+const METRIC_UNIT_LABELS: Partial<Record<keyof DiskIOStats, string>> = {
+  read_count: 'عدد',
+  write_count: 'عدد',
+  read_merged_count: 'عدد',
+  write_merged_count: 'عدد',
+  read_time: 'ms',
+  write_time: 'ms',
+  busy_time: 'ms',
+};
+
+const getAxisId = (key: keyof DiskIOStats) => `${key}-axis`;
+
+const getAxisLabelAndFormatter = (
+  metric: DiskMetricConfig,
+  maxValue: number
+): { axisLabel: string; formatter: (value: number) => string } => {
+  if (metric.key === 'read_bytes' || metric.key === 'write_bytes') {
+    const unitIndex = determineByteUnitIndex(maxValue);
+    const unitLabel = BYTE_UNITS[unitIndex];
+
+    return {
+      axisLabel: `${metric.label} (${unitLabel})`,
+      formatter: createByteAxisValueFormatter(unitIndex),
+    };
+  }
+
+  const unitLabel = METRIC_UNIT_LABELS[metric.key];
+
+  return {
+    axisLabel: unitLabel ? `${metric.label} (${unitLabel})` : metric.label,
+    formatter: (value: number) => {
+      if (!Number.isFinite(value)) {
+        return '0';
+      }
+
+      return formatLargeNumber(Math.max(value, 0));
+    },
+  };
+};
 
 const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
   return METRIC_KEYS.reduce(
@@ -445,16 +513,6 @@ const DISK_TOOLTIP_SX = {
 interface DeviceMetricDatum {
   name: string;
   metrics: NormalizedMetrics;
-}
-
-type NormalizedChartDatum = {
-  device: string;
-  busy_time: number;
-} & Partial<Record<keyof DiskIOStats, number>>;
-
-interface NormalizedDatasetResult {
-  dataset: NormalizedChartDatum[];
-  maxValues: Partial<Record<keyof DiskIOStats, number>>;
 }
 
 export const DiskOverview = () => {
@@ -792,50 +850,6 @@ export const DiskOverview = () => {
   );
 };
 
-const buildNormalizedDataset = (
-  metrics: DiskMetricConfig[],
-  devices: DeviceMetricDatum[]
-): NormalizedDatasetResult => {
-  const maxValues = metrics.reduce(
-    (acc, metric) => {
-      const values = devices.map((item) => {
-        const rawValue = metric.getValue(item.metrics);
-        return Number.isFinite(rawValue) ? rawValue : 0;
-      });
-
-      const metricMax = Math.max(...values, 0);
-      acc[metric.key] = metricMax;
-      return acc;
-    },
-    {} as NormalizedDatasetResult['maxValues']
-  );
-
-  const dataset = devices.map((item) => {
-    const busyRaw = item.metrics.busy_time;
-    const busyTime = Number.isFinite(busyRaw) ? Math.max(busyRaw, 0) : 0;
-
-    const entry: NormalizedChartDatum = {
-      device: item.name,
-      busy_time: busyTime,
-    };
-
-    metrics.forEach((metric) => {
-      const rawValue = metric.getValue(item.metrics);
-      const max = maxValues[metric.key] ?? 0;
-
-      if (max > 0 && Number.isFinite(rawValue)) {
-        entry[metric.key] = clampPercent((rawValue / max) * 100);
-      } else {
-        entry[metric.key] = 0;
-      }
-    });
-
-    return entry;
-  });
-
-  return { dataset, maxValues };
-};
-
 const Disk = () => {
   const { data, isLoading, error } = useDisk();
   const theme = useTheme();
@@ -900,11 +914,8 @@ const Disk = () => {
         return entry;
       });
 
-
-  const { dataset: ioBytesDataset, maxValues: ioBytesMaxValues } = useMemo(
-    () => buildNormalizedDataset(BYTE_METRICS, topDevices),
-    [topDevices]
-  );
+      return { dataset, maxValues };
+    }, [topDevices]);
 
   const chartColors = useMemo(
     () => [
@@ -925,6 +936,39 @@ const Disk = () => {
     ]
   );
 
+  const createAxesForKeys = useCallback(
+    (keys: Array<keyof DiskIOStats>) =>
+      keys
+        .map((key, index) => {
+          const metadata = IO_METRIC_METADATA[key];
+          if (!metadata) {
+            return null;
+          }
+
+          const axisId = getAxisId(key);
+          const maxValue = ioMetricMaxValues[key] ?? 0;
+          const { axisLabel, formatter } = getAxisLabelAndFormatter(
+            metadata.config,
+            maxValue
+          );
+
+          return {
+            id: axisId,
+            min: 0,
+            max: maxValue > 0 ? maxValue : undefined,
+            label: axisLabel,
+            valueFormatter: formatter,
+            tickLabelStyle: { fill: 'var(--color-text)' },
+            labelStyle: { fill: 'var(--color-text)' },
+            position: index % 2 === 0 ? 'left' : 'right',
+            tickSize: 45,
+            width: 96,
+          };
+        })
+        .filter((axis): axis is NonNullable<typeof axis> => axis !== null),
+    [ioMetricMaxValues]
+  );
+
   const createSeriesForKeys = useCallback(
     (keys: Array<keyof DiskIOStats>) =>
       keys
@@ -937,6 +981,7 @@ const Disk = () => {
           const { config: metric, index } = metadata;
           const color = chartColors[index % chartColors.length];
           const max = ioMetricMaxValues[metric.key] ?? 0;
+          const axisId = getAxisId(metric.key);
 
           return {
             id: metric.key,
@@ -945,6 +990,7 @@ const Disk = () => {
             color,
             curve: 'monotoneX',
             showMark: true,
+            yAxisKey: axisId,
             valueFormatter: (value: number | null) => {
               if (!Number.isFinite(value) || max <= 0) {
                 return metric.format(0);
@@ -966,6 +1012,16 @@ const Disk = () => {
   const ioBytesSeries = useMemo(
     () => createSeriesForKeys(['read_bytes', 'write_bytes']),
     [createSeriesForKeys]
+  );
+
+  const ioCountAxes = useMemo(
+    () => createAxesForKeys(['read_count', 'write_count']),
+    [createAxesForKeys]
+  );
+
+  const ioBytesAxes = useMemo(
+    () => createAxesForKeys(['read_bytes', 'write_bytes']),
+    [createAxesForKeys]
   );
 
   const busyTimeTooltipData = useMemo<DiskTooltipContextValue>(() => {
@@ -1038,6 +1094,7 @@ const Disk = () => {
 
   const formatBytesAxisValue = (value: number) =>
     formatAxisValue(value, bytesAxisUnit.divisor);
+
 
   if (isLoading) {
     return (
@@ -1112,10 +1169,11 @@ const Disk = () => {
                         width: 96,
                       },
                     ]}
+
                     axisHighlight={{ x: 'line' }}
                     grid={{ horizontal: true, vertical: false }}
                     height={280}
-                    margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
+                    margin={{ top: 40, right: 80, left: 80, bottom: 64 }}
                     slots={{ tooltip: DiskTooltip }}
                     slotProps={lineChartSlotProps}
                   />
@@ -1150,10 +1208,11 @@ const Disk = () => {
                         width: 96,
                       },
                     ]}
+
                     axisHighlight={{ x: 'line' }}
                     grid={{ horizontal: true, vertical: false }}
                     height={280}
-                    margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
+                    margin={{ top: 40, right: 80, left: 80, bottom: 64 }}
                     slots={{ tooltip: DiskTooltip }}
                     slotProps={lineChartSlotProps}
                   />
