@@ -27,6 +27,7 @@ const NotFoundPage = () => {
         px: { xs: 2, sm: 4 },
         py: { xs: 6, md: 8 },
         fontFamily: 'var(--font-vazir)',
+        backgroundColor: 'var(--color-bg-body, #f5f7fa)',
       }}
     >
       <Box
@@ -34,13 +35,10 @@ const NotFoundPage = () => {
         sx={{
           position: 'absolute',
           inset: 0,
-          backgroundImage:
-            'radial-gradient(circle at 15% 20%, rgba(0,198,169,0.25), transparent 60%), ' +
-            'radial-gradient(circle at 80% 0%, rgba(35,167,213,0.22), transparent 50%), ' +
-            'radial-gradient(circle at 85% 85%, rgba(163,146,75,0.18), transparent 45%)',
-          backgroundSize: '200% 200%',
-          animation: 'gradientMove 18s ease infinite',
-          opacity: 0.85,
+          background:
+            'linear-gradient(135deg, rgba(35,167,213,0.12), rgba(0,198,169,0.06) 45%, rgba(163,146,75,0.1))',
+          backgroundSize: 'cover',
+          opacity: 0.9,
         }}
       />
 
@@ -53,9 +51,8 @@ const NotFoundPage = () => {
           top: { xs: '-70px', sm: '-90px' },
           right: { xs: '-70px', sm: '-90px' },
           borderRadius: '50%',
-          background: 'linear-gradient(140deg, rgba(35,167,213,0.35), rgba(0,198,169,0.25))',
-          filter: 'blur(0px)',
-          opacity: 0.6,
+          background: 'linear-gradient(150deg, rgba(35,167,213,0.22), rgba(0,198,169,0.12))',
+          opacity: 0.4,
         }}
       />
 
@@ -68,9 +65,8 @@ const NotFoundPage = () => {
           bottom: { xs: '-90px', sm: '-110px' },
           left: { xs: '-80px', sm: '-100px' },
           borderRadius: '50%',
-          background: 'linear-gradient(160deg, rgba(163,146,75,0.28), rgba(35,167,213,0.18))',
-          filter: 'blur(0px)',
-          opacity: 0.55,
+          background: 'linear-gradient(160deg, rgba(163,146,75,0.2), rgba(35,167,213,0.14))',
+          opacity: 0.35,
         }}
       />
 
@@ -84,11 +80,15 @@ const NotFoundPage = () => {
           px: { xs: 4, sm: 6 },
           py: { xs: 6, sm: 8 },
           borderRadius: 4,
-          backgroundColor: 'var(--color-card-bg)',
-          backdropFilter: 'saturate(160%) blur(12px)',
+          backgroundColor: 'rgba(255, 255, 255, 0.92)',
+          backdropFilter: 'blur(18px)',
+          border: (theme) =>
+            `1px solid ${
+              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'
+            }`,
           boxShadow: (theme) =>
-            `0 24px 60px ${
-              theme.palette.mode === 'dark' ? '#000000aa' : '#00000033'
+            `0 18px 48px ${
+              theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.55)' : 'rgba(15,23,42,0.12)'
             }`,
         }}
       >
@@ -100,11 +100,8 @@ const NotFoundPage = () => {
               fontWeight: 700,
               lineHeight: 1,
               fontSize: { xs: '4.5rem', sm: '6rem', md: '7.5rem' },
-              backgroundImage:
-                'linear-gradient(120deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent',
+              letterSpacing: { xs: '0.15rem', sm: '0.3rem', md: '0.4rem' },
+              color: 'var(--color-primary)',
             }}
           >
             404
@@ -118,7 +115,7 @@ const NotFoundPage = () => {
                 color: 'var(--color-bg-primary)',
               }}
             >
-              اوه! صفحه مورد نظر پیدا نشد
+              صفحه مورد نظر شما یافت نشد
             </Typography>
             <Typography
               variant="body1"
@@ -129,7 +126,7 @@ const NotFoundPage = () => {
                 lineHeight: 1.8,
               }}
             >
-              ممکن است مسیر حذف شده باشد یا هرگز وجود نداشته است. آدرس وارد شده را بررسی کنید یا یکی از گزینه‌های زیر را برای ادامه انتخاب نمایید.
+              احتمال دارد نشانی وارد شده تغییر کرده یا دیگر در دسترس نباشد. لطفاً نشانی را بازبینی کنید یا یکی از گزینه‌های زیر را برگزینید.
             </Typography>
           </Stack>
 
@@ -146,22 +143,20 @@ const NotFoundPage = () => {
               startIcon={<MdHome size={22} />}
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
-                borderRadius: '14px',
-                py: 1.5,
+                borderRadius: '12px',
+                py: 1.4,
                 fontWeight: 600,
                 fontSize: '1rem',
                 color: 'var(--color-bg-primary)',
-                backgroundImage:
-                  'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))',
-                boxShadow: '0 16px 34px rgba(0, 198, 169, 0.35)',
+                backgroundColor: 'var(--color-primary)',
+                boxShadow: '0 14px 32px rgba(0, 120, 114, 0.28)',
                 '&:hover': {
-                  backgroundImage:
-                    'linear-gradient(135deg, var(--color-primary-light), var(--color-primary))',
-                  boxShadow: '0 18px 40px rgba(0, 198, 169, 0.45)',
+                  backgroundColor: 'var(--color-primary-dark, #028c7f)',
+                  boxShadow: '0 16px 40px rgba(0, 120, 114, 0.34)',
                 },
               }}
             >
-              {isAuthenticated ? 'بازگشت به داشبورد' : 'بازگشت به صفحه ورود'}
+              {isAuthenticated ? 'بازگشت به داشبورد' : 'انتقال به صفحه ورود'}
             </Button>
 
             <Button
@@ -170,8 +165,8 @@ const NotFoundPage = () => {
               startIcon={<MdArrowBack size={22} />}
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
-                borderRadius: '14px',
-                py: 1.5,
+                borderRadius: '12px',
+                py: 1.4,
                 fontWeight: 600,
                 fontSize: '1rem',
                 borderWidth: 2,
@@ -183,7 +178,7 @@ const NotFoundPage = () => {
                 },
               }}
             >
-              بازگشت به صفحه قبل
+              بازگشت به صفحه پیشین
             </Button>
           </Stack>
 
@@ -194,7 +189,7 @@ const NotFoundPage = () => {
               opacity: 0.8,
             }}
           >
-            کد خطا: 404
+            کد خطا: ۴۰۴
           </Typography>
         </Stack>
       </Box>
