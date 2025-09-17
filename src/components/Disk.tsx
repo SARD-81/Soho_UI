@@ -7,6 +7,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
+import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import type { Theme } from '@mui/material/styles';
@@ -93,6 +94,11 @@ const diskPercentFormatter = new Intl.NumberFormat('fa-IR', {
   maximumFractionDigits: 1,
 });
 
+const timeValueFormatter = new Intl.NumberFormat('fa-IR', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 1,
+});
+
 
 const createCardSx = (theme: Theme) => {
   const cardBorderColor =
@@ -122,193 +128,49 @@ interface ParallelDatum {
   metrics: NormalizedMetrics;
 }
 
-interface ParallelCoordinatesChartProps {
-  data: ParallelDatum[];
-  metrics: typeof PARALLEL_METRICS;
-  colors: string[];
-  height?: number;
-}
+type MetricKey = (typeof PARALLEL_METRICS)[number]['key'];
+type MetricNormalizedKey = `${MetricKey}Normalized`;
+type MetricRawKey = `${MetricKey}Raw`;
 
-const ParallelCoordinatesChart = ({
-  data,
-  metrics,
-  colors,
-  height = 260,
-}: ParallelCoordinatesChartProps) => {
-  const theme = useTheme();
+type MetricLineChartDatum = {
+  device: string;
+} & {
+  [K in MetricNormalizedKey]: number;
+} & {
+  [K in MetricRawKey]: number;
+};
 
-  if (data.length === 0) {
-    return null;
+type MetricTooltipFormatterContext = {
+  dataIndex: number;
+};
+
+const formatMilliseconds = (value: number) => {
+  if (!Number.isFinite(value)) {
+    return '-';
   }
 
-  const width = Math.max(metrics.length * 140, 480);
-  const leftPadding = 60;
-  const rightPadding = 40;
-  const topPadding = 24;
-  const bottomPadding = 48;
-  const innerWidth = width - leftPadding - rightPadding;
-  const innerHeight = height - topPadding - bottomPadding;
+  if (value >= 1000) {
+    const seconds = value / 1000;
+    return `${timeValueFormatter.format(seconds)} ثانیه`;
+  }
 
-  const axisPositions = metrics.map((_, index) => {
-    if (metrics.length === 1) {
-      return leftPadding + innerWidth / 2;
-    }
-    return leftPadding + (innerWidth * index) / (metrics.length - 1);
-  });
+  return `${timeValueFormatter.format(value)} میلی‌ثانیه`;
+};
 
-  const axisScales = metrics.map((metric) => {
-    const values = data.map((item) => item.metrics[metric.key] ?? 0);
-    const max = Math.max(...values, 0);
-    const min = 0;
+const formatMetricValue = (metric: MetricKey, value: number) => {
+  if (!Number.isFinite(value)) {
+    return '-';
+  }
 
-    if (max === min) {
-      return { min, max: max === 0 ? 1 : max * 1.05 };
-    }
-
-    return { min, max };
-  });
-
-  const axisColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.25)'
-      : 'rgba(0, 0, 0, 0.35)';
-
-  const textColor = 'var(--color-text)';
-
-  const mapToY = (value: number, scale: { min: number; max: number }) => {
-    if (scale.max === scale.min) {
-      return topPadding + innerHeight / 2;
-    }
-    const ratio = (value - scale.min) / (scale.max - scale.min);
-    return topPadding + innerHeight - ratio * innerHeight;
-  };
-
-  return (
-    <Box sx={{ width: '100%', overflowX: 'auto', direction: 'ltr' }}>
-      <Box
-        component="svg"
-        viewBox={`0 0 ${width} ${height}`}
-        sx={{ width: '100%', height }}
-      >
-        {metrics.map((metric, index) => {
-          const x = axisPositions[index];
-          const scale = axisScales[index];
-
-          return (
-            <g key={metric.key}>
-              <line
-                x1={x}
-                y1={topPadding}
-                x2={x}
-                y2={height - bottomPadding}
-                stroke={axisColor}
-                strokeDasharray="4 4"
-              />
-              <text
-                x={x}
-                y={topPadding - 8}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={11}
-              >
-                {formatLargeNumber(scale.max)}
-              </text>
-              <text
-                x={x}
-                y={height - bottomPadding + 18}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={11}
-              >
-                {formatLargeNumber(scale.min)}
-              </text>
-              <text
-                x={x}
-                y={height - 12}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={12}
-                fontWeight={500}
-              >
-                {metric.label}
-              </text>
-            </g>
-          );
-        })}
-
-        {data.map((item, dataIndex) => {
-          const color = colors[dataIndex % colors.length];
-          const path = metrics
-            .map((metric, index) => {
-              const value = item.metrics[metric.key] ?? 0;
-              const x = axisPositions[index];
-              const y = mapToY(value, axisScales[index]);
-              return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
-            })
-            .join(' ');
-
-          return (
-            <g key={item.name}>
-              <path
-                d={path}
-                fill="none"
-                stroke={color}
-                strokeWidth={2.2}
-                opacity={0.85}
-              />
-              {metrics.map((metric, index) => {
-                const value = item.metrics[metric.key] ?? 0;
-                const x = axisPositions[index];
-                const y = mapToY(value, axisScales[index]);
-
-                return (
-                  <circle key={metric.key} cx={x} cy={y} r={4} fill={color} />
-                );
-              })}
-            </g>
-          );
-        })}
-      </Box>
-
-      <Stack
-        direction="row"
-        spacing={2}
-        flexWrap="wrap"
-        justifyContent="center"
-        sx={{ mt: 2, px: 1 }}
-      >
-        {data.map((item, index) => {
-          const color = colors[index % colors.length];
-
-          return (
-            <Stack
-              key={item.name}
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{ minWidth: 120 }}
-            >
-              <Box
-                sx={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  bgcolor: color,
-                  border: '1px solid rgba(0,0,0,0.2)',
-                }}
-              />
-              <Typography
-                variant="caption"
-                sx={{ color: theme.palette.text.secondary }}
-              >
-                {item.name}
-              </Typography>
-            </Stack>
-          );
-        })}
-      </Stack>
-    </Box>
-  );
+  switch (metric) {
+    case 'read_bytes':
+    case 'write_bytes':
+      return formatBytes(value);
+    case 'busy_time':
+      return formatMilliseconds(value);
+    default:
+      return formatLargeNumber(value);
+  }
 };
 
 export const DiskOverview = () => {
@@ -726,6 +588,38 @@ const Disk = () => {
     ]
   );
 
+  const metricComparisonDataset = useMemo<MetricLineChartDatum[]>(() => {
+    if (topDevices.length === 0) {
+      return [];
+    }
+
+    const maxValues = PARALLEL_METRICS.reduce((acc, metric) => {
+      const metricKey = metric.key as MetricKey;
+      const values = topDevices.map((item) => item.metrics[metricKey] ?? 0);
+      acc[metricKey] = Math.max(...values, 0);
+      return acc;
+    }, {} as Record<MetricKey, number>);
+
+    return topDevices.map((item) => {
+      const row = { device: item.name } as MetricLineChartDatum;
+
+      PARALLEL_METRICS.forEach((metric) => {
+        const metricKey = metric.key as MetricKey;
+        const normalizedKey = `${metricKey}Normalized` as MetricNormalizedKey;
+        const rawKey = `${metricKey}Raw` as MetricRawKey;
+        const rawValue = item.metrics[metricKey] ?? 0;
+        const maxValue = maxValues[metricKey] ?? 0;
+        const normalizedValue =
+          maxValue > 0 ? clampPercent((rawValue / maxValue) * 100) : 0;
+
+        row[normalizedKey] = normalizedValue;
+        row[rawKey] = rawValue;
+      });
+
+      return row;
+    });
+  }, [topDevices]);
+
   const diskPercentFormatter = useMemo(
     () =>
       new Intl.NumberFormat('fa-IR', {
@@ -735,22 +629,36 @@ const Disk = () => {
     []
   );
 
-  const diskCardsBorderColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.08)'
-      : 'rgba(0, 0, 0, 0.08)';
+  const metricLineSeries = useMemo(
+    () =>
+      PARALLEL_METRICS.map((metric, index) => {
+        const metricKey = metric.key as MetricKey;
+        const normalizedKey = `${metricKey}Normalized` as MetricNormalizedKey;
+        const rawKey = `${metricKey}Raw` as MetricRawKey;
 
-  const diskStatsDividerColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.08)'
-      : 'rgba(0, 0, 0, 0.08)';
+        return {
+          id: metricKey,
+          label: metric.label,
+          dataKey: normalizedKey,
+          color: chartColors[index % chartColors.length],
+          showMark: true,
+          valueFormatter: (
+            value: number | null,
+            context: MetricTooltipFormatterContext
+          ) => {
+            if (value == null) {
+              return 'بدون داده';
+            }
 
-  const diskStatsBackground =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.04)'
-      : 'rgba(0, 0, 0, 0.03)';
-
-  const diskChartSize = isSmallScreen ? 180 : 230;
+            const rawValue =
+              metricComparisonDataset[context.dataIndex]?.[rawKey] ?? 0;
+            const formattedRaw = formatMetricValue(metricKey, rawValue);
+            return `${formattedRaw} (${diskPercentFormatter.format(value)}٪)`;
+          },
+        };
+      }),
+    [chartColors, diskPercentFormatter, metricComparisonDataset]
+  );
 
   if (isLoading) {
     return (
@@ -791,14 +699,46 @@ const Disk = () => {
 
       <Stack spacing={2}>
         <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-          مقایسه شاخص‌های ورودی/خروجی (Parallel Coordinates)
+          روند شاخص‌های ورودی/خروجی (مقایسه نرمال‌شده)
         </Typography>
-        {topDevices.length > 0 ? (
-          <ParallelCoordinatesChart
-            data={topDevices}
-            metrics={PARALLEL_METRICS}
-            colors={chartColors}
-          />
+        {metricComparisonDataset.length > 0 ? (
+          <Box sx={{ width: '100%', direction: 'ltr' }}>
+            <LineChart
+              dataset={metricComparisonDataset}
+              xAxis={[
+                {
+                  scaleType: 'point',
+                  dataKey: 'device',
+                  valueFormatter: (value: unknown) =>
+                    value == null ? '' : `${value}`,
+                },
+              ]}
+              yAxis={[
+                {
+                  min: 0,
+                  max: 100,
+                  valueFormatter: (value: number) =>
+                    `${diskPercentFormatter.format(value)}٪`,
+                },
+              ]}
+              series={metricLineSeries}
+              height={320}
+              margin={{ top: 60, right: 40, left: 60, bottom: 60 }}
+              slotProps={{
+                tooltip: {
+                  sx: tooltipSx,
+                  trigger: 'axis',
+                },
+                legend: {
+                  sx: {
+                    color: 'var(--color-text)',
+                    fontFamily: 'var(--font-vazir)',
+                  },
+                  position: { vertical: 'top', horizontal: 'center' },
+                },
+              }}
+            />
+          </Box>
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             شاخص قابل توجهی برای نمایش وجود ندارد.
