@@ -506,10 +506,12 @@ const Disk = () => {
     '& .MuiChartsTooltip-value': {
       color: 'var(--color-text)',
       fontFamily: 'var(--font-vazir)',
+      whiteSpace: 'pre-line',
     },
     '& .MuiChartsTooltip-cell': {
       color: 'var(--color-text)',
       fontFamily: 'var(--font-vazir)',
+      whiteSpace: 'pre-line',
     },
   } as const;
 
@@ -544,83 +546,106 @@ const Disk = () => {
       .slice(0, 5);
   }, [ioSummary]);
 
-  const { dataset: ioLineDataset, maxValues: ioMetricMaxValues } =
-    useMemo(() => {
-      const maxValues = IO_METRICS.reduce(
-        (acc, metric) => {
-          const values = topDevices.map((item) => {
-            const rawValue = metric.getValue(item.metrics);
-            return Number.isFinite(rawValue) ? rawValue : 0;
-          });
-
-          acc[metric.key] = Math.max(...values, 0);
-          return acc;
-        },
-        {} as Record<keyof DiskIOStats, number>
-      );
-
-      const dataset = topDevices.map((item) => {
-        const entry: Record<string, string | number> = { device: item.name };
-
-        IO_METRICS.forEach((metric) => {
-          const rawValue = metric.getValue(item.metrics);
-          const max = maxValues[metric.key];
-          if (max > 0 && Number.isFinite(rawValue)) {
-            entry[metric.key] = clampPercent((rawValue / max) * 100);
-          } else {
-            entry[metric.key] = 0;
-          }
-        });
-
-        return entry;
-      });
-
-      return { dataset, maxValues };
-    }, [topDevices]);
-
-  const chartColors = useMemo(
-    () => [
-      theme.palette.primary.main,
-      theme.palette.secondary.main,
-      theme.palette.success.main,
-      theme.palette.warning.main,
-      theme.palette.info.main,
-      theme.palette.error.main,
-    ],
-    [
-      theme.palette.primary.main,
-      theme.palette.secondary.main,
-      theme.palette.success.main,
-      theme.palette.warning.main,
-      theme.palette.info.main,
-      theme.palette.error.main,
-    ]
+  const ioChartDataset = useMemo(
+    () =>
+      topDevices.map((item) => ({
+        device: item.name,
+        read_count: Math.max(safeNumber(item.metrics.read_count), 0),
+        write_count: Math.max(safeNumber(item.metrics.write_count), 0),
+        read_bytes: Math.max(safeNumber(item.metrics.read_bytes), 0),
+        write_bytes: Math.max(safeNumber(item.metrics.write_bytes), 0),
+        busy_time: Math.max(safeNumber(item.metrics.busy_time), 0),
+      })),
+    [topDevices]
   );
 
-  const ioLineSeries = useMemo(
-    () =>
-      IO_METRICS.map((metric, index) => {
-        const color = chartColors[index % chartColors.length];
-        const max = ioMetricMaxValues[metric.key] ?? 0;
+  const ioCountMax = useMemo(() => {
+    const values = ioChartDataset.flatMap((item) => [
+      item.read_count,
+      item.write_count,
+    ]);
+    return Math.max(...values, 0);
+  }, [ioChartDataset]);
 
-        return {
-          dataKey: metric.key,
-          label: metric.label,
-          color,
-          curve: 'monotoneX' as const,
-          showMark: true,
-          valueFormatter: (value: number | null) => {
-            if (!Number.isFinite(value) || max <= 0) {
-              return metric.format(0);
-            }
+  const ioBytesMax = useMemo(() => {
+    const values = ioChartDataset.flatMap((item) => [
+      item.read_bytes,
+      item.write_bytes,
+    ]);
+    return Math.max(...values, 0);
+  }, [ioChartDataset]);
 
-            const normalized = Number(value);
-            const actual = (normalized / 100) * max;
-            return metric.format(actual);
-          },
-        };
-      }),
-    [chartColors, ioMetricMaxValues]
+  const readColor = theme.palette.primary.main;
+  const writeColor = theme.palette.warning.main;
+
+  const ioCountSeries = useMemo(
+    () => [
+      {
+        id: 'read_count',
+        dataKey: 'read_count',
+        label: 'تعداد خواندن',
+        color: readColor,
+        curve: 'monotoneX' as const,
+        showMark: true,
+        valueFormatter: (
+          value: number | null,
+          { dataIndex }: { dataIndex: number }
+        ) => {
+          const safeValue = Math.max(safeNumber(value), 0);
+          const busyTime = ioChartDataset[dataIndex]?.busy_time ?? 0;
+          const busyLine = `زمان مشغولی: ${formatLargeNumber(busyTime)} ms`;
+          return `${formatLargeNumber(safeValue)} عملیات\n${busyLine}`;
+        },
+      },
+      {
+        id: 'write_count',
+        dataKey: 'write_count',
+        label: 'تعداد نوشتن',
+        color: writeColor,
+        curve: 'monotoneX' as const,
+        showMark: true,
+        valueFormatter: (value: number | null) => {
+          const safeValue = Math.max(safeNumber(value), 0);
+          return `${formatLargeNumber(safeValue)} عملیات`;
+        },
+      },
+    ],
+    [ioChartDataset, readColor, writeColor]
+  );
+
+  const ioBytesSeries = useMemo(
+    () => [
+      {
+        id: 'read_bytes',
+        dataKey: 'read_bytes',
+        label: 'حجم خوانده‌شده',
+        color: readColor,
+        curve: 'monotoneX' as const,
+        showMark: true,
+        valueFormatter: (
+          value: number | null,
+          { dataIndex }: { dataIndex: number }
+        ) => {
+          const safeValue = Math.max(safeNumber(value), 0);
+          const busyTime = ioChartDataset[dataIndex]?.busy_time ?? 0;
+          const busyLine = `زمان مشغولی: ${formatLargeNumber(busyTime)} ms`;
+          return `${formatBytes(safeValue)}\n${busyLine}`;
+        },
+      },
+      {
+        id: 'write_bytes',
+        dataKey: 'write_bytes',
+        label: 'حجم نوشته‌شده',
+        color: writeColor,
+        curve: 'monotoneX' as const,
+        showMark: true,
+        valueFormatter: (value: number | null) => {
+          const safeValue = Math.max(safeNumber(value), 0);
+          return formatBytes(safeValue);
+        },
+      },
+    ],
+    [ioChartDataset, readColor, writeColor]
   );
 
   const barChartDataset = useMemo(
@@ -672,48 +697,100 @@ const Disk = () => {
 
       <Stack spacing={2}>
         <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-          مقایسه شاخص‌های ورودی/خروجی (نمودار روند نرمال‌شده)
+          مقایسه شاخص‌های ورودی/خروجی
         </Typography>
-        {ioLineDataset.length > 0 ? (
-          <Box sx={{ width: '100%', direction: 'ltr' }}>
-            <LineChart
-              dataset={ioLineDataset}
-              series={ioLineSeries}
-              xAxis={[
-                {
-                  dataKey: 'device',
-                  scaleType: 'band',
-                  tickLabelStyle: { fill: 'var(--color-text)' },
-                  labelStyle: { fill: 'var(--color-text)' },
-                },
-              ]}
-              yAxis={[
-                {
-                  min: 0,
-                  max: 105,
-                  label: 'شاخص نرمال‌شده (٪)',
-                  valueFormatter: (value: number) =>
-                    `${diskPercentFormatter.format(value)}٪`,
-                  tickLabelStyle: { fill: 'var(--color-text)' },
-                  labelStyle: { fill: 'var(--color-text)' },
-                },
-              ]}
-              axisHighlight={{ x: 'line' }}
-              grid={{ horizontal: true, vertical: false }}
-              height={320}
-              margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
-              slotProps={{
-                tooltip: { sx: tooltipSx },
-                legend: {
-                  sx: {
-                    color: 'var(--color-text)',
-                    fontFamily: 'var(--font-vazir)',
-                  },
-                  position: { vertical: 'top', horizontal: 'center' },
-                },
-              }}
-            />
-          </Box>
+        {ioChartDataset.length > 0 ? (
+          <Stack spacing={4}>
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                تعداد عملیات خواندن/نوشتن
+              </Typography>
+              <Box sx={{ width: '100%', direction: 'ltr' }}>
+                <LineChart
+                  dataset={ioChartDataset}
+                  series={ioCountSeries}
+                  xAxis={[
+                    {
+                      dataKey: 'device',
+                      scaleType: 'band',
+                      tickLabelStyle: { fill: 'var(--color-text)' },
+                      labelStyle: { fill: 'var(--color-text)' },
+                    },
+                  ]}
+                  yAxis={[
+                    {
+                      min: 0,
+                      max: ioCountMax > 0 ? ioCountMax : undefined,
+                      label: 'تعداد عملیات',
+                      valueFormatter: (value: number) =>
+                        formatLargeNumber(Math.max(value, 0)),
+                      tickLabelStyle: { fill: 'var(--color-text)' },
+                      labelStyle: { fill: 'var(--color-text)' },
+                    },
+                  ]}
+                  axisHighlight={{ x: 'line' }}
+                  grid={{ horizontal: true, vertical: false }}
+                  height={300}
+                  margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
+                  slotProps={{
+                    tooltip: { sx: tooltipSx },
+                    legend: {
+                      sx: {
+                        color: 'var(--color-text)',
+                        fontFamily: 'var(--font-vazir)',
+                      },
+                      position: { vertical: 'top', horizontal: 'center' },
+                    },
+                  }}
+                />
+              </Box>
+            </Box>
+
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                حجم داده خواندن/نوشتن
+              </Typography>
+              <Box sx={{ width: '100%', direction: 'ltr' }}>
+                <LineChart
+                  dataset={ioChartDataset}
+                  series={ioBytesSeries}
+                  xAxis={[
+                    {
+                      dataKey: 'device',
+                      scaleType: 'band',
+                      tickLabelStyle: { fill: 'var(--color-text)' },
+                      labelStyle: { fill: 'var(--color-text)' },
+                    },
+                  ]}
+                  yAxis={[
+                    {
+                      min: 0,
+                      max: ioBytesMax > 0 ? ioBytesMax : undefined,
+                      label: 'حجم داده (بایت)',
+                      valueFormatter: (value: number) =>
+                        formatBytes(Math.max(value, 0)),
+                      tickLabelStyle: { fill: 'var(--color-text)' },
+                      labelStyle: { fill: 'var(--color-text)' },
+                    },
+                  ]}
+                  axisHighlight={{ x: 'line' }}
+                  grid={{ horizontal: true, vertical: false }}
+                  height={300}
+                  margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
+                  slotProps={{
+                    tooltip: { sx: tooltipSx },
+                    legend: {
+                      sx: {
+                        color: 'var(--color-text)',
+                        fontFamily: 'var(--font-vazir)',
+                      },
+                      position: { vertical: 'top', horizontal: 'center' },
+                    },
+                  }}
+                />
+              </Box>
+            </Box>
+          </Stack>
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             شاخص قابل توجهی برای نمایش وجود ندارد.
