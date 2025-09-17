@@ -182,6 +182,76 @@ const diskPercentFormatter = new Intl.NumberFormat('fa-IR', {
   maximumFractionDigits: 1,
 });
 
+type AxisUnitConfig = {
+  divisor: number;
+  label: string;
+};
+
+const COUNT_AXIS_UNITS: AxisUnitConfig[] = [
+  { divisor: 1_000_000_000, label: 'میلیارد' },
+  { divisor: 1_000_000, label: 'میلیون' },
+  { divisor: 1_000, label: 'هزار' },
+];
+
+const determineCountAxisUnit = (maxValue: number): AxisUnitConfig => {
+  for (const unit of COUNT_AXIS_UNITS) {
+    if (maxValue >= unit.divisor) {
+      return unit;
+    }
+  }
+
+  return { divisor: 1, label: 'عدد' };
+};
+
+const BYTE_AXIS_UNITS: AxisUnitConfig[] = [
+  { divisor: 1, label: 'بایت' },
+  { divisor: 1024, label: 'KB' },
+  { divisor: 1024 ** 2, label: 'MB' },
+  { divisor: 1024 ** 3, label: 'GB' },
+  { divisor: 1024 ** 4, label: 'TB' },
+  { divisor: 1024 ** 5, label: 'PB' },
+];
+
+const determineByteAxisUnit = (maxValue: number): AxisUnitConfig => {
+  if (maxValue <= 0) {
+    return BYTE_AXIS_UNITS[0];
+  }
+
+  let unit = BYTE_AXIS_UNITS[0];
+  for (const candidate of BYTE_AXIS_UNITS) {
+    if (maxValue >= candidate.divisor) {
+      unit = candidate;
+    } else {
+      break;
+    }
+  }
+
+  return unit;
+};
+
+const integerAxisFormatter = new Intl.NumberFormat('fa-IR', {
+  maximumFractionDigits: 0,
+});
+
+const singleDecimalAxisFormatter = new Intl.NumberFormat('fa-IR', {
+  maximumFractionDigits: 1,
+  minimumFractionDigits: 0,
+});
+
+const formatAxisValue = (value: number, divisor: number) => {
+  if (!Number.isFinite(value) || divisor <= 0) {
+    return singleDecimalAxisFormatter.format(0);
+  }
+
+  const scaled = Math.max(value, 0) / divisor;
+
+  if (scaled >= 100) {
+    return integerAxisFormatter.format(scaled);
+  }
+
+  return singleDecimalAxisFormatter.format(scaled);
+};
+
 const createCardSx = (theme: Theme) => {
   const cardBorderColor =
     theme.palette.mode === 'dark'
@@ -951,21 +1021,23 @@ const Disk = () => {
   const ioBytesAxisMaxValue =
     ioBytesAxisMax > 0 ? ioBytesAxisMax : undefined;
 
-  const formatCountAxisValue = (value: number) => {
-    if (!Number.isFinite(value)) {
-      return formatLargeNumber(0);
-    }
+  const countAxisUnit = useMemo(
+    () => determineCountAxisUnit(ioCountAxisMax),
+    [ioCountAxisMax]
+  );
+  const bytesAxisUnit = useMemo(
+    () => determineByteAxisUnit(ioBytesAxisMax),
+    [ioBytesAxisMax]
+  );
 
-    return formatLargeNumber(Math.max(value, 0));
-  };
+  const countAxisLabel = `تعداد عملیات (${countAxisUnit.label})`;
+  const bytesAxisLabel = `حجم داده (${bytesAxisUnit.label})`;
 
-  const formatBytesAxisValue = (value: number) => {
-    if (!Number.isFinite(value)) {
-      return formatBytes(0);
-    }
+  const formatCountAxisValue = (value: number) =>
+    formatAxisValue(value, countAxisUnit.divisor);
 
-    return formatBytes(Math.max(value, 0));
-  };
+  const formatBytesAxisValue = (value: number) =>
+    formatAxisValue(value, bytesAxisUnit.divisor);
 
   if (isLoading) {
     return (
@@ -1031,7 +1103,7 @@ const Disk = () => {
                       {
                         min: 0,
                         max: ioCountAxisMaxValue,
-                        label: 'تعداد عملیات (عدد)',
+                        label: countAxisLabel,
                         valueFormatter: formatCountAxisValue,
                         tickLabelStyle: { fill: 'var(--color-text)' },
                         labelStyle: { fill: 'var(--color-text)' },
@@ -1069,7 +1141,7 @@ const Disk = () => {
                       {
                         min: 0,
                         max: ioBytesAxisMaxValue,
-                        label: 'حجم داده (بایت)',
+                        label: bytesAxisLabel,
                         valueFormatter: formatBytesAxisValue,
                         tickLabelStyle: { fill: 'var(--color-text)' },
                         labelStyle: { fill: 'var(--color-text)' },
