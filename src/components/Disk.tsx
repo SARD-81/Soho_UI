@@ -2,14 +2,17 @@ import {
   Box,
   Divider,
   Stack,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
+import { RadarChart, type RadarSeries } from '@mui/x-charts/RadarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
 import { useDisk } from '../hooks/useDisk';
 import '../index.css';
@@ -115,195 +118,460 @@ const createCardSx = (theme: Theme) => {
   } as const;
 };
 
-interface ParallelDatum {
+interface DeviceMetricsEntry {
   name: string;
   metrics: NormalizedMetrics;
 }
 
-interface ParallelCoordinatesChartProps {
-  data: ParallelDatum[];
+interface MetricExtent {
+  min: number;
+  max: number;
+}
+
+const durationFormatter = new Intl.NumberFormat('fa-IR', {
+  maximumFractionDigits: 1,
+});
+
+const normalizedPercentFormatter = new Intl.NumberFormat('fa-IR', {
+  maximumFractionDigits: 0,
+});
+
+const normalizeMetricValue = (value: number, min: number, max: number) => {
+  if (!Number.isFinite(value) || !Number.isFinite(min) || !Number.isFinite(max)) {
+    return 0;
+  }
+
+  if (max === min) {
+    if (max === 0) {
+      return 0;
+    }
+
+    return 100;
+  }
+
+  const ratio = (value - min) / (max - min);
+  const bounded = Math.max(0, Math.min(1, ratio));
+  return bounded * 100;
+};
+
+const computeMetricExtents = (
+  devices: DeviceMetricsEntry[],
+  metrics: typeof PARALLEL_METRICS
+): MetricExtent[] => {
+  return metrics.map((metric) => {
+    const values = devices
+      .map((item) => Number(item.metrics[metric.key] ?? 0))
+      .filter((value) => Number.isFinite(value));
+
+    if (values.length === 0) {
+      return { min: 0, max: 0 };
+    }
+
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+    } satisfies MetricExtent;
+  });
+};
+
+const formatNormalizedPercent = (value: number) => {
+  if (!Number.isFinite(value)) {
+    return '0٪';
+  }
+
+  const clamped = Math.max(0, Math.min(100, value));
+  return `${normalizedPercentFormatter.format(clamped)}٪`;
+};
+
+const formatMetricValue = (metricKey: keyof DiskIOStats, rawValue: number) => {
+  if (!Number.isFinite(rawValue)) {
+    return '-';
+  }
+
+  if (metricKey === 'read_bytes' || metricKey === 'write_bytes') {
+    return formatBytes(rawValue);
+  }
+
+  if (
+    metricKey === 'read_time' ||
+    metricKey === 'write_time' ||
+    metricKey === 'busy_time'
+  ) {
+    return `${durationFormatter.format(rawValue)} ms`;
+  }
+
+  return formatLargeNumber(rawValue);
+};
+
+interface DeviceMetricsRadarChartProps {
+  devices: DeviceMetricsEntry[];
   metrics: typeof PARALLEL_METRICS;
+  metricExtents: MetricExtent[];
   colors: string[];
   height?: number;
 }
 
-const ParallelCoordinatesChart = ({
-  data,
+const DeviceMetricsRadarChart = ({
+  devices,
   metrics,
+  metricExtents,
   colors,
-  height = 260,
-}: ParallelCoordinatesChartProps) => {
+  height = 360,
+}: DeviceMetricsRadarChartProps) => {
   const theme = useTheme();
 
-  if (data.length === 0) {
+  const radarMetrics = useMemo(
+    () =>
+      metrics.map((metric) => ({
+        name: metric.label,
+        min: 0,
+        max: 100,
+      })),
+    [metrics]
+  );
+
+  const series = useMemo<RadarSeries[]>(
+    () =>
+      devices.map((device, index) => {
+        const normalizedValues = metrics.map((metric, metricIndex) => {
+          const { min, max } = metricExtents[metricIndex] ?? { min: 0, max: 0 };
+          const rawValue = Number(device.metrics[metric.key] ?? 0);
+          return normalizeMetricValue(rawValue, min, max);
+        });
+
+        return {
+          id: device.name,
+          label: device.name,
+          color: colors[index % colors.length],
+          data: normalizedValues,
+          fillArea: true,
+          valueFormatter: (_value, { dataIndex }) => {
+            const activeIndex = dataIndex ?? 0;
+
+            return metrics
+              .map((metric, idx) => {
+                const rawValue = Number(device.metrics[metric.key] ?? 0);
+                const normalizedDisplay = normalizedValues[idx] ?? 0;
+                const prefix = idx === activeIndex ? '➤ ' : '  ';
+
+                return `${prefix}${metric.label}: ${formatMetricValue(
+                  metric.key,
+                  rawValue
+                )} (${formatNormalizedPercent(normalizedDisplay)} نسبی)`;
+              })
+              .join('\n');
+          },
+        } satisfies RadarSeries;
+      }),
+    [colors, devices, metricExtents, metrics]
+  );
+
+  if (devices.length === 0 || series.length === 0) {
     return null;
   }
 
-  const width = Math.max(metrics.length * 140, 480);
-  const leftPadding = 60;
-  const rightPadding = 40;
-  const topPadding = 24;
-  const bottomPadding = 48;
-  const innerWidth = width - leftPadding - rightPadding;
-  const innerHeight = height - topPadding - bottomPadding;
-
-  const axisPositions = metrics.map((_, index) => {
-    if (metrics.length === 1) {
-      return leftPadding + innerWidth / 2;
-    }
-    return leftPadding + (innerWidth * index) / (metrics.length - 1);
-  });
-
-  const axisScales = metrics.map((metric) => {
-    const values = data.map((item) => item.metrics[metric.key] ?? 0);
-    const max = Math.max(...values, 0);
-    const min = 0;
-
-    if (max === min) {
-      return { min, max: max === 0 ? 1 : max * 1.05 };
-    }
-
-    return { min, max };
-  });
-
-  const axisColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.25)'
-      : 'rgba(0, 0, 0, 0.35)';
-
-  const textColor = 'var(--color-text)';
-
-  const mapToY = (value: number, scale: { min: number; max: number }) => {
-    if (scale.max === scale.min) {
-      return topPadding + innerHeight / 2;
-    }
-    const ratio = (value - scale.min) / (scale.max - scale.min);
-    return topPadding + innerHeight - ratio * innerHeight;
-  };
+  const dividerColor = theme.palette.divider;
 
   return (
     <Box sx={{ width: '100%', overflowX: 'auto', direction: 'ltr' }}>
+      <RadarChart
+        height={height}
+        series={series}
+        radar={{
+          metrics: radarMetrics,
+          max: 100,
+          labelGap: 8,
+        }}
+        slotProps={{
+          legend: {
+            direction: 'row',
+            position: { vertical: 'bottom', horizontal: 'center' },
+          },
+          tooltip: {
+            sx: {
+              direction: 'rtl',
+              '& .MuiTypography-root': {
+                whiteSpace: 'pre-line',
+              },
+            },
+          },
+        }}
+        sx={{
+          minWidth: 520,
+          '& .MuiChartsAxis-line': {
+            stroke: dividerColor,
+          },
+        }}
+      />
+    </Box>
+  );
+};
+
+interface DeviceMetricsGroupedBarChartProps {
+  devices: DeviceMetricsEntry[];
+  metrics: typeof PARALLEL_METRICS;
+  metricExtents: MetricExtent[];
+  colors: string[];
+  height?: number;
+}
+
+const DeviceMetricsGroupedBarChart = ({
+  devices,
+  metrics,
+  metricExtents,
+  colors,
+  height = 320,
+}: DeviceMetricsGroupedBarChartProps) => {
+  const dataset = useMemo(() => {
+    return metrics.map((metric) => {
+      const row: Record<string, number | string> = {
+        metricKey: metric.key,
+        metricLabel: metric.label,
+      };
+
+      devices.forEach((device, deviceIndex) => {
+        row[`device-${deviceIndex}`] = Number(device.metrics[metric.key] ?? 0);
+      });
+
+      return row;
+    });
+  }, [devices, metrics]);
+
+  const series = useMemo(
+    () =>
+      devices.map((device, deviceIndex) => ({
+        dataKey: `device-${deviceIndex}`,
+        label: device.name,
+        color: colors[deviceIndex % colors.length],
+        valueFormatter: (value: number | null, { dataIndex }: { dataIndex?: number }) => {
+          if (value == null || !Number.isFinite(value) || dataIndex == null) {
+            return '0';
+          }
+
+          const metric = metrics[dataIndex];
+          const { min, max } = metricExtents[dataIndex] ?? { min: 0, max: 0 };
+          const normalizedDisplay = normalizeMetricValue(value, min, max);
+
+          return `${formatMetricValue(metric.key, value)} (${formatNormalizedPercent(
+            normalizedDisplay
+          )} نسبی)`;
+        },
+      })),
+    [colors, devices, metricExtents, metrics]
+  );
+
+  if (devices.length === 0 || dataset.length === 0) {
+    return null;
+  }
+
+  return (
+    <Box sx={{ width: '100%', direction: 'ltr', overflowX: 'auto' }}>
+      <BarChart
+        height={height}
+        dataset={dataset}
+        xAxis={[
+          {
+            scaleType: 'band',
+            dataKey: 'metricLabel',
+            tickLabelStyle: { fontSize: 12 },
+          },
+        ]}
+        yAxis={[
+          {
+            position: 'left',
+            label: 'مقدار واقعی',
+          },
+        ]}
+        series={series}
+        margin={{ top: 24, bottom: 72, left: 64, right: 24 }}
+        slotProps={{
+          legend: {
+            direction: 'row',
+            position: { vertical: 'bottom', horizontal: 'center' },
+          },
+          tooltip: {
+            sx: {
+              direction: 'rtl',
+              '& .MuiTypography-root': {
+                whiteSpace: 'pre-line',
+              },
+            },
+          },
+        }}
+      />
+    </Box>
+  );
+};
+
+interface DeviceMetricsHeatmapProps {
+  devices: DeviceMetricsEntry[];
+  metrics: typeof PARALLEL_METRICS;
+  metricExtents: MetricExtent[];
+}
+
+const DeviceMetricsHeatmap = ({
+  devices,
+  metrics,
+  metricExtents,
+}: DeviceMetricsHeatmapProps) => {
+  const theme = useTheme();
+
+  if (devices.length === 0) {
+    return null;
+  }
+
+  const rows = metrics.map((metric, metricIndex) => {
+    return {
+      metric,
+      values: devices.map((device) => {
+        const rawValue = Number(device.metrics[metric.key] ?? 0);
+        const { min, max } = metricExtents[metricIndex] ?? { min: 0, max: 0 };
+        const normalizedValue = normalizeMetricValue(rawValue, min, max);
+
+        return {
+          device: device.name,
+          rawValue,
+          normalizedValue,
+        };
+      }),
+    };
+  });
+
+  const dividerColor = alpha(theme.palette.text.primary, 0.12);
+  const headerBackground = theme.palette.mode === 'dark'
+    ? alpha('#ffffff', 0.06)
+    : alpha('#000000', 0.04);
+
+  const getCellBackground = (percent: number) => {
+    const ratio = Math.max(0, Math.min(100, percent)) / 100;
+    const baseColor = theme.palette.primary.main;
+    const alphaValue = 0.15 + ratio * 0.65;
+    return alpha(baseColor, alphaValue);
+  };
+
+  const getCellColor = (percent: number) => {
+    const ratio = Math.max(0, Math.min(100, percent)) / 100;
+    if (ratio > 0.6) {
+      return theme.palette.getContrastText(theme.palette.primary.main);
+    }
+    return theme.palette.text.primary;
+  };
+
+  return (
+    <Box sx={{ width: '100%', overflowX: 'auto' }}>
       <Box
-        component="svg"
-        viewBox={`0 0 ${width} ${height}`}
-        sx={{ width: '100%', height }}
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: `minmax(160px, 1.2fr) repeat(${devices.length}, minmax(120px, 1fr))`,
+          border: `1px solid ${dividerColor}`,
+          borderRadius: 2,
+          overflow: 'hidden',
+          direction: 'rtl',
+        }}
       >
-        {metrics.map((metric, index) => {
-          const x = axisPositions[index];
-          const scale = axisScales[index];
+        <Box
+          sx={{
+            px: 2,
+            py: 1.5,
+            fontWeight: 600,
+            textAlign: 'right',
+            bgcolor: headerBackground,
+            borderLeft: `1px solid ${dividerColor}`,
+            borderBottom: `1px solid ${dividerColor}`,
+          }}
+        >
+          شاخص
+        </Box>
+        {devices.map((device, index) => (
+          <Box
+            key={device.name}
+            sx={{
+              px: 2,
+              py: 1.5,
+              fontWeight: 600,
+              textAlign: 'center',
+              bgcolor: headerBackground,
+              borderLeft:
+                index === devices.length - 1 ? 'none' : `1px solid ${dividerColor}`,
+              borderBottom: `1px solid ${dividerColor}`,
+            }}
+          >
+            {device.name}
+          </Box>
+        ))}
+        {rows.map(({ metric, values }) => (
+          <Fragment key={metric.key}>
+            <Box
+              sx={{
+                px: 2,
+                py: 1.5,
+                fontSize: 14,
+                borderTop: `1px solid ${dividerColor}`,
+                borderLeft: `1px solid ${dividerColor}`,
+                display: 'flex',
+                alignItems: 'center',
+                bgcolor: theme.palette.background.paper,
+              }}
+            >
+              {metric.label}
+            </Box>
+            {values.map((value, valueIndex) => {
+              const backgroundColor = getCellBackground(value.normalizedValue);
+              const textColor = getCellColor(value.normalizedValue);
 
-          return (
-            <g key={metric.key}>
-              <line
-                x1={x}
-                y1={topPadding}
-                x2={x}
-                y2={height - bottomPadding}
-                stroke={axisColor}
-                strokeDasharray="4 4"
-              />
-              <text
-                x={x}
-                y={topPadding - 8}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={11}
-              >
-                {formatLargeNumber(scale.max)}
-              </text>
-              <text
-                x={x}
-                y={height - bottomPadding + 18}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={11}
-              >
-                {formatLargeNumber(scale.min)}
-              </text>
-              <text
-                x={x}
-                y={height - 12}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={12}
-                fontWeight={500}
-              >
-                {metric.label}
-              </text>
-            </g>
-          );
-        })}
-
-        {data.map((item, dataIndex) => {
-          const color = colors[dataIndex % colors.length];
-          const path = metrics
-            .map((metric, index) => {
-              const value = item.metrics[metric.key] ?? 0;
-              const x = axisPositions[index];
-              const y = mapToY(value, axisScales[index]);
-              return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
-            })
-            .join(' ');
-
-          return (
-            <g key={item.name}>
-              <path
-                d={path}
-                fill="none"
-                stroke={color}
-                strokeWidth={2.2}
-                opacity={0.85}
-              />
-              {metrics.map((metric, index) => {
-                const value = item.metrics[metric.key] ?? 0;
-                const x = axisPositions[index];
-                const y = mapToY(value, axisScales[index]);
-
-                return (
-                  <circle key={metric.key} cx={x} cy={y} r={4} fill={color} />
-                );
-              })}
-            </g>
-          );
-        })}
+              return (
+                <Tooltip
+                  key={`${metric.key}-${value.device}`}
+                  title={
+                    `${value.device} • ${metric.label}\n` +
+                    `${formatMetricValue(metric.key, value.rawValue)} مقدار واقعی\n` +
+                    `${formatNormalizedPercent(value.normalizedValue)} سهم نسبی`
+                  }
+                  arrow
+                >
+                  <Box
+                    sx={{
+                      px: 1.5,
+                      py: 1.5,
+                      textAlign: 'center',
+                      borderTop: `1px solid ${dividerColor}`,
+                      borderLeft:
+                        valueIndex === values.length - 1
+                          ? 'none'
+                          : `1px solid ${dividerColor}`,
+                      bgcolor: backgroundColor,
+                      color: textColor,
+                      fontSize: 13,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {formatNormalizedPercent(value.normalizedValue)}
+                  </Box>
+                </Tooltip>
+              );
+            })}
+          </Fragment>
+        ))}
       </Box>
-
       <Stack
         direction="row"
-        spacing={2}
-        flexWrap="wrap"
-        justifyContent="center"
-        sx={{ mt: 2, px: 1 }}
+        spacing={1}
+        alignItems="center"
+        sx={{ mt: 1.5, direction: 'rtl' }}
       >
-        {data.map((item, index) => {
-          const color = colors[index % colors.length];
-
-          return (
-            <Stack
-              key={item.name}
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{ minWidth: 120 }}
-            >
-              <Box
-                sx={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  bgcolor: color,
-                  border: '1px solid rgba(0,0,0,0.2)',
-                }}
-              />
-              <Typography
-                variant="caption"
-                sx={{ color: theme.palette.text.secondary }}
-              >
-                {item.name}
-              </Typography>
-            </Stack>
-          );
-        })}
+        <Box
+          sx={{
+            width: 120,
+            height: 12,
+            borderRadius: 6,
+            background: `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${
+              alpha(theme.palette.primary.main, 0.8)
+            } 100%)`,
+          }}
+        />
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+          شدت رنگ بیشتر به معنی سهم نسبی بالاتر در شاخص است.
+        </Typography>
       </Stack>
     </Box>
   );
@@ -669,7 +937,7 @@ const Disk = () => {
     },
   } as const;
 
-  const ioSummary = useMemo<ParallelDatum[]>(() => {
+  const ioSummary = useMemo<DeviceMetricsEntry[]>(() => {
     if (!data?.summary?.disk_io_summary) {
       return [];
     }
@@ -729,6 +997,11 @@ const Disk = () => {
     ]
   );
 
+  const metricExtents = useMemo(
+    () => computeMetricExtents(topDevices, PARALLEL_METRICS),
+    [topDevices]
+  );
+
   if (isLoading) {
     return (
       <Box sx={cardSx}>
@@ -766,16 +1039,47 @@ const Disk = () => {
 
       <Divider sx={{ my: 1 }} />
 
-      <Stack spacing={2}>
+      <Stack spacing={3}>
         <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-          مقایسه شاخص‌های ورودی/خروجی (Parallel Coordinates)
+          مقایسه شاخص‌های ورودی/خروجی (نمونه انواع نمودارها)
         </Typography>
         {topDevices.length > 0 ? (
-          <ParallelCoordinatesChart
-            data={topDevices}
-            metrics={PARALLEL_METRICS}
-            colors={chartColors}
-          />
+          <Stack spacing={3}>
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                نمودار رادار (Radar Chart)
+              </Typography>
+              <DeviceMetricsRadarChart
+                devices={topDevices}
+                metrics={PARALLEL_METRICS}
+                metricExtents={metricExtents}
+                colors={chartColors}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                نمودار ستونی خوشه‌ای (Grouped Columns)
+              </Typography>
+              <DeviceMetricsGroupedBarChart
+                devices={topDevices}
+                metrics={PARALLEL_METRICS}
+                metricExtents={metricExtents}
+                colors={chartColors}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                ماتریس حرارتی (Heatmap)
+              </Typography>
+              <DeviceMetricsHeatmap
+                devices={topDevices}
+                metrics={PARALLEL_METRICS}
+                metricExtents={metricExtents}
+              />
+            </Box>
+          </Stack>
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             شاخص قابل توجهی برای نمایش وجود ندارد.
