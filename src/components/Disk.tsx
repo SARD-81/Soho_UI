@@ -28,12 +28,44 @@ const METRIC_KEYS: Array<keyof DiskIOStats> = [
   'busy_time',
 ];
 
-const PARALLEL_METRICS: Array<{ key: keyof DiskIOStats; label: string }> = [
-  { key: 'read_count', label: 'تعداد خواندن' },
-  { key: 'write_count', label: 'تعداد نوشتن' },
-  { key: 'read_bytes', label: 'حجم خوانده‌شده' },
-  { key: 'write_bytes', label: 'حجم نوشته‌شده' },
-  { key: 'busy_time', label: 'زمان مشغولی' },
+type DiskMetricConfig = {
+  key: keyof DiskIOStats;
+  label: string;
+  getValue: (metrics: NormalizedMetrics) => number;
+  format: (value: number) => string;
+};
+
+const IO_METRICS: DiskMetricConfig[] = [
+  {
+    key: 'read_count',
+    label: 'تعداد خواندن',
+    getValue: (metrics) => metrics.read_count,
+    format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
+  },
+  {
+    key: 'write_count',
+    label: 'تعداد نوشتن',
+    getValue: (metrics) => metrics.write_count,
+    format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
+  },
+  {
+    key: 'read_bytes',
+    label: 'حجم خوانده‌شده',
+    getValue: (metrics) => metrics.read_bytes,
+    format: (value) => formatBytes(Math.max(value, 0)),
+  },
+  {
+    key: 'write_bytes',
+    label: 'حجم نوشته‌شده',
+    getValue: (metrics) => metrics.write_bytes,
+    format: (value) => formatBytes(Math.max(value, 0)),
+  },
+  {
+    key: 'busy_time',
+    label: 'زمان مشغولی (ms)',
+    getValue: (metrics) => metrics.busy_time,
+    format: (value) => `${formatLargeNumber(Math.max(value, 0))} ms`,
+  },
 ];
 
 const formatBytes = (value: number) => {
@@ -153,6 +185,7 @@ const tooltipSx = {
 } as const;
 
 interface DeviceMetricsDatum {
+
   name: string;
   metrics: NormalizedMetrics;
 }
@@ -302,6 +335,7 @@ const DiskMetricsLineChart = ({
     </Box>
   );
 };
+
 
 export const DiskOverview = () => {
   const { data, isLoading, error } = useDisk();
@@ -644,6 +678,7 @@ const Disk = () => {
   const cardSx = createCardSx(theme);
 
   const ioSummary = useMemo<DeviceMetricsDatum[]>(() => {
+
     if (!data?.summary?.disk_io_summary) {
       return [];
     }
@@ -654,7 +689,7 @@ const Disk = () => {
         metrics: normalizeMetrics(metrics),
       }))
       .filter((entry) =>
-        PARALLEL_METRICS.some((metric) => entry.metrics[metric.key] > 0)
+        IO_METRICS.some((metric) => metric.getValue(entry.metrics) > 0)
       );
   }, [data?.summary?.disk_io_summary]);
 
@@ -674,13 +709,39 @@ const Disk = () => {
       .slice(0, 5);
   }, [ioSummary]);
 
-  const barChartDataset = useMemo(
-    () =>
-      topDevices.map((item) => ({
-        device: item.name,
-        readGB: item.metrics.read_bytes / BYTES_IN_GB,
-        writeGB: item.metrics.write_bytes / BYTES_IN_GB,
-      })),
+  const { dataset: ioLineDataset, maxValues: ioMetricMaxValues } = useMemo(
+    () => {
+      const maxValues = IO_METRICS.reduce(
+        (acc, metric) => {
+          const values = topDevices.map((item) => {
+            const rawValue = metric.getValue(item.metrics);
+            return Number.isFinite(rawValue) ? rawValue : 0;
+          });
+
+          acc[metric.key] = Math.max(...values, 0);
+          return acc;
+        },
+        {} as Record<keyof DiskIOStats, number>
+      );
+
+      const dataset = topDevices.map((item) => {
+        const entry: Record<string, string | number> = { device: item.name };
+
+        IO_METRICS.forEach((metric) => {
+          const rawValue = metric.getValue(item.metrics);
+          const max = maxValues[metric.key];
+          if (max > 0 && Number.isFinite(rawValue)) {
+            entry[metric.key] = clampPercent((rawValue / max) * 100);
+          } else {
+            entry[metric.key] = 0;
+          }
+        });
+
+        return entry;
+      });
+
+      return { dataset, maxValues };
+    },
     [topDevices]
   );
 
@@ -701,6 +762,42 @@ const Disk = () => {
       theme.palette.info.main,
       theme.palette.error.main,
     ]
+  );
+
+  const ioLineSeries = useMemo(
+    () =>
+      IO_METRICS.map((metric, index) => {
+        const color = chartColors[index % chartColors.length];
+        const max = ioMetricMaxValues[metric.key] ?? 0;
+
+        return {
+          dataKey: metric.key,
+          label: metric.label,
+          color,
+          curve: 'monotoneX' as const,
+          showMark: true,
+          valueFormatter: (value: number | null) => {
+            if (!Number.isFinite(value) || max <= 0) {
+              return metric.format(0);
+            }
+
+            const normalized = Number(value);
+            const actual = (normalized / 100) * max;
+            return metric.format(actual);
+          },
+        };
+      }),
+    [chartColors, ioMetricMaxValues]
+  );
+
+  const barChartDataset = useMemo(
+    () =>
+      topDevices.map((item) => ({
+        device: item.name,
+        readGB: item.metrics.read_bytes / BYTES_IN_GB,
+        writeGB: item.metrics.write_bytes / BYTES_IN_GB,
+      })),
+    [topDevices]
   );
 
   if (isLoading) {
@@ -759,6 +856,7 @@ const Disk = () => {
               مشاهده جزئیات هر شاخص روی نقاط نمودار توقف کنید.
             </Typography>
           </>
+
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             شاخص قابل توجهی برای نمایش وجود ندارد.
