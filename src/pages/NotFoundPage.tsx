@@ -17,20 +17,16 @@ const NotFoundPage = () => {
 
   return (
     <Box
-      component="section"
       sx={{
         position: 'relative',
         minHeight: { xs: '70svh', md: '80svh' },
         width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: 'grid',
+        placeItems: 'center',
         overflow: 'hidden',
-        px: { xs: 2.5, sm: 4 },
+        px: { xs: 2, sm: 4 },
         py: { xs: 6, md: 8 },
-        backgroundColor: 'var(--color-background)',
         fontFamily: 'var(--font-vazir)',
-        backgroundColor: 'var(--color-bg-body, #f5f7fa)',
       }}
     >
       <Box
@@ -38,10 +34,13 @@ const NotFoundPage = () => {
         sx={{
           position: 'absolute',
           inset: 0,
-          background:
-            'linear-gradient(135deg, rgba(35,167,213,0.12), rgba(0,198,169,0.06) 45%, rgba(163,146,75,0.1))',
-          backgroundSize: 'cover',
-          opacity: 0.9,
+          backgroundImage:
+            'radial-gradient(circle at 20% 25%, rgba(35,167,213,0.18), transparent 60%), ' +
+            'radial-gradient(circle at 80% 15%, rgba(0,198,169,0.14), transparent 55%), ' +
+            'radial-gradient(circle at 75% 80%, rgba(163,146,75,0.12), transparent 50%)',
+          backgroundSize: '180% 180%',
+          animation: 'gradientMove 22s ease infinite',
+          opacity: 0.75,
         }}
       />
 
@@ -54,8 +53,10 @@ const NotFoundPage = () => {
           top: { xs: '-70px', sm: '-90px' },
           right: { xs: '-70px', sm: '-90px' },
           borderRadius: '50%',
-          background: 'linear-gradient(150deg, rgba(35,167,213,0.22), rgba(0,198,169,0.12))',
-          opacity: 0.4,
+          background:
+            'linear-gradient(140deg, rgba(35,167,213,0.24), rgba(0,198,169,0.18))',
+          filter: 'blur(0px)',
+          opacity: 0.55,
         }}
       />
 
@@ -68,46 +69,42 @@ const NotFoundPage = () => {
           bottom: { xs: '-90px', sm: '-110px' },
           left: { xs: '-80px', sm: '-100px' },
           borderRadius: '50%',
-          background: 'linear-gradient(160deg, rgba(163,146,75,0.2), rgba(35,167,213,0.14))',
-          opacity: 0.35,
+          background:
+            'linear-gradient(160deg, rgba(163,146,75,0.22), rgba(35,167,213,0.14))',
+          filter: 'blur(0px)',
+          opacity: 0.5,
         }}
       />
 
       <Box
-
         sx={{
           position: 'relative',
           zIndex: 1,
           width: '100%',
-          maxWidth: 620,
+          maxWidth: 680,
           textAlign: 'center',
           px: { xs: 4, sm: 6 },
           py: { xs: 6, sm: 8 },
           borderRadius: 4,
-          backgroundColor: 'rgba(255, 255, 255, 0.92)',
-          backdropFilter: 'blur(18px)',
-          border: (theme) =>
-            `1px solid ${
-              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'
-            }`,
+          backgroundColor: 'var(--color-card-bg)',
+          backdropFilter: 'saturate(160%) blur(12px)',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
           boxShadow: (theme) =>
             `0 18px 48px ${
-              theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.55)' : 'rgba(15,23,42,0.12)'
+              theme.palette.mode === 'dark' ? '#00000088' : '#00000022'
             }`,
-
         }}
       >
-        <Stack spacing={{ xs: 3, sm: 4 }} alignItems="center">
+        <Stack spacing={3} alignItems="center">
           <Typography
             variant="h1"
             sx={{
               fontFamily: 'var(--font-didot)',
-              fontWeight: 600,
+              fontWeight: 700,
               lineHeight: 1,
               fontSize: { xs: '4.5rem', sm: '6rem', md: '7.5rem' },
-              letterSpacing: { xs: '0.15rem', sm: '0.3rem', md: '0.4rem' },
               color: 'var(--color-primary)',
-
+              letterSpacing: { xs: '-0.08em', md: '-0.1em' },
             }}
           >
             404
@@ -117,12 +114,11 @@ const NotFoundPage = () => {
             <Typography
               variant="h4"
               sx={{
-                fontWeight: 700,
+                fontWeight: 800,
                 color: 'var(--color-bg-primary)',
               }}
             >
-              صفحه مورد نظر شما یافت نشد
-
+              صفحه درخواستی شما در دسترس نیست
             </Typography>
             <Typography
               variant="body1"
@@ -130,11 +126,12 @@ const NotFoundPage = () => {
                 maxWidth: 520,
                 mx: 'auto',
                 color: 'var(--color-text)',
-                lineHeight: 1.9,
+                lineHeight: 1.8,
               }}
             >
-              احتمال دارد نشانی وارد شده تغییر کرده یا دیگر در دسترس نباشد. لطفاً نشانی را بازبینی کنید یا یکی از گزینه‌های زیر را برگزینید.
-
+              ممکن است نشانی که وارد کرده‌اید تغییر یافته باشد یا موقتاً در
+              دسترس نباشد. لطفاً برای ادامه از گزینه‌های زیر استفاده کنید تا به
+              مسیر مناسب هدایت شوید.
             </Typography>
           </Stack>
 
@@ -152,20 +149,22 @@ const NotFoundPage = () => {
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
                 borderRadius: '12px',
-                py: 1.4,
+                py: 1.5,
                 fontWeight: 600,
                 fontSize: '1rem',
+                textTransform: 'none',
                 color: 'var(--color-bg-primary)',
                 backgroundColor: 'var(--color-primary)',
-                boxShadow: '0 14px 32px rgba(0, 120, 114, 0.28)',
+                boxShadow: '0 12px 28px rgba(0, 0, 0, 0.18)',
                 '&:hover': {
-                  backgroundColor: 'var(--color-primary-dark, #028c7f)',
-                  boxShadow: '0 16px 40px rgba(0, 120, 114, 0.34)',
+                  backgroundColor: 'var(--color-primary-light)',
+                  boxShadow: '0 14px 32px rgba(0, 0, 0, 0.22)',
                 },
               }}
             >
-              {isAuthenticated ? 'بازگشت به داشبورد' : 'انتقال به صفحه ورود'}
-
+              {isAuthenticated
+                ? 'بازگشت به پیشخوان سامانه'
+                : 'ورود به صفحه ورود'}
             </Button>
 
             <Button
@@ -175,11 +174,10 @@ const NotFoundPage = () => {
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
                 borderRadius: '12px',
-                py: 1.4,
-
+                py: 1.5,
                 fontWeight: 600,
                 fontSize: '1rem',
-                borderWidth: 1.5,
+                borderWidth: 2,
                 borderColor: 'var(--color-primary)',
                 color: 'var(--color-primary)',
                 backgroundColor: 'transparent',
@@ -201,8 +199,7 @@ const NotFoundPage = () => {
               opacity: 0.8,
             }}
           >
-            کد خطا: ۴۰۴
-
+            شناسه خطا: ۴۰۴
           </Typography>
         </Stack>
       </Box>

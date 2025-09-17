@@ -1,7 +1,11 @@
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { LineChart } from '@mui/x-charts';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useNetwork, type InterfaceAddress, type NetworkInterface } from '../hooks/useNetwork';
+import {
+  useNetwork,
+  type InterfaceAddress,
+  type NetworkInterface,
+} from '../hooks/useNetwork';
 import '../index.css';
 
 type ResponsiveChartContainerProps = {
@@ -76,7 +80,6 @@ const trimIfStringHasValue = (value: string) => {
 const toCleanString = (value: unknown): string | null => {
   if (typeof value === 'string') {
     return trimIfStringHasValue(value);
-
   }
 
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -111,13 +114,14 @@ const flattenAddressEntries = (value: unknown): InterfaceAddress[] => {
       ];
     }
 
-    return Object.values(record).flatMap((entry) => flattenAddressEntries(entry));
+    return Object.values(record).flatMap((entry) =>
+      flattenAddressEntries(entry)
+    );
   }
 
   if (typeof value === 'string') {
     const trimmed = trimIfStringHasValue(value);
     return trimmed ? [{ address: trimmed }] : [];
-
   }
 
   return [];
@@ -166,7 +170,9 @@ const extractIPv4Info = (
     .filter((value): value is IPv4Info => Boolean(value));
 
   return ipv4Entries.reduce<IPv4Info[]>((acc, current) => {
-    const existingIndex = acc.findIndex((item) => item.address === current.address);
+    const existingIndex = acc.findIndex(
+      (item) => item.address === current.address
+    );
 
     if (existingIndex === -1) {
       acc.push(current);
@@ -186,7 +192,6 @@ const formatInterfaceSpeed = (
   const numericSpeed = Number(rawSpeed);
 
   if (!Number.isFinite(numericSpeed) || numericSpeed <= 0) {
-
     return 'نامشخص';
   }
 
@@ -231,70 +236,6 @@ const Network = () => {
 
   const interfaces = data?.interfaces ?? {};
   const names = Object.keys(interfaces);
-
-  const extractInterfaceAddresses = (
-    networkInterface: (typeof interfaces)[string] | undefined
-  ) => {
-    if (!networkInterface?.addresses) {
-      return [] as string[];
-    }
-
-    const rawAddresses = Array.isArray(networkInterface.addresses)
-      ? networkInterface.addresses
-      : typeof networkInterface.addresses === 'object'
-        ? Object.values(networkInterface.addresses)
-        : [];
-
-    const collected = rawAddresses
-      .map((entry) => {
-        if (!entry) {
-          return null;
-        }
-        if (typeof entry === 'string') {
-          const trimmed = entry.trim();
-          return trimmed.length > 0 ? trimmed : null;
-        }
-        if (typeof entry === 'object' && 'address' in entry) {
-          const possible = (entry as { address?: unknown }).address;
-          if (typeof possible === 'string') {
-            const trimmed = possible.trim();
-            if (trimmed.length > 0) {
-              return trimmed;
-            }
-          }
-        }
-        if (typeof entry === 'object') {
-          const nestedValue = Object.values(entry).find(
-            (value) => typeof value === 'string' && value.trim().length > 0
-          );
-          if (typeof nestedValue === 'string') {
-            return nestedValue.trim();
-          }
-        }
-        return null;
-      })
-      .filter((value): value is string => Boolean(value));
-
-    const unique = Array.from(new Set(collected));
-    unique.sort((a, b) => {
-      const aIsIPv4 = a.includes('.') && !a.includes(':');
-      const bIsIPv4 = b.includes('.') && !b.includes(':');
-      if (aIsIPv4 === bIsIPv4) {
-        return a.localeCompare(b, 'fa');
-      }
-      return aIsIPv4 ? -1 : 1;
-    });
-
-    return unique;
-  };
-
-  const resolveInterfaceLabel = (interfaceName: string) => {
-    const addressList = extractInterfaceAddresses(interfaces[interfaceName]);
-    if (addressList.length === 0) {
-      return interfaceName;
-    }
-    return `${interfaceName} (${addressList.join('، ')})`;
-  };
 
   const tooltipSx = {
     direction: 'rtl',
@@ -401,10 +342,7 @@ const Network = () => {
           const interfaceInfo = interfaces[name];
           const unit = interfaceInfo?.bandwidth.unit ?? '';
           const ipv4Details = extractIPv4Info(interfaceInfo);
-          const displayName =
-            ipv4Details.length > 0
-              ? `${name} (${ipv4Details.map((item) => item.address).join('، ')})`
-              : name;
+          const displayName = `${name}`;
           const speedText = formatInterfaceSpeed(
             interfaceInfo?.status,
             speedFormatter
@@ -463,6 +401,10 @@ const Network = () => {
                       {
                         label: unit,
                         max: maxCombinedValue || 15,
+                        position: 'left',
+                        tickSize: 18, // ⬅ increase gap between numbers and the y-axis line
+                        width: 56, // ⬅ reserve room so labels don’t get clipped
+                        tickLabelStyle: { fill: 'var(--color-text)' },
                       },
                     ]}
                     series={[
@@ -514,20 +456,29 @@ const Network = () => {
                   ipv4Details.map((entry, index) => {
                     const labelPrefix =
                       ipv4Details.length > 1
-                        ? `آدرس IPv4 ${index + 1}: `
-                        : 'آدرس IPv4: ';
+                        ? ` IPv4 ${index + 1}: `
+                        : ' IPv4: ';
                     const netmaskSuffix = entry.netmask
-                      ? ` — نت‌ماسک: ${entry.netmask}`
+                      ? ` نت‌ماسک: ${entry.netmask}`
                       : '';
 
                     return (
-                      <Typography
-                        key={`${entry.address}-${index}`}
-                        variant="body2"
-                        sx={{ color: theme.palette.text.secondary }}
-                      >
-                        {`${labelPrefix}${entry.address}${netmaskSuffix}`}
-                      </Typography>
+                      <>
+                        <Typography
+                          key={`${entry.address}-${index}`}
+                          variant="body2"
+                          sx={{ color: theme.palette.text.secondary }}
+                        >
+                          {`${labelPrefix}${entry.address}`}
+                        </Typography>
+                        <Typography
+                          key={`${entry.address}-${index}`}
+                          variant="body2"
+                          sx={{ color: theme.palette.text.secondary }}
+                        >
+                          {`${netmaskSuffix}`}
+                        </Typography>
+                      </>
                     );
                   })
                 ) : (

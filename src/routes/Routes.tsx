@@ -3,10 +3,10 @@ import MainLayout from '../components/MainLayout.tsx';
 import Dashboard from '../pages/Dashboard.tsx';
 import History from '../pages/History.tsx';
 import LoginPage from '../pages/LoginPage.tsx';
+import NotFoundPage from '../pages/NotFoundPage.tsx';
 import Settings from '../pages/Settings.tsx';
 import Share from '../pages/Share.tsx';
 import Users from '../pages/Users.tsx';
-import NotFoundPage from '../pages/NotFoundPage.tsx';
 import ProtectedRoute from '../routes/ProtectedRoute.tsx';
 
 const router = createBrowserRouter([

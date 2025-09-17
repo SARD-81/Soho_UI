@@ -121,6 +121,8 @@ const Memory = () => {
   const percentValue = parseNumeric(data?.percent);
   const usedValue = parseNumeric(data?.used);
   const freeValue = parseNumeric(data?.free);
+  const buffersValue = parseNumeric(data?.buffers);
+  const cachedValue = parseNumeric(data?.cached);
 
   const computedTotal =
     totalValue ??
@@ -214,6 +216,12 @@ const Memory = () => {
       value: formatBytesForDisplay(safeUsed),
     },
     { key: 'free', label: 'آزاد', value: formatBytesForDisplay(safeFree) },
+    {
+      key: 'buffers',
+      label: 'بافر',
+      value: formatBytesForDisplay(buffersValue),
+    },
+    { key: 'cached', label: 'کش', value: formatBytesForDisplay(cachedValue) },
   ];
 
   return (
@@ -298,6 +306,8 @@ const Memory = () => {
                     `${formatBytesForDisplay(safeAvailable)} : در دسترس `,
                     `${formatBytesForDisplay(safeFree)} : آزاد `,
                     `${percentDisplay} : درصد استفاده `,
+                    `${formatBytesForDisplay(cachedValue)} : کش `,
+                    `${formatBytesForDisplay(buffersValue)} : بافر `,
                   ];
                   return lines.join('\n');
                 }

@@ -20,15 +20,6 @@ const Dashboard = () => {
     >
       <Box
         sx={{
-          gridColumn: { xs: '1 / -1', md: '1 / -1', lg: 'span 8' },
-          display: 'flex',
-          width: '100%',
-        }}
-      >
-        <DiskOverview />
-      </Box>
-      <Box
-        sx={{
           gridColumn: { xs: '1 / -1', md: 'span 6', lg: 'span 2' },
           display: 'flex',
           width: '100%',
@@ -47,12 +38,12 @@ const Dashboard = () => {
       </Box>
       <Box
         sx={{
-          gridColumn: '1 / -1',
+          gridColumn: { xs: '1 / -1', md: '1 / -1', lg: 'span 8' },
           display: 'flex',
           width: '100%',
         }}
       >
-        <Network />
+        <DiskOverview />
       </Box>
       <Box
         sx={{
@@ -62,6 +53,15 @@ const Dashboard = () => {
         }}
       >
         <Disk />
+      </Box>
+      <Box
+        sx={{
+          gridColumn: '1 / -1',
+          display: 'flex',
+          width: '100%',
+        }}
+      >
+        <Network />
       </Box>
     </Box>
   );

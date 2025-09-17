@@ -23,9 +23,11 @@ export interface InterfaceStatus {
 
 export interface NetworkInterface {
   bandwidth: Bandwidth;
-  addresses?: InterfaceAddress[] | Record<string, InterfaceAddress | null> | null;
+  addresses?:
+    | InterfaceAddress[]
+    | Record<string, InterfaceAddress | null>
+    | null;
   status?: InterfaceStatus | null;
-
 }
 
 export interface NetworkData {
