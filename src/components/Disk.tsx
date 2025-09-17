@@ -93,6 +93,7 @@ const diskPercentFormatter = new Intl.NumberFormat('fa-IR', {
   maximumFractionDigits: 1,
 });
 
+
 const createCardSx = (theme: Theme) => {
   const cardBorderColor =
     theme.palette.mode === 'dark'
@@ -334,6 +335,7 @@ export const DiskOverview = () => {
     ? 'rgba(255, 255, 255, 0.04)'
     : 'rgba(0, 0, 0, 0.03)';
 
+
   if (isLoading) {
     return (
       <Box sx={cardSx}>
@@ -413,6 +415,7 @@ export const DiskOverview = () => {
             const chartRemaining =
               safeTotal > 0 ? Math.max(safeTotal - boundedUsed, 0) : boundedFree;
             const chartOuterRadius = Math.min(110, chartSize / 2 - 8);
+
             const chartInnerRadius = Math.max(
               chartOuterRadius - 24,
               chartOuterRadius * 0.72
@@ -431,6 +434,7 @@ export const DiskOverview = () => {
               ? 'rgba(255, 255, 255, 0.08)'
               : 'rgba(0, 0, 0, 0.08)';
 
+
             return (
               <Box
                 key={disk.device}
@@ -442,6 +446,7 @@ export const DiskOverview = () => {
                   borderRadius: 3,
                   bgcolor: 'var(--color-card-bg)',
                   border: `1px solid ${cardBorderColor}`,
+
                   boxShadow: '0 16px 32px rgba(0, 0, 0, 0.18)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -519,6 +524,7 @@ export const DiskOverview = () => {
                     ]}
                     width={chartSize}
                     height={chartSize}
+
                     margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     hideLegend
                     slotProps={{
@@ -583,6 +589,7 @@ export const DiskOverview = () => {
                     px: 2,
                     py: 1.5,
                     border: `1px solid ${statsDividerColor}`,
+
                     display: 'flex',
                     flexDirection: 'column',
                   }}
@@ -600,6 +607,7 @@ export const DiskOverview = () => {
                           index === stats.length - 1
                             ? 'none'
                             : `1px dashed ${statsDividerColor}`,
+
                       }}
                     >
                       <Typography
@@ -717,6 +725,32 @@ const Disk = () => {
       theme.palette.error.main,
     ]
   );
+
+  const diskPercentFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat('fa-IR', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }),
+    []
+  );
+
+  const diskCardsBorderColor =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.08)'
+      : 'rgba(0, 0, 0, 0.08)';
+
+  const diskStatsDividerColor =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.08)'
+      : 'rgba(0, 0, 0, 0.08)';
+
+  const diskStatsBackground =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.04)'
+      : 'rgba(0, 0, 0, 0.03)';
+
+  const diskChartSize = isSmallScreen ? 180 : 230;
 
   if (isLoading) {
     return (
