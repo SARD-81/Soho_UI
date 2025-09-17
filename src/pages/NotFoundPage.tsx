@@ -35,12 +35,12 @@ const NotFoundPage = () => {
           position: 'absolute',
           inset: 0,
           backgroundImage:
-            'radial-gradient(circle at 15% 20%, rgba(0,198,169,0.25), transparent 60%), ' +
-            'radial-gradient(circle at 80% 0%, rgba(35,167,213,0.22), transparent 50%), ' +
-            'radial-gradient(circle at 85% 85%, rgba(163,146,75,0.18), transparent 45%)',
-          backgroundSize: '200% 200%',
-          animation: 'gradientMove 18s ease infinite',
-          opacity: 0.85,
+            'radial-gradient(circle at 20% 25%, rgba(35,167,213,0.18), transparent 60%), ' +
+            'radial-gradient(circle at 80% 15%, rgba(0,198,169,0.14), transparent 55%), ' +
+            'radial-gradient(circle at 75% 80%, rgba(163,146,75,0.12), transparent 50%)',
+          backgroundSize: '180% 180%',
+          animation: 'gradientMove 22s ease infinite',
+          opacity: 0.75,
         }}
       />
 
@@ -53,9 +53,9 @@ const NotFoundPage = () => {
           top: { xs: '-70px', sm: '-90px' },
           right: { xs: '-70px', sm: '-90px' },
           borderRadius: '50%',
-          background: 'linear-gradient(140deg, rgba(35,167,213,0.35), rgba(0,198,169,0.25))',
+          background: 'linear-gradient(140deg, rgba(35,167,213,0.24), rgba(0,198,169,0.18))',
           filter: 'blur(0px)',
-          opacity: 0.6,
+          opacity: 0.55,
         }}
       />
 
@@ -68,9 +68,9 @@ const NotFoundPage = () => {
           bottom: { xs: '-90px', sm: '-110px' },
           left: { xs: '-80px', sm: '-100px' },
           borderRadius: '50%',
-          background: 'linear-gradient(160deg, rgba(163,146,75,0.28), rgba(35,167,213,0.18))',
+          background: 'linear-gradient(160deg, rgba(163,146,75,0.22), rgba(35,167,213,0.14))',
           filter: 'blur(0px)',
-          opacity: 0.55,
+          opacity: 0.5,
         }}
       />
 
@@ -86,9 +86,10 @@ const NotFoundPage = () => {
           borderRadius: 4,
           backgroundColor: 'var(--color-card-bg)',
           backdropFilter: 'saturate(160%) blur(12px)',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
           boxShadow: (theme) =>
-            `0 24px 60px ${
-              theme.palette.mode === 'dark' ? '#000000aa' : '#00000033'
+            `0 18px 48px ${
+              theme.palette.mode === 'dark' ? '#00000088' : '#00000022'
             }`,
         }}
       >
@@ -100,11 +101,8 @@ const NotFoundPage = () => {
               fontWeight: 700,
               lineHeight: 1,
               fontSize: { xs: '4.5rem', sm: '6rem', md: '7.5rem' },
-              backgroundImage:
-                'linear-gradient(120deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent',
+              color: 'var(--color-primary)',
+              letterSpacing: { xs: '-0.08em', md: '-0.1em' },
             }}
           >
             404
@@ -118,7 +116,7 @@ const NotFoundPage = () => {
                 color: 'var(--color-bg-primary)',
               }}
             >
-              اوه! صفحه مورد نظر پیدا نشد
+              صفحه درخواستی شما در دسترس نیست
             </Typography>
             <Typography
               variant="body1"
@@ -129,7 +127,18 @@ const NotFoundPage = () => {
                 lineHeight: 1.8,
               }}
             >
-              ممکن است مسیر حذف شده باشد یا هرگز وجود نداشته است. آدرس وارد شده را بررسی کنید یا یکی از گزینه‌های زیر را برای ادامه انتخاب نمایید.
+              ممکن است نشانی که وارد کرده‌اید تغییر یافته باشد یا موقتاً در دسترس نباشد. لطفاً برای ادامه از گزینه‌های زیر استفاده کنید تا به مسیر مناسب هدایت شوید.
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                maxWidth: 520,
+                mx: 'auto',
+                color: 'var(--color-text-secondary, rgba(0, 0, 0, 0.7))',
+                lineHeight: 1.9,
+              }}
+            >
+              در صورت نیاز می‌توانید با تیم پشتیبانی سامانه مکاتبه کنید تا در کوتاه‌ترین زمان ممکن راهنمایی لازم ارائه شود.
             </Typography>
           </Stack>
 
@@ -146,22 +155,21 @@ const NotFoundPage = () => {
               startIcon={<MdHome size={22} />}
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
-                borderRadius: '14px',
+                borderRadius: '12px',
                 py: 1.5,
                 fontWeight: 600,
                 fontSize: '1rem',
+                textTransform: 'none',
                 color: 'var(--color-bg-primary)',
-                backgroundImage:
-                  'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))',
-                boxShadow: '0 16px 34px rgba(0, 198, 169, 0.35)',
+                backgroundColor: 'var(--color-primary)',
+                boxShadow: '0 12px 28px rgba(0, 0, 0, 0.18)',
                 '&:hover': {
-                  backgroundImage:
-                    'linear-gradient(135deg, var(--color-primary-light), var(--color-primary))',
-                  boxShadow: '0 18px 40px rgba(0, 198, 169, 0.45)',
+                  backgroundColor: 'var(--color-primary-light)',
+                  boxShadow: '0 14px 32px rgba(0, 0, 0, 0.22)',
                 },
               }}
             >
-              {isAuthenticated ? 'بازگشت به داشبورد' : 'بازگشت به صفحه ورود'}
+              {isAuthenticated ? 'بازگشت به پیشخوان سامانه' : 'ورود به صفحه ورود'}
             </Button>
 
             <Button
@@ -170,20 +178,22 @@ const NotFoundPage = () => {
               startIcon={<MdArrowBack size={22} />}
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
-                borderRadius: '14px',
+                borderRadius: '12px',
                 py: 1.5,
                 fontWeight: 600,
                 fontSize: '1rem',
                 borderWidth: 2,
                 borderColor: 'var(--color-primary)',
                 color: 'var(--color-primary)',
+                backgroundColor: 'transparent',
+                textTransform: 'none',
                 '&:hover': {
                   borderColor: 'var(--color-primary-light)',
                   backgroundColor: 'rgba(35, 167, 213, 0.08)',
                 },
               }}
             >
-              بازگشت به صفحه قبل
+              بازگشت به صفحه پیشین
             </Button>
           </Stack>
 
@@ -194,7 +204,7 @@ const NotFoundPage = () => {
               opacity: 0.8,
             }}
           >
-            کد خطا: 404
+            شناسه خطا: ۴۰۴
           </Typography>
         </Stack>
       </Box>
