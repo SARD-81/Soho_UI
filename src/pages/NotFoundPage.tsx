@@ -17,15 +17,18 @@ const NotFoundPage = () => {
 
   return (
     <Box
+      component="section"
       sx={{
         position: 'relative',
         minHeight: { xs: '70svh', md: '80svh' },
         width: '100%',
-        display: 'grid',
-        placeItems: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         overflow: 'hidden',
-        px: { xs: 2, sm: 4 },
+        px: { xs: 2.5, sm: 4 },
         py: { xs: 6, md: 8 },
+        backgroundColor: 'var(--color-background)',
         fontFamily: 'var(--font-vazir)',
         backgroundColor: 'var(--color-bg-body, #f5f7fa)',
       }}
@@ -71,11 +74,12 @@ const NotFoundPage = () => {
       />
 
       <Box
+
         sx={{
           position: 'relative',
           zIndex: 1,
           width: '100%',
-          maxWidth: 680,
+          maxWidth: 620,
           textAlign: 'center',
           px: { xs: 4, sm: 6 },
           py: { xs: 6, sm: 8 },
@@ -90,18 +94,20 @@ const NotFoundPage = () => {
             `0 18px 48px ${
               theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.55)' : 'rgba(15,23,42,0.12)'
             }`,
+
         }}
       >
-        <Stack spacing={3} alignItems="center">
+        <Stack spacing={{ xs: 3, sm: 4 }} alignItems="center">
           <Typography
             variant="h1"
             sx={{
               fontFamily: 'var(--font-didot)',
-              fontWeight: 700,
+              fontWeight: 600,
               lineHeight: 1,
               fontSize: { xs: '4.5rem', sm: '6rem', md: '7.5rem' },
               letterSpacing: { xs: '0.15rem', sm: '0.3rem', md: '0.4rem' },
               color: 'var(--color-primary)',
+
             }}
           >
             404
@@ -111,11 +117,12 @@ const NotFoundPage = () => {
             <Typography
               variant="h4"
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 color: 'var(--color-bg-primary)',
               }}
             >
               صفحه مورد نظر شما یافت نشد
+
             </Typography>
             <Typography
               variant="body1"
@@ -123,10 +130,11 @@ const NotFoundPage = () => {
                 maxWidth: 520,
                 mx: 'auto',
                 color: 'var(--color-text)',
-                lineHeight: 1.8,
+                lineHeight: 1.9,
               }}
             >
               احتمال دارد نشانی وارد شده تغییر کرده یا دیگر در دسترس نباشد. لطفاً نشانی را بازبینی کنید یا یکی از گزینه‌های زیر را برگزینید.
+
             </Typography>
           </Stack>
 
@@ -157,6 +165,7 @@ const NotFoundPage = () => {
               }}
             >
               {isAuthenticated ? 'بازگشت به داشبورد' : 'انتقال به صفحه ورود'}
+
             </Button>
 
             <Button
@@ -167,11 +176,14 @@ const NotFoundPage = () => {
                 minWidth: { xs: '100%', sm: 220 },
                 borderRadius: '12px',
                 py: 1.4,
+
                 fontWeight: 600,
                 fontSize: '1rem',
-                borderWidth: 2,
+                borderWidth: 1.5,
                 borderColor: 'var(--color-primary)',
                 color: 'var(--color-primary)',
+                backgroundColor: 'transparent',
+                textTransform: 'none',
                 '&:hover': {
                   borderColor: 'var(--color-primary-light)',
                   backgroundColor: 'rgba(35, 167, 213, 0.08)',
@@ -190,6 +202,7 @@ const NotFoundPage = () => {
             }}
           >
             کد خطا: ۴۰۴
+
           </Typography>
         </Stack>
       </Box>
