@@ -1,12 +1,13 @@
 import {
   Box,
   Divider,
-  LinearProgress,
   Stack,
   Typography,
+  useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
+import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
 import { useDisk } from '../hooks/useDisk';
@@ -78,6 +79,13 @@ const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
 };
 
 type NormalizedMetrics = ReturnType<typeof normalizeMetrics>;
+
+const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
+
+const safeNumber = (value: unknown) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
 
 interface ParallelDatum {
   name: string;
@@ -276,6 +284,7 @@ const ParallelCoordinatesChart = ({
 const Disk = () => {
   const { data, isLoading, error } = useDisk();
   const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const cardBorderColor =
     theme.palette.mode === 'dark'
@@ -384,6 +393,32 @@ const Disk = () => {
     ]
   );
 
+  const diskPercentFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat('fa-IR', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }),
+    []
+  );
+
+  const diskCardsBorderColor =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.08)'
+      : 'rgba(0, 0, 0, 0.08)';
+
+  const diskStatsDividerColor =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.08)'
+      : 'rgba(0, 0, 0, 0.08)';
+
+  const diskStatsBackground =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.04)'
+      : 'rgba(0, 0, 0, 0.03)';
+
+  const diskChartSize = isSmallScreen ? 180 : 230;
+
   if (isLoading) {
     return (
       <Box sx={cardSx}>
@@ -423,89 +458,258 @@ const Disk = () => {
         <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
           نمای کلی مصرف دیسک
         </Typography>
-        <Stack spacing={2}>
-          {disksWithUsage.map((disk) => {
-            const percent = Math.min(100, disk.usage.percent ?? 0);
-            return (
-              <Box
-                key={disk.device}
-                sx={{
-                  p: 2,
-                  borderRadius: 2,
-                  bgcolor:
-                    theme.palette.mode === 'dark'
-                      ? 'rgba(255, 255, 255, 0.04)'
-                      : 'rgba(0, 0, 0, 0.04)',
-                  border: `1px solid ${
-                    theme.palette.mode === 'dark'
-                      ? 'rgba(255, 255, 255, 0.08)'
-                      : 'rgba(0, 0, 0, 0.08)'
-                  }`,
-                }}
-              >
-                <Stack spacing={1.2}>
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="space-between"
+        {disksWithUsage.length > 0 ? (
+          <Box
+            sx={{
+              width: '100%',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
+            {disksWithUsage.map((disk) => {
+              const usage = disk.usage ?? {};
+              const totalRaw = safeNumber(usage.total);
+              const usedRaw = safeNumber(usage.used);
+              const freeRaw = safeNumber(usage.free);
+
+              const nonNegativeUsed = Math.max(usedRaw, 0);
+              const nonNegativeFree = Math.max(freeRaw, 0);
+              const derivedTotal = totalRaw > 0 ? totalRaw : nonNegativeUsed + nonNegativeFree;
+              const safeTotal =
+                derivedTotal > 0 ? derivedTotal : nonNegativeUsed + nonNegativeFree;
+              const boundedUsed =
+                safeTotal > 0 ? Math.min(nonNegativeUsed, safeTotal) : nonNegativeUsed;
+              const fallbackFree = safeTotal > boundedUsed ? safeTotal - boundedUsed : 0;
+              const boundedFree =
+                nonNegativeFree > 0
+                  ? Math.min(
+                      nonNegativeFree,
+                      fallbackFree > 0 ? fallbackFree : nonNegativeFree
+                    )
+                  : fallbackFree;
+              const percentValueRaw = usage.percent;
+              const safePercent =
+                percentValueRaw != null && Number.isFinite(Number(percentValueRaw))
+                  ? clampPercent(Number(percentValueRaw))
+                  : safeTotal > 0
+                    ? clampPercent((boundedUsed / safeTotal) * 100)
+                    : 0;
+              const percentText = `${diskPercentFormatter.format(safePercent)}٪`;
+              const chartRemaining = safeTotal > 0 ? Math.max(safeTotal - boundedUsed, 0) : boundedFree;
+              const chartOuterRadius = Math.min(110, diskChartSize / 2 - 8);
+              const chartInnerRadius = Math.max(chartOuterRadius - 24, chartOuterRadius * 0.72);
+              const stats: Array<{ key: string; label: string; value: string }> = [
+                { key: 'used', label: 'استفاده‌شده', value: formatBytes(boundedUsed) },
+                { key: 'free', label: 'خالی', value: formatBytes(boundedFree) },
+                { key: 'total', label: 'کل', value: formatBytes(safeTotal) },
+                { key: 'percent', label: 'درصد استفاده', value: percentText },
+              ];
+              const usedColor = theme.palette.primary.main;
+              const remainingColor =
+                theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.28)'
+                  : 'rgba(0, 0, 0, 0.16)';
+              const fadedColor =
+                theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.08)';
+
+              return (
+                <Box
+                  key={disk.device}
+                  sx={{
+                    flex: '1 1 280px',
+                    minWidth: { xs: '100%', sm: 260 },
+                    maxWidth: '100%',
+                    p: 2.5,
+                    borderRadius: 3,
+                    bgcolor: 'var(--color-card-bg)',
+                    border: `1px solid ${diskCardsBorderColor}`,
+                    boxShadow: '0 16px 32px rgba(0, 0, 0, 0.18)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
+                  <Stack spacing={1} sx={{ width: '100%' }}>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {disk.device} ({disk.mountpoint || 'نامشخص'})
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: theme.palette.text.secondary }}
+                      >
+                        سیستم فایل: {(disk.fstype || '-').toUpperCase()}
+                      </Typography>
+                    </Box>
+                  </Stack>
+
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: '100%',
+                      display: 'flex',
+                      justifyContent: 'center',
+                    }}
                   >
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {disk.device} ({disk.mountpoint || 'نامشخص'})
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: 'text.secondary' }}
+                    <PieChart
+                      series={[
+                        {
+                          id: `${disk.device}-usage`,
+                          data: [
+                            {
+                              id: 'used',
+                              value: boundedUsed,
+                              label: 'استفاده‌شده',
+                              color: usedColor,
+                            },
+                            {
+                              id: 'remaining',
+                              value: chartRemaining,
+                              label: 'باقی‌مانده',
+                              color: remainingColor,
+                            },
+                          ],
+                          innerRadius: chartInnerRadius,
+                          outerRadius: chartOuterRadius,
+                          paddingAngle: 1.2,
+                          cornerRadius: 5,
+                          startAngle: 90,
+                          endAngle: 450,
+                          highlightScope: { fade: 'global', highlight: 'item' },
+                          faded: {
+                            innerRadius: Math.max(chartInnerRadius - 6, chartInnerRadius * 0.9),
+                            additionalRadius: -12,
+                            color: fadedColor,
+                          },
+                          valueFormatter: (item) => {
+                            if (item.id === 'used') {
+                              return [
+                                `${formatBytes(boundedUsed)} : استفاده‌شده `,
+                                `${formatBytes(safeTotal)} : کل `,
+                                `${formatBytes(boundedFree)} : خالی `,
+                                `${percentText} : درصد استفاده `,
+                              ].join('\n');
+                            }
+                            return `${formatBytes(chartRemaining)} : باقی‌مانده`;
+                          },
+                        },
+                      ]}
+                      width={diskChartSize}
+                      height={diskChartSize}
+                      margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      hideLegend
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            direction: 'rtl',
+                            '& .MuiChartsTooltip-table': {
+                              direction: 'rtl',
+                              color: 'var(--color-text)',
+                            },
+                            '& .MuiChartsTooltip-cell': {
+                              whiteSpace: 'pre-line',
+                              fontFamily: 'var(--font-vazir)',
+                              color: 'var(--color-text)',
+                            },
+                            '& .MuiChartsTooltip-label': {
+                              color: 'var(--color-text)',
+                            },
+                            '& .MuiChartsTooltip-value': {
+                              color: 'var(--color-text)',
+                            },
+                          },
+                        },
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                        pointerEvents: 'none',
+                        gap: 0.5,
+                      }}
                     >
-                      {(disk.fstype || '-').toUpperCase()}
-                    </Typography>
-                  </Stack>
-                  <LinearProgress
-                    variant="determinate"
-                    value={percent}
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontFamily: 'var(--font-didot)',
+                          fontWeight: 700,
+                          color: 'var(--color-primary)',
+                        }}
+                      >
+                        {percentText}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: theme.palette.text.secondary }}
+                      >
+                        درصد استفاده
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Box
                     sx={{
-                      height: 10,
-                      borderRadius: 999,
-                      bgcolor:
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : 'rgba(0, 0, 0, 0.1)',
-                      '& .MuiLinearProgress-bar': {
-                        borderRadius: 999,
-                      },
-                    }}
-                  />
-                  <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    spacing={1}
-                    justifyContent="space-between"
-                    sx={{
-                      color: theme.palette.text.secondary,
-                      fontSize: 12,
+                      width: '100%',
+                      bgcolor: diskStatsBackground,
+                      borderRadius: 2,
+                      px: 2,
+                      py: 1.5,
+                      border: `1px solid ${diskStatsDividerColor}`,
+                      display: 'flex',
+                      flexDirection: 'column',
                     }}
                   >
-                    <Typography variant="caption">
-                      استفاده‌شده: {formatBytes(disk.usage.used)}
-                    </Typography>
-                    <Typography variant="caption">
-                      خالی: {formatBytes(disk.usage.free)}
-                    </Typography>
-                    <Typography variant="caption">
-                      کل: {formatBytes(disk.usage.total)}
-                    </Typography>
-                    <Typography variant="caption">
-                      درصد استفاده: {percent.toFixed(1)}%
-                    </Typography>
-                  </Stack>
-                </Stack>
-              </Box>
-            );
-          })}
-          {disksWithUsage.length === 0 && (
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              داده‌ای برای مصرف دیسک در دسترس نیست.
-            </Typography>
-          )}
-        </Stack>
+                    {stats.map((stat, index) => (
+                      <Box
+                        key={stat.key}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 2,
+                          py: 0.75,
+                          borderBottom:
+                            index === stats.length - 1
+                              ? 'none'
+                              : `1px dashed ${diskStatsDividerColor}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 500,
+                            color: theme.palette.text.secondary,
+                          }}
+                        >
+                          {stat.label}
+                        </Typography>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 700, color: 'var(--color-primary)' }}
+                        >
+                          {stat.value}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        ) : (
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            داده‌ای برای مصرف دیسک در دسترس نیست.
+          </Typography>
+        )}
       </Stack>
 
       <Divider sx={{ my: 1 }} />
@@ -542,11 +746,15 @@ const Disk = () => {
                 {
                   dataKey: 'readGB',
                   label: 'خواندن (GB)',
+                  stack: 'total',
+                  color: theme.palette.primary.main,
                   valueFormatter: (value) => `${(value ?? 0).toFixed(2)} GB`,
                 },
                 {
                   dataKey: 'writeGB',
                   label: 'نوشتن (GB)',
+                  stack: 'total',
+                  color: theme.palette.warning.main,
                   valueFormatter: (value) => `${(value ?? 0).toFixed(2)} GB`,
                 },
               ]}
