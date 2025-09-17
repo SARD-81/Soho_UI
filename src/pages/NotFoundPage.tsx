@@ -53,6 +53,7 @@ const NotFoundPage = () => {
             theme.palette.mode === 'dark'
               ? '0 18px 48px rgba(0, 0, 0, 0.5)'
               : '0 16px 44px rgba(15, 23, 42, 0.12)',
+
         }}
       >
         <Stack spacing={{ xs: 3, sm: 4 }} alignItems="center">
@@ -65,6 +66,7 @@ const NotFoundPage = () => {
               letterSpacing: '0.12em',
               fontSize: { xs: '3.75rem', sm: '4.5rem', md: '5.5rem' },
               color: 'var(--color-primary)',
+
             }}
           >
             404
@@ -79,6 +81,7 @@ const NotFoundPage = () => {
               }}
             >
               صفحه مورد نظر یافت نشد
+
             </Typography>
             <Typography
               variant="body1"
@@ -90,6 +93,7 @@ const NotFoundPage = () => {
               }}
             >
               صفحه‌ای که در جستجوی آن هستید در حال حاضر در دسترس نیست. احتمال دارد نشانی تغییر کرده یا صفحه حذف شده باشد. لطفاً نشانی وارد شده را بازبینی کنید یا از گزینه‌های زیر برای ادامه استفاده نمایید.
+
             </Typography>
           </Stack>
 
@@ -117,6 +121,7 @@ const NotFoundPage = () => {
               }}
             >
               {isAuthenticated ? 'ورود به داشبورد' : 'ورود به سامانه'}
+
             </Button>
 
             <Button
@@ -127,18 +132,21 @@ const NotFoundPage = () => {
                 minWidth: { xs: '100%', sm: 220 },
                 borderRadius: 2,
                 py: 1.4,
+
                 fontWeight: 600,
                 fontSize: '1rem',
                 borderWidth: 1.5,
                 borderColor: 'var(--color-primary)',
                 color: 'var(--color-primary)',
+                backgroundColor: 'transparent',
+                textTransform: 'none',
                 '&:hover': {
                   borderColor: 'var(--color-primary-light)',
                   backgroundColor: 'rgba(35, 167, 213, 0.08)',
                 },
               }}
             >
-              بازگشت به صفحه قبل
+              بازگشت به صفحه پیشین
             </Button>
           </Stack>
 
@@ -149,7 +157,7 @@ const NotFoundPage = () => {
               opacity: 0.8,
             }}
           >
-            کد خطا: 404
+            شناسه خطا: ۴۰۴
           </Typography>
         </Stack>
       </Box>
