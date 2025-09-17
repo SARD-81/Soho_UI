@@ -21,6 +21,7 @@ import {
   useAxesTooltip,
 } from '@mui/x-charts/ChartsTooltip';
 import { LineChart, type LineChartSlotProps, type LineSeries } from '@mui/x-charts/LineChart';
+
 import { PieChart } from '@mui/x-charts/PieChart';
 import { createContext, useCallback, useContext, useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
@@ -47,7 +48,7 @@ type DiskMetricConfig = {
   format: (value: number) => string;
 };
 
-const IO_METRICS: DiskMetricConfig[] = [
+const COUNT_METRICS: DiskMetricConfig[] = [
   {
     key: 'read_count',
     label: 'تعداد خواندن',
@@ -60,6 +61,9 @@ const IO_METRICS: DiskMetricConfig[] = [
     getValue: (metrics) => metrics.write_count,
     format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
   },
+];
+
+const BYTE_METRICS: DiskMetricConfig[] = [
   {
     key: 'read_bytes',
     label: 'حجم خوانده‌شده',
@@ -72,12 +76,18 @@ const IO_METRICS: DiskMetricConfig[] = [
     getValue: (metrics) => metrics.write_bytes,
     format: (value) => formatBytes(Math.max(value, 0)),
   },
-  {
-    key: 'busy_time',
-    label: 'زمان مشغولی (ms)',
-    getValue: (metrics) => metrics.busy_time,
-    format: (value) => `${formatLargeNumber(Math.max(value, 0))} ms`,
-  },
+];
+
+const BUSY_TIME_METRIC: DiskMetricConfig = {
+  key: 'busy_time',
+  label: 'زمان مشغولی (ms)',
+  getValue: (metrics) => metrics.busy_time,
+  format: (value) => `${formatLargeNumber(Math.max(value, 0))} ms`,
+};
+
+const ACTIVITY_METRICS: DiskMetricConfig[] = [
+  ...COUNT_METRICS,
+  ...BYTE_METRICS,
 ];
 
 const BUSY_TIME_METRIC = IO_METRICS.find(
@@ -144,6 +154,9 @@ const formatLargeNumber = (value: number) => {
   }
   return value.toFixed(0);
 };
+
+const formatBusyTime = (value: number) =>
+  BUSY_TIME_METRIC.format(Math.max(value, 0));
 
 const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
   return METRIC_KEYS.reduce(
@@ -364,6 +377,16 @@ interface DeviceMetricDatum {
   metrics: NormalizedMetrics;
 }
 
+type NormalizedChartDatum = {
+  device: string;
+  busy_time: number;
+} & Partial<Record<keyof DiskIOStats, number>>;
+
+interface NormalizedDatasetResult {
+  dataset: NormalizedChartDatum[];
+  maxValues: Partial<Record<keyof DiskIOStats, number>>;
+}
+
 export const DiskOverview = () => {
   const { data, isLoading, error } = useDisk();
   const theme = useTheme();
@@ -456,9 +479,9 @@ export const DiskOverview = () => {
             const boundedFree =
               nonNegativeFree > 0
                 ? Math.min(
-                  nonNegativeFree,
-                  fallbackFree > 0 ? fallbackFree : nonNegativeFree
-                )
+                    nonNegativeFree,
+                    fallbackFree > 0 ? fallbackFree : nonNegativeFree
+                  )
                 : fallbackFree;
             const percentValueRaw = usage.percent;
             const safePercent =
@@ -699,6 +722,50 @@ export const DiskOverview = () => {
   );
 };
 
+const buildNormalizedDataset = (
+  metrics: DiskMetricConfig[],
+  devices: DeviceMetricDatum[]
+): NormalizedDatasetResult => {
+  const maxValues = metrics.reduce(
+    (acc, metric) => {
+      const values = devices.map((item) => {
+        const rawValue = metric.getValue(item.metrics);
+        return Number.isFinite(rawValue) ? rawValue : 0;
+      });
+
+      const metricMax = Math.max(...values, 0);
+      acc[metric.key] = metricMax;
+      return acc;
+    },
+    {} as NormalizedDatasetResult['maxValues']
+  );
+
+  const dataset = devices.map((item) => {
+    const busyRaw = item.metrics.busy_time;
+    const busyTime = Number.isFinite(busyRaw) ? Math.max(busyRaw, 0) : 0;
+
+    const entry: NormalizedChartDatum = {
+      device: item.name,
+      busy_time: busyTime,
+    };
+
+    metrics.forEach((metric) => {
+      const rawValue = metric.getValue(item.metrics);
+      const max = maxValues[metric.key] ?? 0;
+
+      if (max > 0 && Number.isFinite(rawValue)) {
+        entry[metric.key] = clampPercent((rawValue / max) * 100);
+      } else {
+        entry[metric.key] = 0;
+      }
+    });
+
+    return entry;
+  });
+
+  return { dataset, maxValues };
+};
+
 const Disk = () => {
   const { data, isLoading, error } = useDisk();
   const theme = useTheme();
@@ -715,7 +782,7 @@ const Disk = () => {
         metrics: normalizeMetrics(metrics),
       }))
       .filter((entry) =>
-        IO_METRICS.some((metric) => metric.getValue(entry.metrics) > 0)
+        ACTIVITY_METRICS.some((metric) => metric.getValue(entry.metrics) > 0)
       );
   }, [data?.summary?.disk_io_summary]);
 
@@ -763,8 +830,11 @@ const Disk = () => {
         return entry;
       });
 
-      return { dataset, maxValues };
-    }, [topDevices]);
+
+  const { dataset: ioBytesDataset, maxValues: ioBytesMaxValues } = useMemo(
+    () => buildNormalizedDataset(BYTE_METRICS, topDevices),
+    [topDevices]
+  );
 
   const chartColors = useMemo(
     () => [
@@ -855,6 +925,7 @@ const Disk = () => {
         },
       }) satisfies LineChartSlotProps,
     []
+
   );
 
   const barChartDataset = useMemo(
@@ -1018,6 +1089,7 @@ const Disk = () => {
               </Box>
             </Stack>
           </DiskTooltipContext.Provider>
+
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             شاخص قابل توجهی برای نمایش وجود ندارد.
