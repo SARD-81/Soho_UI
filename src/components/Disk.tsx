@@ -8,22 +8,9 @@ import {
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { ChartsLabelMark } from '@mui/x-charts/ChartsLabel';
-import {
-  ChartsTooltipCell,
-  ChartsTooltipContainer,
-  ChartsTooltipPaper,
-  ChartsTooltipRow,
-  ChartsTooltipTable,
-  chartsTooltipClasses,
-  type ChartsTooltipClasses,
-  type ChartsTooltipProps,
-  useAxesTooltip,
-} from '@mui/x-charts/ChartsTooltip';
-import { LineChart, type LineChartSlotProps, type LineSeries } from '@mui/x-charts/LineChart';
-
+import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
-import { createContext, useCallback, useContext, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
 import { useDisk } from '../hooks/useDisk';
 import '../index.css';
@@ -48,7 +35,7 @@ type DiskMetricConfig = {
   format: (value: number) => string;
 };
 
-const COUNT_METRICS: DiskMetricConfig[] = [
+const IO_METRICS: DiskMetricConfig[] = [
   {
     key: 'read_count',
     label: 'تعداد خواندن',
@@ -61,9 +48,6 @@ const COUNT_METRICS: DiskMetricConfig[] = [
     getValue: (metrics) => metrics.write_count,
     format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
   },
-];
-
-const BYTE_METRICS: DiskMetricConfig[] = [
   {
     key: 'read_bytes',
     label: 'حجم خوانده‌شده',
@@ -76,51 +60,13 @@ const BYTE_METRICS: DiskMetricConfig[] = [
     getValue: (metrics) => metrics.write_bytes,
     format: (value) => formatBytes(Math.max(value, 0)),
   },
-];
-
-const BUSY_TIME_METRIC: DiskMetricConfig = {
-  key: 'busy_time',
-  label: 'زمان مشغولی (ms)',
-  getValue: (metrics) => metrics.busy_time,
-  format: (value) => `${formatLargeNumber(Math.max(value, 0))} ms`,
-};
-
-const ACTIVITY_METRICS: DiskMetricConfig[] = [
-  ...COUNT_METRICS,
-  ...BYTE_METRICS,
-];
-
-const IO_METRICS: DiskMetricConfig[] = [
-  ...ACTIVITY_METRICS,
-  BUSY_TIME_METRIC,
-];
-
-type BusyTimeTooltipInfo = {
-  formatted: string;
-};
-
-type BusyTimeTooltipMap = Record<string, BusyTimeTooltipInfo>;
-
-interface DiskTooltipContextValue {
-  label: string;
-  map: BusyTimeTooltipMap;
-}
-
-const DiskTooltipContext = createContext<DiskTooltipContextValue>({
-  label: BUSY_TIME_METRIC.label,
-  map: {},
-});
-
-const combineClasses = (...classes: Array<string | undefined>) =>
-  classes.filter(Boolean).join(' ') || undefined;
-
-const IO_METRIC_METADATA = IO_METRICS.reduce(
-  (acc, metric, index) => {
-    acc[metric.key] = { config: metric, index };
-    return acc;
+  {
+    key: 'busy_time',
+    label: 'زمان مشغولی (ms)',
+    getValue: (metrics) => metrics.busy_time,
+    format: (value) => `${formatLargeNumber(Math.max(value, 0))} ms`,
   },
-  {} as Partial<Record<keyof DiskIOStats, { config: DiskMetricConfig; index: number }>>
-);
+];
 
 const formatBytes = (value: number) => {
   if (!Number.isFinite(value)) {
@@ -156,78 +102,6 @@ const formatLargeNumber = (value: number) => {
   return value.toFixed(0);
 };
 
-type AxisUnitInfo = {
-  label: string;
-  divisor: number;
-};
-
-const createAxisNumberFormatter = (
-  divisor: number,
-  maximumFractionDigits: number
-) => {
-  const safeDivisor = divisor > 0 ? divisor : 1;
-  const formatter = new Intl.NumberFormat('fa-IR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: Math.max(0, maximumFractionDigits),
-  });
-
-  return (value: number | null | undefined) => {
-    if (typeof value !== 'number' || !Number.isFinite(value)) {
-      return formatter.format(0);
-    }
-
-    const scaled = Math.max(value, 0) / safeDivisor;
-    return formatter.format(scaled);
-  };
-};
-
-const COUNT_AXIS_BASE_UNIT: AxisUnitInfo = { label: 'عدد', divisor: 1 };
-
-const COUNT_AXIS_UNITS: AxisUnitInfo[] = [
-  { label: 'میلیارد', divisor: 1_000_000_000 },
-  { label: 'میلیون', divisor: 1_000_000 },
-  { label: 'هزار', divisor: 1_000 },
-];
-
-const determineCountAxisUnit = (value: number): AxisUnitInfo => {
-  if (!Number.isFinite(value) || value <= 0) {
-    return COUNT_AXIS_BASE_UNIT;
-  }
-
-  for (const unit of COUNT_AXIS_UNITS) {
-    if (value >= unit.divisor) {
-      return unit;
-    }
-  }
-
-  return COUNT_AXIS_BASE_UNIT;
-};
-
-const BYTE_AXIS_BASE_UNIT: AxisUnitInfo = { label: 'بایت', divisor: 1 };
-
-const BYTE_AXIS_UNITS: AxisUnitInfo[] = [
-  { label: 'پتابایت', divisor: 1024 ** 5 },
-  { label: 'ترابایت', divisor: 1024 ** 4 },
-  { label: 'گیگابایت', divisor: 1024 ** 3 },
-  { label: 'مگابایت', divisor: 1024 ** 2 },
-  { label: 'کیلوبایت', divisor: 1024 },
-];
-
-const determineByteAxisUnit = (value: number): AxisUnitInfo => {
-  if (!Number.isFinite(value) || value <= 0) {
-    return BYTE_AXIS_BASE_UNIT;
-  }
-
-  for (const unit of BYTE_AXIS_UNITS) {
-    if (value >= unit.divisor) {
-      return unit;
-    }
-  }
-
-  return BYTE_AXIS_BASE_UNIT;
-
-};
-
 const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
   return METRIC_KEYS.reduce(
     (acc, key) => {
@@ -252,76 +126,6 @@ const diskPercentFormatter = new Intl.NumberFormat('fa-IR', {
   maximumFractionDigits: 1,
 });
 
-type AxisUnitConfig = {
-  divisor: number;
-  label: string;
-};
-
-const COUNT_AXIS_UNITS: AxisUnitConfig[] = [
-  { divisor: 1_000_000_000, label: 'میلیارد' },
-  { divisor: 1_000_000, label: 'میلیون' },
-  { divisor: 1_000, label: 'هزار' },
-];
-
-const determineCountAxisUnit = (maxValue: number): AxisUnitConfig => {
-  for (const unit of COUNT_AXIS_UNITS) {
-    if (maxValue >= unit.divisor) {
-      return unit;
-    }
-  }
-
-  return { divisor: 1, label: 'عدد' };
-};
-
-const BYTE_AXIS_UNITS: AxisUnitConfig[] = [
-  { divisor: 1, label: 'بایت' },
-  { divisor: 1024, label: 'KB' },
-  { divisor: 1024 ** 2, label: 'MB' },
-  { divisor: 1024 ** 3, label: 'GB' },
-  { divisor: 1024 ** 4, label: 'TB' },
-  { divisor: 1024 ** 5, label: 'PB' },
-];
-
-const determineByteAxisUnit = (maxValue: number): AxisUnitConfig => {
-  if (maxValue <= 0) {
-    return BYTE_AXIS_UNITS[0];
-  }
-
-  let unit = BYTE_AXIS_UNITS[0];
-  for (const candidate of BYTE_AXIS_UNITS) {
-    if (maxValue >= candidate.divisor) {
-      unit = candidate;
-    } else {
-      break;
-    }
-  }
-
-  return unit;
-};
-
-const integerAxisFormatter = new Intl.NumberFormat('fa-IR', {
-  maximumFractionDigits: 0,
-});
-
-const singleDecimalAxisFormatter = new Intl.NumberFormat('fa-IR', {
-  maximumFractionDigits: 1,
-  minimumFractionDigits: 0,
-});
-
-const formatAxisValue = (value: number, divisor: number) => {
-  if (!Number.isFinite(value) || divisor <= 0) {
-    return singleDecimalAxisFormatter.format(0);
-  }
-
-  const scaled = Math.max(value, 0) / divisor;
-
-  if (scaled >= 100) {
-    return integerAxisFormatter.format(scaled);
-  }
-
-  return singleDecimalAxisFormatter.format(scaled);
-};
-
 const createCardSx = (theme: Theme) => {
   const cardBorderColor =
     theme.palette.mode === 'dark'
@@ -343,174 +147,6 @@ const createCardSx = (theme: Theme) => {
     height: '100%',
   } as const;
 };
-
-type DiskAxisTooltipContentProps = {
-  classes?: Partial<ChartsTooltipClasses>;
-  sx?: ChartsTooltipProps['sx'];
-};
-
-const DiskAxisTooltipContent = ({ classes, sx }: DiskAxisTooltipContentProps) => {
-  const tooltipData = useAxesTooltip();
-  const { label: busyTimeLabel, map: busyTimeMap } = useContext(DiskTooltipContext);
-
-  if (tooltipData === null) {
-    return null;
-  }
-
-  return (
-    <ChartsTooltipPaper
-      sx={sx}
-      className={combineClasses(chartsTooltipClasses.paper, classes?.paper)}
-    >
-      {tooltipData.map(({
-        axisId,
-        axisValue,
-        axisFormattedValue,
-        mainAxis,
-        seriesItems,
-      }) => {
-        const axisKey = axisValue != null ? String(axisValue) : undefined;
-        const busyTimeInfo = axisKey ? busyTimeMap[axisKey] : undefined;
-
-        return (
-          <ChartsTooltipTable
-            key={axisId}
-            className={combineClasses(chartsTooltipClasses.table, classes?.table)}
-          >
-            {axisValue != null && !mainAxis.hideTooltip && (
-              <Typography component="caption">{axisFormattedValue}</Typography>
-            )}
-            <tbody>
-              {seriesItems.map(({
-                seriesId,
-                color,
-                formattedValue,
-                formattedLabel,
-                markType,
-              }) => {
-                if (formattedValue == null) {
-                  return null;
-                }
-
-                return (
-                  <ChartsTooltipRow
-                    key={seriesId}
-                    className={combineClasses(chartsTooltipClasses.row, classes?.row)}
-                  >
-                    <ChartsTooltipCell
-                      component="th"
-                      className={combineClasses(
-                        chartsTooltipClasses.cell,
-                        chartsTooltipClasses.labelCell,
-                        classes?.cell,
-                        classes?.labelCell
-                      )}
-                    >
-                      <Box
-                        component="span"
-                        className={combineClasses(
-                          chartsTooltipClasses.markContainer,
-                          classes?.markContainer
-                        )}
-                      >
-                        <ChartsLabelMark
-                          type={markType}
-                          color={color}
-                          className={combineClasses(
-                            chartsTooltipClasses.mark,
-                            classes?.mark
-                          )}
-                        />
-                      </Box>
-                      {formattedLabel ?? null}
-                    </ChartsTooltipCell>
-                    <ChartsTooltipCell
-                      component="td"
-                      className={combineClasses(
-                        chartsTooltipClasses.cell,
-                        chartsTooltipClasses.valueCell,
-                        classes?.cell,
-                        classes?.valueCell
-                      )}
-                    >
-                      {formattedValue}
-                    </ChartsTooltipCell>
-                  </ChartsTooltipRow>
-                );
-              })}
-              {busyTimeInfo ? (
-                <ChartsTooltipRow
-                  className={combineClasses(chartsTooltipClasses.row, classes?.row)}
-                >
-                  <ChartsTooltipCell
-                    component="th"
-                    className={combineClasses(
-                      chartsTooltipClasses.cell,
-                      chartsTooltipClasses.labelCell,
-                      classes?.cell,
-                      classes?.labelCell
-                    )}
-                  >
-                    <Box
-                      component="span"
-                      className={combineClasses(
-                        chartsTooltipClasses.markContainer,
-                        classes?.markContainer
-                      )}
-                      sx={{ visibility: 'hidden' }}
-                    />
-                    {busyTimeLabel}
-                  </ChartsTooltipCell>
-                  <ChartsTooltipCell
-                    component="td"
-                    className={combineClasses(
-                      chartsTooltipClasses.cell,
-                      chartsTooltipClasses.valueCell,
-                      classes?.cell,
-                      classes?.valueCell
-                    )}
-                  >
-                    {busyTimeInfo.formatted}
-                  </ChartsTooltipCell>
-                </ChartsTooltipRow>
-              ) : null}
-            </tbody>
-          </ChartsTooltipTable>
-        );
-      })}
-    </ChartsTooltipPaper>
-  );
-};
-
-const DiskTooltip = (props: ChartsTooltipProps) => {
-  const { classes, sx, ...other } = props;
-
-  return (
-    <ChartsTooltipContainer {...other} classes={classes} sx={sx}>
-      <DiskAxisTooltipContent classes={classes} sx={sx} />
-    </ChartsTooltipContainer>
-  );
-};
-
-const DISK_TOOLTIP_SX = {
-  direction: 'rtl',
-  '& .MuiChartsTooltip-table': {
-    direction: 'rtl',
-    color: 'var(--color-text)',
-  },
-  '& .MuiChartsTooltip-label': {
-    color: 'var(--color-text)',
-    fontFamily: 'var(--font-vazir)',
-  },
-  '& .MuiChartsTooltip-value': {
-    color: 'var(--color-text)',
-    fontFamily: 'var(--font-vazir)',
-  },
-  '& .MuiChartsTooltip-cell': {
-    color: 'var(--color-text)',
-    fontFamily: 'var(--font-vazir)',
-  },
-} as const;
 
 interface DeviceMetricDatum {
   name: string;
@@ -857,6 +493,26 @@ const Disk = () => {
   const theme = useTheme();
   const cardSx = createCardSx(theme);
 
+  const tooltipSx = {
+    direction: 'rtl',
+    '& .MuiChartsTooltip-table': {
+      direction: 'rtl',
+      color: 'var(--color-text)',
+    },
+    '& .MuiChartsTooltip-label': {
+      color: 'var(--color-text)',
+      fontFamily: 'var(--font-vazir)',
+    },
+    '& .MuiChartsTooltip-value': {
+      color: 'var(--color-text)',
+      fontFamily: 'var(--font-vazir)',
+    },
+    '& .MuiChartsTooltip-cell': {
+      color: 'var(--color-text)',
+      fontFamily: 'var(--font-vazir)',
+    },
+  } as const;
+
   const ioSummary = useMemo<DeviceMetricDatum[]>(() => {
     if (!data?.summary?.disk_io_summary) {
       return [];
@@ -868,7 +524,7 @@ const Disk = () => {
         metrics: normalizeMetrics(metrics),
       }))
       .filter((entry) =>
-        ACTIVITY_METRICS.some((metric) => metric.getValue(entry.metrics) > 0)
+        IO_METRICS.some((metric) => metric.getValue(entry.metrics) > 0)
       );
   }, [data?.summary?.disk_io_summary]);
 
@@ -908,9 +564,12 @@ const Disk = () => {
 
         IO_METRICS.forEach((metric) => {
           const rawValue = metric.getValue(item.metrics);
-          entry[metric.key] = Number.isFinite(rawValue)
-            ? Math.max(rawValue, 0)
-            : 0;
+          const max = maxValues[metric.key];
+          if (max > 0 && Number.isFinite(rawValue)) {
+            entry[metric.key] = clampPercent((rawValue / max) * 100);
+          } else {
+            entry[metric.key] = 0;
+          }
         });
 
         return entry;
@@ -918,12 +577,6 @@ const Disk = () => {
 
       return { dataset, maxValues };
     }, [topDevices]);
-
-  const { maxValues: ioBytesMaxValues } = useMemo(
-    () => buildNormalizedDataset(BYTE_METRICS, topDevices),
-    [topDevices]
-  );
-
 
   const chartColors = useMemo(
     () => [
@@ -944,122 +597,30 @@ const Disk = () => {
     ]
   );
 
-  const createAxesForKeys = useCallback(
-    (keys: Array<keyof DiskIOStats>) =>
-      keys
-        .map((key, index) => {
-          const metadata = IO_METRIC_METADATA[key];
-          if (!metadata) {
-            return null;
-          }
-
-          const axisId = getAxisId(key);
-          const maxValue = ioMetricMaxValues[key] ?? 0;
-          const { axisLabel, formatter } = getAxisLabelAndFormatter(
-            metadata.config,
-            maxValue
-          );
-
-          return {
-            id: axisId,
-            min: 0,
-            max: maxValue > 0 ? maxValue : undefined,
-            label: axisLabel,
-            valueFormatter: formatter,
-            tickLabelStyle: { fill: 'var(--color-text)' },
-            labelStyle: { fill: 'var(--color-text)' },
-            position: index % 2 === 0 ? 'left' : 'right',
-            tickSize: 45,
-            width: 96,
-          };
-        })
-        .filter((axis): axis is NonNullable<typeof axis> => axis !== null),
-    [ioMetricMaxValues]
-  );
-
-  const createSeriesForKeys = useCallback(
-    (keys: Array<keyof DiskIOStats>) =>
-      keys
-        .map<LineSeries | null>((key) => {
-          const metadata = IO_METRIC_METADATA[key];
-          if (!metadata) {
-            return null;
-          }
-
-          const { config: metric, index } = metadata;
-          const color = chartColors[index % chartColors.length];
-          const max = ioMetricMaxValues[metric.key] ?? 0;
-          const axisId = getAxisId(metric.key);
-
-          return {
-            id: metric.key,
-            dataKey: metric.key,
-            label: metric.label,
-            color,
-            curve: 'monotoneX',
-            showMark: true,
-            yAxisKey: axisId,
-            valueFormatter: (value: number | null) => {
-              if (!Number.isFinite(value) || max <= 0) {
-                return metric.format(0);
-              }
-
-              return metric.format(Math.max(Number(value), 0));
-            },
-          } satisfies LineSeries;
-        })
-        .filter((series): series is LineSeries => series !== null),
-    [chartColors, ioMetricMaxValues]
-  );
-
-  const ioCountSeries = useMemo(
-    () => createSeriesForKeys(['read_count', 'write_count']),
-    [createSeriesForKeys]
-  );
-
-  const ioBytesSeries = useMemo(
-    () => createSeriesForKeys(['read_bytes', 'write_bytes']),
-    [createSeriesForKeys]
-  );
-
-  const ioCountAxes = useMemo(
-    () => createAxesForKeys(['read_count', 'write_count']),
-    [createAxesForKeys]
-  );
-
-  const ioBytesAxes = useMemo(
-    () => createAxesForKeys(['read_bytes', 'write_bytes']),
-    [createAxesForKeys]
-  );
-
-  const busyTimeTooltipData = useMemo<DiskTooltipContextValue>(() => {
-    if (!BUSY_TIME_METRIC) {
-      return { label: 'زمان مشغولی', map: {} };
-    }
-
-    const map = topDevices.reduce<BusyTimeTooltipMap>((acc, item) => {
-      const rawValue = BUSY_TIME_METRIC.getValue(item.metrics);
-      acc[item.name] = { formatted: BUSY_TIME_METRIC.format(rawValue) };
-      return acc;
-    }, {});
-
-    return { label: BUSY_TIME_METRIC.label, map };
-  }, [topDevices]);
-
-  const lineChartSlotProps = useMemo(
+  const ioLineSeries = useMemo(
     () =>
-      ({
-        tooltip: { sx: DISK_TOOLTIP_SX },
-        legend: {
-          sx: {
-            color: 'var(--color-text)',
-            fontFamily: 'var(--font-vazir)',
-          },
-          position: { vertical: 'top', horizontal: 'center' },
-        },
-      }) satisfies LineChartSlotProps,
-    []
+      IO_METRICS.map((metric, index) => {
+        const color = chartColors[index % chartColors.length];
+        const max = ioMetricMaxValues[metric.key] ?? 0;
 
+        return {
+          dataKey: metric.key,
+          label: metric.label,
+          color,
+          curve: 'monotoneX' as const,
+          showMark: true,
+          valueFormatter: (value: number | null) => {
+            if (!Number.isFinite(value) || max <= 0) {
+              return metric.format(0);
+            }
+
+            const normalized = Number(value);
+            const actual = (normalized / 100) * max;
+            return metric.format(actual);
+          },
+        };
+      }),
+    [chartColors, ioMetricMaxValues]
   );
 
   const barChartDataset = useMemo(
@@ -1071,60 +632,6 @@ const Disk = () => {
       })),
     [topDevices]
   );
-
-  const ioCountAxisMax = useMemo(
-    () =>
-      COUNT_METRICS.reduce(
-        (max, metric) =>
-          Math.max(max, ioMetricMaxValues[metric.key] ?? 0),
-        0
-      ),
-    [ioMetricMaxValues]
-  );
-
-  const ioBytesAxisMax = useMemo(
-    () =>
-      BYTE_METRICS.reduce(
-        (max, metric) =>
-          Math.max(max, ioBytesMaxValues[metric.key] ?? 0),
-        0
-      ),
-    [ioBytesMaxValues]
-  );
-
-  const countAxisUnitInfo = useMemo(
-    () => determineCountAxisUnit(ioCountAxisMax),
-    [ioCountAxisMax]
-  );
-
-  const bytesAxisUnitInfo = useMemo(
-    () => determineByteAxisUnit(ioBytesAxisMax),
-    [ioBytesAxisMax]
-  );
-
-  const ioCountAxisMaxValue =
-    ioCountAxisMax > 0 ? ioCountAxisMax : undefined;
-  const ioBytesAxisMaxValue =
-    ioBytesAxisMax > 0 ? ioBytesAxisMax : undefined;
-
-  const formatCountAxisValue = useMemo(
-    () =>
-      createAxisNumberFormatter(
-        countAxisUnitInfo.divisor,
-        countAxisUnitInfo.divisor === 1 ? 0 : 1
-      ),
-    [countAxisUnitInfo.divisor]
-  );
-
-  const formatBytesAxisValue = useMemo(
-    () =>
-      createAxisNumberFormatter(
-        bytesAxisUnitInfo.divisor,
-        bytesAxisUnitInfo.divisor === 1 ? 0 : 2
-      ),
-    [bytesAxisUnitInfo.divisor]
-  );
-
 
   if (isLoading) {
     return (
@@ -1168,95 +675,45 @@ const Disk = () => {
           مقایسه شاخص‌های ورودی/خروجی (نمودار روند نرمال‌شده)
         </Typography>
         {ioLineDataset.length > 0 ? (
-          <DiskTooltipContext.Provider value={busyTimeTooltipData}>
-            <Stack spacing={3}>
-              <Box>
-                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                  تعداد عملیات خواندن/نوشتن
-                </Typography>
-                <Box sx={{ width: '100%', direction: 'ltr' }}>
-                  <LineChart
-                    dataset={ioLineDataset}
-                    series={ioCountSeries}
-                    xAxis={[
-                      {
-                        dataKey: 'device',
-                        scaleType: 'band',
-                        tickLabelStyle: { fill: 'var(--color-text)' },
-                        labelStyle: { fill: 'var(--color-text)' },
-                      },
-                    ]}
-                    yAxis={[
-                      {
-                        id: 'io-count-axis',
-                        scaleType: 'linear' as const,
-                        min: 0,
-                        max: ioCountAxisMaxValue,
-                        label: `تعداد عملیات (${countAxisUnitInfo.label})`,
-
-                        valueFormatter: formatCountAxisValue,
-                        tickLabelStyle: { fill: 'var(--color-text)' },
-                        labelStyle: { fill: 'var(--color-text)' },
-                        position: 'left' as const,
-                        tickSize: 45,
-                        width: 96,
-                      },
-                    ]}
-
-                    axisHighlight={{ x: 'line' }}
-                    grid={{ horizontal: true, vertical: false }}
-                    height={280}
-                    margin={{ top: 40, right: 80, left: 80, bottom: 64 }}
-                    slots={{ tooltip: DiskTooltip }}
-                    slotProps={lineChartSlotProps}
-                  />
-                </Box>
-              </Box>
-              <Box>
-                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                  حجم خواندن/نوشتن
-                </Typography>
-                <Box sx={{ width: '100%', direction: 'ltr' }}>
-                  <LineChart
-                    dataset={ioLineDataset}
-                    series={ioBytesSeries}
-                    xAxis={[
-                      {
-                        dataKey: 'device',
-                        scaleType: 'band',
-                        tickLabelStyle: { fill: 'var(--color-text)' },
-                        labelStyle: { fill: 'var(--color-text)' },
-                      },
-                    ]}
-                    yAxis={[
-                      {
-                        id: 'io-bytes-axis',
-                        scaleType: 'linear' as const,
-                        min: 0,
-                        max: ioBytesAxisMaxValue,
-                        label: `حجم داده (${bytesAxisUnitInfo.label})`,
-
-                        valueFormatter: formatBytesAxisValue,
-                        tickLabelStyle: { fill: 'var(--color-text)' },
-                        labelStyle: { fill: 'var(--color-text)' },
-                        position: 'left' as const,
-                        tickSize: 45,
-                        width: 96,
-                      },
-                    ]}
-
-                    axisHighlight={{ x: 'line' }}
-                    grid={{ horizontal: true, vertical: false }}
-                    height={280}
-                    margin={{ top: 40, right: 80, left: 80, bottom: 64 }}
-                    slots={{ tooltip: DiskTooltip }}
-                    slotProps={lineChartSlotProps}
-                  />
-                </Box>
-              </Box>
-            </Stack>
-          </DiskTooltipContext.Provider>
-
+          <Box sx={{ width: '100%', direction: 'ltr' }}>
+            <LineChart
+              dataset={ioLineDataset}
+              series={ioLineSeries}
+              xAxis={[
+                {
+                  dataKey: 'device',
+                  scaleType: 'band',
+                  tickLabelStyle: { fill: 'var(--color-text)' },
+                  labelStyle: { fill: 'var(--color-text)' },
+                },
+              ]}
+              yAxis={[
+                {
+                  min: 0,
+                  max: 105,
+                  label: 'شاخص نرمال‌شده (٪)',
+                  valueFormatter: (value: number) =>
+                    `${diskPercentFormatter.format(value)}٪`,
+                  tickLabelStyle: { fill: 'var(--color-text)' },
+                  labelStyle: { fill: 'var(--color-text)' },
+                },
+              ]}
+              axisHighlight={{ x: 'line' }}
+              grid={{ horizontal: true, vertical: false }}
+              height={320}
+              margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
+              slotProps={{
+                tooltip: { sx: tooltipSx },
+                legend: {
+                  sx: {
+                    color: 'var(--color-text)',
+                    fontFamily: 'var(--font-vazir)',
+                  },
+                  position: { vertical: 'top', horizontal: 'center' },
+                },
+              }}
+            />
+          </Box>
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             شاخص قابل توجهی برای نمایش وجود ندارد.
@@ -1277,10 +734,9 @@ const Disk = () => {
               xAxis={[{ scaleType: 'band', dataKey: 'device' }]}
               yAxis={[
                 {
-                  label: 'GB',
                   position: 'left',
-                  tickSize: 28,
-                  width: 96,
+                  tickSize: 18, // ⬅ increase gap between numbers and the y-axis line
+                  width: 56, // ⬅ reserve room so labels don’t get clipped
                   tickLabelStyle: { fill: 'var(--color-text)' },
                 },
               ]}
@@ -1303,7 +759,7 @@ const Disk = () => {
               height={280}
               margin={{ top: 60, right: 40, left: 40 }}
               slotProps={{
-                tooltip: { sx: DISK_TOOLTIP_SX },
+                tooltip: { sx: tooltipSx },
                 legend: {
                   sx: {
                     color: 'var(--color-text)',
