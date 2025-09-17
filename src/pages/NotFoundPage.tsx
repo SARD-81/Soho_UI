@@ -17,92 +17,56 @@ const NotFoundPage = () => {
 
   return (
     <Box
+      component="section"
       sx={{
         position: 'relative',
         minHeight: { xs: '70svh', md: '80svh' },
         width: '100%',
-        display: 'grid',
-        placeItems: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         overflow: 'hidden',
-        px: { xs: 2, sm: 4 },
+        px: { xs: 2.5, sm: 4 },
         py: { xs: 6, md: 8 },
+        backgroundColor: 'var(--color-background)',
         fontFamily: 'var(--font-vazir)',
       }}
     >
-      <Box
-        aria-hidden
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage:
-            'radial-gradient(circle at 20% 25%, rgba(35,167,213,0.18), transparent 60%), ' +
-            'radial-gradient(circle at 80% 15%, rgba(0,198,169,0.14), transparent 55%), ' +
-            'radial-gradient(circle at 75% 80%, rgba(163,146,75,0.12), transparent 50%)',
-          backgroundSize: '180% 180%',
-          animation: 'gradientMove 22s ease infinite',
-          opacity: 0.75,
-        }}
-      />
-
-      <Box
-        aria-hidden
-        sx={{
-          position: 'absolute',
-          width: { xs: 200, sm: 260 },
-          height: { xs: 200, sm: 260 },
-          top: { xs: '-70px', sm: '-90px' },
-          right: { xs: '-70px', sm: '-90px' },
-          borderRadius: '50%',
-          background: 'linear-gradient(140deg, rgba(35,167,213,0.24), rgba(0,198,169,0.18))',
-          filter: 'blur(0px)',
-          opacity: 0.55,
-        }}
-      />
-
-      <Box
-        aria-hidden
-        sx={{
-          position: 'absolute',
-          width: { xs: 220, sm: 280 },
-          height: { xs: 220, sm: 280 },
-          bottom: { xs: '-90px', sm: '-110px' },
-          left: { xs: '-80px', sm: '-100px' },
-          borderRadius: '50%',
-          background: 'linear-gradient(160deg, rgba(163,146,75,0.22), rgba(35,167,213,0.14))',
-          filter: 'blur(0px)',
-          opacity: 0.5,
-        }}
-      />
-
       <Box
         sx={{
           position: 'relative',
           zIndex: 1,
           width: '100%',
-          maxWidth: 680,
+          maxWidth: 620,
           textAlign: 'center',
           px: { xs: 4, sm: 6 },
-          py: { xs: 6, sm: 8 },
-          borderRadius: 4,
+          py: { xs: 5, sm: 7 },
+          borderRadius: 3,
           backgroundColor: 'var(--color-card-bg)',
-          backdropFilter: 'saturate(160%) blur(12px)',
-          border: '1px solid rgba(0, 0, 0, 0.08)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid',
+          borderColor: (theme) =>
+            theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(15, 23, 42, 0.08)',
           boxShadow: (theme) =>
-            `0 18px 48px ${
-              theme.palette.mode === 'dark' ? '#00000088' : '#00000022'
-            }`,
+            theme.palette.mode === 'dark'
+              ? '0 18px 48px rgba(0, 0, 0, 0.5)'
+              : '0 16px 44px rgba(15, 23, 42, 0.12)',
+
         }}
       >
-        <Stack spacing={3} alignItems="center">
+        <Stack spacing={{ xs: 3, sm: 4 }} alignItems="center">
           <Typography
             variant="h1"
             sx={{
               fontFamily: 'var(--font-didot)',
-              fontWeight: 700,
+              fontWeight: 600,
               lineHeight: 1,
-              fontSize: { xs: '4.5rem', sm: '6rem', md: '7.5rem' },
+              letterSpacing: '0.12em',
+              fontSize: { xs: '3.75rem', sm: '4.5rem', md: '5.5rem' },
               color: 'var(--color-primary)',
-              letterSpacing: { xs: '-0.08em', md: '-0.1em' },
+
             }}
           >
             404
@@ -112,11 +76,12 @@ const NotFoundPage = () => {
             <Typography
               variant="h4"
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 color: 'var(--color-bg-primary)',
               }}
             >
-              صفحه درخواستی شما در دسترس نیست
+              صفحه مورد نظر یافت نشد
+
             </Typography>
             <Typography
               variant="body1"
@@ -124,21 +89,11 @@ const NotFoundPage = () => {
                 maxWidth: 520,
                 mx: 'auto',
                 color: 'var(--color-text)',
-                lineHeight: 1.8,
-              }}
-            >
-              ممکن است نشانی که وارد کرده‌اید تغییر یافته باشد یا موقتاً در دسترس نباشد. لطفاً برای ادامه از گزینه‌های زیر استفاده کنید تا به مسیر مناسب هدایت شوید.
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                maxWidth: 520,
-                mx: 'auto',
-                color: 'var(--color-text-secondary, rgba(0, 0, 0, 0.7))',
                 lineHeight: 1.9,
               }}
             >
-              در صورت نیاز می‌توانید با تیم پشتیبانی سامانه مکاتبه کنید تا در کوتاه‌ترین زمان ممکن راهنمایی لازم ارائه شود.
+              صفحه‌ای که در جستجوی آن هستید در حال حاضر در دسترس نیست. احتمال دارد نشانی تغییر کرده یا صفحه حذف شده باشد. لطفاً نشانی وارد شده را بازبینی کنید یا از گزینه‌های زیر برای ادامه استفاده نمایید.
+
             </Typography>
           </Stack>
 
@@ -155,21 +110,18 @@ const NotFoundPage = () => {
               startIcon={<MdHome size={22} />}
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
-                borderRadius: '12px',
-                py: 1.5,
+                borderRadius: 2,
+                py: 1.4,
                 fontWeight: 600,
                 fontSize: '1rem',
-                textTransform: 'none',
-                color: 'var(--color-bg-primary)',
-                backgroundColor: 'var(--color-primary)',
-                boxShadow: '0 12px 28px rgba(0, 0, 0, 0.18)',
+                boxShadow: 'none',
                 '&:hover': {
-                  backgroundColor: 'var(--color-primary-light)',
-                  boxShadow: '0 14px 32px rgba(0, 0, 0, 0.22)',
+                  boxShadow: 'none',
                 },
               }}
             >
-              {isAuthenticated ? 'بازگشت به پیشخوان سامانه' : 'ورود به صفحه ورود'}
+              {isAuthenticated ? 'ورود به داشبورد' : 'ورود به سامانه'}
+
             </Button>
 
             <Button
@@ -178,11 +130,12 @@ const NotFoundPage = () => {
               startIcon={<MdArrowBack size={22} />}
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
-                borderRadius: '12px',
-                py: 1.5,
+                borderRadius: 2,
+                py: 1.4,
+
                 fontWeight: 600,
                 fontSize: '1rem',
-                borderWidth: 2,
+                borderWidth: 1.5,
                 borderColor: 'var(--color-primary)',
                 color: 'var(--color-primary)',
                 backgroundColor: 'transparent',
