@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
+import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
@@ -56,17 +57,33 @@ const formatBytes = (value: number) => {
   return `${formatter.format(currentValue)} ${units[unitIndex]}`;
 };
 
-const formatLargeNumber = (value: number) => {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(1)}B`;
+const persianNumberFormatter = new Intl.NumberFormat('fa-IR');
+
+const percentFormatter = new Intl.NumberFormat('fa-IR', {
+  maximumFractionDigits: 0,
+});
+
+const formatMetricValue = (metricKey: keyof DiskIOStats, value: number) => {
+  if (!Number.isFinite(value)) {
+    return '-';
   }
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M`;
+
+  if (metricKey === 'read_bytes' || metricKey === 'write_bytes') {
+    return formatBytes(value);
   }
-  if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(1)}K`;
+
+  if (metricKey === 'busy_time') {
+    if (Math.abs(value) >= 1000) {
+      const seconds = value / 1000;
+      const secondsFormatter = new Intl.NumberFormat('fa-IR', {
+        maximumFractionDigits: Math.abs(seconds) >= 100 ? 0 : 1,
+      });
+      return `${secondsFormatter.format(seconds)} ثانیه`;
+    }
+    return `${persianNumberFormatter.format(value)} میلی‌ثانیه`;
   }
-  return value.toFixed(0);
+
+  return persianNumberFormatter.format(value);
 };
 
 const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
@@ -115,196 +132,173 @@ const createCardSx = (theme: Theme) => {
   } as const;
 };
 
-interface ParallelDatum {
+const tooltipSx = {
+  direction: 'rtl',
+  '& .MuiChartsTooltip-table': {
+    direction: 'rtl',
+    color: 'var(--color-text)',
+  },
+  '& .MuiChartsTooltip-label': {
+    color: 'var(--color-text)',
+    fontFamily: 'var(--font-vazir)',
+  },
+  '& .MuiChartsTooltip-value': {
+    color: 'var(--color-text)',
+    fontFamily: 'var(--font-vazir)',
+  },
+  '& .MuiChartsTooltip-cell': {
+    color: 'var(--color-text)',
+    fontFamily: 'var(--font-vazir)',
+  },
+} as const;
+
+interface DeviceMetricsDatum {
   name: string;
   metrics: NormalizedMetrics;
 }
 
-interface ParallelCoordinatesChartProps {
-  data: ParallelDatum[];
+interface DiskMetricsLineChartProps {
+  data: DeviceMetricsDatum[];
   metrics: typeof PARALLEL_METRICS;
   colors: string[];
   height?: number;
 }
 
-const ParallelCoordinatesChart = ({
+const createSeriesId = (index: number) => `series_${index}`;
+
+const DiskMetricsLineChart = ({
   data,
   metrics,
   colors,
-  height = 260,
-}: ParallelCoordinatesChartProps) => {
-  const theme = useTheme();
+  height = 320,
+}: DiskMetricsLineChartProps) => {
+  const metricMaxValues = useMemo(
+    () =>
+      metrics.map((metric) =>
+        Math.max(...data.map((item) => item.metrics[metric.key] ?? 0), 0)
+      ),
+    [data, metrics]
+  );
+
+  const rawValueMatrix = useMemo(
+    () =>
+      data.map((item) =>
+        metrics.map((metric) => item.metrics[metric.key] ?? 0)
+      ),
+    [data, metrics]
+  );
+
+  const dataset = useMemo(() => {
+    return metrics.map((metric, metricIndex) => {
+      const row: Record<string, number | string> = {
+        metricKey: metric.key,
+        metricLabel: metric.label,
+      };
+
+      const maxValue = metricMaxValues[metricIndex] || 0;
+
+      data.forEach((item, deviceIndex) => {
+        const seriesId = createSeriesId(deviceIndex);
+        const rawValue = item.metrics[metric.key] ?? 0;
+        const normalized = maxValue > 0 ? (rawValue / maxValue) * 100 : 0;
+        row[seriesId] = normalized;
+      });
+
+      return row;
+    });
+  }, [data, metricMaxValues, metrics]);
+
+  const series = useMemo(
+    () =>
+      data.map((item, deviceIndex) => {
+        const seriesId = createSeriesId(deviceIndex);
+        const color = colors[deviceIndex % colors.length];
+
+        return {
+          id: seriesId,
+          dataKey: seriesId,
+          label: item.name,
+          color,
+          showMark: true,
+          valueFormatter: (
+            normalizedValue: number | null,
+            context: { dataIndex: number }
+          ) => {
+            const metricIndex = context?.dataIndex ?? 0;
+            const metric = metrics[metricIndex];
+
+            if (!metric) {
+              if (normalizedValue == null) {
+                return '-';
+              }
+              const boundedFallback = Math.max(0, Math.min(100, normalizedValue));
+              return `${percentFormatter.format(boundedFallback)}٪`;
+            }
+
+            const rawValue = rawValueMatrix[deviceIndex]?.[metricIndex] ?? 0;
+            const formattedRaw = formatMetricValue(metric.key, rawValue);
+
+            if (normalizedValue == null) {
+              return formattedRaw;
+            }
+
+            const boundedPercent = Math.max(
+              0,
+              Math.min(100, normalizedValue)
+            );
+            const formattedPercent = percentFormatter.format(boundedPercent);
+            return `${formattedRaw} (${formattedPercent}٪ از بیشینه)`;
+          },
+        };
+      }),
+    [colors, data, metrics, rawValueMatrix]
+  );
 
   if (data.length === 0) {
     return null;
   }
 
-  const width = Math.max(metrics.length * 140, 480);
-  const leftPadding = 60;
-  const rightPadding = 40;
-  const topPadding = 24;
-  const bottomPadding = 48;
-  const innerWidth = width - leftPadding - rightPadding;
-  const innerHeight = height - topPadding - bottomPadding;
-
-  const axisPositions = metrics.map((_, index) => {
-    if (metrics.length === 1) {
-      return leftPadding + innerWidth / 2;
-    }
-    return leftPadding + (innerWidth * index) / (metrics.length - 1);
-  });
-
-  const axisScales = metrics.map((metric) => {
-    const values = data.map((item) => item.metrics[metric.key] ?? 0);
-    const max = Math.max(...values, 0);
-    const min = 0;
-
-    if (max === min) {
-      return { min, max: max === 0 ? 1 : max * 1.05 };
-    }
-
-    return { min, max };
-  });
-
-  const axisColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.25)'
-      : 'rgba(0, 0, 0, 0.35)';
-
-  const textColor = 'var(--color-text)';
-
-  const mapToY = (value: number, scale: { min: number; max: number }) => {
-    if (scale.max === scale.min) {
-      return topPadding + innerHeight / 2;
-    }
-    const ratio = (value - scale.min) / (scale.max - scale.min);
-    return topPadding + innerHeight - ratio * innerHeight;
-  };
-
   return (
-    <Box sx={{ width: '100%', overflowX: 'auto', direction: 'ltr' }}>
-      <Box
-        component="svg"
-        viewBox={`0 0 ${width} ${height}`}
-        sx={{ width: '100%', height }}
-      >
-        {metrics.map((metric, index) => {
-          const x = axisPositions[index];
-          const scale = axisScales[index];
-
-          return (
-            <g key={metric.key}>
-              <line
-                x1={x}
-                y1={topPadding}
-                x2={x}
-                y2={height - bottomPadding}
-                stroke={axisColor}
-                strokeDasharray="4 4"
-              />
-              <text
-                x={x}
-                y={topPadding - 8}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={11}
-              >
-                {formatLargeNumber(scale.max)}
-              </text>
-              <text
-                x={x}
-                y={height - bottomPadding + 18}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={11}
-              >
-                {formatLargeNumber(scale.min)}
-              </text>
-              <text
-                x={x}
-                y={height - 12}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={12}
-                fontWeight={500}
-              >
-                {metric.label}
-              </text>
-            </g>
-          );
-        })}
-
-        {data.map((item, dataIndex) => {
-          const color = colors[dataIndex % colors.length];
-          const path = metrics
-            .map((metric, index) => {
-              const value = item.metrics[metric.key] ?? 0;
-              const x = axisPositions[index];
-              const y = mapToY(value, axisScales[index]);
-              return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
-            })
-            .join(' ');
-
-          return (
-            <g key={item.name}>
-              <path
-                d={path}
-                fill="none"
-                stroke={color}
-                strokeWidth={2.2}
-                opacity={0.85}
-              />
-              {metrics.map((metric, index) => {
-                const value = item.metrics[metric.key] ?? 0;
-                const x = axisPositions[index];
-                const y = mapToY(value, axisScales[index]);
-
-                return (
-                  <circle key={metric.key} cx={x} cy={y} r={4} fill={color} />
-                );
-              })}
-            </g>
-          );
-        })}
-      </Box>
-
-      <Stack
-        direction="row"
-        spacing={2}
-        flexWrap="wrap"
-        justifyContent="center"
-        sx={{ mt: 2, px: 1 }}
-      >
-        {data.map((item, index) => {
-          const color = colors[index % colors.length];
-
-          return (
-            <Stack
-              key={item.name}
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{ minWidth: 120 }}
-            >
-              <Box
-                sx={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  bgcolor: color,
-                  border: '1px solid rgba(0,0,0,0.2)',
-                }}
-              />
-              <Typography
-                variant="caption"
-                sx={{ color: theme.palette.text.secondary }}
-              >
-                {item.name}
-              </Typography>
-            </Stack>
-          );
-        })}
-      </Stack>
+    <Box sx={{ width: '100%', direction: 'ltr' }}>
+      <LineChart
+        height={height}
+        dataset={dataset}
+        xAxis={[
+          {
+            dataKey: 'metricLabel',
+            scaleType: 'band',
+            tickLabelStyle: { fill: 'var(--color-text)' },
+          },
+        ]}
+        yAxis={[
+          {
+            min: 0,
+            max: 105,
+            tickLabelStyle: { fill: 'var(--color-text)' },
+            valueFormatter: (value: number) =>
+              `${percentFormatter.format(
+                Math.max(0, Math.min(100, value))
+              )}٪`,
+          },
+        ]}
+        series={series}
+        margin={{ top: 60, bottom: 60, left: 64, right: 32 }}
+        grid={{ horizontal: true, vertical: false }}
+        axisHighlight={{ x: 'line', y: 'none' }}
+        slotProps={{
+          legend: {
+            position: { vertical: 'top', horizontal: 'center' },
+            sx: {
+              color: 'var(--color-text)',
+              fontFamily: 'var(--font-vazir)',
+            },
+          },
+          tooltip: {
+            sx: tooltipSx,
+            trigger: 'axis',
+          },
+        }}
+      />
     </Box>
   );
 };
@@ -649,27 +643,7 @@ const Disk = () => {
   const theme = useTheme();
   const cardSx = createCardSx(theme);
 
-  const tooltipSx = {
-    direction: 'rtl',
-    '& .MuiChartsTooltip-table': {
-      direction: 'rtl',
-      color: 'var(--color-text)',
-    },
-    '& .MuiChartsTooltip-label': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-value': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-cell': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-  } as const;
-
-  const ioSummary = useMemo<ParallelDatum[]>(() => {
+  const ioSummary = useMemo<DeviceMetricsDatum[]>(() => {
     if (!data?.summary?.disk_io_summary) {
       return [];
     }
@@ -768,14 +742,23 @@ const Disk = () => {
 
       <Stack spacing={2}>
         <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-          مقایسه شاخص‌های ورودی/خروجی (Parallel Coordinates)
+          مقایسه شاخص‌های ورودی/خروجی (نمودار خطی نرمال‌شده)
         </Typography>
         {topDevices.length > 0 ? (
-          <ParallelCoordinatesChart
-            data={topDevices}
-            metrics={PARALLEL_METRICS}
-            colors={chartColors}
-          />
+          <>
+            <DiskMetricsLineChart
+              data={topDevices}
+              metrics={PARALLEL_METRICS}
+              colors={chartColors}
+            />
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', textAlign: 'center' }}
+            >
+              مقادیر این نمودار بر اساس بیشترین مقدار هر شاخص نرمال شده‌اند؛ برای
+              مشاهده جزئیات هر شاخص روی نقاط نمودار توقف کنید.
+            </Typography>
+          </>
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             شاخص قابل توجهی برای نمایش وجود ندارد.
