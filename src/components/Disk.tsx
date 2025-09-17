@@ -90,9 +90,10 @@ const ACTIVITY_METRICS: DiskMetricConfig[] = [
   ...BYTE_METRICS,
 ];
 
-const BUSY_TIME_METRIC = IO_METRICS.find(
-  (metric): metric is DiskMetricConfig & { key: 'busy_time' } => metric.key === 'busy_time'
-);
+const IO_METRICS: DiskMetricConfig[] = [
+  ...ACTIVITY_METRICS,
+  BUSY_TIME_METRIC,
+];
 
 type BusyTimeTooltipInfo = {
   formatted: string;
@@ -106,7 +107,7 @@ interface DiskTooltipContextValue {
 }
 
 const DiskTooltipContext = createContext<DiskTooltipContextValue>({
-  label: BUSY_TIME_METRIC?.label ?? 'زمان مشغولی',
+  label: BUSY_TIME_METRIC.label,
   map: {},
 });
 
@@ -155,75 +156,76 @@ const formatLargeNumber = (value: number) => {
   return value.toFixed(0);
 };
 
-const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'] as const;
-
-const determineByteUnitIndex = (value: number) => {
-  let unitIndex = 0;
-  let normalized = Math.max(value, 0);
-
-  while (normalized >= 1024 && unitIndex < BYTE_UNITS.length - 1) {
-    normalized /= 1024;
-    unitIndex += 1;
-  }
-
-  return unitIndex;
+type AxisUnitInfo = {
+  label: string;
+  divisor: number;
 };
 
-const createByteAxisValueFormatter = (unitIndex: number) => {
-  const divisor = 1024 ** unitIndex;
+const createAxisNumberFormatter = (
+  divisor: number,
+  maximumFractionDigits: number
+) => {
+  const safeDivisor = divisor > 0 ? divisor : 1;
+  const formatter = new Intl.NumberFormat('fa-IR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: Math.max(0, maximumFractionDigits),
+  });
 
-  return (value: number) => {
-    if (!Number.isFinite(value)) {
-      return `0 ${BYTE_UNITS[unitIndex]}`;
+  return (value: number | null | undefined) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return formatter.format(0);
     }
 
-    const normalized = divisor > 0 ? Math.max(value, 0) / divisor : Math.max(value, 0);
-    const formatter = new Intl.NumberFormat('en-US', {
-      maximumFractionDigits: normalized >= 100 ? 0 : normalized >= 10 ? 1 : 2,
-    });
-
-    return `${formatter.format(normalized)} ${BYTE_UNITS[unitIndex]}`;
+    const scaled = Math.max(value, 0) / safeDivisor;
+    return formatter.format(scaled);
   };
 };
 
-const METRIC_UNIT_LABELS: Partial<Record<keyof DiskIOStats, string>> = {
-  read_count: 'عدد',
-  write_count: 'عدد',
-  read_merged_count: 'عدد',
-  write_merged_count: 'عدد',
-  read_time: 'ms',
-  write_time: 'ms',
-  busy_time: 'ms',
-};
+const COUNT_AXIS_BASE_UNIT: AxisUnitInfo = { label: 'عدد', divisor: 1 };
 
-const getAxisId = (key: keyof DiskIOStats) => `${key}-axis`;
+const COUNT_AXIS_UNITS: AxisUnitInfo[] = [
+  { label: 'میلیارد', divisor: 1_000_000_000 },
+  { label: 'میلیون', divisor: 1_000_000 },
+  { label: 'هزار', divisor: 1_000 },
+];
 
-const getAxisLabelAndFormatter = (
-  metric: DiskMetricConfig,
-  maxValue: number
-): { axisLabel: string; formatter: (value: number) => string } => {
-  if (metric.key === 'read_bytes' || metric.key === 'write_bytes') {
-    const unitIndex = determineByteUnitIndex(maxValue);
-    const unitLabel = BYTE_UNITS[unitIndex];
-
-    return {
-      axisLabel: `${metric.label} (${unitLabel})`,
-      formatter: createByteAxisValueFormatter(unitIndex),
-    };
+const determineCountAxisUnit = (value: number): AxisUnitInfo => {
+  if (!Number.isFinite(value) || value <= 0) {
+    return COUNT_AXIS_BASE_UNIT;
   }
 
-  const unitLabel = METRIC_UNIT_LABELS[metric.key];
+  for (const unit of COUNT_AXIS_UNITS) {
+    if (value >= unit.divisor) {
+      return unit;
+    }
+  }
 
-  return {
-    axisLabel: unitLabel ? `${metric.label} (${unitLabel})` : metric.label,
-    formatter: (value: number) => {
-      if (!Number.isFinite(value)) {
-        return '0';
-      }
+  return COUNT_AXIS_BASE_UNIT;
+};
 
-      return formatLargeNumber(Math.max(value, 0));
-    },
-  };
+const BYTE_AXIS_BASE_UNIT: AxisUnitInfo = { label: 'بایت', divisor: 1 };
+
+const BYTE_AXIS_UNITS: AxisUnitInfo[] = [
+  { label: 'پتابایت', divisor: 1024 ** 5 },
+  { label: 'ترابایت', divisor: 1024 ** 4 },
+  { label: 'گیگابایت', divisor: 1024 ** 3 },
+  { label: 'مگابایت', divisor: 1024 ** 2 },
+  { label: 'کیلوبایت', divisor: 1024 },
+];
+
+const determineByteAxisUnit = (value: number): AxisUnitInfo => {
+  if (!Number.isFinite(value) || value <= 0) {
+    return BYTE_AXIS_BASE_UNIT;
+  }
+
+  for (const unit of BYTE_AXIS_UNITS) {
+    if (value >= unit.divisor) {
+      return unit;
+    }
+  }
+
+  return BYTE_AXIS_BASE_UNIT;
+
 };
 
 const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
@@ -917,6 +919,12 @@ const Disk = () => {
       return { dataset, maxValues };
     }, [topDevices]);
 
+  const { maxValues: ioBytesMaxValues } = useMemo(
+    () => buildNormalizedDataset(BYTE_METRICS, topDevices),
+    [topDevices]
+  );
+
+
   const chartColors = useMemo(
     () => [
       theme.palette.primary.main,
@@ -1064,36 +1072,58 @@ const Disk = () => {
     [topDevices]
   );
 
-  const ioCountAxisMax = Math.max(
-    ioMetricMaxValues.read_count ?? 0,
-    ioMetricMaxValues.write_count ?? 0
+  const ioCountAxisMax = useMemo(
+    () =>
+      COUNT_METRICS.reduce(
+        (max, metric) =>
+          Math.max(max, ioMetricMaxValues[metric.key] ?? 0),
+        0
+      ),
+    [ioMetricMaxValues]
   );
-  const ioBytesAxisMax = Math.max(
-    ioMetricMaxValues.read_bytes ?? 0,
-    ioMetricMaxValues.write_bytes ?? 0
+
+  const ioBytesAxisMax = useMemo(
+    () =>
+      BYTE_METRICS.reduce(
+        (max, metric) =>
+          Math.max(max, ioBytesMaxValues[metric.key] ?? 0),
+        0
+      ),
+    [ioBytesMaxValues]
   );
+
+  const countAxisUnitInfo = useMemo(
+    () => determineCountAxisUnit(ioCountAxisMax),
+    [ioCountAxisMax]
+  );
+
+  const bytesAxisUnitInfo = useMemo(
+    () => determineByteAxisUnit(ioBytesAxisMax),
+    [ioBytesAxisMax]
+  );
+
   const ioCountAxisMaxValue =
     ioCountAxisMax > 0 ? ioCountAxisMax : undefined;
   const ioBytesAxisMaxValue =
     ioBytesAxisMax > 0 ? ioBytesAxisMax : undefined;
 
-  const countAxisUnit = useMemo(
-    () => determineCountAxisUnit(ioCountAxisMax),
-    [ioCountAxisMax]
+  const formatCountAxisValue = useMemo(
+    () =>
+      createAxisNumberFormatter(
+        countAxisUnitInfo.divisor,
+        countAxisUnitInfo.divisor === 1 ? 0 : 1
+      ),
+    [countAxisUnitInfo.divisor]
   );
-  const bytesAxisUnit = useMemo(
-    () => determineByteAxisUnit(ioBytesAxisMax),
-    [ioBytesAxisMax]
+
+  const formatBytesAxisValue = useMemo(
+    () =>
+      createAxisNumberFormatter(
+        bytesAxisUnitInfo.divisor,
+        bytesAxisUnitInfo.divisor === 1 ? 0 : 2
+      ),
+    [bytesAxisUnitInfo.divisor]
   );
-
-  const countAxisLabel = `تعداد عملیات (${countAxisUnit.label})`;
-  const bytesAxisLabel = `حجم داده (${bytesAxisUnit.label})`;
-
-  const formatCountAxisValue = (value: number) =>
-    formatAxisValue(value, countAxisUnit.divisor);
-
-  const formatBytesAxisValue = (value: number) =>
-    formatAxisValue(value, bytesAxisUnit.divisor);
 
 
   if (isLoading) {
@@ -1158,13 +1188,16 @@ const Disk = () => {
                     ]}
                     yAxis={[
                       {
+                        id: 'io-count-axis',
+                        scaleType: 'linear' as const,
                         min: 0,
                         max: ioCountAxisMaxValue,
-                        label: countAxisLabel,
+                        label: `تعداد عملیات (${countAxisUnitInfo.label})`,
+
                         valueFormatter: formatCountAxisValue,
                         tickLabelStyle: { fill: 'var(--color-text)' },
                         labelStyle: { fill: 'var(--color-text)' },
-                        position: 'left',
+                        position: 'left' as const,
                         tickSize: 45,
                         width: 96,
                       },
@@ -1197,13 +1230,16 @@ const Disk = () => {
                     ]}
                     yAxis={[
                       {
+                        id: 'io-bytes-axis',
+                        scaleType: 'linear' as const,
                         min: 0,
                         max: ioBytesAxisMaxValue,
-                        label: bytesAxisLabel,
+                        label: `حجم داده (${bytesAxisUnitInfo.label})`,
+
                         valueFormatter: formatBytesAxisValue,
                         tickLabelStyle: { fill: 'var(--color-text)' },
                         labelStyle: { fill: 'var(--color-text)' },
-                        position: 'left',
+                        position: 'left' as const,
                         tickSize: 45,
                         width: 96,
                       },
