@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
+import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
@@ -27,12 +28,44 @@ const METRIC_KEYS: Array<keyof DiskIOStats> = [
   'busy_time',
 ];
 
-const PARALLEL_METRICS: Array<{ key: keyof DiskIOStats; label: string }> = [
-  { key: 'read_count', label: 'تعداد خواندن' },
-  { key: 'write_count', label: 'تعداد نوشتن' },
-  { key: 'read_bytes', label: 'حجم خوانده‌شده' },
-  { key: 'write_bytes', label: 'حجم نوشته‌شده' },
-  { key: 'busy_time', label: 'زمان مشغولی' },
+type DiskMetricConfig = {
+  key: keyof DiskIOStats;
+  label: string;
+  getValue: (metrics: NormalizedMetrics) => number;
+  format: (value: number) => string;
+};
+
+const IO_METRICS: DiskMetricConfig[] = [
+  {
+    key: 'read_count',
+    label: 'تعداد خواندن',
+    getValue: (metrics) => metrics.read_count,
+    format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
+  },
+  {
+    key: 'write_count',
+    label: 'تعداد نوشتن',
+    getValue: (metrics) => metrics.write_count,
+    format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
+  },
+  {
+    key: 'read_bytes',
+    label: 'حجم خوانده‌شده',
+    getValue: (metrics) => metrics.read_bytes,
+    format: (value) => formatBytes(Math.max(value, 0)),
+  },
+  {
+    key: 'write_bytes',
+    label: 'حجم نوشته‌شده',
+    getValue: (metrics) => metrics.write_bytes,
+    format: (value) => formatBytes(Math.max(value, 0)),
+  },
+  {
+    key: 'busy_time',
+    label: 'زمان مشغولی (ms)',
+    getValue: (metrics) => metrics.busy_time,
+    format: (value) => `${formatLargeNumber(Math.max(value, 0))} ms`,
+  },
 ];
 
 const formatBytes = (value: number) => {
@@ -115,199 +148,10 @@ const createCardSx = (theme: Theme) => {
   } as const;
 };
 
-interface ParallelDatum {
+interface DeviceMetricDatum {
   name: string;
   metrics: NormalizedMetrics;
 }
-
-interface ParallelCoordinatesChartProps {
-  data: ParallelDatum[];
-  metrics: typeof PARALLEL_METRICS;
-  colors: string[];
-  height?: number;
-}
-
-const ParallelCoordinatesChart = ({
-  data,
-  metrics,
-  colors,
-  height = 260,
-}: ParallelCoordinatesChartProps) => {
-  const theme = useTheme();
-
-  if (data.length === 0) {
-    return null;
-  }
-
-  const width = Math.max(metrics.length * 140, 480);
-  const leftPadding = 60;
-  const rightPadding = 40;
-  const topPadding = 24;
-  const bottomPadding = 48;
-  const innerWidth = width - leftPadding - rightPadding;
-  const innerHeight = height - topPadding - bottomPadding;
-
-  const axisPositions = metrics.map((_, index) => {
-    if (metrics.length === 1) {
-      return leftPadding + innerWidth / 2;
-    }
-    return leftPadding + (innerWidth * index) / (metrics.length - 1);
-  });
-
-  const axisScales = metrics.map((metric) => {
-    const values = data.map((item) => item.metrics[metric.key] ?? 0);
-    const max = Math.max(...values, 0);
-    const min = 0;
-
-    if (max === min) {
-      return { min, max: max === 0 ? 1 : max * 1.05 };
-    }
-
-    return { min, max };
-  });
-
-  const axisColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.25)'
-      : 'rgba(0, 0, 0, 0.35)';
-
-  const textColor = 'var(--color-text)';
-
-  const mapToY = (value: number, scale: { min: number; max: number }) => {
-    if (scale.max === scale.min) {
-      return topPadding + innerHeight / 2;
-    }
-    const ratio = (value - scale.min) / (scale.max - scale.min);
-    return topPadding + innerHeight - ratio * innerHeight;
-  };
-
-  return (
-    <Box sx={{ width: '100%', overflowX: 'auto', direction: 'ltr' }}>
-      <Box
-        component="svg"
-        viewBox={`0 0 ${width} ${height}`}
-        sx={{ width: '100%', height }}
-      >
-        {metrics.map((metric, index) => {
-          const x = axisPositions[index];
-          const scale = axisScales[index];
-
-          return (
-            <g key={metric.key}>
-              <line
-                x1={x}
-                y1={topPadding}
-                x2={x}
-                y2={height - bottomPadding}
-                stroke={axisColor}
-                strokeDasharray="4 4"
-              />
-              <text
-                x={x}
-                y={topPadding - 8}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={11}
-              >
-                {formatLargeNumber(scale.max)}
-              </text>
-              <text
-                x={x}
-                y={height - bottomPadding + 18}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={11}
-              >
-                {formatLargeNumber(scale.min)}
-              </text>
-              <text
-                x={x}
-                y={height - 12}
-                textAnchor="middle"
-                fill={textColor}
-                fontSize={12}
-                fontWeight={500}
-              >
-                {metric.label}
-              </text>
-            </g>
-          );
-        })}
-
-        {data.map((item, dataIndex) => {
-          const color = colors[dataIndex % colors.length];
-          const path = metrics
-            .map((metric, index) => {
-              const value = item.metrics[metric.key] ?? 0;
-              const x = axisPositions[index];
-              const y = mapToY(value, axisScales[index]);
-              return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
-            })
-            .join(' ');
-
-          return (
-            <g key={item.name}>
-              <path
-                d={path}
-                fill="none"
-                stroke={color}
-                strokeWidth={2.2}
-                opacity={0.85}
-              />
-              {metrics.map((metric, index) => {
-                const value = item.metrics[metric.key] ?? 0;
-                const x = axisPositions[index];
-                const y = mapToY(value, axisScales[index]);
-
-                return (
-                  <circle key={metric.key} cx={x} cy={y} r={4} fill={color} />
-                );
-              })}
-            </g>
-          );
-        })}
-      </Box>
-
-      <Stack
-        direction="row"
-        spacing={2}
-        flexWrap="wrap"
-        justifyContent="center"
-        sx={{ mt: 2, px: 1 }}
-      >
-        {data.map((item, index) => {
-          const color = colors[index % colors.length];
-
-          return (
-            <Stack
-              key={item.name}
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{ minWidth: 120 }}
-            >
-              <Box
-                sx={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  bgcolor: color,
-                  border: '1px solid rgba(0,0,0,0.2)',
-                }}
-              />
-              <Typography
-                variant="caption"
-                sx={{ color: theme.palette.text.secondary }}
-              >
-                {item.name}
-              </Typography>
-            </Stack>
-          );
-        })}
-      </Stack>
-    </Box>
-  );
-};
 
 export const DiskOverview = () => {
   const { data, isLoading, error } = useDisk();
@@ -401,9 +245,9 @@ export const DiskOverview = () => {
             const boundedFree =
               nonNegativeFree > 0
                 ? Math.min(
-                    nonNegativeFree,
-                    fallbackFree > 0 ? fallbackFree : nonNegativeFree
-                  )
+                  nonNegativeFree,
+                  fallbackFree > 0 ? fallbackFree : nonNegativeFree
+                )
                 : fallbackFree;
             const percentValueRaw = usage.percent;
             const safePercent =
@@ -669,7 +513,7 @@ const Disk = () => {
     },
   } as const;
 
-  const ioSummary = useMemo<ParallelDatum[]>(() => {
+  const ioSummary = useMemo<DeviceMetricDatum[]>(() => {
     if (!data?.summary?.disk_io_summary) {
       return [];
     }
@@ -680,7 +524,7 @@ const Disk = () => {
         metrics: normalizeMetrics(metrics),
       }))
       .filter((entry) =>
-        PARALLEL_METRICS.some((metric) => entry.metrics[metric.key] > 0)
+        IO_METRICS.some((metric) => metric.getValue(entry.metrics) > 0)
       );
   }, [data?.summary?.disk_io_summary]);
 
@@ -700,15 +544,39 @@ const Disk = () => {
       .slice(0, 5);
   }, [ioSummary]);
 
-  const barChartDataset = useMemo(
-    () =>
-      topDevices.map((item) => ({
-        device: item.name,
-        readGB: item.metrics.read_bytes / BYTES_IN_GB,
-        writeGB: item.metrics.write_bytes / BYTES_IN_GB,
-      })),
-    [topDevices]
-  );
+  const { dataset: ioLineDataset, maxValues: ioMetricMaxValues } =
+    useMemo(() => {
+      const maxValues = IO_METRICS.reduce(
+        (acc, metric) => {
+          const values = topDevices.map((item) => {
+            const rawValue = metric.getValue(item.metrics);
+            return Number.isFinite(rawValue) ? rawValue : 0;
+          });
+
+          acc[metric.key] = Math.max(...values, 0);
+          return acc;
+        },
+        {} as Record<keyof DiskIOStats, number>
+      );
+
+      const dataset = topDevices.map((item) => {
+        const entry: Record<string, string | number> = { device: item.name };
+
+        IO_METRICS.forEach((metric) => {
+          const rawValue = metric.getValue(item.metrics);
+          const max = maxValues[metric.key];
+          if (max > 0 && Number.isFinite(rawValue)) {
+            entry[metric.key] = clampPercent((rawValue / max) * 100);
+          } else {
+            entry[metric.key] = 0;
+          }
+        });
+
+        return entry;
+      });
+
+      return { dataset, maxValues };
+    }, [topDevices]);
 
   const chartColors = useMemo(
     () => [
@@ -727,6 +595,42 @@ const Disk = () => {
       theme.palette.info.main,
       theme.palette.error.main,
     ]
+  );
+
+  const ioLineSeries = useMemo(
+    () =>
+      IO_METRICS.map((metric, index) => {
+        const color = chartColors[index % chartColors.length];
+        const max = ioMetricMaxValues[metric.key] ?? 0;
+
+        return {
+          dataKey: metric.key,
+          label: metric.label,
+          color,
+          curve: 'monotoneX' as const,
+          showMark: true,
+          valueFormatter: (value: number | null) => {
+            if (!Number.isFinite(value) || max <= 0) {
+              return metric.format(0);
+            }
+
+            const normalized = Number(value);
+            const actual = (normalized / 100) * max;
+            return metric.format(actual);
+          },
+        };
+      }),
+    [chartColors, ioMetricMaxValues]
+  );
+
+  const barChartDataset = useMemo(
+    () =>
+      topDevices.map((item) => ({
+        device: item.name,
+        readGB: item.metrics.read_bytes / BYTES_IN_GB,
+        writeGB: item.metrics.write_bytes / BYTES_IN_GB,
+      })),
+    [topDevices]
   );
 
   if (isLoading) {
@@ -768,14 +672,51 @@ const Disk = () => {
 
       <Stack spacing={2}>
         <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-          مقایسه شاخص‌های ورودی/خروجی (Parallel Coordinates)
+          مقایسه شاخص‌های ورودی/خروجی (نمودار روند نرمال‌شده)
         </Typography>
-        {topDevices.length > 0 ? (
-          <ParallelCoordinatesChart
-            data={topDevices}
-            metrics={PARALLEL_METRICS}
-            colors={chartColors}
-          />
+        {ioLineDataset.length > 0 ? (
+          <Box sx={{ width: '100%', direction: 'ltr' }}>
+            <LineChart
+              dataset={ioLineDataset}
+              series={ioLineSeries}
+              xAxis={[
+                {
+                  dataKey: 'device',
+                  scaleType: 'band',
+                  tickLabelStyle: { fill: 'var(--color-text)' },
+                  labelStyle: { fill: 'var(--color-text)' },
+                },
+              ]}
+              yAxis={[
+                {
+                  min: 0,
+                  max: 105,
+                  label: 'شاخص نرمال‌شده (٪)',
+                  valueFormatter: (value: number) =>
+                    `${diskPercentFormatter.format(value)}٪`,
+                  tickLabelStyle: { fill: 'var(--color-text)' },
+                  labelStyle: { fill: 'var(--color-text)' },
+                  position: 'left',
+                  tickSize: 45,
+                  width: 96,
+                },
+              ]}
+              axisHighlight={{ x: 'line' }}
+              grid={{ horizontal: true, vertical: false }}
+              height={320}
+              margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
+              slotProps={{
+                tooltip: { sx: tooltipSx },
+                legend: {
+                  sx: {
+                    color: 'var(--color-text)',
+                    fontFamily: 'var(--font-vazir)',
+                  },
+                  position: { vertical: 'top', horizontal: 'center' },
+                },
+              }}
+            />
+          </Box>
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             شاخص قابل توجهی برای نمایش وجود ندارد.
@@ -796,9 +737,10 @@ const Disk = () => {
               xAxis={[{ scaleType: 'band', dataKey: 'device' }]}
               yAxis={[
                 {
+                  label: 'GB',
                   position: 'left',
-                  tickSize: 18, // ⬅ increase gap between numbers and the y-axis line
-                  width: 56, // ⬅ reserve room so labels don’t get clipped
+                  tickSize: 28,
+                  width: 96,
                   tickLabelStyle: { fill: 'var(--color-text)' },
                 },
               ]}
