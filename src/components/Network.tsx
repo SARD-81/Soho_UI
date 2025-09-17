@@ -100,6 +100,70 @@ const Network = () => {
   const interfaces = data?.interfaces ?? {};
   const names = Object.keys(interfaces);
 
+  const extractInterfaceAddresses = (
+    networkInterface: (typeof interfaces)[string] | undefined
+  ) => {
+    if (!networkInterface?.addresses) {
+      return [] as string[];
+    }
+
+    const rawAddresses = Array.isArray(networkInterface.addresses)
+      ? networkInterface.addresses
+      : typeof networkInterface.addresses === 'object'
+        ? Object.values(networkInterface.addresses)
+        : [];
+
+    const collected = rawAddresses
+      .map((entry) => {
+        if (!entry) {
+          return null;
+        }
+        if (typeof entry === 'string') {
+          const trimmed = entry.trim();
+          return trimmed.length > 0 ? trimmed : null;
+        }
+        if (typeof entry === 'object' && 'address' in entry) {
+          const possible = (entry as { address?: unknown }).address;
+          if (typeof possible === 'string') {
+            const trimmed = possible.trim();
+            if (trimmed.length > 0) {
+              return trimmed;
+            }
+          }
+        }
+        if (typeof entry === 'object') {
+          const nestedValue = Object.values(entry).find(
+            (value) => typeof value === 'string' && value.trim().length > 0
+          );
+          if (typeof nestedValue === 'string') {
+            return nestedValue.trim();
+          }
+        }
+        return null;
+      })
+      .filter((value): value is string => Boolean(value));
+
+    const unique = Array.from(new Set(collected));
+    unique.sort((a, b) => {
+      const aIsIPv4 = a.includes('.') && !a.includes(':');
+      const bIsIPv4 = b.includes('.') && !b.includes(':');
+      if (aIsIPv4 === bIsIPv4) {
+        return a.localeCompare(b, 'fa');
+      }
+      return aIsIPv4 ? -1 : 1;
+    });
+
+    return unique;
+  };
+
+  const resolveInterfaceLabel = (interfaceName: string) => {
+    const addressList = extractInterfaceAddresses(interfaces[interfaceName]);
+    if (addressList.length === 0) {
+      return interfaceName;
+    }
+    return `${interfaceName} (${addressList.join('، ')})`;
+  };
+
   const tooltipSx = {
     direction: 'rtl',
     '& .MuiChartsTooltip-table': {
@@ -192,7 +256,9 @@ const Network = () => {
         </ResponsiveChartContainer>
       ) : (
         names.map((name) => {
-          const unit = interfaces[name]?.bandwidth.unit ?? '';
+          const interfaceInfo = interfaces[name];
+          const unit = interfaceInfo?.bandwidth.unit ?? '';
+          const displayName = resolveInterfaceLabel(name);
           const now = Date.now();
           const elapsed = now - startTimeRef.current;
           const min =
@@ -222,7 +288,7 @@ const Network = () => {
                 variant="h6"
                 sx={{ mb: 1, color: 'var(--color-primary)' }}
               >
-                {name}
+                {displayName}
               </Typography>
               <ResponsiveChartContainer height={chartSize}>
                 {(width) => (
