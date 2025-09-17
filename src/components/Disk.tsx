@@ -89,17 +89,33 @@ const formatBytes = (value: number) => {
   return `${formatter.format(currentValue)} ${units[unitIndex]}`;
 };
 
-const formatLargeNumber = (value: number) => {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(1)}B`;
+const persianNumberFormatter = new Intl.NumberFormat('fa-IR');
+
+const percentFormatter = new Intl.NumberFormat('fa-IR', {
+  maximumFractionDigits: 0,
+});
+
+const formatMetricValue = (metricKey: keyof DiskIOStats, value: number) => {
+  if (!Number.isFinite(value)) {
+    return '-';
   }
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M`;
+
+  if (metricKey === 'read_bytes' || metricKey === 'write_bytes') {
+    return formatBytes(value);
   }
-  if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(1)}K`;
+
+  if (metricKey === 'busy_time') {
+    if (Math.abs(value) >= 1000) {
+      const seconds = value / 1000;
+      const secondsFormatter = new Intl.NumberFormat('fa-IR', {
+        maximumFractionDigits: Math.abs(seconds) >= 100 ? 0 : 1,
+      });
+      return `${secondsFormatter.format(seconds)} ثانیه`;
+    }
+    return `${persianNumberFormatter.format(value)} میلی‌ثانیه`;
   }
-  return value.toFixed(0);
+
+  return persianNumberFormatter.format(value);
 };
 
 const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
@@ -148,10 +164,178 @@ const createCardSx = (theme: Theme) => {
   } as const;
 };
 
-interface DeviceMetricDatum {
+const tooltipSx = {
+  direction: 'rtl',
+  '& .MuiChartsTooltip-table': {
+    direction: 'rtl',
+    color: 'var(--color-text)',
+  },
+  '& .MuiChartsTooltip-label': {
+    color: 'var(--color-text)',
+    fontFamily: 'var(--font-vazir)',
+  },
+  '& .MuiChartsTooltip-value': {
+    color: 'var(--color-text)',
+    fontFamily: 'var(--font-vazir)',
+  },
+  '& .MuiChartsTooltip-cell': {
+    color: 'var(--color-text)',
+    fontFamily: 'var(--font-vazir)',
+  },
+} as const;
+
+interface DeviceMetricsDatum {
+
   name: string;
   metrics: NormalizedMetrics;
 }
+
+interface DiskMetricsLineChartProps {
+  data: DeviceMetricsDatum[];
+  metrics: typeof PARALLEL_METRICS;
+  colors: string[];
+  height?: number;
+}
+
+const createSeriesId = (index: number) => `series_${index}`;
+
+const DiskMetricsLineChart = ({
+  data,
+  metrics,
+  colors,
+  height = 320,
+}: DiskMetricsLineChartProps) => {
+  const metricMaxValues = useMemo(
+    () =>
+      metrics.map((metric) =>
+        Math.max(...data.map((item) => item.metrics[metric.key] ?? 0), 0)
+      ),
+    [data, metrics]
+  );
+
+  const rawValueMatrix = useMemo(
+    () =>
+      data.map((item) =>
+        metrics.map((metric) => item.metrics[metric.key] ?? 0)
+      ),
+    [data, metrics]
+  );
+
+  const dataset = useMemo(() => {
+    return metrics.map((metric, metricIndex) => {
+      const row: Record<string, number | string> = {
+        metricKey: metric.key,
+        metricLabel: metric.label,
+      };
+
+      const maxValue = metricMaxValues[metricIndex] || 0;
+
+      data.forEach((item, deviceIndex) => {
+        const seriesId = createSeriesId(deviceIndex);
+        const rawValue = item.metrics[metric.key] ?? 0;
+        const normalized = maxValue > 0 ? (rawValue / maxValue) * 100 : 0;
+        row[seriesId] = normalized;
+      });
+
+      return row;
+    });
+  }, [data, metricMaxValues, metrics]);
+
+  const series = useMemo(
+    () =>
+      data.map((item, deviceIndex) => {
+        const seriesId = createSeriesId(deviceIndex);
+        const color = colors[deviceIndex % colors.length];
+
+        return {
+          id: seriesId,
+          dataKey: seriesId,
+          label: item.name,
+          color,
+          showMark: true,
+          valueFormatter: (
+            normalizedValue: number | null,
+            context: { dataIndex: number }
+          ) => {
+            const metricIndex = context?.dataIndex ?? 0;
+            const metric = metrics[metricIndex];
+
+            if (!metric) {
+              if (normalizedValue == null) {
+                return '-';
+              }
+              const boundedFallback = Math.max(0, Math.min(100, normalizedValue));
+              return `${percentFormatter.format(boundedFallback)}٪`;
+            }
+
+            const rawValue = rawValueMatrix[deviceIndex]?.[metricIndex] ?? 0;
+            const formattedRaw = formatMetricValue(metric.key, rawValue);
+
+            if (normalizedValue == null) {
+              return formattedRaw;
+            }
+
+            const boundedPercent = Math.max(
+              0,
+              Math.min(100, normalizedValue)
+            );
+            const formattedPercent = percentFormatter.format(boundedPercent);
+            return `${formattedRaw} (${formattedPercent}٪ از بیشینه)`;
+          },
+        };
+      }),
+    [colors, data, metrics, rawValueMatrix]
+  );
+
+  if (data.length === 0) {
+    return null;
+  }
+
+  return (
+    <Box sx={{ width: '100%', direction: 'ltr' }}>
+      <LineChart
+        height={height}
+        dataset={dataset}
+        xAxis={[
+          {
+            dataKey: 'metricLabel',
+            scaleType: 'band',
+            tickLabelStyle: { fill: 'var(--color-text)' },
+          },
+        ]}
+        yAxis={[
+          {
+            min: 0,
+            max: 105,
+            tickLabelStyle: { fill: 'var(--color-text)' },
+            valueFormatter: (value: number) =>
+              `${percentFormatter.format(
+                Math.max(0, Math.min(100, value))
+              )}٪`,
+          },
+        ]}
+        series={series}
+        margin={{ top: 60, bottom: 60, left: 64, right: 32 }}
+        grid={{ horizontal: true, vertical: false }}
+        axisHighlight={{ x: 'line', y: 'none' }}
+        slotProps={{
+          legend: {
+            position: { vertical: 'top', horizontal: 'center' },
+            sx: {
+              color: 'var(--color-text)',
+              fontFamily: 'var(--font-vazir)',
+            },
+          },
+          tooltip: {
+            sx: tooltipSx,
+            trigger: 'axis',
+          },
+        }}
+      />
+    </Box>
+  );
+};
+
 
 export const DiskOverview = () => {
   const { data, isLoading, error } = useDisk();
@@ -493,27 +677,8 @@ const Disk = () => {
   const theme = useTheme();
   const cardSx = createCardSx(theme);
 
-  const tooltipSx = {
-    direction: 'rtl',
-    '& .MuiChartsTooltip-table': {
-      direction: 'rtl',
-      color: 'var(--color-text)',
-    },
-    '& .MuiChartsTooltip-label': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-value': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-cell': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-  } as const;
+  const ioSummary = useMemo<DeviceMetricsDatum[]>(() => {
 
-  const ioSummary = useMemo<DeviceMetricDatum[]>(() => {
     if (!data?.summary?.disk_io_summary) {
       return [];
     }
@@ -674,48 +839,24 @@ const Disk = () => {
 
       <Stack spacing={2}>
         <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-          مقایسه شاخص‌های ورودی/خروجی (نمودار روند نرمال‌شده)
+          مقایسه شاخص‌های ورودی/خروجی (نمودار خطی نرمال‌شده)
         </Typography>
-        {ioLineDataset.length > 0 ? (
-          <Box sx={{ width: '100%', direction: 'ltr' }}>
-            <LineChart
-              dataset={ioLineDataset}
-              series={ioLineSeries}
-              xAxis={[
-                {
-                  dataKey: 'device',
-                  scaleType: 'band',
-                  tickLabelStyle: { fill: 'var(--color-text)' },
-                  labelStyle: { fill: 'var(--color-text)' },
-                },
-              ]}
-              yAxis={[
-                {
-                  min: 0,
-                  max: 105,
-                  label: 'شاخص نرمال‌شده (٪)',
-                  valueFormatter: (value: number) =>
-                    `${diskPercentFormatter.format(value)}٪`,
-                  tickLabelStyle: { fill: 'var(--color-text)' },
-                  labelStyle: { fill: 'var(--color-text)' },
-                },
-              ]}
-              axisHighlight={{ x: 'line' }}
-              grid={{ horizontal: true, vertical: false }}
-              height={320}
-              margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
-              slotProps={{
-                tooltip: { sx: tooltipSx },
-                legend: {
-                  sx: {
-                    color: 'var(--color-text)',
-                    fontFamily: 'var(--font-vazir)',
-                  },
-                  position: { vertical: 'top', horizontal: 'center' },
-                },
-              }}
+        {topDevices.length > 0 ? (
+          <>
+            <DiskMetricsLineChart
+              data={topDevices}
+              metrics={PARALLEL_METRICS}
+              colors={chartColors}
             />
-          </Box>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', textAlign: 'center' }}
+            >
+              مقادیر این نمودار بر اساس بیشترین مقدار هر شاخص نرمال شده‌اند؛ برای
+              مشاهده جزئیات هر شاخص روی نقاط نمودار توقف کنید.
+            </Typography>
+          </>
+
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             شاخص قابل توجهی برای نمایش وجود ندارد.
