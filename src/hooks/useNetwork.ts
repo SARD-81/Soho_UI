@@ -16,7 +16,8 @@ export interface InterfaceAddress {
 }
 
 export interface InterfaceStatus {
-  speed?: number | null;
+  speed?: number | string | null;
+
   [key: string]: unknown;
 }
 

@@ -68,10 +68,15 @@ const MAX_HISTORY_MS = 90 * 1000; // 1 minute 30 seconds
 
 type IPv4Info = { address: string; netmask: string | null };
 
+const trimIfStringHasValue = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
 const toCleanString = (value: unknown): string | null => {
   if (typeof value === 'string') {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
+    return trimIfStringHasValue(value);
+
   }
 
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -110,8 +115,9 @@ const flattenAddressEntries = (value: unknown): InterfaceAddress[] => {
   }
 
   if (typeof value === 'string') {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? [{ address: trimmed }] : [];
+    const trimmed = trimIfStringHasValue(value);
+    return trimmed ? [{ address: trimmed }] : [];
+
   }
 
   return [];
@@ -177,14 +183,10 @@ const formatInterfaceSpeed = (
   formatter: Intl.NumberFormat
 ) => {
   const rawSpeed = status?.speed;
-  const numericSpeed =
-    typeof rawSpeed === 'number'
-      ? rawSpeed
-      : typeof rawSpeed === 'string'
-        ? Number(rawSpeed)
-        : null;
+  const numericSpeed = Number(rawSpeed);
 
-  if (numericSpeed == null || Number.isNaN(numericSpeed) || numericSpeed <= 0) {
+  if (!Number.isFinite(numericSpeed) || numericSpeed <= 0) {
+
     return 'نامشخص';
   }
 
