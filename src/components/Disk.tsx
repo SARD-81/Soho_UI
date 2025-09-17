@@ -21,6 +21,7 @@ import {
   useAxesTooltip,
 } from '@mui/x-charts/ChartsTooltip';
 import { LineChart, type LineChartSlotProps, type LineSeries } from '@mui/x-charts/LineChart';
+
 import { PieChart } from '@mui/x-charts/PieChart';
 import { createContext, useCallback, useContext, useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
@@ -47,7 +48,8 @@ type DiskMetricConfig = {
   format: (value: number) => string;
 };
 
-const IO_METRICS: DiskMetricConfig[] = [
+const IO_COUNT_METRICS: DiskMetricConfig[] = [
+
   {
     key: 'read_count',
     label: 'تعداد خواندن',
@@ -60,6 +62,10 @@ const IO_METRICS: DiskMetricConfig[] = [
     getValue: (metrics) => metrics.write_count,
     format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
   },
+];
+
+const IO_BYTE_METRICS: DiskMetricConfig[] = [
+
   {
     key: 'read_bytes',
     label: 'حجم خوانده‌شده',
@@ -71,12 +77,6 @@ const IO_METRICS: DiskMetricConfig[] = [
     label: 'حجم نوشته‌شده',
     getValue: (metrics) => metrics.write_bytes,
     format: (value) => formatBytes(Math.max(value, 0)),
-  },
-  {
-    key: 'busy_time',
-    label: 'زمان مشغولی (ms)',
-    getValue: (metrics) => metrics.busy_time,
-    format: (value) => `${formatLargeNumber(Math.max(value, 0))} ms`,
   },
 ];
 
@@ -111,6 +111,7 @@ const IO_METRIC_METADATA = IO_METRICS.reduce(
   {} as Partial<Record<keyof DiskIOStats, { config: DiskMetricConfig; index: number }>>
 );
 
+
 const formatBytes = (value: number) => {
   if (!Number.isFinite(value)) {
     return '-';
@@ -144,6 +145,8 @@ const formatLargeNumber = (value: number) => {
   }
   return value.toFixed(0);
 };
+
+const formatBusyTime = (value: number) => BUSY_TIME_METRIC.format(Math.max(value, 0));
 
 const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
   return METRIC_KEYS.reduce(
@@ -363,6 +366,54 @@ interface DeviceMetricDatum {
   name: string;
   metrics: NormalizedMetrics;
 }
+
+type ChartDatasetEntry = {
+  device: string;
+  busy_time: number;
+  [key: string]: string | number;
+};
+
+type MetricMaxValues = Partial<Record<keyof DiskIOStats, number>>;
+
+const buildNormalizedDataset = (
+  devices: DeviceMetricDatum[],
+  metrics: DiskMetricConfig[]
+) => {
+  const maxValues = metrics.reduce<MetricMaxValues>((acc, metric) => {
+    const values = devices.map((item) => {
+      const rawValue = metric.getValue(item.metrics);
+      return Number.isFinite(rawValue) ? rawValue : 0;
+    });
+
+    acc[metric.key] = Math.max(...values, 0);
+    return acc;
+  }, {});
+
+  const dataset = devices.map((item) => {
+    const entry: ChartDatasetEntry = {
+      device: item.name,
+      busy_time: Number.isFinite(item.metrics.busy_time)
+        ? item.metrics.busy_time
+        : 0,
+    };
+
+    metrics.forEach((metric) => {
+      const rawValue = metric.getValue(item.metrics);
+      const max = maxValues[metric.key] ?? 0;
+
+      if (max > 0 && Number.isFinite(rawValue)) {
+        entry[metric.key] = clampPercent((rawValue / max) * 100);
+      } else {
+        entry[metric.key] = 0;
+      }
+    });
+
+    return entry;
+  });
+
+  return { dataset, maxValues };
+};
+
 
 export const DiskOverview = () => {
   const { data, isLoading, error } = useDisk();
@@ -699,6 +750,50 @@ export const DiskOverview = () => {
   );
 };
 
+const buildNormalizedDataset = (
+  metrics: DiskMetricConfig[],
+  devices: DeviceMetricDatum[]
+): NormalizedDatasetResult => {
+  const maxValues = metrics.reduce(
+    (acc, metric) => {
+      const values = devices.map((item) => {
+        const rawValue = metric.getValue(item.metrics);
+        return Number.isFinite(rawValue) ? rawValue : 0;
+      });
+
+      const metricMax = Math.max(...values, 0);
+      acc[metric.key] = metricMax;
+      return acc;
+    },
+    {} as NormalizedDatasetResult['maxValues']
+  );
+
+  const dataset = devices.map((item) => {
+    const busyRaw = item.metrics.busy_time;
+    const busyTime = Number.isFinite(busyRaw) ? Math.max(busyRaw, 0) : 0;
+
+    const entry: NormalizedChartDatum = {
+      device: item.name,
+      busy_time: busyTime,
+    };
+
+    metrics.forEach((metric) => {
+      const rawValue = metric.getValue(item.metrics);
+      const max = maxValues[metric.key] ?? 0;
+
+      if (max > 0 && Number.isFinite(rawValue)) {
+        entry[metric.key] = clampPercent((rawValue / max) * 100);
+      } else {
+        entry[metric.key] = 0;
+      }
+    });
+
+    return entry;
+  });
+
+  return { dataset, maxValues };
+};
+
 const Disk = () => {
   const { data, isLoading, error } = useDisk();
   const theme = useTheme();
@@ -715,7 +810,7 @@ const Disk = () => {
         metrics: normalizeMetrics(metrics),
       }))
       .filter((entry) =>
-        IO_METRICS.some((metric) => metric.getValue(entry.metrics) > 0)
+        ACTIVITY_METRICS.some((metric) => metric.getValue(entry.metrics) > 0)
       );
   }, [data?.summary?.disk_io_summary]);
 
@@ -735,39 +830,22 @@ const Disk = () => {
       .slice(0, 5);
   }, [ioSummary]);
 
-  const { dataset: ioLineDataset, maxValues: ioMetricMaxValues } =
-    useMemo(() => {
-      const maxValues = IO_METRICS.reduce(
-        (acc, metric) => {
-          const values = topDevices.map((item) => {
-            const rawValue = metric.getValue(item.metrics);
-            return Number.isFinite(rawValue) ? rawValue : 0;
-          });
+  const {
+    dataset: countLineDataset,
+    maxValues: countMetricMaxValues,
+  } = useMemo(
+    () => buildNormalizedDataset(topDevices, IO_COUNT_METRICS),
+    [topDevices]
+  );
 
-          acc[metric.key] = Math.max(...values, 0);
-          return acc;
-        },
-        {} as Record<keyof DiskIOStats, number>
-      );
+  const {
+    dataset: byteLineDataset,
+    maxValues: byteMetricMaxValues,
+  } = useMemo(
+    () => buildNormalizedDataset(topDevices, IO_BYTE_METRICS),
 
-      const dataset = topDevices.map((item) => {
-        const entry: Record<string, string | number> = { device: item.name };
-
-        IO_METRICS.forEach((metric) => {
-          const rawValue = metric.getValue(item.metrics);
-          const max = maxValues[metric.key];
-          if (max > 0 && Number.isFinite(rawValue)) {
-            entry[metric.key] = clampPercent((rawValue / max) * 100);
-          } else {
-            entry[metric.key] = 0;
-          }
-        });
-
-        return entry;
-      });
-
-      return { dataset, maxValues };
-    }, [topDevices]);
+    [topDevices]
+  );
 
   const chartColors = useMemo(
     () => [
@@ -860,6 +938,7 @@ const Disk = () => {
         },
       }) satisfies LineChartSlotProps,
     []
+
   );
 
   const barChartDataset = useMemo(
@@ -924,6 +1003,7 @@ const Disk = () => {
                   <LineChart
                     dataset={ioLineDataset}
                     series={ioCountSeries}
+
                     xAxis={[
                       {
                         dataKey: 'device',
@@ -963,6 +1043,7 @@ const Disk = () => {
                   <LineChart
                     dataset={ioLineDataset}
                     series={ioBytesSeries}
+
                     xAxis={[
                       {
                         dataKey: 'device',
@@ -996,6 +1077,7 @@ const Disk = () => {
               </Box>
             </Stack>
           </DiskTooltipContext.Provider>
+
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             شاخص قابل توجهی برای نمایش وجود ندارد.
