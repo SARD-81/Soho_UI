@@ -8,7 +8,8 @@ import {
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { LineChart } from '@mui/x-charts/LineChart';
+import { LineChart, type LineSeries } from '@mui/x-charts/LineChart';
+
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
@@ -164,172 +165,195 @@ const createCardSx = (theme: Theme) => {
   } as const;
 };
 
-const tooltipSx = {
-  direction: 'rtl',
-  '& .MuiChartsTooltip-table': {
-    direction: 'rtl',
-    color: 'var(--color-text)',
-  },
-  '& .MuiChartsTooltip-label': {
-    color: 'var(--color-text)',
-    fontFamily: 'var(--font-vazir)',
-  },
-  '& .MuiChartsTooltip-value': {
-    color: 'var(--color-text)',
-    fontFamily: 'var(--font-vazir)',
-  },
-  '& .MuiChartsTooltip-cell': {
-    color: 'var(--color-text)',
-    fontFamily: 'var(--font-vazir)',
-  },
-} as const;
-
-interface DeviceMetricsDatum {
+interface DeviceMetricsEntry {
 
   name: string;
   metrics: NormalizedMetrics;
 }
 
-interface DiskMetricsLineChartProps {
-  data: DeviceMetricsDatum[];
+interface DeviceMetricsTrendChartProps {
+  devices: DeviceMetricsEntry[];
+
   metrics: typeof PARALLEL_METRICS;
   colors: string[];
   height?: number;
 }
 
-const createSeriesId = (index: number) => `series_${index}`;
+const durationFormatter = new Intl.NumberFormat('fa-IR', {
+  maximumFractionDigits: 1,
+});
 
-const DiskMetricsLineChart = ({
-  data,
+const normalizedPercentFormatter = new Intl.NumberFormat('fa-IR', {
+  maximumFractionDigits: 0,
+});
+
+const normalizeMetricValue = (value: number, min: number, max: number) => {
+  if (!Number.isFinite(value) || !Number.isFinite(min) || !Number.isFinite(max)) {
+    return 0;
+  }
+
+  if (max === min) {
+    if (max === 0) {
+      return 0;
+    }
+
+    return 100;
+  }
+
+  const ratio = (value - min) / (max - min);
+  const bounded = Math.max(0, Math.min(1, ratio));
+  return bounded * 100;
+};
+
+const formatNormalizedPercent = (value: number) => {
+  if (!Number.isFinite(value)) {
+    return '0٪';
+  }
+
+  const clamped = Math.max(0, Math.min(100, value));
+  return `${normalizedPercentFormatter.format(clamped)}٪`;
+};
+
+const formatMetricValue = (metricKey: keyof DiskIOStats, rawValue: number) => {
+  if (!Number.isFinite(rawValue)) {
+    return '-';
+  }
+
+  if (metricKey === 'read_bytes' || metricKey === 'write_bytes') {
+    return formatBytes(rawValue);
+  }
+
+  if (
+    metricKey === 'read_time' ||
+    metricKey === 'write_time' ||
+    metricKey === 'busy_time'
+  ) {
+    return `${durationFormatter.format(rawValue)} ms`;
+  }
+
+  return formatLargeNumber(rawValue);
+};
+
+const DeviceMetricsTrendChart = ({
+  devices,
   metrics,
   colors,
   height = 320,
-}: DiskMetricsLineChartProps) => {
-  const metricMaxValues = useMemo(
-    () =>
-      metrics.map((metric) =>
-        Math.max(...data.map((item) => item.metrics[metric.key] ?? 0), 0)
-      ),
-    [data, metrics]
+}: DeviceMetricsTrendChartProps) => {
+  const theme = useTheme();
+
+  const metricLabels = useMemo(
+    () => metrics.map((metric) => metric.label),
+    [metrics]
   );
 
-  const rawValueMatrix = useMemo(
+  const metricExtents = useMemo(
     () =>
-      data.map((item) =>
-        metrics.map((metric) => item.metrics[metric.key] ?? 0)
-      ),
-    [data, metrics]
-  );
+      metrics.map((metric) => {
+        const values = devices
+          .map((item) => Number(item.metrics[metric.key] ?? 0))
+          .filter((value) => Number.isFinite(value));
 
-  const dataset = useMemo(() => {
-    return metrics.map((metric, metricIndex) => {
-      const row: Record<string, number | string> = {
-        metricKey: metric.key,
-        metricLabel: metric.label,
-      };
-
-      const maxValue = metricMaxValues[metricIndex] || 0;
-
-      data.forEach((item, deviceIndex) => {
-        const seriesId = createSeriesId(deviceIndex);
-        const rawValue = item.metrics[metric.key] ?? 0;
-        const normalized = maxValue > 0 ? (rawValue / maxValue) * 100 : 0;
-        row[seriesId] = normalized;
-      });
-
-      return row;
-    });
-  }, [data, metricMaxValues, metrics]);
-
-  const series = useMemo(
-    () =>
-      data.map((item, deviceIndex) => {
-        const seriesId = createSeriesId(deviceIndex);
-        const color = colors[deviceIndex % colors.length];
+        if (values.length === 0) {
+          return { min: 0, max: 0 };
+        }
 
         return {
-          id: seriesId,
-          dataKey: seriesId,
-          label: item.name,
-          color,
-          showMark: true,
-          valueFormatter: (
-            normalizedValue: number | null,
-            context: { dataIndex: number }
-          ) => {
-            const metricIndex = context?.dataIndex ?? 0;
-            const metric = metrics[metricIndex];
-
-            if (!metric) {
-              if (normalizedValue == null) {
-                return '-';
-              }
-              const boundedFallback = Math.max(0, Math.min(100, normalizedValue));
-              return `${percentFormatter.format(boundedFallback)}٪`;
-            }
-
-            const rawValue = rawValueMatrix[deviceIndex]?.[metricIndex] ?? 0;
-            const formattedRaw = formatMetricValue(metric.key, rawValue);
-
-            if (normalizedValue == null) {
-              return formattedRaw;
-            }
-
-            const boundedPercent = Math.max(
-              0,
-              Math.min(100, normalizedValue)
-            );
-            const formattedPercent = percentFormatter.format(boundedPercent);
-            return `${formattedRaw} (${formattedPercent}٪ از بیشینه)`;
-          },
+          min: Math.min(...values),
+          max: Math.max(...values),
         };
       }),
-    [colors, data, metrics, rawValueMatrix]
+    [devices, metrics]
   );
 
-  if (data.length === 0) {
+  const lineSeries = useMemo<LineSeries[]>(
+    () =>
+      devices.map((device, index) => {
+        const normalizedValues = metricExtents.map(({ min, max }, metricIndex) => {
+          const rawValue = Number(device.metrics[metrics[metricIndex].key] ?? 0);
+          return normalizeMetricValue(rawValue, min, max);
+        });
+
+        return {
+          id: device.name,
+          label: device.name,
+          color: colors[index % colors.length],
+          data: normalizedValues,
+          curve: 'monotoneX',
+          showMark: true,
+          valueFormatter: (_value, { dataIndex }) => {
+            const activeIndex = dataIndex ?? 0;
+
+            return metrics
+              .map((metric, idx) => {
+                const rawValue = Number(device.metrics[metric.key] ?? 0);
+                const normalizedDisplay = normalizedValues[idx] ?? 0;
+                const prefix = idx === activeIndex ? '➤ ' : '  ';
+
+                return `${prefix}${metric.label}: ${formatMetricValue(
+                  metric.key,
+                  rawValue
+                )} (${formatNormalizedPercent(normalizedDisplay)} نسبی)`;
+              })
+              .join('\n');
+          },
+        } satisfies LineSeries;
+      }),
+    [devices, metricExtents, metrics, colors]
+  );
+
+  if (devices.length === 0 || lineSeries.length === 0) {
     return null;
   }
 
+  const chartWidth = Math.max(metricLabels.length * 160, 560);
+  const textColor = theme.palette.text.primary;
+
   return (
-    <Box sx={{ width: '100%', direction: 'ltr' }}>
+    <Box sx={{ width: '100%', overflowX: 'auto', direction: 'ltr' }}>
       <LineChart
         height={height}
-        dataset={dataset}
+        width={chartWidth}
+        series={lineSeries}
         xAxis={[
           {
-            dataKey: 'metricLabel',
-            scaleType: 'band',
-            tickLabelStyle: { fill: 'var(--color-text)' },
+            id: 'metrics',
+            data: metricLabels,
+            scaleType: 'point',
+            tickLabelStyle: { fill: textColor, fontSize: 12 },
+
           },
         ]}
         yAxis={[
           {
+            id: 'normalized',
             min: 0,
-            max: 105,
-            tickLabelStyle: { fill: 'var(--color-text)' },
-            valueFormatter: (value: number) =>
-              `${percentFormatter.format(
-                Math.max(0, Math.min(100, value))
-              )}٪`,
+            max: 100,
+            label: 'نمایش نسبی (٪)',
+            tickNumber: 5,
+            tickLabelStyle: { fill: textColor },
+            valueFormatter: (value) => formatNormalizedPercent(value),
           },
         ]}
-        series={series}
-        margin={{ top: 60, bottom: 60, left: 64, right: 32 }}
         grid={{ horizontal: true, vertical: false }}
-        axisHighlight={{ x: 'line', y: 'none' }}
+        margin={{ top: 32, bottom: 64, left: 60, right: 36 }}
         slotProps={{
           legend: {
-            position: { vertical: 'top', horizontal: 'center' },
-            sx: {
-              color: 'var(--color-text)',
-              fontFamily: 'var(--font-vazir)',
-            },
+            direction: 'row',
+            position: { vertical: 'bottom', horizontal: 'center' },
           },
           tooltip: {
-            sx: tooltipSx,
-            trigger: 'axis',
+            sx: {
+              direction: 'rtl',
+              '& .MuiChartsTooltip-table': {
+                direction: 'rtl',
+              },
+              '& .MuiTypography-root': {
+                whiteSpace: 'pre-line',
+              },
+            },
           },
+
         }}
       />
     </Box>
@@ -679,6 +703,8 @@ const Disk = () => {
 
   const ioSummary = useMemo<DeviceMetricsDatum[]>(() => {
 
+  const ioSummary = useMemo<DeviceMetricsEntry[]>(() => {
+
     if (!data?.summary?.disk_io_summary) {
       return [];
     }
@@ -839,23 +865,14 @@ const Disk = () => {
 
       <Stack spacing={2}>
         <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-          مقایسه شاخص‌های ورودی/خروجی (نمودار خطی نرمال‌شده)
+          مقایسه شاخص‌های ورودی/خروجی (نمودار روند نرمال‌سازی‌شده)
         </Typography>
         {topDevices.length > 0 ? (
-          <>
-            <DiskMetricsLineChart
-              data={topDevices}
-              metrics={PARALLEL_METRICS}
-              colors={chartColors}
-            />
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', textAlign: 'center' }}
-            >
-              مقادیر این نمودار بر اساس بیشترین مقدار هر شاخص نرمال شده‌اند؛ برای
-              مشاهده جزئیات هر شاخص روی نقاط نمودار توقف کنید.
-            </Typography>
-          </>
+          <DeviceMetricsTrendChart
+            devices={topDevices}
+            metrics={PARALLEL_METRICS}
+            colors={chartColors}
+          />
 
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
