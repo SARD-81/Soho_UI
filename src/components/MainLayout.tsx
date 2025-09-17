@@ -10,6 +10,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useState } from 'react';
+import { IoPersonCircleOutline } from 'react-icons/io5';
 import { MdClose, MdLogout, MdMenu, MdSearch } from 'react-icons/md';
 import { Outlet } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
@@ -139,8 +140,14 @@ const MainLayout: React.FC = () => {
             }}
           >
             {!isMobile && (
-              <Typography sx={{ color: 'var(--color-bg-primary)' }}>
-                خوش آمدید، {username}
+              <Typography
+                sx={{
+                  color: 'var(--color-bg-primary)',
+                  display: 'flex',
+                  gap: 1,
+                }}
+              >
+                خوش آمدید، {username} <IoPersonCircleOutline size={24} />
               </Typography>
             )}
             {isMobile ? (

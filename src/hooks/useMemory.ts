@@ -7,6 +7,8 @@ export type MemoryResponse = {
   percent?: number | null;
   used?: number | null;
   free?: number | null;
+  buffers?: number | null;
+  cached?: number | null;
   [key: string]: number | null | undefined;
 };
 

@@ -3,6 +3,7 @@ import MainLayout from '../components/MainLayout.tsx';
 import Dashboard from '../pages/Dashboard.tsx';
 import History from '../pages/History.tsx';
 import LoginPage from '../pages/LoginPage.tsx';
+import NotFoundPage from '../pages/NotFoundPage.tsx';
 import Settings from '../pages/Settings.tsx';
 import Share from '../pages/Share.tsx';
 import Users from '../pages/Users.tsx';
@@ -27,11 +28,12 @@ const router = createBrowserRouter([
       { path: 'settings', element: <Settings /> },
       { path: 'share', element: <Share /> },
       { path: 'history', element: <History /> },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
   {
     path: '*',
-    element: <Navigate to="/dashboard" replace />,
+    element: <NotFoundPage />,
   },
 ]);
 
