@@ -7,8 +7,22 @@ interface Bandwidth {
   unit: string;
 }
 
-interface NetworkInterface {
+export interface InterfaceAddress {
+  address?: string | null;
+  netmask?: string | null;
+  family?: string | null;
+  [key: string]: unknown;
+}
+
+export interface InterfaceStatus {
+  speed?: number | string | null;
+  [key: string]: unknown;
+}
+
+export interface NetworkInterface {
   bandwidth: Bandwidth;
+  addresses?: InterfaceAddress[] | Record<string, InterfaceAddress | null> | null;
+  status?: InterfaceStatus | null;
 }
 
 export interface NetworkData {

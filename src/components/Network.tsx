@@ -1,7 +1,7 @@
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { LineChart } from '@mui/x-charts';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useNetwork } from '../hooks/useNetwork';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useNetwork, type InterfaceAddress, type NetworkInterface } from '../hooks/useNetwork';
 import '../index.css';
 
 type ResponsiveChartContainerProps = {
@@ -66,6 +66,130 @@ type History = Record<
 
 const MAX_HISTORY_MS = 90 * 1000; // 1 minute 30 seconds
 
+type IPv4Info = { address: string; netmask: string | null };
+
+const trimIfStringHasValue = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const toCleanString = (value: unknown): string | null => {
+  if (typeof value === 'string') {
+    return trimIfStringHasValue(value);
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return null;
+};
+
+const flattenAddressEntries = (value: unknown): InterfaceAddress[] => {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap((entry) => flattenAddressEntries(entry));
+  }
+
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+
+    if ('address' in record || 'netmask' in record || 'family' in record) {
+      const candidate = record as InterfaceAddress;
+
+      return [
+        {
+          ...candidate,
+          address: toCleanString(candidate.address),
+          netmask: toCleanString(candidate.netmask),
+          family: toCleanString(candidate.family),
+        },
+      ];
+    }
+
+    return Object.values(record).flatMap((entry) => flattenAddressEntries(entry));
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = trimIfStringHasValue(value);
+    return trimmed ? [{ address: trimmed }] : [];
+  }
+
+  return [];
+};
+
+const extractIPv4Info = (
+  networkInterface: NetworkInterface | undefined
+): IPv4Info[] => {
+  if (!networkInterface) {
+    return [];
+  }
+
+  const flattened = flattenAddressEntries(networkInterface.addresses);
+
+  const ipv4Entries = flattened
+    .map((entry) => {
+      const address = toCleanString(entry.address);
+      const family = toCleanString(entry.family)?.toLowerCase() ?? '';
+
+      if (!address) {
+        return null;
+      }
+
+      const isIPv4ByAddress = address.includes('.') && !address.includes(':');
+      const isIPv4ByFamily =
+        family === 'ipv4' ||
+        family === 'inet' ||
+        family.includes('af_inet') ||
+        (family.includes('inet') && !family.includes('6'));
+
+      if (!isIPv4ByAddress && !isIPv4ByFamily) {
+        return null;
+      }
+
+      if (!isIPv4ByAddress) {
+        return null;
+      }
+
+      const netmask = toCleanString(entry.netmask);
+
+      return {
+        address,
+        netmask: netmask ?? null,
+      };
+    })
+    .filter((value): value is IPv4Info => Boolean(value));
+
+  return ipv4Entries.reduce<IPv4Info[]>((acc, current) => {
+    const existingIndex = acc.findIndex((item) => item.address === current.address);
+
+    if (existingIndex === -1) {
+      acc.push(current);
+    } else if (!acc[existingIndex].netmask && current.netmask) {
+      acc[existingIndex] = { ...acc[existingIndex], netmask: current.netmask };
+    }
+
+    return acc;
+  }, []);
+};
+
+const formatInterfaceSpeed = (
+  status: NetworkInterface['status'] | undefined,
+  formatter: Intl.NumberFormat
+) => {
+  const rawSpeed = status?.speed;
+  const numericSpeed = Number(rawSpeed);
+
+  if (!Number.isFinite(numericSpeed) || numericSpeed <= 0) {
+    return 'نامشخص';
+  }
+
+  return `${formatter.format(numericSpeed)} Mbps`;
+};
+
 const Network = () => {
   const { data, isLoading, error } = useNetwork();
   const theme = useTheme();
@@ -94,6 +218,11 @@ const Network = () => {
       return next;
     });
   }, [data]);
+
+  const speedFormatter = useMemo(
+    () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }),
+    []
+  );
 
   if (error) return <Typography>Error: {error.message}</Typography>;
 
@@ -124,6 +253,16 @@ const Network = () => {
     theme.palette.mode === 'dark'
       ? 'rgba(255, 255, 255, 0.12)'
       : 'rgba(0, 0, 0, 0.08)';
+
+  const metaInfoBorderColor =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.12)'
+      : 'rgba(0, 0, 0, 0.12)';
+
+  const metaInfoBackground =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.04)'
+      : 'rgba(0, 0, 0, 0.03)';
 
   return (
     <Box
@@ -192,7 +331,17 @@ const Network = () => {
         </ResponsiveChartContainer>
       ) : (
         names.map((name) => {
-          const unit = interfaces[name]?.bandwidth.unit ?? '';
+          const interfaceInfo = interfaces[name];
+          const unit = interfaceInfo?.bandwidth.unit ?? '';
+          const ipv4Details = extractIPv4Info(interfaceInfo);
+          const displayName =
+            ipv4Details.length > 0
+              ? `${name} (${ipv4Details.map((item) => item.address).join('، ')})`
+              : name;
+          const speedText = formatInterfaceSpeed(
+            interfaceInfo?.status,
+            speedFormatter
+          );
           const now = Date.now();
           const elapsed = now - startTimeRef.current;
           const min =
@@ -222,7 +371,7 @@ const Network = () => {
                 variant="h6"
                 sx={{ mb: 1, color: 'var(--color-primary)' }}
               >
-                {name}
+                {displayName}
               </Typography>
               <ResponsiveChartContainer height={chartSize}>
                 {(width) => (
@@ -279,6 +428,55 @@ const Network = () => {
                   />
                 )}
               </ResponsiveChartContainer>
+              <Box
+                sx={{
+                  mt: 2,
+                  width: '100%',
+                  bgcolor: metaInfoBackground,
+                  borderRadius: 2,
+                  px: 2,
+                  py: 1.5,
+                  border: `1px dashed ${metaInfoBorderColor}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 0.75,
+                }}
+              >
+                {ipv4Details.length > 0 ? (
+                  ipv4Details.map((entry, index) => {
+                    const labelPrefix =
+                      ipv4Details.length > 1
+                        ? `آدرس IPv4 ${index + 1}: `
+                        : 'آدرس IPv4: ';
+                    const netmaskSuffix = entry.netmask
+                      ? ` — نت‌ماسک: ${entry.netmask}`
+                      : '';
+
+                    return (
+                      <Typography
+                        key={`${entry.address}-${index}`}
+                        variant="body2"
+                        sx={{ color: theme.palette.text.secondary }}
+                      >
+                        {`${labelPrefix}${entry.address}${netmaskSuffix}`}
+                      </Typography>
+                    );
+                  })
+                ) : (
+                  <Typography
+                    variant="body2"
+                    sx={{ color: theme.palette.text.secondary }}
+                  >
+                    آدرس IPv4 در دسترس نیست.
+                  </Typography>
+                )}
+                <Typography
+                  variant="body2"
+                  sx={{ color: theme.palette.text.secondary }}
+                >
+                  سرعت لینک: {speedText}
+                </Typography>
+              </Box>
             </Box>
           );
         })
