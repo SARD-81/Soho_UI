@@ -30,9 +30,51 @@ const NotFoundPage = () => {
         py: { xs: 6, md: 8 },
         backgroundColor: 'var(--color-background)',
         fontFamily: 'var(--font-vazir)',
+        backgroundColor: 'var(--color-bg-body, #f5f7fa)',
       }}
     >
       <Box
+        aria-hidden
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(135deg, rgba(35,167,213,0.12), rgba(0,198,169,0.06) 45%, rgba(163,146,75,0.1))',
+          backgroundSize: 'cover',
+          opacity: 0.9,
+        }}
+      />
+
+      <Box
+        aria-hidden
+        sx={{
+          position: 'absolute',
+          width: { xs: 200, sm: 260 },
+          height: { xs: 200, sm: 260 },
+          top: { xs: '-70px', sm: '-90px' },
+          right: { xs: '-70px', sm: '-90px' },
+          borderRadius: '50%',
+          background: 'linear-gradient(150deg, rgba(35,167,213,0.22), rgba(0,198,169,0.12))',
+          opacity: 0.4,
+        }}
+      />
+
+      <Box
+        aria-hidden
+        sx={{
+          position: 'absolute',
+          width: { xs: 220, sm: 280 },
+          height: { xs: 220, sm: 280 },
+          bottom: { xs: '-90px', sm: '-110px' },
+          left: { xs: '-80px', sm: '-100px' },
+          borderRadius: '50%',
+          background: 'linear-gradient(160deg, rgba(163,146,75,0.2), rgba(35,167,213,0.14))',
+          opacity: 0.35,
+        }}
+      />
+
+      <Box
+
         sx={{
           position: 'relative',
           zIndex: 1,
@@ -40,19 +82,18 @@ const NotFoundPage = () => {
           maxWidth: 620,
           textAlign: 'center',
           px: { xs: 4, sm: 6 },
-          py: { xs: 5, sm: 7 },
-          borderRadius: 3,
-          backgroundColor: 'var(--color-card-bg)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid',
-          borderColor: (theme) =>
-            theme.palette.mode === 'dark'
-              ? 'rgba(255, 255, 255, 0.08)'
-              : 'rgba(15, 23, 42, 0.08)',
+          py: { xs: 6, sm: 8 },
+          borderRadius: 4,
+          backgroundColor: 'rgba(255, 255, 255, 0.92)',
+          backdropFilter: 'blur(18px)',
+          border: (theme) =>
+            `1px solid ${
+              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'
+            }`,
           boxShadow: (theme) =>
-            theme.palette.mode === 'dark'
-              ? '0 18px 48px rgba(0, 0, 0, 0.5)'
-              : '0 16px 44px rgba(15, 23, 42, 0.12)',
+            `0 18px 48px ${
+              theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.55)' : 'rgba(15,23,42,0.12)'
+            }`,
 
         }}
       >
@@ -63,8 +104,8 @@ const NotFoundPage = () => {
               fontFamily: 'var(--font-didot)',
               fontWeight: 600,
               lineHeight: 1,
-              letterSpacing: '0.12em',
-              fontSize: { xs: '3.75rem', sm: '4.5rem', md: '5.5rem' },
+              fontSize: { xs: '4.5rem', sm: '6rem', md: '7.5rem' },
+              letterSpacing: { xs: '0.15rem', sm: '0.3rem', md: '0.4rem' },
               color: 'var(--color-primary)',
 
             }}
@@ -80,7 +121,7 @@ const NotFoundPage = () => {
                 color: 'var(--color-bg-primary)',
               }}
             >
-              صفحه مورد نظر یافت نشد
+              صفحه مورد نظر شما یافت نشد
 
             </Typography>
             <Typography
@@ -92,7 +133,7 @@ const NotFoundPage = () => {
                 lineHeight: 1.9,
               }}
             >
-              صفحه‌ای که در جستجوی آن هستید در حال حاضر در دسترس نیست. احتمال دارد نشانی تغییر کرده یا صفحه حذف شده باشد. لطفاً نشانی وارد شده را بازبینی کنید یا از گزینه‌های زیر برای ادامه استفاده نمایید.
+              احتمال دارد نشانی وارد شده تغییر کرده یا دیگر در دسترس نباشد. لطفاً نشانی را بازبینی کنید یا یکی از گزینه‌های زیر را برگزینید.
 
             </Typography>
           </Stack>
@@ -110,17 +151,20 @@ const NotFoundPage = () => {
               startIcon={<MdHome size={22} />}
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
-                borderRadius: 2,
+                borderRadius: '12px',
                 py: 1.4,
                 fontWeight: 600,
                 fontSize: '1rem',
-                boxShadow: 'none',
+                color: 'var(--color-bg-primary)',
+                backgroundColor: 'var(--color-primary)',
+                boxShadow: '0 14px 32px rgba(0, 120, 114, 0.28)',
                 '&:hover': {
-                  boxShadow: 'none',
+                  backgroundColor: 'var(--color-primary-dark, #028c7f)',
+                  boxShadow: '0 16px 40px rgba(0, 120, 114, 0.34)',
                 },
               }}
             >
-              {isAuthenticated ? 'ورود به داشبورد' : 'ورود به سامانه'}
+              {isAuthenticated ? 'بازگشت به داشبورد' : 'انتقال به صفحه ورود'}
 
             </Button>
 
@@ -130,7 +174,7 @@ const NotFoundPage = () => {
               startIcon={<MdArrowBack size={22} />}
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
-                borderRadius: 2,
+                borderRadius: '12px',
                 py: 1.4,
 
                 fontWeight: 600,
@@ -157,7 +201,8 @@ const NotFoundPage = () => {
               opacity: 0.8,
             }}
           >
-            شناسه خطا: ۴۰۴
+            کد خطا: ۴۰۴
+
           </Typography>
         </Stack>
       </Box>
