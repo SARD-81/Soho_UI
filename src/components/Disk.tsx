@@ -11,6 +11,7 @@ import type { Theme } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { RadarChart, type RadarSeries } from '@mui/x-charts/RadarChart';
+
 import { PieChart } from '@mui/x-charts/PieChart';
 import { Fragment, useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
@@ -30,12 +31,44 @@ const METRIC_KEYS: Array<keyof DiskIOStats> = [
   'busy_time',
 ];
 
-const PARALLEL_METRICS: Array<{ key: keyof DiskIOStats; label: string }> = [
-  { key: 'read_count', label: 'تعداد خواندن' },
-  { key: 'write_count', label: 'تعداد نوشتن' },
-  { key: 'read_bytes', label: 'حجم خوانده‌شده' },
-  { key: 'write_bytes', label: 'حجم نوشته‌شده' },
-  { key: 'busy_time', label: 'زمان مشغولی' },
+type DiskMetricConfig = {
+  key: keyof DiskIOStats;
+  label: string;
+  getValue: (metrics: NormalizedMetrics) => number;
+  format: (value: number) => string;
+};
+
+const IO_METRICS: DiskMetricConfig[] = [
+  {
+    key: 'read_count',
+    label: 'تعداد خواندن',
+    getValue: (metrics) => metrics.read_count,
+    format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
+  },
+  {
+    key: 'write_count',
+    label: 'تعداد نوشتن',
+    getValue: (metrics) => metrics.write_count,
+    format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
+  },
+  {
+    key: 'read_bytes',
+    label: 'حجم خوانده‌شده',
+    getValue: (metrics) => metrics.read_bytes,
+    format: (value) => formatBytes(Math.max(value, 0)),
+  },
+  {
+    key: 'write_bytes',
+    label: 'حجم نوشته‌شده',
+    getValue: (metrics) => metrics.write_bytes,
+    format: (value) => formatBytes(Math.max(value, 0)),
+  },
+  {
+    key: 'busy_time',
+    label: 'زمان مشغولی (ms)',
+    getValue: (metrics) => metrics.busy_time,
+    format: (value) => `${formatLargeNumber(Math.max(value, 0))} ms`,
+  },
 ];
 
 const formatBytes = (value: number) => {
@@ -59,17 +92,33 @@ const formatBytes = (value: number) => {
   return `${formatter.format(currentValue)} ${units[unitIndex]}`;
 };
 
-const formatLargeNumber = (value: number) => {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(1)}B`;
+const persianNumberFormatter = new Intl.NumberFormat('fa-IR');
+
+const percentFormatter = new Intl.NumberFormat('fa-IR', {
+  maximumFractionDigits: 0,
+});
+
+const formatMetricValue = (metricKey: keyof DiskIOStats, value: number) => {
+  if (!Number.isFinite(value)) {
+    return '-';
   }
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M`;
+
+  if (metricKey === 'read_bytes' || metricKey === 'write_bytes') {
+    return formatBytes(value);
   }
-  if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(1)}K`;
+
+  if (metricKey === 'busy_time') {
+    if (Math.abs(value) >= 1000) {
+      const seconds = value / 1000;
+      const secondsFormatter = new Intl.NumberFormat('fa-IR', {
+        maximumFractionDigits: Math.abs(seconds) >= 100 ? 0 : 1,
+      });
+      return `${secondsFormatter.format(seconds)} ثانیه`;
+    }
+    return `${persianNumberFormatter.format(value)} میلی‌ثانیه`;
   }
-  return value.toFixed(0);
+
+  return persianNumberFormatter.format(value);
 };
 
 const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
@@ -119,6 +168,7 @@ const createCardSx = (theme: Theme) => {
 };
 
 interface DeviceMetricsEntry {
+
   name: string;
   metrics: NormalizedMetrics;
 }
@@ -205,6 +255,7 @@ const formatMetricValue = (metricKey: keyof DiskIOStats, rawValue: number) => {
 
 interface DeviceMetricsRadarChartProps {
   devices: DeviceMetricsEntry[];
+
   metrics: typeof PARALLEL_METRICS;
   metricExtents: MetricExtent[];
   colors: string[];
@@ -573,9 +624,11 @@ const DeviceMetricsHeatmap = ({
           شدت رنگ بیشتر به معنی سهم نسبی بالاتر در شاخص است.
         </Typography>
       </Stack>
+
     </Box>
   );
 };
+
 
 export const DiskOverview = () => {
   const { data, isLoading, error } = useDisk();
@@ -917,27 +970,12 @@ const Disk = () => {
   const theme = useTheme();
   const cardSx = createCardSx(theme);
 
-  const tooltipSx = {
-    direction: 'rtl',
-    '& .MuiChartsTooltip-table': {
-      direction: 'rtl',
-      color: 'var(--color-text)',
-    },
-    '& .MuiChartsTooltip-label': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-value': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-cell': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-  } as const;
+  const ioSummary = useMemo<DeviceMetricsDatum[]>(() => {
 
   const ioSummary = useMemo<DeviceMetricsEntry[]>(() => {
+
+  const ioSummary = useMemo<DeviceMetricsEntry[]>(() => {
+
     if (!data?.summary?.disk_io_summary) {
       return [];
     }
@@ -948,7 +986,7 @@ const Disk = () => {
         metrics: normalizeMetrics(metrics),
       }))
       .filter((entry) =>
-        PARALLEL_METRICS.some((metric) => entry.metrics[metric.key] > 0)
+        IO_METRICS.some((metric) => metric.getValue(entry.metrics) > 0)
       );
   }, [data?.summary?.disk_io_summary]);
 
@@ -968,13 +1006,39 @@ const Disk = () => {
       .slice(0, 5);
   }, [ioSummary]);
 
-  const barChartDataset = useMemo(
-    () =>
-      topDevices.map((item) => ({
-        device: item.name,
-        readGB: item.metrics.read_bytes / BYTES_IN_GB,
-        writeGB: item.metrics.write_bytes / BYTES_IN_GB,
-      })),
+  const { dataset: ioLineDataset, maxValues: ioMetricMaxValues } = useMemo(
+    () => {
+      const maxValues = IO_METRICS.reduce(
+        (acc, metric) => {
+          const values = topDevices.map((item) => {
+            const rawValue = metric.getValue(item.metrics);
+            return Number.isFinite(rawValue) ? rawValue : 0;
+          });
+
+          acc[metric.key] = Math.max(...values, 0);
+          return acc;
+        },
+        {} as Record<keyof DiskIOStats, number>
+      );
+
+      const dataset = topDevices.map((item) => {
+        const entry: Record<string, string | number> = { device: item.name };
+
+        IO_METRICS.forEach((metric) => {
+          const rawValue = metric.getValue(item.metrics);
+          const max = maxValues[metric.key];
+          if (max > 0 && Number.isFinite(rawValue)) {
+            entry[metric.key] = clampPercent((rawValue / max) * 100);
+          } else {
+            entry[metric.key] = 0;
+          }
+        });
+
+        return entry;
+      });
+
+      return { dataset, maxValues };
+    },
     [topDevices]
   );
 
@@ -999,6 +1063,7 @@ const Disk = () => {
 
   const metricExtents = useMemo(
     () => computeMetricExtents(topDevices, PARALLEL_METRICS),
+
     [topDevices]
   );
 
@@ -1080,6 +1145,7 @@ const Disk = () => {
               />
             </Box>
           </Stack>
+
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             شاخص قابل توجهی برای نمایش وجود ندارد.
