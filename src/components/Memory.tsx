@@ -279,7 +279,6 @@ const Memory = () => {
                   color: remainingArcColor,
                 },
               ],
-              innerRadius: 70,
               outerRadius: 120,
               paddingAngle: 2,
               cornerRadius: 6,
