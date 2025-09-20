@@ -1,18 +1,17 @@
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { LineChart } from '@mui/x-charts';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type {
+  History,
+  IPv4Info,
+  ResponsiveChartContainerProps,
+} from '../@types/network';
 import {
   useNetwork,
   type InterfaceAddress,
   type NetworkInterface,
 } from '../hooks/useNetwork';
 import '../index.css';
-import { createCardSx } from './cardStyles';
-
-type ResponsiveChartContainerProps = {
-  height: number;
-  children: (width: number) => ReactNode;
-};
 
 const ResponsiveChartContainer = ({
   height,
@@ -64,14 +63,7 @@ const ResponsiveChartContainer = ({
   );
 };
 
-type History = Record<
-  string,
-  Array<{ time: number; upload: number; download: number }>
->;
-
 const MAX_HISTORY_MS = 90 * 1000; // 1 minute 30 seconds
-
-type IPv4Info = { address: string; netmask: string | null };
 
 const trimIfStringHasValue = (value: string) => {
   const trimmed = value.trim();
@@ -258,6 +250,11 @@ const Network = () => {
     },
   } as const;
 
+  const cardBorderColor =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.12)'
+      : 'rgba(0, 0, 0, 0.08)';
+
   const metaInfoBorderColor =
     theme.palette.mode === 'dark'
       ? 'rgba(255, 255, 255, 0.12)'
@@ -268,13 +265,24 @@ const Network = () => {
       ? 'rgba(255, 255, 255, 0.04)'
       : 'rgba(0, 0, 0, 0.03)';
 
-  const cardSx = {
-    ...createCardSx(theme),
-    alignItems: 'stretch',
-  } as const;
-
   return (
-    <Box sx={cardSx}>
+    <Box
+      sx={{
+        p: 3,
+        bgcolor: 'var(--color-card-bg)',
+        borderRadius: 3,
+        mb: 3,
+        color: 'var(--color-bg-primary)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        gap: 3,
+        border: `1px solid ${cardBorderColor}`,
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
+        width: '100%',
+        height: '100%',
+      }}
+    >
       <Typography
         variant="subtitle2"
         sx={{

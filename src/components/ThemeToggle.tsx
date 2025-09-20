@@ -1,12 +1,8 @@
-import { IconButton, type SxProps, type Theme } from '@mui/material';
+import { IconButton } from '@mui/material';
 import React from 'react';
 import { LuMoon, LuSun } from 'react-icons/lu';
+import type { ThemeToggleProps } from '../@types/themeToggle';
 import { useTheme } from '../contexts/ThemeContext';
-
-interface ThemeToggleProps {
-  fixed?: boolean;
-  sx?: SxProps<Theme>;
-}
 
 const ThemeToggle: React.FC<ThemeToggleProps> = ({ fixed = true, sx }) => {
   const { isDark, toggleTheme } = useTheme();

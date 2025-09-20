@@ -17,35 +17,11 @@ import { toast } from 'react-hot-toast';
 import { FaEye, FaEyeSlash, FaLock, FaUser } from 'react-icons/fa';
 import { LuLogIn } from 'react-icons/lu';
 import { useNavigate } from 'react-router-dom';
+import { loginTextFieldSx } from '../constants/loginForm';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { useLogin } from '../hooks/useLogin';
 import { useRememberUsername } from '../hooks/useRememberUsername';
 import { type LoginFormData, loginSchema } from '../schemas/authSchema';
-
-const TextFieldSx = {
-  '& .MuiOutlinedInput-root': {
-    borderRadius: 2.5,
-    color: 'var(--color-text)',
-    backgroundColor: 'var(--color-input-bg)',
-    border: '1px solid var(--color-input-border)',
-    transition: 'all 0.3s ease',
-    '&:hover': {
-      backgroundColor: 'var(--color-input-bg)',
-      borderColor: 'var(--color-primary-light)',
-    },
-    '&.Mui-focused': {
-      backgroundColor: 'var(--color-input-bg)',
-      borderColor: 'var(--color-primary)',
-      boxShadow: '0 0 0 3px rgba(126, 87, 194, 0.1)',
-    },
-    '&.Mui-error': {
-      borderColor: 'var(--color-error)',
-    },
-  },
-  '& .MuiOutlinedInput-input': {
-    padding: '12px 14px',
-  },
-};
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -120,7 +96,7 @@ function LoginForm() {
                   ),
                 },
               }}
-              sx={TextFieldSx}
+              sx={loginTextFieldSx}
             />
           )}
         />
@@ -168,7 +144,7 @@ function LoginForm() {
                   ),
                 },
               }}
-              sx={TextFieldSx}
+              sx={loginTextFieldSx}
             />
           )}
         />

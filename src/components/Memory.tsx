@@ -1,18 +1,10 @@
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
+import { BYTE_UNITS, clampPercent, parseNumeric } from '../constants/memory';
 import { useMemory } from '../hooks/useMemory';
+import { formatBytes } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
-import { formatBytes } from '../util/formatters';
-
-const BYTE_UNITS = ['B', 'KB', 'MB', 'GB'] as const;
-
-const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
-
-const parseNumeric = (value: unknown): number | null => {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : null;
-};
 
 const Memory = () => {
   const { data, isLoading, error } = useMemory();

@@ -7,7 +7,7 @@ export const createCardSx = (theme: Theme): SxProps<Theme> => {
       : 'rgba(0, 0, 0, 0.08)';
 
   return {
-    width: '100%',
+    // width: '100%',
     p: 3,
     bgcolor: 'var(--color-card-bg)',
     borderRadius: 3,
