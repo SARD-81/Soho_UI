@@ -15,6 +15,7 @@ import {
   diskPercentFormatter,
   normalizeMetrics,
   safeNumber,
+  tooltipMultilineSx,
 } from '../constants/disk';
 import { useDisk } from '../hooks/useDisk';
 import '../index.css';
@@ -27,15 +28,6 @@ import { createCardSx } from './cardStyles';
 import AppBarChart from './charts/AppBarChart';
 import AppLineChart from './charts/AppLineChart';
 import AppPieChart from './charts/AppPieChart';
-
-const tooltipMultilineSx = {
-  '& .MuiChartsTooltip-cell': {
-    whiteSpace: 'pre-line',
-  },
-  '& .MuiChartsTooltip-value': {
-    whiteSpace: 'pre-line',
-  },
-} as const;
 
 export const DiskOverview = () => {
   const { data, isLoading, error } = useDisk();

@@ -193,7 +193,7 @@ const Memory = () => {
   ];
 
   return (
-    <Box sx={cardSx}>
+    <Box sx={{ ...cardSx, width: '100%' }}>
       <Typography
         variant="subtitle2"
         sx={{

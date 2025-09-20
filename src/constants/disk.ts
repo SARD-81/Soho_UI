@@ -72,3 +72,12 @@ export const diskPercentFormatter = new Intl.NumberFormat('fa-IR', {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
 });
+
+export const tooltipMultilineSx = {
+  '& .MuiChartsTooltip-cell': {
+    whiteSpace: 'pre-line',
+  },
+  '& .MuiChartsTooltip-value': {
+    whiteSpace: 'pre-line',
+  },
+} as const;
