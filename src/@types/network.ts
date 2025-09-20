@@ -1,10 +1,3 @@
-import type { ReactNode } from 'react';
-
-export type ResponsiveChartContainerProps = {
-  height: number;
-  children: (width: number) => ReactNode;
-};
-
 export type HistoryPoint = {
   time: number;
   upload: number;

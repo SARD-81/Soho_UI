@@ -1,10 +1,10 @@
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import { BYTE_UNITS, clampPercent, parseNumeric } from '../constants/memory';
 import { useMemory } from '../hooks/useMemory';
 import { formatBytes } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
+import AppPieChart from './charts/AppPieChart';
 
 const Memory = () => {
   const { data, isLoading, error } = useMemory();
@@ -237,7 +237,7 @@ const Memory = () => {
       </Box>
 
       <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-        <PieChart
+        <AppPieChart
           series={[
             {
               id: 'memory-usage',
@@ -290,21 +290,11 @@ const Memory = () => {
           slotProps={{
             tooltip: {
               sx: {
-                direction: 'rtl',
-                '& .MuiChartsTooltip-table': {
-                  direction: 'rtl',
-                  color: 'var(--color-text)',
-                },
                 '& .MuiChartsTooltip-cell': {
                   whiteSpace: 'pre-line',
-                  fontFamily: 'var(--font-vazir)',
-                  color: 'var(--color-text)',
-                },
-                '& .MuiChartsTooltip-label': {
-                  color: 'var(--color-text)',
                 },
                 '& .MuiChartsTooltip-value': {
-                  color: 'var(--color-text)',
+                  whiteSpace: 'pre-line',
                 },
               },
             },
