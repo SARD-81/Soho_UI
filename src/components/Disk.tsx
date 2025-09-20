@@ -6,7 +6,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import type { Theme } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
@@ -14,6 +13,7 @@ import { useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
 import { useDisk } from '../hooks/useDisk';
 import '../index.css';
+import { createCardSx } from './cardStyles';
 
 const BYTES_IN_GB = 1024 ** 3;
 const METRIC_KEYS: Array<keyof DiskIOStats> = [
@@ -147,28 +147,6 @@ const diskPercentFormatter = new Intl.NumberFormat('fa-IR', {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
 });
-
-const createCardSx = (theme: Theme) => {
-  const cardBorderColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(0, 0, 0, 0.08)';
-
-  return {
-    p: 3,
-    bgcolor: 'var(--color-card-bg)',
-    borderRadius: 3,
-    mb: 3,
-    color: 'var(--color-bg-primary)',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: 3,
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
-    border: `1px solid ${cardBorderColor}`,
-    backdropFilter: 'blur(14px)',
-    height: '100%',
-  } as const;
-};
 
 interface DeviceMetricDatum {
   name: string;
