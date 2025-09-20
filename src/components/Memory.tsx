@@ -2,6 +2,7 @@ import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import { useMemory } from '../hooks/useMemory';
+import { createCardSx } from './cardStyles';
 import { formatBytes } from '../util/formatters';
 
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB'] as const;
@@ -46,11 +47,6 @@ const Memory = () => {
     });
   };
 
-  const containerBorderColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(0, 0, 0, 0.08)';
-
   const statsDividerColor =
     theme.palette.mode === 'dark'
       ? 'rgba(255, 255, 255, 0.08)'
@@ -71,21 +67,7 @@ const Memory = () => {
       ? 'rgba(255, 255, 255, 0.08)'
       : 'rgba(0, 0, 0, 0.08)';
 
-  const cardSx = {
-    width: '100%',
-    p: 3,
-    bgcolor: 'var(--color-card-bg)',
-    borderRadius: 3,
-    mb: 3,
-    color: 'var(--color-bg-primary)',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: 3,
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
-    border: `1px solid ${containerBorderColor}`,
-    backdropFilter: 'blur(14px)',
-    height: '100%',
-  };
+  const cardSx = createCardSx(theme);
 
   if (isLoading) {
     return (

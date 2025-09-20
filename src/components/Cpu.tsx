@@ -8,6 +8,7 @@ import {
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 import { useMemo } from 'react';
 import { useCpu } from '../hooks/useCpu';
+import { createCardSx } from './cardStyles';
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
@@ -98,27 +99,10 @@ const Cpu = () => {
       ? 'rgba(255, 255, 255, 0.04)'
       : 'rgba(0, 0, 0, 0.03)';
 
-  const cardBorderColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(0, 0, 0, 0.08)';
-
   const cardSx = {
-    width: '100%',
-    p: 3,
-    bgcolor: 'var(--color-card-bg)',
-    borderRadius: 3,
-    mb: 3,
-    color: 'var(--color-bg-primary)',
-    display: 'flex',
-    flexDirection: 'column' as const,
+    ...createCardSx(theme),
     alignItems: 'center',
-    gap: 3,
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
-    border: `1px solid ${cardBorderColor}`,
-    backdropFilter: 'blur(14px)',
-    height: '100%',
-  };
+  } as const;
 
   const stats = [
     {

@@ -7,6 +7,7 @@ import {
   type NetworkInterface,
 } from '../hooks/useNetwork';
 import '../index.css';
+import { createCardSx } from './cardStyles';
 
 type ResponsiveChartContainerProps = {
   height: number;
@@ -257,11 +258,6 @@ const Network = () => {
     },
   } as const;
 
-  const cardBorderColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(0, 0, 0, 0.08)';
-
   const metaInfoBorderColor =
     theme.palette.mode === 'dark'
       ? 'rgba(255, 255, 255, 0.12)'
@@ -272,24 +268,13 @@ const Network = () => {
       ? 'rgba(255, 255, 255, 0.04)'
       : 'rgba(0, 0, 0, 0.03)';
 
+  const cardSx = {
+    ...createCardSx(theme),
+    alignItems: 'stretch',
+  } as const;
+
   return (
-    <Box
-      sx={{
-        p: 3,
-        bgcolor: 'var(--color-card-bg)',
-        borderRadius: 3,
-        mb: 3,
-        color: 'var(--color-bg-primary)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'stretch',
-        gap: 3,
-        border: `1px solid ${cardBorderColor}`,
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
-        width: '100%',
-        height: '100%',
-      }}
-    >
+    <Box sx={cardSx}>
       <Typography
         variant="subtitle2"
         sx={{
