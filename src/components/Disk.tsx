@@ -1,16 +1,23 @@
 import {
   Box,
   Divider,
+  Skeleton,
   Stack,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { BarChart } from '@mui/x-charts/BarChart';
-import { LineChart } from '@mui/x-charts/LineChart';
-import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
-import type { DiskIOStats } from '../@types/disk';
+import type { DeviceMetricDatum, NormalizedMetrics } from '../@types/disk';
+import {
+  BYTES_IN_GB,
+  IO_METRICS,
+  clampPercent,
+  diskPercentFormatter,
+  normalizeMetrics,
+  safeNumber,
+  tooltipMultilineSx,
+} from '../constants/disk';
 import { useDisk } from '../hooks/useDisk';
 import '../index.css';
 import {
@@ -19,88 +26,9 @@ import {
   formatLargeNumber,
 } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
-
-const BYTES_IN_GB = 1024 ** 3;
-const METRIC_KEYS: Array<keyof DiskIOStats> = [
-  'read_count',
-  'write_count',
-  'read_bytes',
-  'write_bytes',
-  'read_time',
-  'write_time',
-  'read_merged_count',
-  'write_merged_count',
-  'busy_time',
-];
-
-type DiskMetricConfig = {
-  key: keyof DiskIOStats;
-  label: string;
-  getValue: (metrics: NormalizedMetrics) => number;
-  format: (value: number) => string;
-};
-
-const IO_METRICS: DiskMetricConfig[] = [
-  {
-    key: 'read_count',
-    label: 'تعداد خواندن',
-    getValue: (metrics) => metrics.read_count,
-    format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
-  },
-  {
-    key: 'write_count',
-    label: 'تعداد نوشتن',
-    getValue: (metrics) => metrics.write_count,
-    format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
-  },
-  {
-    key: 'read_bytes',
-    label: 'حجم خوانده‌شده',
-    getValue: (metrics) => metrics.read_bytes,
-    format: (value) => formatBytes(Math.max(value, 0)),
-  },
-  {
-    key: 'write_bytes',
-    label: 'حجم نوشته‌شده',
-    getValue: (metrics) => metrics.write_bytes,
-    format: (value) => formatBytes(Math.max(value, 0)),
-  },
-  {
-    key: 'busy_time',
-    label: 'زمان مشغولی (ms)',
-    getValue: (metrics) => metrics.busy_time,
-    format: (value) => `${formatLargeNumber(Math.max(value, 0))} ms`,
-  },
-];
-
-const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
-  return METRIC_KEYS.reduce(
-    (acc, key) => {
-      acc[key] = Number(metrics?.[key] ?? 0);
-      return acc;
-    },
-    {} as Record<keyof DiskIOStats, number>
-  );
-};
-
-type NormalizedMetrics = ReturnType<typeof normalizeMetrics>;
-
-const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
-
-const safeNumber = (value: unknown) => {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : 0;
-};
-
-const diskPercentFormatter = new Intl.NumberFormat('fa-IR', {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-});
-
-interface DeviceMetricDatum {
-  name: string;
-  metrics: NormalizedMetrics;
-}
+import AppBarChart from './charts/AppBarChart';
+import AppLineChart from './charts/AppLineChart';
+import AppPieChart from './charts/AppPieChart';
 
 export const DiskOverview = () => {
   const { data, isLoading, error } = useDisk();
@@ -129,7 +57,109 @@ export const DiskOverview = () => {
   if (isLoading) {
     return (
       <Box sx={cardSx}>
-        <Typography variant="body2">در حال بارگذاری اطلاعات دیسک...</Typography>
+        <Skeleton
+          variant="text"
+          width="40%"
+          height={28}
+          sx={{ borderRadius: 1 }}
+        />
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          {Array.from({ length: 2 }).map((_, index) => (
+            <Box
+              key={index}
+              sx={{
+                flex: '1 1 240px',
+                minWidth: 220,
+                p: 2.5,
+                borderRadius: 3,
+                bgcolor: 'var(--color-card-bg)',
+                border: `1px solid ${cardBorderColor}`,
+                boxShadow: '0 16px 32px rgba(0, 0, 0, 0.18)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+              }}
+            >
+              <Skeleton
+                variant="text"
+                width="70%"
+                height={22}
+                sx={{ borderRadius: 1, alignSelf: 'stretch' }}
+              />
+              <Skeleton
+                variant="text"
+                width="50%"
+                height={18}
+                sx={{ borderRadius: 1, alignSelf: 'stretch' }}
+              />
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
+                <Skeleton
+                  variant="circular"
+                  width={chartSize}
+                  height={chartSize}
+                  sx={{ bgcolor: 'action.hover' }}
+                />
+              </Box>
+              <Box
+                sx={{
+                  width: '100%',
+                  bgcolor: statsBackground,
+                  borderRadius: 2,
+                  px: 2,
+                  py: 1.5,
+                  border: `1px solid ${statsDividerColor}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}
+              >
+                {Array.from({ length: 4 }).map((_, statIndex) => (
+                  <Box
+                    key={statIndex}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 2,
+                      borderBottom:
+                        statIndex === 3
+                          ? 'none'
+                          : `1px dashed ${statsDividerColor}`,
+                      py: 0.75,
+                    }}
+                  >
+                    <Skeleton
+                      variant="text"
+                      width="60%"
+                      height={16}
+                      sx={{ borderRadius: 1 }}
+                    />
+                    <Skeleton
+                      variant="text"
+                      width="30%"
+                      height={16}
+                      sx={{ borderRadius: 1 }}
+                    />
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          ))}
+        </Box>
       </Box>
     );
   }
@@ -274,7 +304,7 @@ export const DiskOverview = () => {
                     justifyContent: 'center',
                   }}
                 >
-                  <PieChart
+                  <AppPieChart
                     series={[
                       {
                         id: `${disk.device}-usage`,
@@ -326,24 +356,7 @@ export const DiskOverview = () => {
                     hideLegend
                     slotProps={{
                       tooltip: {
-                        sx: {
-                          direction: 'rtl',
-                          '& .MuiChartsTooltip-table': {
-                            direction: 'rtl',
-                            color: 'var(--color-text)',
-                          },
-                          '& .MuiChartsTooltip-cell': {
-                            whiteSpace: 'pre-line',
-                            fontFamily: 'var(--font-vazir)',
-                            color: 'var(--color-text)',
-                          },
-                          '& .MuiChartsTooltip-label': {
-                            color: 'var(--color-text)',
-                          },
-                          '& .MuiChartsTooltip-value': {
-                            color: 'var(--color-text)',
-                          },
-                        },
+                        sx: tooltipMultilineSx,
                       },
                     }}
                   />
@@ -441,28 +454,6 @@ const Disk = () => {
   const { data, isLoading, error } = useDisk();
   const theme = useTheme();
   const cardSx = createCardSx(theme);
-
-  const tooltipSx = {
-    direction: 'rtl',
-    '& .MuiChartsTooltip-table': {
-      direction: 'rtl',
-      color: 'var(--color-text)',
-    },
-    '& .MuiChartsTooltip-label': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-value': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-      whiteSpace: 'pre-line',
-    },
-    '& .MuiChartsTooltip-cell': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-      whiteSpace: 'pre-line',
-    },
-  } as const;
 
   const ioSummary = useMemo<DeviceMetricDatum[]>(() => {
     if (!data?.summary?.disk_io_summary) {
@@ -609,8 +600,76 @@ const Disk = () => {
 
   if (isLoading) {
     return (
-      <Box sx={cardSx}>
-        <Typography variant="body2">در حال بارگذاری اطلاعات دیسک...</Typography>
+      <Box sx={{ ...cardSx, width: '100%' }}>
+        <Skeleton
+          variant="text"
+          width="35%"
+          height={28}
+          sx={{ borderRadius: 1 }}
+        />
+        <Divider sx={{ my: 1 }} />
+        <Stack spacing={4}>
+          <Box>
+            <Skeleton
+              variant="text"
+              width="40%"
+              height={22}
+              sx={{ borderRadius: 1 }}
+            />
+            <Skeleton
+              variant="rectangular"
+              height={220}
+              sx={{ mt: 2, borderRadius: 2, bgcolor: 'action.hover' }}
+            />
+          </Box>
+          <Box>
+            <Skeleton
+              variant="text"
+              width="40%"
+              height={22}
+              sx={{ borderRadius: 1 }}
+            />
+            <Skeleton
+              variant="rectangular"
+              height={220}
+              sx={{ mt: 2, borderRadius: 2, bgcolor: 'action.hover' }}
+            />
+          </Box>
+          <Box>
+            <Skeleton
+              variant="text"
+              width="50%"
+              height={22}
+              sx={{ borderRadius: 1 }}
+            />
+            <Stack spacing={1.5} sx={{ mt: 1 }}>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
+                  <Skeleton
+                    variant="text"
+                    width="45%"
+                    height={18}
+                    sx={{ borderRadius: 1 }}
+                  />
+                  <Skeleton
+                    variant="text"
+                    width="30%"
+                    height={18}
+                    sx={{ borderRadius: 1 }}
+                  />
+                </Box>
+              ))}
+            </Stack>
+          </Box>
+        </Stack>
       </Box>
     );
   }
@@ -655,7 +714,7 @@ const Disk = () => {
                 تعداد عملیات خواندن/نوشتن
               </Typography>
               <Box sx={{ width: '100%', direction: 'ltr' }}>
-                <LineChart
+                <AppLineChart
                   dataset={ioChartDataset}
                   series={ioCountSeries}
                   xAxis={[
@@ -685,14 +744,7 @@ const Disk = () => {
                   height={300}
                   margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
                   slotProps={{
-                    tooltip: { sx: tooltipSx },
-                    legend: {
-                      sx: {
-                        color: 'var(--color-text)',
-                        fontFamily: 'var(--font-vazir)',
-                      },
-                      position: { vertical: 'top', horizontal: 'center' },
-                    },
+                    tooltip: { sx: tooltipMultilineSx },
                   }}
                 />
               </Box>
@@ -703,7 +755,7 @@ const Disk = () => {
                 حجم داده خواندن/نوشتن
               </Typography>
               <Box sx={{ width: '100%', direction: 'ltr' }}>
-                <LineChart
+                <AppLineChart
                   dataset={ioChartDataset}
                   series={ioBytesSeries}
                   xAxis={[
@@ -733,14 +785,7 @@ const Disk = () => {
                   height={300}
                   margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
                   slotProps={{
-                    tooltip: { sx: tooltipSx },
-                    legend: {
-                      sx: {
-                        color: 'var(--color-text)',
-                        fontFamily: 'var(--font-vazir)',
-                      },
-                      position: { vertical: 'top', horizontal: 'center' },
-                    },
+                    tooltip: { sx: tooltipMultilineSx },
                   }}
                 />
               </Box>
@@ -761,7 +806,7 @@ const Disk = () => {
         </Typography>
         {barChartDataset.length > 0 ? (
           <Box sx={{ width: '100%', direction: 'ltr' }}>
-            <BarChart
+            <AppBarChart
               dataset={barChartDataset}
               xAxis={[{ scaleType: 'band', dataKey: 'device' }]}
               yAxis={[
@@ -792,14 +837,7 @@ const Disk = () => {
               height={280}
               margin={{ top: 60, right: 40, left: 40 }}
               slotProps={{
-                tooltip: { sx: tooltipSx },
-                legend: {
-                  sx: {
-                    color: 'var(--color-text)',
-                    fontFamily: 'var(--font-vazir)',
-                  },
-                  position: { vertical: 'top', horizontal: 'center' },
-                },
+                tooltip: { sx: tooltipMultilineSx },
               }}
             />
           </Box>

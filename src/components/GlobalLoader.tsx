@@ -6,6 +6,7 @@ export default function GlobalLoader() {
     predicate: (query) =>
       !query.meta?.skipGlobalLoader &&
       query.state.fetchStatus === 'fetching' &&
+      query.state.status === 'error' &&
       query.state.data === undefined,
   });
   const isMutating = useIsMutating({

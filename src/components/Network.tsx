@@ -1,76 +1,24 @@
-import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { LineChart } from '@mui/x-charts';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  Box,
+  Skeleton,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { History, IPv4Info } from '../@types/network';
+
 import {
   useNetwork,
   type InterfaceAddress,
   type NetworkInterface,
 } from '../hooks/useNetwork';
 import '../index.css';
-
-type ResponsiveChartContainerProps = {
-  height: number;
-  children: (width: number) => ReactNode;
-};
-
-const ResponsiveChartContainer = ({
-  height,
-  children,
-}: ResponsiveChartContainerProps) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [width, setWidth] = useState(0);
-
-  useEffect(() => {
-    const element = containerRef.current;
-    if (!element) {
-      return;
-    }
-
-    const updateWidth = () => {
-      setWidth(element.getBoundingClientRect().width);
-    };
-
-    if (typeof ResizeObserver === 'undefined') {
-      updateWidth();
-      return;
-    }
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setWidth(entry.contentRect.width);
-      }
-    });
-
-    observer.observe(element);
-    updateWidth();
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  return (
-    <Box
-      ref={containerRef}
-      sx={{
-        width: '100%',
-        minHeight: height,
-      }}
-    >
-      {width > 0 && children(width)}
-    </Box>
-  );
-};
-
-type History = Record<
-  string,
-  Array<{ time: number; upload: number; download: number }>
->;
+import { createCardSx } from './cardStyles.ts';
+import AppLineChart from './charts/AppLineChart';
+import ResponsiveChartContainer from './charts/ResponsiveChartContainer';
 
 const MAX_HISTORY_MS = 90 * 1000; // 1 minute 30 seconds
-
-type IPv4Info = { address: string; netmask: string | null };
 
 const trimIfStringHasValue = (value: string) => {
   const trimmed = value.trim();
@@ -203,6 +151,7 @@ const Network = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const chartSize = isSmallScreen ? 150 : 260;
+  const cardSx = createCardSx(theme);
 
   const [history, setHistory] = useState<History>({});
   const startTimeRef = useRef<number>(Date.now());
@@ -232,30 +181,76 @@ const Network = () => {
     []
   );
 
-  if (error) return <Typography>Error: {error.message}</Typography>;
+  if (isLoading && !data) {
+    return (
+      <Box sx={cardSx}>
+        <Skeleton
+          variant="text"
+          width="45%"
+          height={28}
+          sx={{ borderRadius: 1 }}
+        />
+        <Skeleton
+          variant="rectangular"
+          height={chartSize}
+          sx={{ borderRadius: 2, bgcolor: 'action.hover' }}
+        />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {Array.from({ length: 2 }).map((_, index) => (
+            <Box
+              key={index}
+              sx={{
+                p: 2,
+                bgcolor: 'var(--color-card-bg)',
+                borderRadius: '10px',
+                border: '2px solid var(--color-primary)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+              }}
+            >
+              <Skeleton
+                variant="text"
+                width="35%"
+                height={22}
+                sx={{ borderRadius: 1 }}
+              />
+              <Skeleton
+                variant="rectangular"
+                height={chartSize}
+                sx={{ borderRadius: 2, bgcolor: 'action.hover' }}
+              />
+              <Skeleton
+                variant="text"
+                width="55%"
+                height={18}
+                sx={{ borderRadius: 1 }}
+              />
+              <Skeleton
+                variant="text"
+                width="40%"
+                height={18}
+                sx={{ borderRadius: 1 }}
+              />
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <Box sx={cardSx}>
+        <Typography variant="body2" sx={{ color: 'var(--color-error)' }}>
+          خطا در دریافت داده‌های شبکه: {error.message}
+        </Typography>
+      </Box>
+    );
+  }
 
   const interfaces = data?.interfaces ?? {};
   const names = Object.keys(interfaces);
-
-  const tooltipSx = {
-    direction: 'rtl',
-    '& .MuiChartsTooltip-table': {
-      direction: 'rtl',
-      color: 'var(--color-text)',
-    },
-    '& .MuiChartsTooltip-label': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-value': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-cell': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-  } as const;
 
   const cardBorderColor =
     theme.palette.mode === 'dark'
@@ -273,23 +268,7 @@ const Network = () => {
       : 'rgba(0, 0, 0, 0.03)';
 
   return (
-    <Box
-      sx={{
-        p: 3,
-        bgcolor: 'var(--color-card-bg)',
-        borderRadius: 3,
-        mb: 3,
-        color: 'var(--color-bg-primary)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'stretch',
-        gap: 3,
-        border: `1px solid ${cardBorderColor}`,
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
-        width: '100%',
-        height: '100%',
-      }}
-    >
+    <Box sx={cardSx}>
       <Typography
         variant="subtitle2"
         sx={{
@@ -309,7 +288,7 @@ const Network = () => {
       {names.length === 0 ? (
         <ResponsiveChartContainer height={chartSize}>
           {(width) => (
-            <LineChart
+            <AppLineChart
               width={width}
               height={chartSize}
               dataset={[]}
@@ -332,7 +311,6 @@ const Network = () => {
               ]}
               slotProps={{
                 noDataOverlay: { message: 'No network data' },
-                tooltip: { sx: tooltipSx },
               }}
             />
           )}
@@ -381,7 +359,7 @@ const Network = () => {
               </Typography>
               <ResponsiveChartContainer height={chartSize}>
                 {(width) => (
-                  <LineChart
+                  <AppLineChart
                     width={width}
                     height={chartSize}
                     dataset={interfaceHistory}
@@ -425,15 +403,7 @@ const Network = () => {
                     ]}
                     margin={{ left: 40, right: 24, top: 20, bottom: 20 }}
                     slotProps={{
-                      legend: {
-                        sx: {
-                          color: 'var(--color-text)',
-                          fontFamily: 'var(--font-vazir)',
-                        },
-                        position: { vertical: 'top', horizontal: 'center' },
-                      },
                       noDataOverlay: { message: 'No network data' },
-                      tooltip: { sx: tooltipSx },
                     }}
                   />
                 )}

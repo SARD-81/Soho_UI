@@ -1,18 +1,16 @@
-import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { PieChart } from '@mui/x-charts/PieChart';
+import {
+  Box,
+  Skeleton,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { useMemo } from 'react';
+import { BYTE_UNITS, clampPercent, parseNumeric } from '../constants/memory';
 import { useMemory } from '../hooks/useMemory';
 import { formatBytes } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
-
-const BYTE_UNITS = ['B', 'KB', 'MB', 'GB'] as const;
-
-const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
-
-const parseNumeric = (value: unknown): number | null => {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : null;
-};
+import AppPieChart from './charts/AppPieChart';
 
 const Memory = () => {
   const { data, isLoading, error } = useMemory();
@@ -71,13 +69,68 @@ const Memory = () => {
 
   if (isLoading) {
     return (
-      <Box sx={cardSx}>
-        <Typography
-          variant="body2"
-          sx={{ color: theme.palette.text.secondary }}
+      <Box sx={{ ...cardSx, width: '100%' }}>
+        <Skeleton
+          variant="text"
+          width="50%"
+          height={28}
+          sx={{ borderRadius: 1 }}
+        />
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+          }}
         >
-          در حال بارگذاری اطلاعات حافظه...
-        </Typography>
+          <Skeleton
+            variant="circular"
+            width={chartSize}
+            height={chartSize}
+            sx={{ bgcolor: 'action.hover' }}
+          />
+        </Box>
+        <Box
+          sx={{
+            width: '100%',
+            bgcolor: statsBackground,
+            borderRadius: 2,
+            px: 2,
+            py: 2,
+            border: `1px solid ${statsDividerColor}`,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+          }}
+        >
+          {Array.from({ length: 7 }).map((_, index) => (
+            <Box
+              key={index}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 2,
+                py: 0.75,
+                borderBottom:
+                  index === 6 ? 'none' : `1px dashed ${statsDividerColor}`,
+              }}
+            >
+              <Skeleton
+                variant="text"
+                width="55%"
+                height={18}
+                sx={{ borderRadius: 1 }}
+              />
+              <Skeleton
+                variant="text"
+                width="25%"
+                height={20}
+                sx={{ borderRadius: 1 }}
+              />
+            </Box>
+          ))}
+        </Box>
       </Box>
     );
   }
@@ -201,7 +254,7 @@ const Memory = () => {
   ];
 
   return (
-    <Box sx={cardSx}>
+    <Box sx={{ ...cardSx, width: '100%' }}>
       <Typography
         variant="subtitle2"
         sx={{
@@ -245,7 +298,7 @@ const Memory = () => {
       </Box>
 
       <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-        <PieChart
+        <AppPieChart
           series={[
             {
               id: 'memory-usage',
@@ -298,21 +351,11 @@ const Memory = () => {
           slotProps={{
             tooltip: {
               sx: {
-                direction: 'rtl',
-                '& .MuiChartsTooltip-table': {
-                  direction: 'rtl',
-                  color: 'var(--color-text)',
-                },
                 '& .MuiChartsTooltip-cell': {
                   whiteSpace: 'pre-line',
-                  fontFamily: 'var(--font-vazir)',
-                  color: 'var(--color-text)',
-                },
-                '& .MuiChartsTooltip-label': {
-                  color: 'var(--color-text)',
                 },
                 '& .MuiChartsTooltip-value': {
-                  color: 'var(--color-text)',
+                  whiteSpace: 'pre-line',
                 },
               },
             },

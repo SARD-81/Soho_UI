@@ -9,27 +9,10 @@ import {
   Toolbar,
 } from '@mui/material';
 import React from 'react';
-import { FaHistory, FaShare } from 'react-icons/fa';
-import { HiUsers } from 'react-icons/hi';
-import { MdClose, MdSpaceDashboard, MdStorage } from 'react-icons/md';
-import { RiSettings3Fill } from 'react-icons/ri';
+import { MdClose } from 'react-icons/md';
 import { Link } from 'react-router-dom';
-
-interface NavigationDrawerProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-const drawerWidth = 200;
-
-const navItems = [
-  { text: 'داشبورد', icon: <MdSpaceDashboard />, path: '/dashboard' },
-  { text: 'ذخیره سازی', icon: <MdStorage />, path: '/storage' },
-  { text: 'کاربران', icon: <HiUsers />, path: '/users' },
-  { text: 'تاریخچه', icon: <FaHistory />, path: '/history' },
-  { text: 'اشتراک گذاری', icon: <FaShare />, path: '/share' },
-  { text: 'تنظیمات', icon: <RiSettings3Fill />, path: '/settings' },
-];
+import type { NavigationDrawerProps } from '../@types/navigationDrawer';
+import { drawerWidth, navItems } from '../constants/navigationDrawer';
 
 const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   open,
