@@ -9,10 +9,9 @@ import {
   Toolbar,
 } from '@mui/material';
 import React from 'react';
-import { BiHistory } from 'react-icons/bi';
-import { FaShare } from 'react-icons/fa';
-import { FiUsers } from 'react-icons/fi';
-import { MdClose, MdSpaceDashboard } from 'react-icons/md';
+import { FaHistory, FaShare } from 'react-icons/fa';
+import { HiUsers } from 'react-icons/hi';
+import { MdClose, MdSpaceDashboard, MdStorage } from 'react-icons/md';
 import { RiSettings3Fill } from 'react-icons/ri';
 import { Link } from 'react-router-dom';
 
@@ -25,8 +24,9 @@ const drawerWidth = 200;
 
 const navItems = [
   { text: 'داشبورد', icon: <MdSpaceDashboard />, path: '/dashboard' },
-  { text: 'کاربران', icon: <FiUsers />, path: '/users' },
-  { text: 'تاریخچه', icon: <BiHistory />, path: '/history' },
+  { text: 'ذخیره سازی', icon: <MdStorage />, path: '/storage' },
+  { text: 'کاربران', icon: <HiUsers />, path: '/users' },
+  { text: 'تاریخچه', icon: <FaHistory />, path: '/history' },
   { text: 'اشتراک گذاری', icon: <FaShare />, path: '/share' },
   { text: 'تنظیمات', icon: <RiSettings3Fill />, path: '/settings' },
 ];

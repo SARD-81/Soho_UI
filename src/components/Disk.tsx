@@ -6,7 +6,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import type { Theme } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
@@ -14,6 +13,12 @@ import { useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
 import { useDisk } from '../hooks/useDisk';
 import '../index.css';
+import {
+  formatBytes,
+  formatDuration,
+  formatLargeNumber,
+} from '../utils/formatters';
+import { createCardSx } from './cardStyles';
 
 const BYTES_IN_GB = 1024 ** 3;
 const METRIC_KEYS: Array<keyof DiskIOStats> = [
@@ -68,62 +73,6 @@ const IO_METRICS: DiskMetricConfig[] = [
   },
 ];
 
-const formatDuration = (valueMs: number) => {
-  if (!Number.isFinite(valueMs)) return '-';
-
-  const sign = valueMs < 0 ? '-' : '';
-  let currentValue = Math.abs(valueMs);
-
-  const units = ['ms', 's', 'min', 'h', 'd'] as const;
-  const steps = [1000, 60, 60, 24]; // ms→s, s→min, min→h, h→d
-
-  let unitIndex = 0;
-  while (unitIndex < steps.length && currentValue >= steps[unitIndex]) {
-    currentValue /= steps[unitIndex];
-    unitIndex += 1;
-  }
-
-  const formatter = new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: currentValue >= 100 ? 0 : 1,
-  });
-
-  return `${sign}${formatter.format(currentValue)} ${units[unitIndex]}`;
-};
-
-const formatBytes = (value: number) => {
-  if (!Number.isFinite(value)) {
-    return '-';
-  }
-
-  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  let currentValue = value;
-  let unitIndex = 0;
-
-  while (currentValue >= 1024 && unitIndex < units.length - 1) {
-    currentValue /= 1024;
-    unitIndex += 1;
-  }
-
-  const formatter = new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: currentValue >= 100 ? 0 : 1,
-  });
-
-  return `${formatter.format(currentValue)} ${units[unitIndex]}`;
-};
-
-const formatLargeNumber = (value: number) => {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(1)}B`;
-  }
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M`;
-  }
-  if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(1)}K`;
-  }
-  return value.toFixed(0);
-};
-
 const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
   return METRIC_KEYS.reduce(
     (acc, key) => {
@@ -147,28 +96,6 @@ const diskPercentFormatter = new Intl.NumberFormat('fa-IR', {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
 });
-
-const createCardSx = (theme: Theme) => {
-  const cardBorderColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(0, 0, 0, 0.08)';
-
-  return {
-    p: 3,
-    bgcolor: 'var(--color-card-bg)',
-    borderRadius: 3,
-    mb: 3,
-    color: 'var(--color-bg-primary)',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: 3,
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
-    border: `1px solid ${cardBorderColor}`,
-    backdropFilter: 'blur(14px)',
-    height: '100%',
-  } as const;
-};
 
 interface DeviceMetricDatum {
   name: string;

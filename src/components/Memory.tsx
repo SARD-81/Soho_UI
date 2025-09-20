@@ -2,6 +2,8 @@ import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import { useMemory } from '../hooks/useMemory';
+import { formatBytes } from '../utils/formatters';
+import { createCardSx } from './cardStyles';
 
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB'] as const;
 
@@ -27,35 +29,23 @@ const Memory = () => {
     []
   );
 
-  const byteFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat('fa-IR', {
-        maximumFractionDigits: 2,
-      }),
-    []
-  );
-
   const formatBytesValue = (value: number | null | undefined) => {
-    if (value == null || !Number.isFinite(value)) {
+    if (value == null) {
       return '—';
     }
 
-    const absoluteValue = Math.max(value, 0);
-    let unitIndex = 0;
-    let normalizedValue = absoluteValue;
-
-    while (normalizedValue >= 1024 && unitIndex < BYTE_UNITS.length - 1) {
-      normalizedValue /= 1024;
-      unitIndex += 1;
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return '—';
     }
 
-    return `${byteFormatter.format(normalizedValue)} ${BYTE_UNITS[unitIndex]}`;
+    return formatBytes(Math.max(numericValue, 0), {
+      locale: 'fa-IR',
+      maximumFractionDigits: 2,
+      units: BYTE_UNITS,
+      fallback: '—',
+    });
   };
-
-  const containerBorderColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(0, 0, 0, 0.08)';
 
   const statsDividerColor =
     theme.palette.mode === 'dark'
@@ -77,21 +67,7 @@ const Memory = () => {
       ? 'rgba(255, 255, 255, 0.08)'
       : 'rgba(0, 0, 0, 0.08)';
 
-  const cardSx = {
-    width: '100%',
-    p: 3,
-    bgcolor: 'var(--color-card-bg)',
-    borderRadius: 3,
-    mb: 3,
-    color: 'var(--color-bg-primary)',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: 3,
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
-    border: `1px solid ${containerBorderColor}`,
-    backdropFilter: 'blur(14px)',
-    height: '100%',
-  };
+  const cardSx = createCardSx(theme);
 
   if (isLoading) {
     return (

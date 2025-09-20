@@ -7,11 +7,10 @@ import {
 } from '@mui/material';
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 import { useMemo } from 'react';
+import type { RgbColor } from '../@types/cpu.ts';
 import { useCpu } from '../hooks/useCpu';
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
-
-type RgbColor = { r: number; g: number; b: number };
 
 const formatRgb = ({ r, g, b }: RgbColor) => `rgb(${r}, ${g}, ${b})`;
 

@@ -74,15 +74,15 @@ const MainLayout: React.FC = () => {
             sx={{ height: 30 }}
           />
 
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{ color: 'var(--color-primary)', flexShrink: 0 }}
-          >
-            سوهو
-          </Typography>
+          {/*<Typography*/}
+          {/*  variant="h6"*/}
+          {/*  component="div"*/}
+          {/*  sx={{ color: 'var(--color-primary)', flexShrink: 0 }}*/}
+          {/*>*/}
+          {/*  سوهو*/}
+          {/*</Typography>*/}
           <TextField
-            placeholder="جستجو..."
+            placeholder="جستجو در سوهو..."
             size={'small'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
