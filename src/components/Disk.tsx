@@ -13,6 +13,7 @@ import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import type { DiskIOStats } from '../@types/disk';
 import { useDisk } from '../hooks/useDisk';
+import { formatBytes, formatDuration, formatLargeNumber } from '../util/formatters';
 import '../index.css';
 
 const BYTES_IN_GB = 1024 ** 3;
@@ -67,62 +68,6 @@ const IO_METRICS: DiskMetricConfig[] = [
     format: (value) => `${formatLargeNumber(Math.max(value, 0))} ms`,
   },
 ];
-
-const formatDuration = (valueMs: number) => {
-  if (!Number.isFinite(valueMs)) return '-';
-
-  const sign = valueMs < 0 ? '-' : '';
-  let currentValue = Math.abs(valueMs);
-
-  const units = ['ms', 's', 'min', 'h', 'd'] as const;
-  const steps = [1000, 60, 60, 24]; // ms→s, s→min, min→h, h→d
-
-  let unitIndex = 0;
-  while (unitIndex < steps.length && currentValue >= steps[unitIndex]) {
-    currentValue /= steps[unitIndex];
-    unitIndex += 1;
-  }
-
-  const formatter = new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: currentValue >= 100 ? 0 : 1,
-  });
-
-  return `${sign}${formatter.format(currentValue)} ${units[unitIndex]}`;
-};
-
-const formatBytes = (value: number) => {
-  if (!Number.isFinite(value)) {
-    return '-';
-  }
-
-  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  let currentValue = value;
-  let unitIndex = 0;
-
-  while (currentValue >= 1024 && unitIndex < units.length - 1) {
-    currentValue /= 1024;
-    unitIndex += 1;
-  }
-
-  const formatter = new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: currentValue >= 100 ? 0 : 1,
-  });
-
-  return `${formatter.format(currentValue)} ${units[unitIndex]}`;
-};
-
-const formatLargeNumber = (value: number) => {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(1)}B`;
-  }
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M`;
-  }
-  if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(1)}K`;
-  }
-  return value.toFixed(0);
-};
 
 const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
   return METRIC_KEYS.reduce(
