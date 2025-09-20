@@ -1,12 +1,20 @@
-import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Box,
+  Skeleton,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { History, IPv4Info } from '../@types/network';
+
 import {
   useNetwork,
   type InterfaceAddress,
   type NetworkInterface,
 } from '../hooks/useNetwork';
 import '../index.css';
+import { createCardSx } from './cardStyles.ts';
 import AppLineChart from './charts/AppLineChart';
 import ResponsiveChartContainer from './charts/ResponsiveChartContainer';
 
@@ -143,6 +151,7 @@ const Network = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const chartSize = isSmallScreen ? 150 : 260;
+  const cardSx = createCardSx(theme);
 
   const [history, setHistory] = useState<History>({});
   const startTimeRef = useRef<number>(Date.now());
@@ -172,7 +181,73 @@ const Network = () => {
     []
   );
 
-  if (error) return <Typography>Error: {error.message}</Typography>;
+  if (isLoading && !data) {
+    return (
+      <Box sx={cardSx}>
+        <Skeleton
+          variant="text"
+          width="45%"
+          height={28}
+          sx={{ borderRadius: 1 }}
+        />
+        <Skeleton
+          variant="rectangular"
+          height={chartSize}
+          sx={{ borderRadius: 2, bgcolor: 'action.hover' }}
+        />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {Array.from({ length: 2 }).map((_, index) => (
+            <Box
+              key={index}
+              sx={{
+                p: 2,
+                bgcolor: 'var(--color-card-bg)',
+                borderRadius: '10px',
+                border: '2px solid var(--color-primary)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+              }}
+            >
+              <Skeleton
+                variant="text"
+                width="35%"
+                height={22}
+                sx={{ borderRadius: 1 }}
+              />
+              <Skeleton
+                variant="rectangular"
+                height={chartSize}
+                sx={{ borderRadius: 2, bgcolor: 'action.hover' }}
+              />
+              <Skeleton
+                variant="text"
+                width="55%"
+                height={18}
+                sx={{ borderRadius: 1 }}
+              />
+              <Skeleton
+                variant="text"
+                width="40%"
+                height={18}
+                sx={{ borderRadius: 1 }}
+              />
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <Box sx={cardSx}>
+        <Typography variant="body2" sx={{ color: 'var(--color-error)' }}>
+          خطا در دریافت داده‌های شبکه: {error.message}
+        </Typography>
+      </Box>
+    );
+  }
 
   const interfaces = data?.interfaces ?? {};
   const names = Object.keys(interfaces);
@@ -193,23 +268,7 @@ const Network = () => {
       : 'rgba(0, 0, 0, 0.03)';
 
   return (
-    <Box
-      sx={{
-        p: 3,
-        bgcolor: 'var(--color-card-bg)',
-        borderRadius: 3,
-        mb: 3,
-        color: 'var(--color-bg-primary)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'stretch',
-        gap: 3,
-        border: `1px solid ${cardBorderColor}`,
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
-        width: '100%',
-        height: '100%',
-      }}
-    >
+    <Box sx={cardSx}>
       <Typography
         variant="subtitle2"
         sx={{

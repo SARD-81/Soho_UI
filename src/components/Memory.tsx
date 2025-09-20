@@ -1,4 +1,10 @@
-import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Box,
+  Skeleton,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { useMemo } from 'react';
 import { BYTE_UNITS, clampPercent, parseNumeric } from '../constants/memory';
 import { useMemory } from '../hooks/useMemory';
@@ -63,13 +69,68 @@ const Memory = () => {
 
   if (isLoading) {
     return (
-      <Box sx={cardSx}>
-        <Typography
-          variant="body2"
-          sx={{ color: theme.palette.text.secondary }}
+      <Box sx={{ ...cardSx, width: '100%' }}>
+        <Skeleton
+          variant="text"
+          width="50%"
+          height={28}
+          sx={{ borderRadius: 1 }}
+        />
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+          }}
         >
-          در حال بارگذاری اطلاعات حافظه...
-        </Typography>
+          <Skeleton
+            variant="circular"
+            width={chartSize}
+            height={chartSize}
+            sx={{ bgcolor: 'action.hover' }}
+          />
+        </Box>
+        <Box
+          sx={{
+            width: '100%',
+            bgcolor: statsBackground,
+            borderRadius: 2,
+            px: 2,
+            py: 2,
+            border: `1px solid ${statsDividerColor}`,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+          }}
+        >
+          {Array.from({ length: 7 }).map((_, index) => (
+            <Box
+              key={index}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 2,
+                py: 0.75,
+                borderBottom:
+                  index === 6 ? 'none' : `1px dashed ${statsDividerColor}`,
+              }}
+            >
+              <Skeleton
+                variant="text"
+                width="55%"
+                height={18}
+                sx={{ borderRadius: 1 }}
+              />
+              <Skeleton
+                variant="text"
+                width="25%"
+                height={20}
+                sx={{ borderRadius: 1 }}
+              />
+            </Box>
+          ))}
+        </Box>
       </Box>
     );
   }

@@ -1,8 +1,15 @@
-import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Box,
+  Skeleton,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { gaugeClasses } from '@mui/x-charts/Gauge';
 import { useMemo } from 'react';
 import type { RgbColor } from '../@types/cpu.ts';
 import { useCpu } from '../hooks/useCpu';
+import { createCardSx } from './cardStyles.ts';
 import AppGauge from './charts/AppGauge';
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
@@ -28,6 +35,7 @@ const Cpu = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const chartSize = isSmallScreen ? 150 : 260;
+  const cardSx = createCardSx(theme);
 
   const percentFormatter = useMemo(
     () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }),
@@ -97,23 +105,6 @@ const Cpu = () => {
       ? 'rgba(255, 255, 255, 0.12)'
       : 'rgba(0, 0, 0, 0.08)';
 
-  const cardSx = {
-    width: '100%',
-    p: 3,
-    bgcolor: 'var(--color-card-bg)',
-    borderRadius: 3,
-    mb: 3,
-    color: 'var(--color-bg-primary)',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    gap: 3,
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
-    border: `1px solid ${cardBorderColor}`,
-    backdropFilter: 'blur(14px)',
-    height: '100%',
-  };
-
   const stats = [
     {
       key: 'percent',
@@ -131,9 +122,67 @@ const Cpu = () => {
   if (isLoading) {
     return (
       <Box sx={cardSx}>
-        <Typography variant="body2">
-          در حال بارگذاری اطلاعات پردازنده...
-        </Typography>
+        <Skeleton
+          variant="text"
+          width="60%"
+          height={28}
+          sx={{ borderRadius: 1 }}
+        />
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          <Skeleton
+            variant="circular"
+            width={chartSize}
+            height={chartSize}
+            sx={{ bgcolor: 'action.hover' }}
+          />
+        </Box>
+        <Box
+          sx={{
+            width: '100%',
+            bgcolor: statsBackground,
+            borderRadius: 2,
+            px: 2,
+            py: 2,
+            border: `1px solid ${statsDividerColor}`,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+          }}
+        >
+          {Array.from({ length: 7 }).map((_, index) => (
+            <Box
+              key={index}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 2,
+                py: 0.75,
+                borderBottom:
+                  index === 6 ? 'none' : `1px dashed ${statsDividerColor}`,
+              }}
+            >
+              <Skeleton
+                variant="text"
+                width="55%"
+                height={18}
+                sx={{ borderRadius: 1 }}
+              />
+              <Skeleton
+                variant="text"
+                width="25%"
+                height={20}
+                sx={{ borderRadius: 1 }}
+              />
+            </Box>
+          ))}
+        </Box>
       </Box>
     );
   }

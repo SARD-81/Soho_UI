@@ -1,6 +1,7 @@
 import {
   Box,
   Divider,
+  Skeleton,
   Stack,
   Typography,
   useMediaQuery,
@@ -56,7 +57,109 @@ export const DiskOverview = () => {
   if (isLoading) {
     return (
       <Box sx={cardSx}>
-        <Typography variant="body2">در حال بارگذاری اطلاعات دیسک...</Typography>
+        <Skeleton
+          variant="text"
+          width="40%"
+          height={28}
+          sx={{ borderRadius: 1 }}
+        />
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          {Array.from({ length: 2 }).map((_, index) => (
+            <Box
+              key={index}
+              sx={{
+                flex: '1 1 240px',
+                minWidth: 220,
+                p: 2.5,
+                borderRadius: 3,
+                bgcolor: 'var(--color-card-bg)',
+                border: `1px solid ${cardBorderColor}`,
+                boxShadow: '0 16px 32px rgba(0, 0, 0, 0.18)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+              }}
+            >
+              <Skeleton
+                variant="text"
+                width="70%"
+                height={22}
+                sx={{ borderRadius: 1, alignSelf: 'stretch' }}
+              />
+              <Skeleton
+                variant="text"
+                width="50%"
+                height={18}
+                sx={{ borderRadius: 1, alignSelf: 'stretch' }}
+              />
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
+                <Skeleton
+                  variant="circular"
+                  width={chartSize}
+                  height={chartSize}
+                  sx={{ bgcolor: 'action.hover' }}
+                />
+              </Box>
+              <Box
+                sx={{
+                  width: '100%',
+                  bgcolor: statsBackground,
+                  borderRadius: 2,
+                  px: 2,
+                  py: 1.5,
+                  border: `1px solid ${statsDividerColor}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}
+              >
+                {Array.from({ length: 4 }).map((_, statIndex) => (
+                  <Box
+                    key={statIndex}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 2,
+                      borderBottom:
+                        statIndex === 3
+                          ? 'none'
+                          : `1px dashed ${statsDividerColor}`,
+                      py: 0.75,
+                    }}
+                  >
+                    <Skeleton
+                      variant="text"
+                      width="60%"
+                      height={16}
+                      sx={{ borderRadius: 1 }}
+                    />
+                    <Skeleton
+                      variant="text"
+                      width="30%"
+                      height={16}
+                      sx={{ borderRadius: 1 }}
+                    />
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          ))}
+        </Box>
       </Box>
     );
   }
@@ -497,8 +600,76 @@ const Disk = () => {
 
   if (isLoading) {
     return (
-      <Box sx={cardSx}>
-        <Typography variant="body2">در حال بارگذاری اطلاعات دیسک...</Typography>
+      <Box sx={{ ...cardSx, width: '100%' }}>
+        <Skeleton
+          variant="text"
+          width="35%"
+          height={28}
+          sx={{ borderRadius: 1 }}
+        />
+        <Divider sx={{ my: 1 }} />
+        <Stack spacing={4}>
+          <Box>
+            <Skeleton
+              variant="text"
+              width="40%"
+              height={22}
+              sx={{ borderRadius: 1 }}
+            />
+            <Skeleton
+              variant="rectangular"
+              height={220}
+              sx={{ mt: 2, borderRadius: 2, bgcolor: 'action.hover' }}
+            />
+          </Box>
+          <Box>
+            <Skeleton
+              variant="text"
+              width="40%"
+              height={22}
+              sx={{ borderRadius: 1 }}
+            />
+            <Skeleton
+              variant="rectangular"
+              height={220}
+              sx={{ mt: 2, borderRadius: 2, bgcolor: 'action.hover' }}
+            />
+          </Box>
+          <Box>
+            <Skeleton
+              variant="text"
+              width="50%"
+              height={22}
+              sx={{ borderRadius: 1 }}
+            />
+            <Stack spacing={1.5} sx={{ mt: 1 }}>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
+                  <Skeleton
+                    variant="text"
+                    width="45%"
+                    height={18}
+                    sx={{ borderRadius: 1 }}
+                  />
+                  <Skeleton
+                    variant="text"
+                    width="30%"
+                    height={18}
+                    sx={{ borderRadius: 1 }}
+                  />
+                </Box>
+              ))}
+            </Stack>
+          </Box>
+        </Stack>
       </Box>
     );
   }
