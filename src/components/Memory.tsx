@@ -3,6 +3,7 @@ import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import { useMemory } from '../hooks/useMemory';
 import { createCardSx } from './cardStyles';
+import { formatBytes } from '../util/formatters';
 
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB'] as const;
 
@@ -28,29 +29,22 @@ const Memory = () => {
     []
   );
 
-  const byteFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat('fa-IR', {
-        maximumFractionDigits: 2,
-      }),
-    []
-  );
-
   const formatBytesValue = (value: number | null | undefined) => {
-    if (value == null || !Number.isFinite(value)) {
+    if (value == null) {
       return '—';
     }
 
-    const absoluteValue = Math.max(value, 0);
-    let unitIndex = 0;
-    let normalizedValue = absoluteValue;
-
-    while (normalizedValue >= 1024 && unitIndex < BYTE_UNITS.length - 1) {
-      normalizedValue /= 1024;
-      unitIndex += 1;
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return '—';
     }
 
-    return `${byteFormatter.format(normalizedValue)} ${BYTE_UNITS[unitIndex]}`;
+    return formatBytes(Math.max(numericValue, 0), {
+      locale: 'fa-IR',
+      maximumFractionDigits: 2,
+      units: BYTE_UNITS,
+      fallback: '—',
+    });
   };
 
   const statsDividerColor =
