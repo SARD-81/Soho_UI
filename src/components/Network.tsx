@@ -1,67 +1,14 @@
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { LineChart } from '@mui/x-charts';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type {
-  History,
-  IPv4Info,
-  ResponsiveChartContainerProps,
-} from '../@types/network';
+import type { History, IPv4Info } from '../@types/network';
 import {
   useNetwork,
   type InterfaceAddress,
   type NetworkInterface,
 } from '../hooks/useNetwork';
 import '../index.css';
-
-const ResponsiveChartContainer = ({
-  height,
-  children,
-}: ResponsiveChartContainerProps) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [width, setWidth] = useState(0);
-
-  useEffect(() => {
-    const element = containerRef.current;
-    if (!element) {
-      return;
-    }
-
-    const updateWidth = () => {
-      setWidth(element.getBoundingClientRect().width);
-    };
-
-    if (typeof ResizeObserver === 'undefined') {
-      updateWidth();
-      return;
-    }
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setWidth(entry.contentRect.width);
-      }
-    });
-
-    observer.observe(element);
-    updateWidth();
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  return (
-    <Box
-      ref={containerRef}
-      sx={{
-        width: '100%',
-        minHeight: height,
-      }}
-    >
-      {width > 0 && children(width)}
-    </Box>
-  );
-};
+import AppLineChart from './charts/AppLineChart';
+import ResponsiveChartContainer from './charts/ResponsiveChartContainer';
 
 const MAX_HISTORY_MS = 90 * 1000; // 1 minute 30 seconds
 
@@ -230,26 +177,6 @@ const Network = () => {
   const interfaces = data?.interfaces ?? {};
   const names = Object.keys(interfaces);
 
-  const tooltipSx = {
-    direction: 'rtl',
-    '& .MuiChartsTooltip-table': {
-      direction: 'rtl',
-      color: 'var(--color-text)',
-    },
-    '& .MuiChartsTooltip-label': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-value': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-cell': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-  } as const;
-
   const cardBorderColor =
     theme.palette.mode === 'dark'
       ? 'rgba(255, 255, 255, 0.12)'
@@ -302,7 +229,7 @@ const Network = () => {
       {names.length === 0 ? (
         <ResponsiveChartContainer height={chartSize}>
           {(width) => (
-            <LineChart
+            <AppLineChart
               width={width}
               height={chartSize}
               dataset={[]}
@@ -325,7 +252,6 @@ const Network = () => {
               ]}
               slotProps={{
                 noDataOverlay: { message: 'No network data' },
-                tooltip: { sx: tooltipSx },
               }}
             />
           )}
@@ -374,7 +300,7 @@ const Network = () => {
               </Typography>
               <ResponsiveChartContainer height={chartSize}>
                 {(width) => (
-                  <LineChart
+                  <AppLineChart
                     width={width}
                     height={chartSize}
                     dataset={interfaceHistory}
@@ -418,15 +344,7 @@ const Network = () => {
                     ]}
                     margin={{ left: 40, right: 24, top: 20, bottom: 20 }}
                     slotProps={{
-                      legend: {
-                        sx: {
-                          color: 'var(--color-text)',
-                          fontFamily: 'var(--font-vazir)',
-                        },
-                        position: { vertical: 'top', horizontal: 'center' },
-                      },
                       noDataOverlay: { message: 'No network data' },
-                      tooltip: { sx: tooltipSx },
                     }}
                   />
                 )}

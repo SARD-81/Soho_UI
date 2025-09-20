@@ -6,9 +6,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { BarChart } from '@mui/x-charts/BarChart';
-import { LineChart } from '@mui/x-charts/LineChart';
-import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
 import type { DeviceMetricDatum, NormalizedMetrics } from '../@types/disk';
 import {
@@ -27,6 +24,18 @@ import {
   formatLargeNumber,
 } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
+import AppBarChart from './charts/AppBarChart';
+import AppLineChart from './charts/AppLineChart';
+import AppPieChart from './charts/AppPieChart';
+
+const tooltipMultilineSx = {
+  '& .MuiChartsTooltip-cell': {
+    whiteSpace: 'pre-line',
+  },
+  '& .MuiChartsTooltip-value': {
+    whiteSpace: 'pre-line',
+  },
+} as const;
 
 export const DiskOverview = () => {
   const { data, isLoading, error } = useDisk();
@@ -200,7 +209,7 @@ export const DiskOverview = () => {
                     justifyContent: 'center',
                   }}
                 >
-                  <PieChart
+                  <AppPieChart
                     series={[
                       {
                         id: `${disk.device}-usage`,
@@ -252,24 +261,7 @@ export const DiskOverview = () => {
                     hideLegend
                     slotProps={{
                       tooltip: {
-                        sx: {
-                          direction: 'rtl',
-                          '& .MuiChartsTooltip-table': {
-                            direction: 'rtl',
-                            color: 'var(--color-text)',
-                          },
-                          '& .MuiChartsTooltip-cell': {
-                            whiteSpace: 'pre-line',
-                            fontFamily: 'var(--font-vazir)',
-                            color: 'var(--color-text)',
-                          },
-                          '& .MuiChartsTooltip-label': {
-                            color: 'var(--color-text)',
-                          },
-                          '& .MuiChartsTooltip-value': {
-                            color: 'var(--color-text)',
-                          },
-                        },
+                        sx: tooltipMultilineSx,
                       },
                     }}
                   />
@@ -367,28 +359,6 @@ const Disk = () => {
   const { data, isLoading, error } = useDisk();
   const theme = useTheme();
   const cardSx = createCardSx(theme);
-
-  const tooltipSx = {
-    direction: 'rtl',
-    '& .MuiChartsTooltip-table': {
-      direction: 'rtl',
-      color: 'var(--color-text)',
-    },
-    '& .MuiChartsTooltip-label': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-    },
-    '& .MuiChartsTooltip-value': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-      whiteSpace: 'pre-line',
-    },
-    '& .MuiChartsTooltip-cell': {
-      color: 'var(--color-text)',
-      fontFamily: 'var(--font-vazir)',
-      whiteSpace: 'pre-line',
-    },
-  } as const;
 
   const ioSummary = useMemo<DeviceMetricDatum[]>(() => {
     if (!data?.summary?.disk_io_summary) {
@@ -581,7 +551,7 @@ const Disk = () => {
                 تعداد عملیات خواندن/نوشتن
               </Typography>
               <Box sx={{ width: '100%', direction: 'ltr' }}>
-                <LineChart
+                <AppLineChart
                   dataset={ioChartDataset}
                   series={ioCountSeries}
                   xAxis={[
@@ -611,14 +581,7 @@ const Disk = () => {
                   height={300}
                   margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
                   slotProps={{
-                    tooltip: { sx: tooltipSx },
-                    legend: {
-                      sx: {
-                        color: 'var(--color-text)',
-                        fontFamily: 'var(--font-vazir)',
-                      },
-                      position: { vertical: 'top', horizontal: 'center' },
-                    },
+                    tooltip: { sx: tooltipMultilineSx },
                   }}
                 />
               </Box>
@@ -629,7 +592,7 @@ const Disk = () => {
                 حجم داده خواندن/نوشتن
               </Typography>
               <Box sx={{ width: '100%', direction: 'ltr' }}>
-                <LineChart
+                <AppLineChart
                   dataset={ioChartDataset}
                   series={ioBytesSeries}
                   xAxis={[
@@ -659,14 +622,7 @@ const Disk = () => {
                   height={300}
                   margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
                   slotProps={{
-                    tooltip: { sx: tooltipSx },
-                    legend: {
-                      sx: {
-                        color: 'var(--color-text)',
-                        fontFamily: 'var(--font-vazir)',
-                      },
-                      position: { vertical: 'top', horizontal: 'center' },
-                    },
+                    tooltip: { sx: tooltipMultilineSx },
                   }}
                 />
               </Box>
@@ -687,7 +643,7 @@ const Disk = () => {
         </Typography>
         {barChartDataset.length > 0 ? (
           <Box sx={{ width: '100%', direction: 'ltr' }}>
-            <BarChart
+            <AppBarChart
               dataset={barChartDataset}
               xAxis={[{ scaleType: 'band', dataKey: 'device' }]}
               yAxis={[
@@ -718,14 +674,7 @@ const Disk = () => {
               height={280}
               margin={{ top: 60, right: 40, left: 40 }}
               slotProps={{
-                tooltip: { sx: tooltipSx },
-                legend: {
-                  sx: {
-                    color: 'var(--color-text)',
-                    fontFamily: 'var(--font-vazir)',
-                  },
-                  position: { vertical: 'top', horizontal: 'center' },
-                },
+                tooltip: { sx: tooltipMultilineSx },
               }}
             />
           </Box>
