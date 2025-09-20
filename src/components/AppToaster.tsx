@@ -1,15 +1,6 @@
 import { Toaster } from 'react-hot-toast';
+import type { AppToasterProps } from '../@types/components/appToaster';
 import '../index.css';
-
-type AppToasterProps = {
-  position?:
-    | 'top-left'
-    | 'top-center'
-    | 'top-right'
-    | 'bottom-left'
-    | 'bottom-center'
-    | 'bottom-right';
-};
 
 export default function AppToaster({
   position = 'top-center',

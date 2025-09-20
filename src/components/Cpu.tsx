@@ -7,28 +7,9 @@ import {
 } from '@mui/material';
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 import { useMemo } from 'react';
+import { clampPercent, getGaugeColor } from '../constants/components/cpu';
 import { useCpu } from '../hooks/useCpu';
 import { createCardSx } from './cardStyles';
-
-const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
-
-type RgbColor = { r: number; g: number; b: number };
-
-const formatRgb = ({ r, g, b }: RgbColor) => `rgb(${r}, ${g}, ${b})`;
-
-const interpolateColor = (start: RgbColor, end: RgbColor, ratio: number) => ({
-  r: Math.round(start.r + (end.r - start.r) * ratio),
-  g: Math.round(start.g + (end.g - start.g) * ratio),
-  b: Math.round(start.b + (end.b - start.b) * ratio),
-});
-
-const START_COLOR: RgbColor = { r: 0, g: 255, b: 0 };
-const ALERT_COLOR: RgbColor = { r: 255, g: 0, b: 0 };
-
-const getGaugeColor = (value: number) => {
-  const ratio = clampPercent(value) / 100;
-  return formatRgb(interpolateColor(START_COLOR, ALERT_COLOR, ratio));
-};
 
 const Cpu = () => {
   const { data, isLoading, error } = useCpu();

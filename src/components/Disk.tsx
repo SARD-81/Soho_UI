@@ -10,93 +10,22 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useMemo } from 'react';
-import type { DiskIOStats } from '../@types/disk';
+import type {
+  DeviceMetricDatum,
+  NormalizedMetrics,
+} from '../@types/components/disk';
 import { useDisk } from '../hooks/useDisk';
 import { formatBytes, formatDuration, formatLargeNumber } from '../util/formatters';
 import '../index.css';
 import { createCardSx } from './cardStyles';
-
-const BYTES_IN_GB = 1024 ** 3;
-const METRIC_KEYS: Array<keyof DiskIOStats> = [
-  'read_count',
-  'write_count',
-  'read_bytes',
-  'write_bytes',
-  'read_time',
-  'write_time',
-  'read_merged_count',
-  'write_merged_count',
-  'busy_time',
-];
-
-type DiskMetricConfig = {
-  key: keyof DiskIOStats;
-  label: string;
-  getValue: (metrics: NormalizedMetrics) => number;
-  format: (value: number) => string;
-};
-
-const IO_METRICS: DiskMetricConfig[] = [
-  {
-    key: 'read_count',
-    label: 'تعداد خواندن',
-    getValue: (metrics) => metrics.read_count,
-    format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
-  },
-  {
-    key: 'write_count',
-    label: 'تعداد نوشتن',
-    getValue: (metrics) => metrics.write_count,
-    format: (value) => `${formatLargeNumber(Math.max(value, 0))} عملیات`,
-  },
-  {
-    key: 'read_bytes',
-    label: 'حجم خوانده‌شده',
-    getValue: (metrics) => metrics.read_bytes,
-    format: (value) => formatBytes(Math.max(value, 0)),
-  },
-  {
-    key: 'write_bytes',
-    label: 'حجم نوشته‌شده',
-    getValue: (metrics) => metrics.write_bytes,
-    format: (value) => formatBytes(Math.max(value, 0)),
-  },
-  {
-    key: 'busy_time',
-    label: 'زمان مشغولی (ms)',
-    getValue: (metrics) => metrics.busy_time,
-    format: (value) => `${formatLargeNumber(Math.max(value, 0))} ms`,
-  },
-];
-
-const normalizeMetrics = (metrics?: Partial<DiskIOStats>) => {
-  return METRIC_KEYS.reduce(
-    (acc, key) => {
-      acc[key] = Number(metrics?.[key] ?? 0);
-      return acc;
-    },
-    {} as Record<keyof DiskIOStats, number>
-  );
-};
-
-type NormalizedMetrics = ReturnType<typeof normalizeMetrics>;
-
-const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
-
-const safeNumber = (value: unknown) => {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : 0;
-};
-
-const diskPercentFormatter = new Intl.NumberFormat('fa-IR', {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-});
-
-interface DeviceMetricDatum {
-  name: string;
-  metrics: NormalizedMetrics;
-}
+import {
+  BYTES_IN_GB,
+  IO_METRICS,
+  clampPercent,
+  diskPercentFormatter,
+  normalizeMetrics,
+  safeNumber,
+} from '../constants/components/disk';
 
 export const DiskOverview = () => {
   const { data, isLoading, error } = useDisk();

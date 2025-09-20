@@ -1,18 +1,19 @@
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { LineChart } from '@mui/x-charts';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   useNetwork,
   type InterfaceAddress,
   type NetworkInterface,
 } from '../hooks/useNetwork';
 import '../index.css';
+import type {
+  History,
+  IPv4Info,
+  ResponsiveChartContainerProps,
+} from '../@types/components/network';
+import { MAX_HISTORY_MS } from '../constants/components/network';
 import { createCardSx } from './cardStyles';
-
-type ResponsiveChartContainerProps = {
-  height: number;
-  children: (width: number) => ReactNode;
-};
 
 const ResponsiveChartContainer = ({
   height,
@@ -64,14 +65,6 @@ const ResponsiveChartContainer = ({
   );
 };
 
-type History = Record<
-  string,
-  Array<{ time: number; upload: number; download: number }>
->;
-
-const MAX_HISTORY_MS = 90 * 1000; // 1 minute 30 seconds
-
-type IPv4Info = { address: string; netmask: string | null };
 
 const trimIfStringHasValue = (value: string) => {
   const trimmed = value.trim();
