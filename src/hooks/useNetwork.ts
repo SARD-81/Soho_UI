@@ -35,7 +35,7 @@ export interface NetworkData {
 }
 
 const fetchNetwork = async () => {
-  const { data } = await axiosInstance.get<NetworkData>('/network');
+  const { data } = await axiosInstance.get<NetworkData>('/net');
   return data;
 };
 

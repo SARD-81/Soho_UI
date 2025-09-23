@@ -278,6 +278,7 @@ export const DiskOverview = () => {
                   boxShadow: '0 16px 32px rgba(0, 0, 0, 0.18)',
                   display: 'flex',
                   flexDirection: 'column',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   gap: 2,
                 }}

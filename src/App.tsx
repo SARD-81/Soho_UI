@@ -6,7 +6,7 @@ import { useTheme } from './contexts/ThemeContext';
 import router from './routes/Routes';
 import getTheme from './theme';
 
-function AppContent() {
+function App() {
   const { isDark } = useTheme();
   const theme = getTheme(isDark);
 
@@ -17,10 +17,6 @@ function AppContent() {
       <RouterProvider router={router} />
     </MUIThemeProvider>
   );
-}
-
-function App() {
-  return <AppContent />;
 }
 
 export default App;
