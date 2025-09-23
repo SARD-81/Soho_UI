@@ -198,7 +198,7 @@ const Cpu = () => {
   }
 
   return (
-    <Box sx={cardSx}>
+    <Box sx={{ ...cardSx, justifyContent: 'space-between' }}>
       <Typography
         variant="subtitle2"
         sx={{
@@ -259,6 +259,7 @@ const Cpu = () => {
           width: '100%',
           bgcolor: statsBackground,
           borderRadius: 2,
+          alignSelf: 'end',
           px: 2,
           py: 2,
           border: `1px solid ${statsDividerColor}`,

@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import type { ComponentType } from 'react';
 import Cpu from '../components/Cpu';
-import Disk, { DiskOverview } from '../components/Disk';
+import Disk from '../components/Disk';
 import Memory from '../components/Memory';
 import Network from '../components/Network';
 
@@ -70,11 +70,11 @@ const dashboardWidgets: DashboardWidget[] = [
     component: Memory,
     columns: { xs: 12, md: 6, xl: 3 },
   },
-  {
-    id: 'disk-overview',
-    component: DiskOverview,
-    columns: { xs: 12, md: 12, xl: 6 },
-  },
+  // {
+  //   id: 'disk-overview',
+  //   component: DiskOverview,
+  //   columns: { xs: 12, md: 12, xl: 6 },
+  // },
   {
     id: 'disk',
     component: Disk,
