@@ -3,7 +3,7 @@ import type { DiskResponse } from '../@types/disk';
 import axiosInstance from '../lib/axiosInstance';
 
 const fetchDisk = async (): Promise<DiskResponse> => {
-  const { data } = await axiosInstance.get<DiskResponse>('/disk');
+  const { data } = await axiosInstance.get<DiskResponse>('/api/disk');
   return data;
 };
 

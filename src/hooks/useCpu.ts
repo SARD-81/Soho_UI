@@ -19,7 +19,7 @@ export interface CpuResponse {
 }
 
 const fetchCpu = async () => {
-  const { data } = await axiosInstance.get<CpuResponse>('/cpu');
+  const { data } = await axiosInstance.get<CpuResponse>('/api/cpu');
   return data;
 };
 

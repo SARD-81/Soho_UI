@@ -13,7 +13,7 @@ export type MemoryResponse = {
 };
 
 const fetchMemory = async () => {
-  const { data } = await axiosInstance.get<MemoryResponse>('/memory');
+  const { data } = await axiosInstance.get<MemoryResponse>('/api/memory');
   return data;
 };
 

@@ -252,11 +252,6 @@ const Network = () => {
   const interfaces = data?.interfaces ?? {};
   const names = Object.keys(interfaces);
 
-  const cardBorderColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(0, 0, 0, 0.08)';
-
   const metaInfoBorderColor =
     theme.palette.mode === 'dark'
       ? 'rgba(255, 255, 255, 0.12)'
@@ -428,27 +423,35 @@ const Network = () => {
                       ipv4Details.length > 1
                         ? ` IPv4 ${index + 1}: `
                         : ' IPv4: ';
-                    const netmaskSuffix = entry.netmask
+                    const netmaskText = entry.netmask
                       ? ` نت‌ماسک: ${entry.netmask}`
-                      : '';
+                      : null;
+                    const baseKey = entry.address ?? `ipv4-${index}`;
 
                     return (
-                      <>
+                      <Box
+                        key={`${baseKey}-${index}`}
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 0.25,
+                        }}
+                      >
                         <Typography
-                          key={`${entry.address}-${index}`}
                           variant="body2"
                           sx={{ color: theme.palette.text.secondary }}
                         >
                           {`${labelPrefix}${entry.address}`}
                         </Typography>
-                        <Typography
-                          key={`${entry.address}-${index}`}
-                          variant="body2"
-                          sx={{ color: theme.palette.text.secondary }}
-                        >
-                          {`${netmaskSuffix}`}
-                        </Typography>
-                      </>
+                        {netmaskText && (
+                          <Typography
+                            variant="body2"
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
+                            {netmaskText}
+                          </Typography>
+                        )}
+                      </Box>
                     );
                   })
                 ) : (
