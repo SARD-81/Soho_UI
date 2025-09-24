@@ -4,6 +4,7 @@ import Cpu from '../components/Cpu';
 import Disk from '../components/Disk';
 import Memory from '../components/Memory';
 import Network from '../components/Network';
+import Zpool from '../components/Zpool';
 
 type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -70,11 +71,11 @@ const dashboardWidgets: DashboardWidget[] = [
     component: Memory,
     columns: { xs: 12, md: 6, xl: 3 },
   },
-  // {
-  //   id: 'disk-overview',
-  //   component: DiskOverview,
-  //   columns: { xs: 12, md: 12, xl: 6 },
-  // },
+  {
+    id: 'zpool-overview',
+    component: Zpool,
+    columns: { xs: 12, md: 12, xl: 6 },
+  },
   {
     id: 'disk',
     component: Disk,
