@@ -62,7 +62,8 @@ const parseByteValue = (value: unknown): number | null => {
 
         const normalizedUnit = unit.replace(/s$/, '');
         const multiplier =
-          BYTE_UNITS[normalizedUnit] ?? BYTE_UNITS[normalizedUnit.replace(/b$/, '')];
+          BYTE_UNITS[normalizedUnit] ??
+          BYTE_UNITS[normalizedUnit.replace(/b$/, '')];
 
         if (multiplier != null) {
           return baseValue * multiplier;
@@ -96,7 +97,9 @@ const parsePercentValue = (value: unknown): number | null => {
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
-const parseDedup = (value: unknown): { ratio: number | null; display: string | null } => {
+const parseDedup = (
+  value: unknown
+): { ratio: number | null; display: string | null } => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return {
       ratio: value,
@@ -170,7 +173,12 @@ const normalizeZpoolCapacity = (
     freeBytes = totalBytes - usedBytes;
   }
 
-  if (capacityPercent == null && totalBytes != null && usedBytes != null && totalBytes > 0) {
+  if (
+    capacityPercent == null &&
+    totalBytes != null &&
+    usedBytes != null &&
+    totalBytes > 0
+  ) {
     capacityPercent = (usedBytes / totalBytes) * 100;
   }
 
@@ -223,13 +231,13 @@ const normalizeZpoolCapacity = (
 };
 
 const fetchZpools = async (): Promise<ZpoolQueryResult> => {
-  const { data: listResponse } = await axiosInstance.get<ZpoolListResponse>(
-    ZPOOL_LIST_ENDPOINT
-  );
+  const { data: listResponse } =
+    await axiosInstance.get<ZpoolListResponse>(ZPOOL_LIST_ENDPOINT);
 
   const poolNames = Array.isArray(listResponse?.data)
-    ? listResponse.data.filter((poolName): poolName is string =>
-        typeof poolName === 'string' && poolName.trim().length > 0
+    ? listResponse.data.filter(
+        (poolName): poolName is string =>
+          typeof poolName === 'string' && poolName.trim().length > 0
       )
     : [];
 
@@ -240,7 +248,9 @@ const fetchZpools = async (): Promise<ZpoolQueryResult> => {
   const requests = poolNames.map((poolName) =>
     axiosInstance
       .get<ZpoolCapacityResponse>(createZpoolCapacityEndpoint(poolName))
-      .then((response) => normalizeZpoolCapacity(poolName, response.data?.data ?? {}))
+      .then((response) =>
+        normalizeZpoolCapacity(poolName, response.data?.data ?? {})
+      )
       .catch((error) => {
         throw { poolName, error };
       })

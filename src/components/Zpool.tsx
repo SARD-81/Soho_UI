@@ -10,9 +10,9 @@ import {
 import { useMemo } from 'react';
 import { diskPercentFormatter, tooltipMultilineSx } from '../constants/disk';
 import { useZpool } from '../hooks/useZpool';
+import { formatBytes } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
 import AppPieChart from './charts/AppPieChart';
-import { formatBytes } from '../utils/formatters';
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
@@ -25,7 +25,10 @@ const Zpool = () => {
   const cardSx = createCardSx(theme);
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
-  const failedPools = useMemo(() => data?.failedPools ?? [], [data?.failedPools]);
+  const failedPools = useMemo(
+    () => data?.failedPools ?? [],
+    [data?.failedPools]
+  );
 
   const isDarkMode = theme.palette.mode === 'dark';
   const cardBorderColor = isDarkMode
@@ -181,7 +184,8 @@ const Zpool = () => {
           variant="outlined"
           sx={{ direction: 'rtl', fontSize: '0.875rem' }}
         >
-          بازیابی اطلاعات برای استخرهای زیر با خطا مواجه شد: {failedPools.join('، ')}
+          بازیابی اطلاعات برای استخرهای زیر با خطا مواجه شد:{' '}
+          {failedPools.join('، ')}
         </Alert>
       )}
 
@@ -189,6 +193,7 @@ const Zpool = () => {
         <Box
           sx={{
             width: '100%',
+            height: '100%',
             display: 'flex',
             flexWrap: 'wrap',
             gap: 2,
@@ -204,7 +209,9 @@ const Zpool = () => {
             const derivedTotal =
               totalRaw > 0 ? totalRaw : nonNegativeUsed + nonNegativeFree;
             const safeTotal =
-              derivedTotal > 0 ? derivedTotal : nonNegativeUsed + nonNegativeFree;
+              derivedTotal > 0
+                ? derivedTotal
+                : nonNegativeUsed + nonNegativeFree;
             const boundedUsed =
               safeTotal > 0
                 ? Math.min(nonNegativeUsed, safeTotal)
@@ -238,16 +245,17 @@ const Zpool = () => {
               chartOuterRadius * 0.22
             );
 
-            const stats: Array<{ key: string; label: string; value: string }> = [
-              {
-                key: 'used',
-                label: 'استفاده‌شده',
-                value: formatBytes(boundedUsed),
-              },
-              { key: 'free', label: 'خالی', value: formatBytes(boundedFree) },
-              { key: 'total', label: 'کل', value: formatBytes(safeTotal) },
-              { key: 'percent', label: 'درصد استفاده', value: percentText },
-            ];
+            const stats: Array<{ key: string; label: string; value: string }> =
+              [
+                {
+                  key: 'used',
+                  label: 'استفاده‌شده',
+                  value: formatBytes(boundedUsed),
+                },
+                { key: 'free', label: 'خالی', value: formatBytes(boundedFree) },
+                { key: 'total', label: 'کل', value: formatBytes(safeTotal) },
+                { key: 'percent', label: 'درصد استفاده', value: percentText },
+              ];
 
             if (pool.health) {
               stats.push({ key: 'health', label: 'سلامت', value: pool.health });
@@ -297,6 +305,7 @@ const Zpool = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
+                  justifyContent: 'space-between',
                   gap: 2,
                 }}
               >
