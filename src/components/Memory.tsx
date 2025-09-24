@@ -288,7 +288,7 @@ const Memory = () => {
         <Typography
           variant="h3"
           sx={{
-            fontFamily: 'var(--font-didot)',
+            fontFamily: 'var(--font-vazir)',
             fontWeight: 600,
             color: 'var(--color-primary)',
           }}

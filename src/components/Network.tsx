@@ -252,11 +252,6 @@ const Network = () => {
   const interfaces = data?.interfaces ?? {};
   const names = Object.keys(interfaces);
 
-  const cardBorderColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(0, 0, 0, 0.08)';
-
   const metaInfoBorderColor =
     theme.palette.mode === 'dark'
       ? 'rgba(255, 255, 255, 0.12)'

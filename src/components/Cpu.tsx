@@ -100,11 +100,6 @@ const Cpu = () => {
       ? 'rgba(255, 255, 255, 0.04)'
       : 'rgba(0, 0, 0, 0.03)';
 
-  const cardBorderColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(0, 0, 0, 0.08)';
-
   const stats = [
     {
       key: 'percent',

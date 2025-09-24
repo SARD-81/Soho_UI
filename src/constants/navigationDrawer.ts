@@ -4,7 +4,7 @@ import { FaShare } from 'react-icons/fa';
 import { FiUsers } from 'react-icons/fi';
 import { MdSpaceDashboard, MdStorage } from 'react-icons/md';
 import { RiSettings3Fill } from 'react-icons/ri';
-import type { NavigationItem } from '../../@types/components/navigationDrawer';
+import type { NavigationItem } from '../@types/navigationDrawer';
 
 export const drawerWidth = 200;
 

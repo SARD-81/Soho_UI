@@ -62,9 +62,8 @@ function LoginForm() {
     if (isSuccess) {
       toast.success('ورود موفقیت‌آمیز بود!');
     } else if (isError) {
-      toast.error(
-        error?.message || 'ورود ناموفق! لطفا اطلاعات خود را بررسی کنید.'
-      );
+      toast.error('ورود ناموفق! لطفا اطلاعات خود را بررسی کنید.');
+      console.error(error?.message);
     }
   }, [isSuccess, isError, error]);
 
