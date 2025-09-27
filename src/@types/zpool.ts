@@ -1,11 +1,7 @@
-export interface ZpoolListResponse {
-  data: string[];
-}
-
 export type ZpoolCapacityPayload = Record<string, unknown>;
 
-export interface ZpoolCapacityResponse {
-  data: ZpoolCapacityPayload;
+export interface ZpoolListResponse {
+  data: ZpoolCapacityPayload[];
 }
 
 export interface ZpoolCapacityEntry {

@@ -1,25 +1,54 @@
 import {
   Box,
+  Button,
+  Checkbox,
   Chip,
   CircularProgress,
+  FormControl,
+  FormControlLabel,
+  FormGroup,
+  FormHelperText,
   IconButton,
+  InputLabel,
   LinearProgress,
+  MenuItem,
   Paper,
+  Select,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useMemo } from 'react';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
+import type { FormEvent } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { MdDeleteOutline, MdEdit } from 'react-icons/md';
 import type { ZpoolCapacityEntry } from '../@types/zpool';
-import { diskPercentFormatter } from '../constants/disk';
+import BlurModal from '../components/BlurModal';
+import { useDisk } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
+import axiosInstance from '../lib/axiosInstance';
 import { formatBytes } from '../utils/formatters';
+
+interface ApiErrorResponse {
+  detail?: string;
+  message?: string;
+  errors?: string | string[];
+  [key: string]: unknown;
+}
+
+interface CreatePoolPayload {
+  pool_name: string;
+  devices: string[];
+  vdev_type: string;
+}
 
 const STATUS_STYLES: Record<
   'active' | 'warning' | 'maintenance' | 'unknown',
@@ -105,56 +134,385 @@ const formatCapacity = (value: number | null | undefined) =>
     fallback: '-',
   });
 
-const formatPercent = (value: number | null | undefined) => {
-  if (value == null || !Number.isFinite(value)) {
-    return '-';
-  }
-
-  return `${diskPercentFormatter.format(value)}٪`;
-};
-
-const getDedupLabel = (pool: ZpoolCapacityEntry) => {
-  if (pool.deduplication) {
-    return pool.deduplication;
-  }
-
-  if (
-    pool.deduplicationRatio != null &&
-    Number.isFinite(pool.deduplicationRatio)
-  ) {
-    return `${pool.deduplicationRatio.toFixed(2)}x`;
-  }
-
-  return '-';
-};
-
 const IntegratedStorage = () => {
-  const { data, isLoading, error } = useZpool({ refetchInterval: 15000 });
+  const queryClient = useQueryClient();
+  const {
+    data,
+    isLoading: isPoolsLoading,
+    error: zpoolError,
+  } = useZpool({
+    refetchInterval: 15000,
+  });
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [poolName, setPoolName] = useState('');
+  const [vdevType, setVdevType] = useState('disk');
+  const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
+  const [poolNameError, setPoolNameError] = useState<string | null>(null);
+  const [devicesError, setDevicesError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  const resetCreateForm = useCallback(() => {
+    setPoolName('');
+    setVdevType('disk');
+    setSelectedDevices([]);
+    setPoolNameError(null);
+    setDevicesError(null);
+    setApiError(null);
+  }, []);
+
+  const handleOpenCreate = useCallback(() => {
+    resetCreateForm();
+    setIsCreateModalOpen(true);
+  }, [resetCreateForm]);
+
+  const {
+    data: diskData,
+    isLoading: isDiskLoading,
+    error: diskError,
+  } = useDisk({
+    enabled: isCreateModalOpen,
+    refetchInterval: isCreateModalOpen ? 5000 : undefined,
+  });
+
+  const deviceOptions = useMemo(() => {
+    const summary = diskData?.summary.disk_io_summary;
+    if (!summary) {
+      return [] as string[];
+    }
+
+    return Object.keys(summary).sort((a, b) => a.localeCompare(b, 'en'));
+  }, [diskData?.summary.disk_io_summary]);
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
 
+  const extractApiMessage = useCallback(
+    (error: AxiosError<ApiErrorResponse>) => {
+      const payload = error.response?.data;
+
+      if (!payload) {
+        return error.message;
+      }
+
+      if (typeof payload === 'string') {
+        return payload;
+      }
+
+      if (payload.detail && typeof payload.detail === 'string') {
+        return payload.detail;
+      }
+
+      if (payload.message && typeof payload.message === 'string') {
+        return payload.message;
+      }
+
+      if (payload.errors) {
+        if (Array.isArray(payload.errors)) {
+          return payload.errors.join('، ');
+        }
+
+        if (typeof payload.errors === 'string') {
+          return payload.errors;
+        }
+      }
+
+      return error.message;
+    },
+    []
+  );
+
+  const createPoolMutation = useMutation<
+    unknown,
+    AxiosError<ApiErrorResponse>,
+    CreatePoolPayload
+  >({
+    mutationFn: async (payload) => {
+      await axiosInstance.post('/api/zpool/create', payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['zpool'] });
+      resetCreateForm();
+      setIsCreateModalOpen(false);
+      if (typeof window !== 'undefined') {
+        window.alert('Pool جدید با موفقیت ایجاد شد.');
+      }
+    },
+    onError: (error) => {
+      setApiError(extractApiMessage(error));
+    },
+  });
+
+  const handleCloseCreate = useCallback(() => {
+    resetCreateForm();
+    setIsCreateModalOpen(false);
+    createPoolMutation.reset();
+  }, [createPoolMutation, resetCreateForm]);
+
+  const handleDeviceToggle = useCallback((device: string) => {
+    setSelectedDevices((prev) => {
+      if (prev.includes(device)) {
+        return prev.filter((item) => item !== device);
+      }
+
+      return [...prev, device];
+    });
+  }, []);
+
+  const handleVdevTypeChange = useCallback(
+    (event: SelectChangeEvent<string>) => {
+      setVdevType(event.target.value);
+    },
+    []
+  );
+
+  const handleCreateSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setPoolNameError(null);
+      setDevicesError(null);
+      setApiError(null);
+
+      const trimmedName = poolName.trim();
+      let hasError = false;
+
+      if (!trimmedName) {
+        setPoolNameError('لطفاً نام Pool را وارد کنید.');
+        hasError = true;
+      }
+
+      if (selectedDevices.length === 0) {
+        setDevicesError('حداقل یک دیسک را انتخاب کنید.');
+        hasError = true;
+      }
+
+      if (hasError) {
+        return;
+      }
+
+      createPoolMutation.mutate({
+        pool_name: trimmedName,
+        devices: selectedDevices,
+        vdev_type: vdevType,
+      });
+    },
+    [createPoolMutation, poolName, selectedDevices, vdevType]
+  );
+
   const handleEdit = useCallback((pool: ZpoolCapacityEntry) => {
     if (typeof window !== 'undefined') {
-      window.alert(`ویرایش استخر ${pool.name}`);
+      window.alert(`ویرایش Pool ${pool.name}`);
     }
   }, []);
 
-  const handleDelete = useCallback((pool: ZpoolCapacityEntry) => {
-    if (typeof window !== 'undefined') {
-      window.alert(`حذف استخر ${pool.name}`);
-    }
-  }, []);
+  const deletePoolMutation = useMutation<
+    unknown,
+    AxiosError<ApiErrorResponse>,
+    string
+  >({
+    mutationFn: async (poolNameParam) => {
+      await axiosInstance.post('/api/zpool/delete', {
+        pool_name: poolNameParam,
+      });
+    },
+    onSuccess: (_, poolNameParam) => {
+      queryClient.invalidateQueries({ queryKey: ['zpool'] });
+      if (typeof window !== 'undefined') {
+        window.alert(`Pool ${poolNameParam} با موفقیت حذف شد.`);
+      }
+    },
+    onError: (error, poolNameParam) => {
+      if (typeof window !== 'undefined') {
+        window.alert(
+          `خطا در حذف Pool ${poolNameParam}: ${extractApiMessage(error)}`
+        );
+      }
+    },
+  });
+
+  const handleDelete = useCallback(
+    (pool: ZpoolCapacityEntry) => {
+      if (deletePoolMutation.isPending) {
+        return;
+      }
+
+      if (
+        typeof window !== 'undefined' &&
+        window.confirm(`آیا از حذف Pool ${pool.name} مطمئن هستید؟`)
+      ) {
+        deletePoolMutation.mutate(pool.name);
+      }
+    },
+    [deletePoolMutation]
+  );
 
   return (
     <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Typography
-          variant="h5"
-          sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            flexWrap: 'wrap',
+          }}
         >
-          فضای یکپارچه
-        </Typography>
+          <Typography
+            variant="h5"
+            sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+          >
+            فضای یکپارچه
+          </Typography>
+
+          <Button
+            onClick={handleOpenCreate}
+            variant="contained"
+            sx={{
+              px: 3,
+              py: 1.25,
+              borderRadius: 999,
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              background:
+                'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+              color: 'var(--color-bg)',
+              boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+              '&:hover': {
+                background:
+                  'linear-gradient(135deg, rgba(0, 198, 169, 0.95) 0%, rgba(18, 140, 200, 0.95) 100%)',
+                boxShadow: '0 18px 36px -18px rgba(0, 198, 169, 0.75)',
+              },
+            }}
+          >
+            ایجاد
+          </Button>
+        </Box>
       </Box>
+
+      <BlurModal
+        open={isCreateModalOpen}
+        onClose={handleCloseCreate}
+        title="ایجاد Pool جدید"
+        actions={
+          <>
+            <Button
+              onClick={handleCloseCreate}
+              variant="outlined"
+              color="inherit"
+              disabled={createPoolMutation.isPending}
+              sx={{ borderRadius: 999, px: 3, fontWeight: 600 }}
+            >
+              انصراف
+            </Button>
+            <Button
+              type="submit"
+              form="create-pool-form"
+              variant="contained"
+              disabled={createPoolMutation.isPending}
+              sx={{
+                borderRadius: 999,
+                px: 4,
+                fontWeight: 700,
+                background:
+                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+                boxShadow: '0 14px 28px -18px rgba(0, 198, 169, 0.8)',
+                '&:hover': {
+                  background:
+                    'linear-gradient(135deg, rgba(0, 198, 169, 0.95) 0%, rgba(18, 140, 200, 0.95) 100%)',
+                },
+              }}
+            >
+              {createPoolMutation.isPending ? 'در حال ایجاد…' : 'ایجاد'}
+            </Button>
+          </>
+        }
+      >
+        <Box
+          component="form"
+          id="create-pool-form"
+          onSubmit={handleCreateSubmit}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              label="نام Pool"
+              value={poolName}
+              onChange={(event) => setPoolName(event.target.value)}
+              autoFocus
+              fullWidth
+              error={Boolean(poolNameError)}
+              helperText={poolNameError ?? 'نام یکتا برای Pool جدید وارد کنید.'}
+              InputLabelProps={{ shrink: true }}
+            />
+
+            <FormControl fullWidth>
+              <InputLabel id="vdev-type-label">نوع VDEV</InputLabel>
+              <Select
+                labelId="vdev-type-label"
+                label="نوع VDEV"
+                value={vdevType}
+                onChange={handleVdevTypeChange}
+              >
+                <MenuItem value="disk">disk</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl component="fieldset" error={Boolean(devicesError)}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>
+                انتخاب دیسک‌ها
+              </Typography>
+
+              {isDiskLoading && (
+                <LinearProgress sx={{ borderRadius: 999, height: 6 }} />
+              )}
+
+              {diskError && !isDiskLoading && (
+                <Typography sx={{ color: 'var(--color-error)' }}>
+                  خطا در دریافت اطلاعات دیسک‌ها: {diskError.message}
+                </Typography>
+              )}
+
+              {!isDiskLoading && !diskError && deviceOptions.length === 0 && (
+                <Typography sx={{ color: 'var(--color-secondary)' }}>
+                  دیسکی برای انتخاب موجود نیست.
+                </Typography>
+              )}
+
+              {!isDiskLoading && !diskError && deviceOptions.length > 0 && (
+                <FormGroup
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns:
+                      'repeat(auto-fill, minmax(160px, 1fr))',
+                    gap: 1,
+                    mt: 1,
+                  }}
+                >
+                  {deviceOptions.map((device) => (
+                    <FormControlLabel
+                      key={device}
+                      control={
+                        <Checkbox
+                          checked={selectedDevices.includes(device)}
+                          onChange={() => handleDeviceToggle(device)}
+                        />
+                      }
+                      label={device}
+                    />
+                  ))}
+                </FormGroup>
+              )}
+
+              {devicesError && <FormHelperText>{devicesError}</FormHelperText>}
+            </FormControl>
+
+            {apiError && (
+              <Typography sx={{ color: 'var(--color-error)', fontWeight: 600 }}>
+                {apiError}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      </BlurModal>
 
       <TableContainer
         component={Paper}
@@ -190,7 +548,7 @@ const IntegratedStorage = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {isLoading && (
+            {isPoolsLoading && (
               <TableRow>
                 <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
                   <Box
@@ -210,17 +568,17 @@ const IntegratedStorage = () => {
               </TableRow>
             )}
 
-            {error && !isLoading && (
+            {zpoolError && !isPoolsLoading && (
               <TableRow>
                 <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                   <Typography sx={{ color: 'var(--color-error)' }}>
-                    خطا در دریافت اطلاعات استخرها: {error.message}
+                    خطا در دریافت اطلاعات استخرها: {zpoolError.message}
                   </Typography>
                 </TableCell>
               </TableRow>
             )}
 
-            {!isLoading && !error && pools.length === 0 && (
+            {!isPoolsLoading && !zpoolError && pools.length === 0 && (
               <TableRow>
                 <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                   <Typography sx={{ color: 'var(--color-secondary)' }}>
@@ -338,6 +696,7 @@ const IntegratedStorage = () => {
                           size="small"
                           color="error"
                           onClick={() => handleDelete(pool)}
+                          disabled={deletePoolMutation.isPending}
                         >
                           <MdDeleteOutline size={18} />
                         </IconButton>

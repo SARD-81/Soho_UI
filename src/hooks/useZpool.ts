@@ -2,16 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import type {
   ZpoolCapacityEntry,
   ZpoolCapacityPayload,
-  ZpoolCapacityResponse,
   ZpoolListResponse,
   ZpoolQueryResult,
 } from '../@types/zpool';
 import axiosInstance from '../lib/axiosInstance';
 
 const ZPOOL_LIST_ENDPOINT = '/api/zpool/';
-
-const createZpoolDetailsEndpoint = (poolName: string) =>
-  `/api/zpool/${encodeURIComponent(poolName)}/`;
 
 const BYTE_UNITS: Record<string, number> = {
   b: 1,
@@ -234,43 +230,27 @@ const fetchZpools = async (): Promise<ZpoolQueryResult> => {
   const { data: listResponse } =
     await axiosInstance.get<ZpoolListResponse>(ZPOOL_LIST_ENDPOINT);
 
-  const poolNames = Array.isArray(listResponse?.data)
-    ? listResponse.data.filter(
-        (poolName): poolName is string =>
-          typeof poolName === 'string' && poolName.trim().length > 0
-      )
-    : [];
-
-  if (poolNames.length === 0) {
+  if (!Array.isArray(listResponse?.data)) {
     return { pools: [], failedPools: [] };
   }
-
-  const requests = poolNames.map((poolName) =>
-    axiosInstance
-      .get<ZpoolCapacityResponse>(createZpoolDetailsEndpoint(poolName))
-      .then((response) =>
-        normalizeZpoolCapacity(poolName, response.data?.data ?? {})
-      )
-      .catch((error) => {
-        throw { poolName, error };
-      })
-  );
-
-  const settledResults = await Promise.allSettled(requests);
 
   const pools: ZpoolCapacityEntry[] = [];
   const failedPools: string[] = [];
 
-  settledResults.forEach((result) => {
-    if (result.status === 'fulfilled') {
-      pools.push(result.value);
+  listResponse.data.forEach((poolData, index) => {
+    if (!poolData || typeof poolData !== 'object') {
+      failedPools.push(`Pool #${index + 1}`);
       return;
     }
 
-    const failure = result.reason as { poolName?: string } | undefined;
-    if (failure?.poolName) {
-      failedPools.push(failure.poolName);
-    }
+    const rawObject = poolData as ZpoolCapacityPayload;
+    const rawName = (rawObject as Record<string, unknown>).name;
+    const fallbackName =
+      typeof rawName === 'string' && rawName.trim().length > 0
+        ? rawName
+        : `Pool #${index + 1}`;
+
+    pools.push(normalizeZpoolCapacity(fallbackName, rawObject));
   });
 
   pools.sort((a, b) => a.name.localeCompare(b.name, 'fa'));
