@@ -1,9 +1,9 @@
 import { Box, Button, Typography } from '@mui/material';
 import BlurModal from '../BlurModal';
-import type { UsePoolDeletionReturn } from '../../hooks/usePoolDeletion';
+import type { UseDeleteZpoolReturn } from '../../hooks/useDeleteZpool';
 
 interface ConfirmDeletePoolModalProps {
-  controller: UsePoolDeletionReturn;
+  controller: UseDeleteZpoolReturn;
 }
 
 const buttonStyles = {
