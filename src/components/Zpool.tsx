@@ -155,7 +155,7 @@ const Zpool = () => {
     return (
       <Box sx={cardSx}>
         <Typography variant="body2" sx={{ color: 'var(--color-error)' }}>
-          خطا در دریافت اطلاعات استخرها: {error.message}
+          خطا در دریافت اطلاعات Pool ها: {error.message}
         </Typography>
       </Box>
     );
@@ -175,7 +175,7 @@ const Zpool = () => {
         <Box component="span" sx={{ fontSize: 20 }}>
           🗃️
         </Box>
-        نمای کلی استخرهای ZFS
+        نمای کلی Pool های ZFS
       </Typography>
 
       {failedPools.length > 0 && (
@@ -184,7 +184,7 @@ const Zpool = () => {
           variant="outlined"
           sx={{ direction: 'rtl', fontSize: '0.875rem' }}
         >
-          بازیابی اطلاعات برای استخرهای زیر با خطا مواجه شد:{' '}
+          بازیابی اطلاعات برای Pool های زیر با خطا مواجه شد:{' '}
           {failedPools.join('، ')}
         </Alert>
       )}
@@ -472,7 +472,7 @@ const Zpool = () => {
           variant="body2"
           sx={{ color: theme.palette.text.secondary }}
         >
-          هیچ استخر فعالی یافت نشد.
+          هیچ Pool فعالی یافت نشد.
         </Typography>
       )}
     </Box>
