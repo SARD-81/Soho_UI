@@ -19,11 +19,6 @@ export interface VolumeEntry {
   raw: VolumeRawEntry;
 }
 
-export interface VolumeGroup {
-  poolName: string;
-  volumes: VolumeEntry[];
-}
-
 export interface VolumeQueryResult {
   volumes: VolumeEntry[];
 }
