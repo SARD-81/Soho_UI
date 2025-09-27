@@ -1,5 +1,6 @@
-import { Alert, Box, Button, Typography } from '@mui/material';
-import { useCallback, useMemo, useState } from 'react';
+import { Box, Button, Typography } from '@mui/material';
+import { useCallback, useMemo } from 'react';
+import { toast } from 'react-hot-toast';
 import type { ZpoolCapacityEntry } from '../@types/zpool';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
@@ -10,24 +11,21 @@ import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { useZpool } from '../hooks/useZpool';
 
 const IntegratedStorage = () => {
-  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-
-  const handleFeedback = useCallback((message: string | null) => {
-    setFeedbackMessage(message);
-  }, []);
-
   const createPool = useCreatePool({
     onSuccess: (poolName) => {
-      handleFeedback(`Pool ${poolName} با موفقیت ایجاد شد.`);
+      toast.success(`Pool ${poolName} با موفقیت ایجاد شد.`);
+    },
+    onError: (errorMessage) => {
+      toast.error(`ایجاد Pool با خطا مواجه شد: ${errorMessage}`);
     },
   });
 
   const poolDeletion = useDeleteZpool({
     onSuccess: (poolName) => {
-      handleFeedback(`Pool ${poolName} با موفقیت حذف شد.`);
+      toast.success(`Pool ${poolName} با موفقیت حذف شد.`);
     },
     onError: (error, poolName) => {
-      handleFeedback(`حذف Pool ${poolName} با خطا مواجه شد: ${error.message}`);
+      toast.error(`حذف Pool ${poolName} با خطا مواجه شد: ${error.message}`);
     },
   });
 
@@ -50,7 +48,9 @@ const IntegratedStorage = () => {
       return [] as string[];
     }
 
-    return Object.keys(summary).sort((a, b) => a.localeCompare(b, 'en'));
+    return Object.keys(summary)
+      .filter((device) => device.length === 3 && device.startsWith('sd'))
+      .sort((a, b) => a.localeCompare(b, 'en'));
   }, [diskData?.summary.disk_io_summary]);
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
@@ -62,16 +62,14 @@ const IntegratedStorage = () => {
   }, []);
 
   const handleOpenCreate = useCallback(() => {
-    handleFeedback(null);
     createPool.openCreateModal();
-  }, [createPool, handleFeedback]);
+  }, [createPool]);
 
   const handleDelete = useCallback(
     (pool: ZpoolCapacityEntry) => {
-      handleFeedback(null);
       poolDeletion.requestDelete(pool);
     },
-    [handleFeedback, poolDeletion]
+    [poolDeletion]
   );
 
   return (
@@ -114,24 +112,6 @@ const IntegratedStorage = () => {
           </Button>
         </Box>
 
-        {feedbackMessage && (
-          <Alert
-            severity={feedbackMessage.includes('خطا') ? 'error' : 'success'}
-            onClose={() => handleFeedback(null)}
-            sx={{
-              borderRadius: '10px',
-              backgroundColor: 'var(--color-card-bg)',
-              color: 'var(--color-text)',
-              '& .MuiAlert-icon': {
-                color: feedbackMessage.includes('خطا')
-                  ? 'var(--color-error)'
-                  : 'var(--color-primary)',
-              },
-            }}
-          >
-            {feedbackMessage}
-          </Alert>
-        )}
       </Box>
 
       <CreatePoolModal
