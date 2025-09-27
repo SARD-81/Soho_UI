@@ -6,7 +6,7 @@ import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDisk } from '../hooks/useDisk';
-import { usePoolDeletion } from '../hooks/usePoolDeletion';
+import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { useZpool } from '../hooks/useZpool';
 
 const IntegratedStorage = () => {
@@ -22,7 +22,7 @@ const IntegratedStorage = () => {
     },
   });
 
-  const poolDeletion = usePoolDeletion({
+  const poolDeletion = useDeleteZpool({
     onSuccess: (poolName) => {
       handleFeedback(`Pool ${poolName} با موفقیت حذف شد.`);
     },
