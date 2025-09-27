@@ -16,6 +16,7 @@ export interface VolumeEntry {
   poolName: string;
   volumeName: string;
   attributes: VolumeAttribute[];
+  attributeMap: Record<string, string>;
   raw: VolumeRawEntry;
 }
 

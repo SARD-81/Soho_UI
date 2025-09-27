@@ -1,7 +1,7 @@
 import { Box, Button, Typography } from '@mui/material';
 import { useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
-import type { VolumeEntry, VolumeGroup } from '../@types/volume';
+import type { VolumeEntry } from '../@types/volume';
 import ConfirmDeleteVolumeModal from '../components/block-storage/ConfirmDeleteVolumeModal';
 import CreateVolumeModal from '../components/block-storage/CreateVolumeModal';
 import VolumesTable from '../components/block-storage/VolumesTable';
@@ -40,26 +40,24 @@ const BlockStorage = () => {
     [poolData?.pools]
   );
 
-  const volumeGroups = useMemo<VolumeGroup[]>(() => {
-    const groups = new Map<string, VolumeEntry[]>();
+  const volumes = useMemo(
+    () => volumeData?.volumes ?? [],
+    [volumeData?.volumes]
+  );
 
-    poolOptions.forEach((poolName) => {
-      groups.set(poolName, []);
+  const attributeKeys = useMemo(() => {
+    const keys = new Set<string>();
+
+    volumes.forEach((volume) => {
+      volume.attributes.forEach((attribute) => {
+        if (attribute.key !== 'name') {
+          keys.add(attribute.key);
+        }
+      });
     });
 
-    (volumeData?.volumes ?? []).forEach((volume) => {
-      const existing = groups.get(volume.poolName) ?? [];
-      existing.push(volume);
-      groups.set(volume.poolName, existing);
-    });
-
-    return Array.from(groups.entries())
-      .map(([poolName, volumes]) => ({
-        poolName,
-        volumes: volumes.sort((a, b) => a.volumeName.localeCompare(b.volumeName, 'fa')),
-      }))
-      .sort((a, b) => a.poolName.localeCompare(b.poolName, 'fa'));
-  }, [poolOptions, volumeData?.volumes]);
+    return Array.from(keys).sort((a, b) => a.localeCompare(b, 'fa'));
+  }, [volumes]);
 
   const handleOpenCreate = useCallback(() => {
     createVolume.openCreateModal();
@@ -119,7 +117,8 @@ const BlockStorage = () => {
       <CreateVolumeModal controller={createVolume} poolOptions={poolOptions} />
 
       <VolumesTable
-        groups={volumeGroups}
+        volumes={volumes}
+        attributeKeys={attributeKeys}
         isLoading={isLoading}
         error={error ?? null}
         onDeleteVolume={handleDeleteRequest}

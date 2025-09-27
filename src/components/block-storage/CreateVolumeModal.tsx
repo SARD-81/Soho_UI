@@ -39,7 +39,10 @@ const inputBaseStyles = {
   },
 };
 
-const CreateVolumeModal = ({ controller, poolOptions }: CreateVolumeModalProps) => {
+const CreateVolumeModal = ({
+  controller,
+  poolOptions,
+}: CreateVolumeModalProps) => {
   const {
     isOpen,
     closeCreateModal,
@@ -116,7 +119,10 @@ const CreateVolumeModal = ({ controller, poolOptions }: CreateVolumeModalProps) 
       <Box component="form" id="create-volume-form" onSubmit={handleSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <FormControl fullWidth error={Boolean(poolError)}>
-            <InputLabel id="volume-pool-select" sx={{ color: 'var(--color-text)' }}>
+            <InputLabel
+              id="volume-pool-select"
+              sx={{ color: 'var(--color-text)' }}
+            >
               انتخاب Pool
             </InputLabel>
             <Select
@@ -182,7 +188,10 @@ const CreateVolumeModal = ({ controller, poolOptions }: CreateVolumeModalProps) 
             />
 
             <FormControl fullWidth>
-              <InputLabel id="volume-size-unit" sx={{ color: 'var(--color-text)' }}>
+              <InputLabel
+                id="volume-size-unit"
+                sx={{ color: 'var(--color-text)' }}
+              >
                 واحد
               </InputLabel>
               <Select
