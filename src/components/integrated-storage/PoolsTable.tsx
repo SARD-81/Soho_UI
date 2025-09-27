@@ -10,8 +10,8 @@ import {
 import { useMemo } from 'react';
 import { MdDeleteOutline, MdEdit } from 'react-icons/md';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
-import DataTable from '../common/DataTable';
-import type { DataTableColumn } from '../common/DataTable';
+import type { DataTableColumn } from '../DataTable';
+import DataTable from '../DataTable';
 import {
   clampPercent,
   formatCapacity,
@@ -69,7 +69,10 @@ const PoolsTable = ({
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
               {pool.name}
             </Typography>
-            <Typography variant="caption" sx={{ color: 'var(--color-secondary)' }}>
+            <Typography
+              variant="caption"
+              sx={{ color: 'var(--color-secondary)' }}
+            >
               وضعیت گزارش‌شده: {pool.health ?? 'نامشخص'}
             </Typography>
           </Box>
@@ -116,7 +119,10 @@ const PoolsTable = ({
               </Box>
               <Typography variant="body2" sx={{ color: 'var(--color-text)' }}>
                 {formatCapacity(pool.usedBytes)}
-                <Typography component="span" sx={{ mx: 0.5, color: 'var(--color-secondary)' }}>
+                <Typography
+                  component="span"
+                  sx={{ mx: 0.5, color: 'var(--color-secondary)' }}
+                >
                   از
                 </Typography>
                 {formatCapacity(pool.totalBytes)}
@@ -164,7 +170,11 @@ const PoolsTable = ({
         renderCell: (pool) => (
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
             <Tooltip title="ویرایش">
-              <IconButton size="small" color="primary" onClick={() => onEdit(pool)}>
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => onEdit(pool)}
+              >
                 <MdEdit size={18} />
               </IconButton>
             </Tooltip>

@@ -267,7 +267,7 @@ export const useZpool = (options?: UseZpoolOptions) => {
   return useQuery<ZpoolQueryResult, Error>({
     queryKey: ['zpool'],
     queryFn: fetchZpools,
-    refetchInterval: options?.refetchInterval ?? 10000,
+    refetchInterval: options?.refetchInterval ?? 1000,
     refetchIntervalInBackground: true,
   });
 };

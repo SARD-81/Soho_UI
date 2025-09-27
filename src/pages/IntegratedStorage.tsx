@@ -1,6 +1,6 @@
 import { Box, Button, Typography } from '@mui/material';
-import { useQueries } from '@tanstack/react-query';
 import type { UseQueryResult } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
@@ -12,7 +12,10 @@ import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { useDisk } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
-import { fetchZpoolDetails, zpoolDetailQueryKey } from '../hooks/useZpoolDetails';
+import {
+  fetchZpoolDetails,
+  zpoolDetailQueryKey,
+} from '../hooks/useZpoolDetails';
 
 const IntegratedStorage = () => {
   const createPool = useCreatePool({
@@ -166,7 +169,7 @@ const IntegratedStorage = () => {
             sx={{
               px: 3,
               py: 1.25,
-              borderRadius: '10px',
+              borderRadius: '3px',
               fontWeight: 700,
               fontSize: '0.95rem',
               background:

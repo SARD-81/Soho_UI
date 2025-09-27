@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { ZpoolDetailEntry, ZpoolDetailResponse } from '../@types/zpool';
+import type { ZpoolDetailEntry, ZpoolDetailResponse } from '../@types/zpool.ts';
 import axiosInstance from '../lib/axiosInstance';
 
 export const zpoolDetailQueryKey = (poolName: string) => [
@@ -19,7 +19,8 @@ export const fetchZpoolDetails = async (
   }
 
   const firstValidEntry = data.data.find(
-    (entry): entry is ZpoolDetailEntry => entry != null && typeof entry === 'object'
+    (entry): entry is ZpoolDetailEntry =>
+      entry != null && typeof entry === 'object'
   );
 
   if (!firstValidEntry) {
@@ -51,8 +52,6 @@ export const useZpoolDetails = (
     queryKey: zpoolDetailQueryKey(poolName),
     queryFn: () => fetchZpoolDetails(poolName),
     enabled: options?.enabled ?? true,
-    staleTime: 15000,
-    refetchInterval: options?.enabled ? 15000 : undefined,
+    refetchInterval: options?.enabled ? 1000 : undefined,
   });
 };
-

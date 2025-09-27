@@ -3,6 +3,7 @@ import {
   CircularProgress,
   IconButton,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { MdClose } from 'react-icons/md';
 import type { ZpoolDetailEntry } from '../../@types/zpool';
@@ -47,6 +48,16 @@ const SelectedPoolsDetailsPanel = ({
   items,
   onRemove,
 }: SelectedPoolsDetailsPanelProps) => {
+  const theme = useTheme();
+  const dividerColor =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.08)'
+      : 'rgba(0, 0, 0, 0.08)';
+  const listBackground =
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.04)'
+      : 'rgba(0, 0, 0, 0.03)';
+
   if (!items.length) {
     return null;
   }
@@ -91,8 +102,11 @@ const SelectedPoolsDetailsPanel = ({
               key={poolName}
               sx={{
                 borderRadius: 2,
-                border: '1px solid var(--color-input-border)',
-                backgroundColor: 'rgba(0, 198, 169, 0.05)',
+                border: `1px solid ${dividerColor}`,
+                backgroundColor:
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(0, 0, 0, 0.35)'
+                    : 'rgba(255, 255, 255, 0.9)',
                 p: 2.5,
                 display: 'flex',
                 flexDirection: 'column',
@@ -155,27 +169,52 @@ const SelectedPoolsDetailsPanel = ({
               {!isLoading && !error && entries.length > 0 && (
                 <Box
                   sx={{
-                    display: 'grid',
-                    gap: 1.5,
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                    width: '100%',
+                    bgcolor: listBackground,
+                    borderRadius: 2,
+                    px: 2,
+                    py: 2,
+                    border: `1px solid ${dividerColor}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
                   }}
                 >
-                  {entries.map(([key, value]) => (
+                  {entries.map(([key, value], index) => (
                     <Box
                       key={key}
                       sx={{
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: 0.5,
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        gap: 2,
+                        py: 0.75,
+                        borderBottom:
+                          index === entries.length - 1
+                            ? 'none'
+                            : `1px dashed ${dividerColor}`,
                       }}
                     >
                       <Typography
-                        variant="caption"
-                        sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}
+                        variant="body2"
+                        sx={{
+                          fontWeight: 500,
+                          color: theme.palette.text.secondary,
+                        }}
                       >
                         {key}
                       </Typography>
-                      <Typography sx={{ color: 'var(--color-text)', fontWeight: 500 }}>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontWeight: 700,
+                          color: 'var(--color-primary)',
+                          textAlign: 'left',
+                          direction: 'ltr',
+                          wordBreak: 'break-word',
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
                         {formatDetailValue(value)}
                       </Typography>
                     </Box>
@@ -191,4 +230,3 @@ const SelectedPoolsDetailsPanel = ({
 };
 
 export default SelectedPoolsDetailsPanel;
-
