@@ -21,3 +21,11 @@ export interface ZpoolQueryResult {
   pools: ZpoolCapacityEntry[];
   failedPools: string[];
 }
+
+export interface ZpoolDetailEntry {
+  [key: string]: unknown;
+}
+
+export interface ZpoolDetailResponse {
+  data?: ZpoolDetailEntry[];
+}
