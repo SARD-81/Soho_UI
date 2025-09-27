@@ -1,5 +1,6 @@
 import {
   Box,
+  Checkbox,
   Chip,
   CircularProgress,
   IconButton,
@@ -29,6 +30,8 @@ interface PoolsTableProps {
   onEdit: (pool: ZpoolCapacityEntry) => void;
   onDelete: (pool: ZpoolCapacityEntry) => void;
   isDeleteDisabled: boolean;
+  selectedPools: string[];
+  onToggleSelect: (pool: ZpoolCapacityEntry, checked: boolean) => void;
 }
 
 const PoolsTable = ({
@@ -38,6 +41,8 @@ const PoolsTable = ({
   onEdit,
   onDelete,
   isDeleteDisabled,
+  selectedPools,
+  onToggleSelect,
 }: PoolsTableProps) => (
   <TableContainer
     component={Paper}
@@ -64,6 +69,7 @@ const PoolsTable = ({
             },
           }}
         >
+          <TableCell padding="checkbox" sx={{ width: 52 }} />
           <TableCell align="left">نام Pool</TableCell>
           <TableCell align="left">ظرفیت کل</TableCell>
           <TableCell align="center">حجم مصرف‌شده</TableCell>
@@ -75,7 +81,7 @@ const PoolsTable = ({
       <TableBody>
         {isLoading && (
           <TableRow>
-            <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
+            <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -95,7 +101,7 @@ const PoolsTable = ({
 
         {error && !isLoading && (
           <TableRow>
-            <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+            <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
               <Typography sx={{ color: 'var(--color-error)' }}>
                 خطا در دریافت اطلاعات Pool ها: {error.message}
               </Typography>
@@ -105,7 +111,7 @@ const PoolsTable = ({
 
         {!isLoading && !error && pools.length === 0 && (
           <TableRow>
-            <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+            <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
               <Typography sx={{ color: 'var(--color-secondary)' }}>
                 هیچ Pool فعالی برای نمایش وجود ندارد.
               </Typography>
@@ -134,6 +140,14 @@ const PoolsTable = ({
                 },
               }}
             >
+              <TableCell padding="checkbox" align="center">
+                <Checkbox
+                  checked={selectedPools.includes(pool.name)}
+                  onChange={(event) => onToggleSelect(pool, event.target.checked)}
+                  color="primary"
+                  inputProps={{ 'aria-label': `انتخاب ${pool.name}` }}
+                />
+              </TableCell>
               <TableCell align="left">
                 <Typography
                   sx={{ fontWeight: 700, color: 'var(--color-text)' }}
