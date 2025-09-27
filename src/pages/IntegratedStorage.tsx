@@ -1,7 +1,13 @@
 import {
   Box,
+  Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   IconButton,
   LinearProgress,
   Paper,
@@ -14,10 +20,12 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useMemo } from 'react';
+import { isAxiosError } from 'axios';
+import { useCallback, useMemo, useState } from 'react';
 import { MdDeleteOutline, MdEdit } from 'react-icons/md';
 import type { ZpoolCapacityEntry } from '../@types/zpool';
 import { diskPercentFormatter } from '../constants/disk';
+import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { useZpool } from '../hooks/useZpool';
 import { formatBytes } from '../utils/formatters';
 
@@ -130,8 +138,36 @@ const getDedupLabel = (pool: ZpoolCapacityEntry) => {
 
 const IntegratedStorage = () => {
   const { data, isLoading, error } = useZpool({ refetchInterval: 15000 });
+  const {
+    mutate: deletePool,
+    isPending: isDeleting,
+    error: deleteError,
+    reset: resetDelete,
+  } = useDeleteZpool();
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
+
+  const [poolToDelete, setPoolToDelete] = useState<ZpoolCapacityEntry | null>(null);
+
+  const deleteErrorMessage = useMemo(() => {
+    if (!deleteError) {
+      return null;
+    }
+
+    if (isAxiosError(deleteError)) {
+      const responseData = deleteError.response?.data as
+        | { detail?: string; message?: string }
+        | undefined;
+
+      return responseData?.detail ?? responseData?.message ?? deleteError.message;
+    }
+
+    if (deleteError instanceof Error) {
+      return deleteError.message;
+    }
+
+    return 'حذف استخر با خطا مواجه شد.';
+  }, [deleteError]);
 
   const handleEdit = useCallback((pool: ZpoolCapacityEntry) => {
     if (typeof window !== 'undefined') {
@@ -140,10 +176,33 @@ const IntegratedStorage = () => {
   }, []);
 
   const handleDelete = useCallback((pool: ZpoolCapacityEntry) => {
-    if (typeof window !== 'undefined') {
-      window.alert(`حذف استخر ${pool.name}`);
+    resetDelete();
+    setPoolToDelete(pool);
+  }, [resetDelete]);
+
+  const handleCloseDeleteDialog = useCallback(() => {
+    if (isDeleting) {
+      return;
     }
-  }, []);
+
+    setPoolToDelete(null);
+    resetDelete();
+  }, [isDeleting, resetDelete]);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!poolToDelete) {
+      return;
+    }
+
+    deletePool(
+      { name: poolToDelete.name },
+      {
+        onSuccess: () => {
+          setPoolToDelete(null);
+        },
+      }
+    );
+  }, [deletePool, poolToDelete]);
 
   return (
     <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
@@ -350,6 +409,66 @@ const IntegratedStorage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Dialog
+        open={poolToDelete != null}
+        onClose={handleCloseDeleteDialog}
+        maxWidth="xs"
+        fullWidth
+        aria-labelledby="delete-pool-dialog-title"
+      >
+        <DialogTitle
+          id="delete-pool-dialog-title"
+          sx={{ fontWeight: 700, color: 'var(--color-text)' }}
+        >
+          تایید حذف استخر
+        </DialogTitle>
+        <DialogContent
+          dividers
+          sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+        >
+          <DialogContentText sx={{ color: 'var(--color-secondary)' }}>
+            آیا از حذف استخر{' '}
+            <Box component="span" sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+              {poolToDelete?.name}
+            </Box>{' '}
+            اطمینان دارید؟ این عملیات قابل بازگشت نیست.
+          </DialogContentText>
+
+          {deleteErrorMessage && (
+            <Box
+              sx={{
+                px: 2,
+                py: 1.25,
+                borderRadius: 2,
+                backgroundColor: 'rgba(244, 67, 54, 0.12)',
+                color: 'var(--color-error)',
+                fontSize: '0.85rem',
+              }}
+            >
+              {deleteErrorMessage}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2.5 }}>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            color="inherit"
+            variant="outlined"
+            disabled={isDeleting}
+          >
+            انصراف
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'در حال حذف...' : 'حذف استخر'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
