@@ -53,19 +53,56 @@ const createAttributes = (raw: VolumeRawEntry): VolumeAttribute[] =>
     value: formatAttributeValue(value),
   }));
 
+const extractNames = (fullName: string) => {
+  const trimmedFullName = fullName.trim();
+  const spacedSeparator = ' / ';
+
+  if (trimmedFullName.includes(spacedSeparator)) {
+    const separatorIndex = trimmedFullName.indexOf(spacedSeparator);
+    const poolName = trimmedFullName.slice(0, separatorIndex).trim();
+    const remaining = trimmedFullName
+      .slice(separatorIndex + spacedSeparator.length)
+      .trim();
+
+    return {
+      poolName: poolName.length > 0 ? poolName : 'نامشخص',
+      volumeName: remaining.length > 0 ? remaining : trimmedFullName,
+    };
+  }
+
+  const slashIndex = trimmedFullName.indexOf('/');
+
+  if (slashIndex !== -1) {
+    const poolName = trimmedFullName.slice(0, slashIndex).trim();
+    const remaining = trimmedFullName.slice(slashIndex + 1).trim();
+
+    return {
+      poolName: poolName.length > 0 ? poolName : 'نامشخص',
+      volumeName: remaining.length > 0 ? remaining : trimmedFullName,
+    };
+  }
+
+  const fallbackName = trimmedFullName.length > 0 ? trimmedFullName : 'نامشخص';
+
+  return {
+    poolName: 'نامشخص',
+    volumeName: fallbackName,
+  };
+};
+
 const normalizeVolumeEntry = (
   fullName: string,
   raw: unknown
 ): VolumeEntry => {
   const normalizedRaw = normalizeRawEntry(raw);
-  const [poolName, ...rest] = fullName.split('/');
-  const volumeName = rest.length > 0 ? rest.join('/') : fullName;
+  const { poolName, volumeName } = extractNames(fullName);
+  const safeVolumeName = volumeName.length > 0 ? volumeName : 'نامشخص';
 
   return {
     id: fullName,
-    fullName,
-    poolName: poolName || 'نامشخص',
-    volumeName,
+    fullName: fullName.trim(),
+    poolName,
+    volumeName: safeVolumeName,
     attributes: createAttributes(normalizedRaw),
     raw: normalizedRaw,
   };
