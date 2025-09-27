@@ -11,7 +11,7 @@ import axiosInstance from '../lib/axiosInstance';
 const ZPOOL_LIST_ENDPOINT = '/api/zpool/';
 
 const createZpoolCapacityEndpoint = (poolName: string) =>
-  `/api/zpool/${encodeURIComponent(poolName)}/capacity/`;
+  `/api/pool/${encodeURIComponent(poolName)}/capacity/`;
 
 const BYTE_UNITS: Record<string, number> = {
   b: 1,
