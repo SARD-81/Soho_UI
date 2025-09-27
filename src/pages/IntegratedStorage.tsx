@@ -1,9 +1,15 @@
 import {
   Box,
+  Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
   LinearProgress,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -11,15 +17,17 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useMemo } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { type FormEvent, useCallback, useMemo, useState } from 'react';
 import { MdDeleteOutline, MdEdit } from 'react-icons/md';
 import type { ZpoolCapacityEntry } from '../@types/zpool';
-import { diskPercentFormatter } from '../constants/disk';
 import { useZpool } from '../hooks/useZpool';
 import { formatBytes } from '../utils/formatters';
+import axiosInstance from '../lib/axiosInstance';
 
 const STATUS_STYLES: Record<
   'active' | 'warning' | 'maintenance' | 'unknown',
@@ -105,33 +113,72 @@ const formatCapacity = (value: number | null | undefined) =>
     fallback: '-',
   });
 
-const formatPercent = (value: number | null | undefined) => {
-  if (value == null || !Number.isFinite(value)) {
-    return '-';
-  }
-
-  return `${diskPercentFormatter.format(value)}٪`;
-};
-
-const getDedupLabel = (pool: ZpoolCapacityEntry) => {
-  if (pool.deduplication) {
-    return pool.deduplication;
-  }
-
-  if (
-    pool.deduplicationRatio != null &&
-    Number.isFinite(pool.deduplicationRatio)
-  ) {
-    return `${pool.deduplicationRatio.toFixed(2)}x`;
-  }
-
-  return '-';
-};
-
 const IntegratedStorage = () => {
   const { data, isLoading, error } = useZpool({ refetchInterval: 15000 });
+  const queryClient = useQueryClient();
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [poolName, setPoolName] = useState('');
+  const [devicesInput, setDevicesInput] = useState('');
+  const [vdevType, setVdevType] = useState('disk');
+  const [formError, setFormError] = useState<string | null>(null);
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
+
+  const resetForm = useCallback(() => {
+    setPoolName('');
+    setDevicesInput('');
+    setVdevType('disk');
+    setFormError(null);
+  }, []);
+
+  type CreatePoolPayload = {
+    pool_name: string;
+    devices: string[];
+    vdev_type: string;
+  };
+
+  const createPoolMutation = useMutation<unknown, Error, CreatePoolPayload>({
+    mutationFn: async (payload) => {
+      await axiosInstance.post('/api/zpool/create', payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['zpool'] });
+      setIsCreateOpen(false);
+      resetForm();
+      if (typeof window !== 'undefined') {
+        window.alert('استخر با موفقیت ایجاد شد.');
+      }
+    },
+    onError: (mutationError) => {
+      const message =
+        mutationError instanceof Error
+          ? mutationError.message
+          : 'خطا در ایجاد استخر. لطفاً دوباره تلاش کنید.';
+      setFormError(message);
+    },
+  });
+
+  const deletePoolMutation = useMutation<unknown, Error, string>({
+    mutationFn: async (name) => {
+      await axiosInstance.post('/api/zpool/delete', { pool_name: name });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['zpool'] });
+      if (typeof window !== 'undefined') {
+        window.alert('استخر با موفقیت حذف شد.');
+      }
+    },
+    onError: (mutationError) => {
+      if (typeof window !== 'undefined') {
+        const message =
+          mutationError instanceof Error
+            ? mutationError.message
+            : 'خطا در حذف استخر. لطفاً دوباره تلاش کنید.';
+        window.alert(message);
+      }
+    },
+  });
 
   const handleEdit = useCallback((pool: ZpoolCapacityEntry) => {
     if (typeof window !== 'undefined') {
@@ -140,20 +187,102 @@ const IntegratedStorage = () => {
   }, []);
 
   const handleDelete = useCallback((pool: ZpoolCapacityEntry) => {
-    if (typeof window !== 'undefined') {
-      window.alert(`حذف استخر ${pool.name}`);
+    if (typeof window === 'undefined' || deletePoolMutation.isPending) {
+      return;
     }
-  }, []);
+
+    const confirmed = window.confirm(`آیا از حذف استخر ${pool.name} اطمینان دارید؟`);
+    if (!confirmed) {
+      return;
+    }
+
+    deletePoolMutation.mutate(pool.name);
+  }, [deletePoolMutation]);
+
+  const handleOpenCreate = useCallback(() => {
+    resetForm();
+    setIsCreateOpen(true);
+  }, [resetForm]);
+
+  const handleCloseCreate = useCallback(() => {
+    if (createPoolMutation.isPending) {
+      return;
+    }
+
+    setIsCreateOpen(false);
+  }, [createPoolMutation.isPending]);
+
+  const handleCreateSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setFormError(null);
+
+      const trimmedPoolName = poolName.trim();
+      const devices = devicesInput
+        .split(/[\n,]+/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      if (!trimmedPoolName) {
+        setFormError('لطفاً نام استخر را وارد کنید.');
+        return;
+      }
+
+      if (devices.length === 0) {
+        setFormError('حداقل یک دستگاه باید معرفی شود.');
+        return;
+      }
+
+      createPoolMutation.mutate({
+        pool_name: trimmedPoolName,
+        devices,
+        vdev_type: vdevType,
+      });
+    },
+    [createPoolMutation, devicesInput, poolName, vdevType]
+  );
 
   return (
     <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Typography
-          variant="h5"
-          sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
         >
-          فضای یکپارچه
-        </Typography>
+          <Typography
+            variant="h5"
+            sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+          >
+            فضای یکپارچه
+          </Typography>
+
+          <Button
+            onClick={handleOpenCreate}
+            sx={{
+              px: 3.5,
+              py: 1.2,
+              borderRadius: 2.5,
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              color: 'var(--color-bg)',
+              background:
+                'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))',
+              boxShadow: '0 10px 25px -12px rgba(0, 198, 169, 0.7)',
+              '&:hover': {
+                background:
+                  'linear-gradient(135deg, var(--color-primary-light), var(--color-primary))',
+                boxShadow: '0 12px 32px -12px rgba(0, 198, 169, 0.8)',
+              },
+            }}
+          >
+            ایجاد
+          </Button>
+        </Box>
       </Box>
 
       <TableContainer
@@ -338,6 +467,7 @@ const IntegratedStorage = () => {
                           size="small"
                           color="error"
                           onClick={() => handleDelete(pool)}
+                          disabled={deletePoolMutation.isPending}
                         >
                           <MdDeleteOutline size={18} />
                         </IconButton>
@@ -350,6 +480,95 @@ const IntegratedStorage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Dialog
+        open={isCreateOpen}
+        onClose={handleCloseCreate}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            p: 1,
+            minWidth: { xs: 'auto', sm: 420 },
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, color: 'var(--color-primary)' }}>
+          ایجاد استخر جدید
+        </DialogTitle>
+        <Box component="form" onSubmit={handleCreateSubmit}>
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="نام استخر"
+              value={poolName}
+              onChange={(event) => setPoolName(event.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              label="دستگاه‌ها"
+              value={devicesInput}
+              onChange={(event) => setDevicesInput(event.target.value)}
+              placeholder="هر دستگاه را با ویرگول یا خط جدید جدا کنید"
+              multiline
+              minRows={3}
+              fullWidth
+              required
+            />
+            <TextField
+              label="نوع VDEV"
+              select
+              value={vdevType}
+              onChange={(event) => setVdevType(event.target.value)}
+              fullWidth
+            >
+              <MenuItem value="disk">Disk</MenuItem>
+              <MenuItem value="mirror">Mirror</MenuItem>
+              <MenuItem value="raidz">RAID-Z</MenuItem>
+              <MenuItem value="raidz2">RAID-Z2</MenuItem>
+              <MenuItem value="raidz3">RAID-Z3</MenuItem>
+            </TextField>
+
+            {formError && (
+              <Typography color="error" variant="body2">
+                {formError}
+              </Typography>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+            <Button
+              onClick={handleCloseCreate}
+              disabled={createPoolMutation.isPending}
+              sx={{ fontWeight: 600 }}
+            >
+              انصراف
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={createPoolMutation.isPending}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 1,
+                fontWeight: 700,
+                px: 3,
+                borderRadius: 2,
+                background:
+                  'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))',
+                '&:hover': {
+                  background:
+                    'linear-gradient(135deg, var(--color-primary-light), var(--color-primary))',
+                },
+              }}
+            >
+              {createPoolMutation.isPending && (
+                <CircularProgress size={18} thickness={5} sx={{ color: 'inherit' }} />
+              )}
+              ایجاد استخر
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
     </Box>
   );
 };
