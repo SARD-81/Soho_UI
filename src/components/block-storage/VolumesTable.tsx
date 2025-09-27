@@ -54,10 +54,7 @@ const VolumesTable = ({
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
               {volume.volumeName}
             </Typography>
-            <Typography
-              variant="caption"
-              sx={{ color: 'var(--color-secondary)' }}
-            >
+            <Typography variant="caption" sx={{ color: 'var(--color-secondary)' }}>
               {volume.fullName}
             </Typography>
           </Box>
