@@ -15,8 +15,8 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent } from 'react';
-import BlurModal from '../BlurModal';
 import type { UseCreatePoolReturn } from '../../hooks/useCreatePool';
+import BlurModal from '../BlurModal';
 
 interface CreatePoolModalProps {
   controller: UseCreatePoolReturn;
@@ -128,7 +128,10 @@ const CreatePoolModal = ({
           />
 
           <FormControl fullWidth>
-            <InputLabel id="vdev-type-label" sx={{ color: 'var(--color-text)' }}>
+            <InputLabel
+              id="vdev-type-label"
+              sx={{ color: 'var(--color-text)' }}
+            >
               نوع VDEV
             </InputLabel>
             <Select
@@ -151,7 +154,9 @@ const CreatePoolModal = ({
           </FormControl>
 
           <FormControl component="fieldset" error={Boolean(devicesError)}>
-            <Typography sx={{ fontWeight: 600, mb: 1, color: 'var(--color-text)' }}>
+            <Typography
+              sx={{ fontWeight: 600, mb: 1, color: 'var(--color-text)' }}
+            >
               انتخاب دیسک‌ها
             </Typography>
 
@@ -185,7 +190,8 @@ const CreatePoolModal = ({
                 <FormGroup
                   sx={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                    gridTemplateColumns:
+                      'repeat(auto-fill, minmax(180px, 1fr))',
                     gap: 1,
                     p: 1.5,
                   }}
@@ -207,7 +213,7 @@ const CreatePoolModal = ({
                       }
                       label={device}
                       sx={{
-                        alignItems: 'flex-start',
+                        alignItems: 'center',
                         m: 0,
                         borderRadius: '8px',
                         px: 1,

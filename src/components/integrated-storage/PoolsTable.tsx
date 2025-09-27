@@ -15,7 +15,12 @@ import {
 } from '@mui/material';
 import { MdDeleteOutline, MdEdit } from 'react-icons/md';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
-import { clampPercent, formatCapacity, resolveStatus, STATUS_STYLES } from './status';
+import {
+  clampPercent,
+  formatCapacity,
+  resolveStatus,
+  STATUS_STYLES,
+} from './status';
 
 interface PoolsTableProps {
   pools: ZpoolCapacityEntry[];
@@ -130,15 +135,22 @@ const PoolsTable = ({
               }}
             >
               <TableCell align="left">
-                <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+                <Typography
+                  sx={{ fontWeight: 700, color: 'var(--color-text)' }}
+                >
                   {pool.name}
                 </Typography>
-                <Typography variant="caption" sx={{ color: 'var(--color-secondary)' }}>
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'var(--color-secondary)' }}
+                >
                   وضعیت گزارش‌شده: {pool.health ?? 'نامشخص'}
                 </Typography>
               </TableCell>
               <TableCell align="left">
-                <Typography sx={{ fontWeight: 600, color: 'var(--color-text)' }}>
+                <Typography
+                  sx={{ fontWeight: 600, color: 'var(--color-text)' }}
+                >
                   {formatCapacity(pool.totalBytes)}
                 </Typography>
               </TableCell>
@@ -163,9 +175,15 @@ const PoolsTable = ({
                       }}
                     />
                   </Box>
-                  <Typography variant="body2" sx={{ color: 'var(--color-text)' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: 'var(--color-text)' }}
+                  >
                     {formatCapacity(pool.usedBytes)}
-                    <Typography component="span" sx={{ mx: 0.5, color: 'var(--color-secondary)' }}>
+                    <Typography
+                      component="span"
+                      sx={{ mx: 0.5, color: 'var(--color-secondary)' }}
+                    >
                       از
                     </Typography>
                     {formatCapacity(pool.totalBytes)}
@@ -192,7 +210,11 @@ const PoolsTable = ({
               <TableCell align="center">
                 <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
                   <Tooltip title="ویرایش">
-                    <IconButton size="small" color="primary" onClick={() => onEdit(pool)}>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => onEdit(pool)}
+                    >
                       <MdEdit size={18} />
                     </IconButton>
                   </Tooltip>

@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 import type { ZpoolCapacityEntry, ZpoolQueryResult } from '../@types/zpool';
 import axiosInstance from '../lib/axiosInstance';
 
@@ -37,7 +37,11 @@ export const useDeleteZpool = ({
   const [targetPool, setTargetPool] = useState<ZpoolCapacityEntry | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const deleteMutation = useMutation<DeleteZpoolResponse, Error, DeleteZpoolPayload>({
+  const deleteMutation = useMutation<
+    DeleteZpoolResponse,
+    Error,
+    DeleteZpoolPayload
+  >({
     mutationFn: deleteZpool,
     onSuccess: (_data, variables) => {
       queryClient.setQueryData<ZpoolQueryResult | undefined>(

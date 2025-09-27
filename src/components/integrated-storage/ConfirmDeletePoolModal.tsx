@@ -1,6 +1,6 @@
 import { Box, Button, Typography } from '@mui/material';
-import BlurModal from '../BlurModal';
 import type { UseDeleteZpoolReturn } from '../../hooks/useDeleteZpool';
+import BlurModal from '../BlurModal';
 
 interface ConfirmDeletePoolModalProps {
   controller: UseDeleteZpoolReturn;
@@ -11,9 +11,17 @@ const buttonStyles = {
   fontWeight: 600,
 };
 
-const ConfirmDeletePoolModal = ({ controller }: ConfirmDeletePoolModalProps) => {
-  const { isOpen, targetPool, closeModal, confirmDelete, isDeleting, errorMessage } =
-    controller;
+const ConfirmDeletePoolModal = ({
+  controller,
+}: ConfirmDeletePoolModalProps) => {
+  const {
+    isOpen,
+    targetPool,
+    closeModal,
+    confirmDelete,
+    isDeleting,
+    errorMessage,
+  } = controller;
 
   return (
     <BlurModal
