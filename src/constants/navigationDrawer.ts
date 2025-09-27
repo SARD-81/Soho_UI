@@ -19,6 +19,11 @@ export const navItems: NavigationItem[] = [
     icon: createElement(MdStorage),
     path: '/Integrated-space',
   },
+  {
+    text: 'فضای بلاکی',
+    icon: createElement(MdStorage),
+    path: '/block-space',
+  },
   { text: 'کاربران', icon: createElement(FiUsers), path: '/users' },
   { text: 'تاریخچه', icon: createElement(BiHistory), path: '/history' },
   { text: 'اشتراک گذاری', icon: createElement(FaShare), path: '/share' },
