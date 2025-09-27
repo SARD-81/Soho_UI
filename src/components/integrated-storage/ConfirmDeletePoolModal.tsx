@@ -1,9 +1,14 @@
 import { Box, Button, Typography } from '@mui/material';
+import type { ZpoolCapacityEntry } from '../../@types/zpool';
 import BlurModal from '../BlurModal';
-import type { UsePoolDeletionReturn } from '../../hooks/usePoolDeletion';
 
 interface ConfirmDeletePoolModalProps {
-  controller: UsePoolDeletionReturn;
+  isOpen: boolean;
+  targetPool: ZpoolCapacityEntry | null;
+  onClose: () => void;
+  onConfirm: () => void;
+  isDeleting: boolean;
+  errorMessage: string | null;
 }
 
 const buttonStyles = {
@@ -11,19 +16,23 @@ const buttonStyles = {
   fontWeight: 600,
 };
 
-const ConfirmDeletePoolModal = ({ controller }: ConfirmDeletePoolModalProps) => {
-  const { isOpen, targetPool, closeModal, confirmDelete, isDeleting, errorMessage } =
-    controller;
-
+const ConfirmDeletePoolModal = ({
+  isOpen,
+  targetPool,
+  onClose,
+  onConfirm,
+  isDeleting,
+  errorMessage,
+}: ConfirmDeletePoolModalProps) => {
   return (
     <BlurModal
       open={isOpen}
-      onClose={closeModal}
+      onClose={onClose}
       title="حذف Pool"
       actions={
         <>
           <Button
-            onClick={closeModal}
+            onClick={onClose}
             color="inherit"
             variant="outlined"
             disabled={isDeleting}
@@ -32,7 +41,7 @@ const ConfirmDeletePoolModal = ({ controller }: ConfirmDeletePoolModalProps) => 
             انصراف
           </Button>
           <Button
-            onClick={confirmDelete}
+            onClick={onConfirm}
             variant="contained"
             color="error"
             disabled={isDeleting}

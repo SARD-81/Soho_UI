@@ -7,7 +7,7 @@ import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDisk } from '../hooks/useDisk';
-import { usePoolDeletion } from '../hooks/usePoolDeletion';
+import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { useZpool } from '../hooks/useZpool';
 import {
   clampPercent,
@@ -19,6 +19,10 @@ import {
 const IntegratedStorage = () => {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [selectedPoolNames, setSelectedPoolNames] = useState<string[]>([]);
+  const [poolPendingDelete, setPoolPendingDelete] = useState<ZpoolCapacityEntry | null>(
+    null
+  );
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
 
   const handleFeedback = useCallback((message: string | null) => {
     setFeedbackMessage(message);
@@ -30,14 +34,7 @@ const IntegratedStorage = () => {
     },
   });
 
-  const poolDeletion = usePoolDeletion({
-    onSuccess: (poolName) => {
-      handleFeedback(`Pool ${poolName} با موفقیت حذف شد.`);
-    },
-    onError: (error, poolName) => {
-      handleFeedback(`حذف Pool ${poolName} با خطا مواجه شد: ${error.message}`);
-    },
-  });
+  const deletePoolMutation = useDeleteZpool();
 
   const { data, isLoading: isPoolsLoading, error: zpoolError } = useZpool({
     refetchInterval: 15000,
@@ -93,10 +90,40 @@ const IntegratedStorage = () => {
   const handleDelete = useCallback(
     (pool: ZpoolCapacityEntry) => {
       handleFeedback(null);
-      poolDeletion.requestDelete(pool);
+      setDeleteErrorMessage(null);
+      setPoolPendingDelete(pool);
     },
-    [handleFeedback, poolDeletion]
+    [handleFeedback]
   );
+
+  const handleCloseDeleteModal = useCallback(() => {
+    setPoolPendingDelete(null);
+    setDeleteErrorMessage(null);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!poolPendingDelete || deletePoolMutation.isPending) {
+      return;
+    }
+
+    setDeleteErrorMessage(null);
+
+    deletePoolMutation.mutate(
+      { name: poolPendingDelete.name },
+      {
+        onSuccess: () => {
+          handleFeedback(`Pool ${poolPendingDelete.name} با موفقیت حذف شد.`);
+          handleCloseDeleteModal();
+        },
+        onError: (error) => {
+          setDeleteErrorMessage(error.message);
+          handleFeedback(
+            `حذف Pool ${poolPendingDelete.name} با خطا مواجه شد: ${error.message}`
+          );
+        },
+      }
+    );
+  }, [deletePoolMutation, handleCloseDeleteModal, handleFeedback, poolPendingDelete]);
 
   const handleTogglePoolSelection = useCallback(
     (pool: ZpoolCapacityEntry, shouldSelect: boolean) => {
@@ -193,7 +220,7 @@ const IntegratedStorage = () => {
         error={zpoolError ?? null}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        isDeleteDisabled={poolDeletion.isDeleting}
+        isDeleteDisabled={deletePoolMutation.isPending}
         selectedPoolNames={selectedPoolNames}
         onTogglePoolSelection={handleTogglePoolSelection}
         isSelectionLimitReached={isSelectionLimitReached}
@@ -324,7 +351,14 @@ const IntegratedStorage = () => {
         </Box>
       )}
 
-      <ConfirmDeletePoolModal controller={poolDeletion} />
+      <ConfirmDeletePoolModal
+        isOpen={Boolean(poolPendingDelete)}
+        targetPool={poolPendingDelete}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        isDeleting={deletePoolMutation.isPending}
+        errorMessage={deleteErrorMessage}
+      />
     </Box>
   );
 };
