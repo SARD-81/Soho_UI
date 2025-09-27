@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance from '../lib/axiosInstance';
 import type {
   VolumeApiResponse,
   VolumeEntry,
   VolumeQueryResult,
   VolumeRawEntry,
 } from '../@types/volume';
+import axiosInstance from '../lib/axiosInstance';
 
 const VOLUME_LIST_ENDPOINT = '/api/volume/';
 
@@ -52,10 +52,13 @@ const createAttributeEntries = (raw: VolumeRawEntry) => {
     value: formatAttributeValue(value),
   }));
 
-  const map = entries.reduce<Record<string, string>>((accumulator, attribute) => {
-    accumulator[attribute.key] = attribute.value;
-    return accumulator;
-  }, {});
+  const map = entries.reduce<Record<string, string>>(
+    (accumulator, attribute) => {
+      accumulator[attribute.key] = attribute.value;
+      return accumulator;
+    },
+    {}
+  );
 
   return { entries, map };
 };
@@ -88,7 +91,8 @@ const extractVolumeNames = (
         : fallbackName;
 
   const [poolPart, ...volumeParts] = sourceName.split('/');
-  const poolName = poolPart && poolPart.trim().length > 0 ? poolPart.trim() : 'نامشخص';
+  const poolName =
+    poolPart && poolPart.trim().length > 0 ? poolPart.trim() : 'نامشخص';
   const volumeNameSource =
     volumeParts.length > 0 ? volumeParts.join('/') : sourceName;
   const volumeName =
@@ -127,9 +131,8 @@ const normalizeVolumeEntry = (
 };
 
 const fetchVolumes = async (): Promise<VolumeQueryResult> => {
-  const response = await axiosInstance.get<VolumeApiResponse>(
-    VOLUME_LIST_ENDPOINT
-  );
+  const response =
+    await axiosInstance.get<VolumeApiResponse>(VOLUME_LIST_ENDPOINT);
 
   const payload = response.data;
   const rawVolumes = payload?.data;
