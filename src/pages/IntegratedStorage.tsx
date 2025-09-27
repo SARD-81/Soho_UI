@@ -15,11 +15,11 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useMemo } from 'react';
+import { MdDeleteOutline, MdEdit } from 'react-icons/md';
 import type { ZpoolCapacityEntry } from '../@types/zpool';
 import { diskPercentFormatter } from '../constants/disk';
 import { useZpool } from '../hooks/useZpool';
 import { formatBytes } from '../utils/formatters';
-import { MdDeleteOutline, MdEdit } from 'react-icons/md';
 
 const STATUS_STYLES: Record<
   'active' | 'warning' | 'maintenance' | 'unknown',
@@ -89,7 +89,10 @@ const resolveStatus = (health?: string) => {
     normalized.includes('replace') ||
     normalized.includes('sync')
   ) {
-    return { key: 'maintenance' as const, label: STATUS_STYLES.maintenance.label };
+    return {
+      key: 'maintenance' as const,
+      label: STATUS_STYLES.maintenance.label,
+    };
   }
 
   return { key: 'unknown' as const, label: health };
@@ -115,7 +118,10 @@ const getDedupLabel = (pool: ZpoolCapacityEntry) => {
     return pool.deduplication;
   }
 
-  if (pool.deduplicationRatio != null && Number.isFinite(pool.deduplicationRatio)) {
+  if (
+    pool.deduplicationRatio != null &&
+    Number.isFinite(pool.deduplicationRatio)
+  ) {
     return `${pool.deduplicationRatio.toFixed(2)}x`;
   }
 
@@ -148,10 +154,6 @@ const IntegratedStorage = () => {
         >
           فضای یکپارچه
         </Typography>
-        <Typography sx={{ color: 'var(--color-secondary)', maxWidth: 520 }}>
-          وضعیت خوشه‌های ذخیره‌سازی یکپارچه را در یک نگاه مشاهده کنید و از
-          هم‌ترازی منابع و سلامت کلی سامانه مطمئن شوید.
-        </Typography>
       </Box>
 
       <TableContainer
@@ -179,13 +181,10 @@ const IntegratedStorage = () => {
                 },
               }}
             >
-              <TableCell align="right">نام استخر</TableCell>
-              <TableCell align="right">ظرفیت کل</TableCell>
-              <TableCell align="right">حجم مصرف‌شده</TableCell>
+              <TableCell align="left">نام Pool</TableCell>
+              <TableCell align="left">ظرفیت کل</TableCell>
+              <TableCell align="center">حجم مصرف‌شده</TableCell>
               <TableCell align="right">حجم آزاد</TableCell>
-              <TableCell align="right">شاخص بهره‌وری</TableCell>
-              <TableCell align="right">Dedup</TableCell>
-              <TableCell align="right">تکه‌تکه شدن</TableCell>
               <TableCell align="center">وضعیت</TableCell>
               <TableCell align="center">عملیات</TableCell>
             </TableRow>
@@ -194,7 +193,14 @@ const IntegratedStorage = () => {
             {isLoading && (
               <TableRow>
                 <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 2,
+                      alignItems: 'center',
+                    }}
+                  >
                     <CircularProgress color="primary" size={32} />
                     <Typography sx={{ color: 'var(--color-secondary)' }}>
                       در حال دریافت اطلاعات استخرها...
@@ -233,7 +239,9 @@ const IntegratedStorage = () => {
                 <TableRow
                   key={pool.name}
                   sx={{
-                    '&:last-of-type .MuiTableCell-root': { borderBottom: 'none' },
+                    '&:last-of-type .MuiTableCell-root': {
+                      borderBottom: 'none',
+                    },
                     '& .MuiTableCell-root': {
                       borderBottom: '1px solid var(--color-input-border)',
                       fontSize: '0.92rem',
@@ -243,7 +251,7 @@ const IntegratedStorage = () => {
                     },
                   }}
                 >
-                  <TableCell align="right">
+                  <TableCell align="left">
                     <Typography
                       sx={{ fontWeight: 700, color: 'var(--color-text)' }}
                     >
@@ -256,15 +264,17 @@ const IntegratedStorage = () => {
                       وضعیت گزارش‌شده: {pool.health ?? 'نامشخص'}
                     </Typography>
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="left">
                     <Typography
                       sx={{ fontWeight: 600, color: 'var(--color-text)' }}
                     >
                       {formatCapacity(pool.totalBytes)}
                     </Typography>
                   </TableCell>
-                  <TableCell align="right" sx={{ minWidth: 180 }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <TableCell align="center" sx={{ minWidth: 180 }}>
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
+                    >
                       <LinearProgress
                         variant="determinate"
                         value={utilization ?? 0}
@@ -298,27 +308,6 @@ const IntegratedStorage = () => {
                       {formatCapacity(pool.freeBytes)}
                     </Typography>
                   </TableCell>
-                  <TableCell align="right">
-                    <Typography
-                      sx={{ fontWeight: 600, color: 'var(--color-primary)' }}
-                    >
-                      {utilization != null ? formatPercent(utilization) : '-'}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: 'var(--color-secondary)' }}
-                    >
-                      نسبت استفاده به ظرفیت
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right" sx={{ color: 'var(--color-text)' }}>
-                    {getDedupLabel(pool)}
-                  </TableCell>
-                  <TableCell align="right" sx={{ color: 'var(--color-text)' }}>
-                    {pool.fragmentationPercent != null
-                      ? formatPercent(clampPercent(pool.fragmentationPercent))
-                      : '-'}
-                  </TableCell>
                   <TableCell align="center">
                     <Chip
                       label={status.label}
@@ -332,7 +321,9 @@ const IntegratedStorage = () => {
                     />
                   </TableCell>
                   <TableCell align="center">
-                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                    <Box
+                      sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}
+                    >
                       <Tooltip title="ویرایش">
                         <IconButton
                           size="small"
