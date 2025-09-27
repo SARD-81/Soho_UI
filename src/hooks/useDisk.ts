@@ -9,6 +9,7 @@ const fetchDisk = async (): Promise<DiskResponse> => {
 
 interface UseDiskOptions {
   refetchInterval?: number;
+  enabled?: boolean;
 }
 
 export const useDisk = (options?: UseDiskOptions) => {
@@ -17,5 +18,6 @@ export const useDisk = (options?: UseDiskOptions) => {
     queryFn: fetchDisk,
     refetchInterval: options?.refetchInterval ?? 1000,
     refetchIntervalInBackground: true,
+    enabled: options?.enabled ?? true,
   });
 };

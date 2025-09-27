@@ -155,7 +155,7 @@ const Zpool = () => {
     return (
       <Box sx={cardSx}>
         <Typography variant="body2" sx={{ color: 'var(--color-error)' }}>
-          خطا در دریافت اطلاعات استخرها: {error.message}
+          خطا در دریافت اطلاعات Pool ها: {error.message}
         </Typography>
       </Box>
     );
@@ -175,7 +175,7 @@ const Zpool = () => {
         <Box component="span" sx={{ fontSize: 20 }}>
           🗃️
         </Box>
-        نمای کلی استخرهای ZFS
+        نمای کلی Pool های ZFS
       </Typography>
 
       {failedPools.length > 0 && (
@@ -184,7 +184,7 @@ const Zpool = () => {
           variant="outlined"
           sx={{ direction: 'rtl', fontSize: '0.875rem' }}
         >
-          بازیابی اطلاعات برای استخرهای زیر با خطا مواجه شد:{' '}
+          بازیابی اطلاعات برای Pool های زیر با خطا مواجه شد:{' '}
           {failedPools.join('، ')}
         </Alert>
       )}
@@ -254,33 +254,10 @@ const Zpool = () => {
                 },
                 { key: 'free', label: 'خالی', value: formatBytes(boundedFree) },
                 { key: 'total', label: 'کل', value: formatBytes(safeTotal) },
-                { key: 'percent', label: 'درصد استفاده', value: percentText },
               ];
 
             if (pool.health) {
               stats.push({ key: 'health', label: 'سلامت', value: pool.health });
-            }
-
-            if (pool.fragmentationPercent != null) {
-              stats.push({
-                key: 'fragmentation',
-                label: 'درصد پراکندگی',
-                value: `${diskPercentFormatter.format(pool.fragmentationPercent)}٪`,
-              });
-            }
-
-            if (pool.deduplication || pool.deduplicationRatio != null) {
-              const dedupValue = pool.deduplicationRatio;
-              const formatted = pool.deduplication
-                ? pool.deduplication
-                : dedupValue != null && Number.isFinite(dedupValue)
-                  ? `${dedupValue.toFixed(2)}x`
-                  : '-';
-              stats.push({
-                key: 'dedup',
-                label: 'ضریب Dedup',
-                value: formatted,
-              });
             }
 
             const usedColor = theme.palette.primary.main;
@@ -472,7 +449,7 @@ const Zpool = () => {
           variant="body2"
           sx={{ color: theme.palette.text.secondary }}
         >
-          هیچ استخر فعالی یافت نشد.
+          هیچ Pool فعالی یافت نشد.
         </Typography>
       )}
     </Box>
