@@ -10,8 +10,8 @@ import axiosInstance from '../lib/axiosInstance';
 
 const ZPOOL_LIST_ENDPOINT = '/api/zpool/';
 
-const createZpoolCapacityEndpoint = (poolName: string) =>
-  `/api/pool/${encodeURIComponent(poolName)}/capacity/`;
+const createZpoolDetailsEndpoint = (poolName: string) =>
+  `/api/zpool/${encodeURIComponent(poolName)}/`;
 
 const BYTE_UNITS: Record<string, number> = {
   b: 1,
@@ -247,7 +247,7 @@ const fetchZpools = async (): Promise<ZpoolQueryResult> => {
 
   const requests = poolNames.map((poolName) =>
     axiosInstance
-      .get<ZpoolCapacityResponse>(createZpoolCapacityEndpoint(poolName))
+      .get<ZpoolCapacityResponse>(createZpoolDetailsEndpoint(poolName))
       .then((response) =>
         normalizeZpoolCapacity(poolName, response.data?.data ?? {})
       )
