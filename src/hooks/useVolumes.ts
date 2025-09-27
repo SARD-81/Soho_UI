@@ -72,7 +72,7 @@ const normalizeVolumeEntry = (
 };
 
 const fetchVolumes = async (): Promise<VolumeQueryResult> => {
-  const response = await axiosInstance.post<VolumeApiResponse>(
+  const response = await axiosInstance.get<VolumeApiResponse>(
     VOLUME_LIST_ENDPOINT
   );
 
