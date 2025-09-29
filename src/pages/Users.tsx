@@ -9,7 +9,6 @@ import {
 } from '@mui/material';
 import {
   type ChangeEvent,
-  type ReactNode,
   type SyntheticEvent,
   useCallback,
   useEffect,
@@ -19,6 +18,7 @@ import {
 import { toast } from 'react-hot-toast';
 import type { CreateOsUserPayload } from '../@types/users';
 import { USERS_TABS, type UsersTabValue } from '../constants/users';
+import TabPanel from '../components/TabPanel';
 import OsUserCreateModal from '../components/users/OsUserCreateModal';
 import OsUsersTable from '../components/users/OsUsersTable';
 import SelectedSambaUsersDetailsPanel from '../components/users/SelectedSambaUsersDetailsPanel';
@@ -33,22 +33,6 @@ import { useSambaUsers } from '../hooks/useSambaUsers';
 import { useUpdateSambaUserPassword } from '../hooks/useUpdateSambaUserPassword';
 import { normalizeOsUsers } from '../utils/osUsers';
 import { normalizeSambaUsers } from '../utils/sambaUsers';
-
-const TabPanel = ({
-  value,
-  currentValue,
-  children,
-}: {
-  value: UsersTabValue;
-  currentValue: UsersTabValue;
-  children: ReactNode;
-}) => {
-  if (value !== currentValue) {
-    return null;
-  }
-
-  return <Box sx={{ mt: 3 }}>{children}</Box>;
-};
 
 const Users = () => {
   const [activeTab, setActiveTab] = useState<UsersTabValue>(USERS_TABS.os);
