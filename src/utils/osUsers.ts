@@ -16,7 +16,7 @@ const toOptionalString = (value: unknown): string | undefined => {
   return undefined;
 };
 
-const pickFirstValue = (
+const pickDirectValue = (
   record: RawOsUserDetails,
   keys: string[]
 ): string | undefined => {
@@ -29,6 +29,67 @@ const pickFirstValue = (
         return normalized;
       }
     }
+  }
+
+  return undefined;
+};
+
+const pickFromDataArray = (
+  data: unknown,
+  keys: string[]
+): string | undefined => {
+  if (!Array.isArray(data)) {
+    return undefined;
+  }
+
+  for (const entry of data) {
+    if (typeof entry !== 'object' || entry === null) {
+      continue;
+    }
+
+    const record = entry as RawOsUserDetails;
+    const directMatch = pickDirectValue(record, keys);
+
+    if (directMatch) {
+      return directMatch;
+    }
+
+    const alias = toOptionalString(record.key ?? record.name ?? record.field);
+
+    if (alias && keys.includes(alias)) {
+      const value = toOptionalString(
+        record.value ?? record.val ?? record.data ?? record.content
+      );
+
+      if (value) {
+        return value;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const pickFirstValue = (
+  record: RawOsUserDetails,
+  keys: string[]
+): string | undefined => {
+  const directMatch = pickDirectValue(record, keys);
+
+  if (directMatch) {
+    return directMatch;
+  }
+
+  const nestedSource = (record as { data?: unknown }).data;
+
+  const fromArray = pickFromDataArray(nestedSource, keys);
+
+  if (fromArray) {
+    return fromArray;
+  }
+
+  if (nestedSource && typeof nestedSource === 'object') {
+    return pickFirstValue(nestedSource as RawOsUserDetails, keys);
   }
 
   return undefined;
