@@ -17,7 +17,7 @@ const toOptionalString = (value: unknown): string | undefined => {
 };
 
 const pickFirstValue = (
-  record: RawOsUserDetails,
+  record: Record<string, unknown>,
   keys: string[]
 ): string | undefined => {
   for (const key of keys) {
@@ -39,13 +39,20 @@ const normalizeRecord = (
   value: unknown,
   index: number
 ): OsUserTableItem => {
+  const normalizedIdentifier = toOptionalString(identifier);
+  const usernameFromValue =
+    typeof value === 'string' ? toOptionalString(value) : undefined;
+
   const record =
     typeof value === 'object' && value !== null
-      ? (value as RawOsUserDetails)
-      : ({} as RawOsUserDetails);
+      ? (value as Record<string, unknown>)
+      : {};
 
   const resolvedUsername =
-    pickFirstValue(record, ['username', 'user', 'name']) ?? identifier;
+    usernameFromValue ??
+    pickFirstValue(record, ['username', 'user', 'name']) ??
+    normalizedIdentifier ??
+    `user-${index + 1}`;
 
   const username = resolvedUsername || `user-${index + 1}`;
   const uid = pickFirstValue(record, ['uid', 'user_id', 'userId']);
@@ -65,15 +72,20 @@ const normalizeRecord = (
     'shell_path',
   ]);
 
+  const raw: RawOsUserDetails =
+    typeof value === 'object' && value !== null
+      ? record
+      : usernameFromValue ?? username;
+
   return {
-    id: username || `user-${index + 1}`,
+    id: username,
     username,
     fullName,
     uid,
     gid,
     homeDirectory,
     loginShell,
-    raw: record,
+    raw,
   };
 };
 
