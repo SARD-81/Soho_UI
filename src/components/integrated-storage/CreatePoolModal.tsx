@@ -26,13 +26,14 @@ interface CreatePoolModalProps {
 }
 
 const buttonBaseStyles = {
-  borderRadius: '10px',
+  borderRadius: '3px',
   fontWeight: 600,
 };
 
 const inputBaseStyles = {
   backgroundColor: 'var(--color-input-bg)',
-  borderRadius: '10px',
+  height: 1,
+  borderRadius: '5px',
   color: 'var(--color-text)',
   '& fieldset': {
     borderColor: 'var(--color-input-border)',
@@ -121,13 +122,14 @@ const CreatePoolModal = ({
             onChange={handlePoolNameChange}
             autoFocus
             fullWidth
+            size="small"
             error={Boolean(poolNameError)}
             helperText={poolNameError ?? 'نام یکتا برای Pool جدید وارد کنید.'}
             InputLabelProps={{ shrink: true }}
             InputProps={{ sx: inputBaseStyles }}
           />
 
-          <FormControl fullWidth>
+          <FormControl size="small" fullWidth>
             <InputLabel
               id="vdev-type-label"
               sx={{ color: 'var(--color-text)' }}

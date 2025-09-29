@@ -41,7 +41,7 @@ const IntegratedStorage = () => {
     isLoading: isPoolsLoading,
     error: zpoolError,
   } = useZpool({
-    refetchInterval: 15000,
+    refetchInterval: 1000,
   });
 
   const {
@@ -176,11 +176,6 @@ const IntegratedStorage = () => {
                 'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
               color: 'var(--color-bg)',
               boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-              '&:hover': {
-                background:
-                  'linear-gradient(135deg, rgba(0, 198, 169, 0.95) 0%, rgba(18, 140, 200, 0.95) 100%)',
-                boxShadow: '0 18px 36px -18px rgba(0, 198, 169, 0.75)',
-              },
             }}
           >
             ایجاد

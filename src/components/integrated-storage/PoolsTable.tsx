@@ -9,8 +9,8 @@ import {
 } from '@mui/material';
 import { useMemo } from 'react';
 import { MdDeleteOutline, MdEdit } from 'react-icons/md';
+import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
-import type { DataTableColumn } from '../DataTable';
 import DataTable from '../DataTable';
 import {
   clampPercent,
@@ -101,7 +101,7 @@ const PoolsTable = ({
               <Box
                 sx={{
                   position: 'relative',
-                  height: 8,
+                  height: 5,
                   borderRadius: '10px',
                   backgroundColor: 'rgba(0, 198, 169, 0.12)',
                   overflow: 'hidden',
