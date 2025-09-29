@@ -6,6 +6,7 @@ import History from '../pages/History.tsx';
 import IntegratedStorage from '../pages/IntegratedStorage.tsx';
 import LoginPage from '../pages/LoginPage.tsx';
 import NotFoundPage from '../pages/NotFoundPage.tsx';
+import Services from '../pages/Services.tsx';
 import Settings from '../pages/Settings.tsx';
 import Share from '../pages/Share.tsx';
 import Users from '../pages/Users.tsx';
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'Integrated-space', element: <IntegratedStorage /> },
       { path: 'block-space', element: <BlockStorage /> },
+      { path: 'services', element: <Services /> },
       { path: 'users', element: <Users /> },
       { path: 'settings', element: <Settings /> },
       { path: 'share', element: <Share /> },

@@ -8,9 +8,8 @@ const fetchDisk = async (): Promise<DiskResponse> => {
 };
 
 const fetchDiskWwnMap = async (): Promise<DiskWwnMapResponse> => {
-  const { data } = await axiosInstance.get<DiskWwnMapResponse>(
-    '/api/disk/wwn/map/'
-  );
+  const { data } =
+    await axiosInstance.get<DiskWwnMapResponse>('/api/disk/wwn/map/');
   return data;
 };
 

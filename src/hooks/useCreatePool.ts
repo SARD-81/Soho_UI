@@ -135,7 +135,9 @@ export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
         hasError = true;
       } else if (vdevType === 'mirror') {
         if (deviceCount < 2 || deviceCount % 2 !== 0) {
-          setDevicesError('برای MIRROR تعداد دیسک‌ها باید عددی زوج و حداقل ۲ باشد.');
+          setDevicesError(
+            'برای MIRROR تعداد دیسک‌ها باید عددی زوج و حداقل ۲ باشد.'
+          );
           hasError = true;
         }
       } else if (vdevType === 'raidz') {
