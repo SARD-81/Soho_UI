@@ -1,6 +1,4 @@
-export interface RawOsUserDetails {
-  [key: string]: unknown;
-}
+export type RawOsUserDetails = string | Record<string, unknown>;
 
 export interface OsUsersResponse {
   data?: RawOsUserDetails[] | Record<string, RawOsUserDetails>;
