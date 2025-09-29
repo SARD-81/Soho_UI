@@ -57,7 +57,11 @@ const normalizeRecord = (
   const username = resolvedUsername || `user-${index + 1}`;
   const uid = pickFirstValue(record, ['uid', 'user_id', 'userId']);
   const gid = pickFirstValue(record, ['gid', 'group_id', 'groupId']);
-  const fullName = pickFirstValue(record, ['full_name', 'gecos', 'displayName']);
+  const fullName = pickFirstValue(record, [
+    'full_name',
+    'gecos',
+    'displayName',
+  ]);
   const homeDirectory = pickFirstValue(record, [
     'home_directory',
     'homeDirectory',
@@ -75,7 +79,7 @@ const normalizeRecord = (
   const raw: RawOsUserDetails =
     typeof value === 'object' && value !== null
       ? record
-      : usernameFromValue ?? username;
+      : (usernameFromValue ?? username);
 
   return {
     id: username,
@@ -97,7 +101,9 @@ export const normalizeOsUsers = (
   }
 
   if (Array.isArray(data)) {
-    return data.map((entry, index) => normalizeRecord(String(index + 1), entry, index));
+    return data.map((entry, index) =>
+      normalizeRecord(String(index + 1), entry, index)
+    );
   }
 
   return Object.entries(data).map(([key, entry], index) =>

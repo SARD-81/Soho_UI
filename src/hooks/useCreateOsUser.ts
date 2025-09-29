@@ -31,7 +31,11 @@ export const useCreateOsUser = ({
 }: UseCreateOsUserOptions = {}) => {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, AxiosError<ApiErrorResponse>, CreateOsUserPayload>({
+  return useMutation<
+    unknown,
+    AxiosError<ApiErrorResponse>,
+    CreateOsUserPayload
+  >({
     mutationFn: createOsUserRequest,
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: osUsersBaseQueryKey });

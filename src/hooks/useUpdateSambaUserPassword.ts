@@ -6,7 +6,9 @@ import type { ApiErrorResponse } from '../utils/apiError';
 import { extractApiErrorMessage } from '../utils/apiError';
 import { sambaUsersQueryKey } from './useSambaUsers';
 
-const updatePasswordRequest = async (payload: UpdateSambaUserPasswordPayload) => {
+const updatePasswordRequest = async (
+  payload: UpdateSambaUserPasswordPayload
+) => {
   await axiosInstance.post('/api/samba/user/passwd/', payload);
 };
 
@@ -21,7 +23,11 @@ export const useUpdateSambaUserPassword = ({
 }: UseUpdateSambaUserPasswordOptions = {}) => {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, AxiosError<ApiErrorResponse>, UpdateSambaUserPasswordPayload>({
+  return useMutation<
+    unknown,
+    AxiosError<ApiErrorResponse>,
+    UpdateSambaUserPasswordPayload
+  >({
     mutationFn: updatePasswordRequest,
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sambaUsersQueryKey });

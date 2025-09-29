@@ -10,10 +10,10 @@ import type { History } from '../@types/network';
 
 import { useNetwork } from '../hooks/useNetwork';
 import '../index.css';
+import { extractIPv4Info, formatInterfaceSpeed } from '../utils/networkDetails';
 import { createCardSx } from './cardStyles.ts';
 import AppLineChart from './charts/AppLineChart';
 import ResponsiveChartContainer from './charts/ResponsiveChartContainer';
-import { extractIPv4Info, formatInterfaceSpeed } from '../utils/networkDetails';
 
 const MAX_HISTORY_MS = 90 * 1000; // 1 minute 30 seconds
 

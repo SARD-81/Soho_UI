@@ -46,7 +46,8 @@ const SharesTable = ({
     const resolveValidUsers = (share: SambaShareEntry) => {
       const { details } = share;
       const value =
-        (typeof details.valid_users === 'string' && details.valid_users.trim()) ||
+        (typeof details.valid_users === 'string' &&
+          details.valid_users.trim()) ||
         (typeof details['valid users'] === 'string' &&
           (details['valid users'] as string).trim());
 
@@ -125,8 +126,7 @@ const SharesTable = ({
         header: 'عملیات',
         align: 'center',
         renderCell: (share) => {
-          const isShareDeleting =
-            isDeleting && pendingShareName === share.name;
+          const isShareDeleting = isDeleting && pendingShareName === share.name;
 
           return (
             <Tooltip title="حذف اشتراک">

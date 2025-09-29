@@ -1,8 +1,5 @@
 import type { IPv4Info } from '../@types/network';
-import type {
-  InterfaceAddress,
-  NetworkInterface,
-} from '../hooks/useNetwork';
+import type { InterfaceAddress, NetworkInterface } from '../hooks/useNetwork';
 
 const trimIfStringHasValue = (value: string) => {
   const trimmed = value.trim();
@@ -46,7 +43,9 @@ const flattenAddressEntries = (value: unknown): InterfaceAddress[] => {
       ];
     }
 
-    return Object.values(record).flatMap((entry) => flattenAddressEntries(entry));
+    return Object.values(record).flatMap((entry) =>
+      flattenAddressEntries(entry)
+    );
   }
 
   if (typeof value === 'string') {

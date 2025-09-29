@@ -1,10 +1,6 @@
 import { Box, Checkbox, IconButton, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
-import {
-  MdDeleteOutline,
-  MdLockOpen,
-  MdLockReset,
-} from 'react-icons/md';
+import { MdDeleteOutline, MdLockOpen, MdLockReset } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { SambaUserTableItem } from '../../@types/samba';
 import DataTable from '../DataTable';
@@ -132,7 +128,8 @@ const SambaUsersTable = ({
         align: 'center',
         width: 168,
         renderCell: (user) => {
-          const isEnablePending = isEnabling && pendingEnableUsername === user.username;
+          const isEnablePending =
+            isEnabling && pendingEnableUsername === user.username;
           const isPasswordPending =
             isUpdatingPassword && pendingPasswordUsername === user.username;
 

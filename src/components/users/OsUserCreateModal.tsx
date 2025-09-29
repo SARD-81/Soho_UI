@@ -1,10 +1,4 @@
-import {
-  Alert,
-  Box,
-  Button,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, TextField, Typography } from '@mui/material';
 import { type FormEvent, useEffect, useState } from 'react';
 import type { CreateOsUserPayload } from '../../@types/users';
 import { DEFAULT_LOGIN_SHELL } from '../../constants/users';
@@ -70,7 +64,8 @@ const OsUserCreateModal = ({
                 'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
             },
             '&.Mui-disabled': {
-              backgroundColor: 'color-mix(in srgb, var(--color-secondary) 25%, transparent)',
+              backgroundColor:
+                'color-mix(in srgb, var(--color-secondary) 25%, transparent)',
               color: 'var(--color-secondary)',
             },
           }}
@@ -86,8 +81,8 @@ const OsUserCreateModal = ({
         sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
       >
         <Typography sx={{ color: 'var(--color-secondary)' }}>
-          لطفاً اطلاعات کاربر جدید را وارد کنید. پوسته ورود به صورت پیش‌فرض تنظیم
-          شده است.
+          لطفاً اطلاعات کاربر جدید را وارد کنید. پوسته ورود به صورت پیش‌فرض
+          تنظیم شده است.
         </Typography>
 
         <TextField

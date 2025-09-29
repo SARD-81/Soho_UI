@@ -21,7 +21,11 @@ export const useCreateSambaUser = ({
 }: UseCreateSambaUserOptions = {}) => {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, AxiosError<ApiErrorResponse>, CreateSambaUserPayload>({
+  return useMutation<
+    unknown,
+    AxiosError<ApiErrorResponse>,
+    CreateSambaUserPayload
+  >({
     mutationFn: createSambaUserRequest,
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sambaUsersQueryKey });

@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
 import type { QueryKey } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import type { OsUsersResponse } from '../@types/users';
 import axiosInstance from '../lib/axiosInstance';
 

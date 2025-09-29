@@ -14,7 +14,9 @@ import BlurModal from '../BlurModal';
 interface SambaUserCreateModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: CreateSambaUserPayload & { createOsUserFirst: boolean }) => void;
+  onSubmit: (
+    payload: CreateSambaUserPayload & { createOsUserFirst: boolean }
+  ) => void;
   isSubmitting: boolean;
   errorMessage: string | null;
   initialUsername?: string;

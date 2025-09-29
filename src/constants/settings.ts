@@ -10,5 +10,5 @@ const SETTINGS_TAB_ITEMS: Array<{ label: string; value: SettingsTabValue }> = [
   { label: 'تنظیمات کاربران', value: SETTINGS_TABS.users },
 ];
 
-export { SETTINGS_TAB_ITEMS, SETTINGS_TABS };
+export { SETTINGS_TABS, SETTINGS_TAB_ITEMS };
 export type { SettingsTabValue };

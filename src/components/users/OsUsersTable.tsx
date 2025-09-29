@@ -1,4 +1,10 @@
-import { Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
   MdCancel,
@@ -86,7 +92,10 @@ const OsUsersTable = ({
           if (isSambaStatusLoading && row.hasSambaUser === undefined) {
             return (
               <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                <CircularProgress size={18} sx={{ color: 'var(--color-secondary)' }} />
+                <CircularProgress
+                  size={18}
+                  sx={{ color: 'var(--color-secondary)' }}
+                />
               </Box>
             );
           }

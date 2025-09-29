@@ -8,4 +8,4 @@ export const USERS_TABS = {
 
 type UsersTabKeys = keyof typeof USERS_TABS;
 
-export type UsersTabValue = typeof USERS_TABS[UsersTabKeys];
+export type UsersTabValue = (typeof USERS_TABS)[UsersTabKeys];

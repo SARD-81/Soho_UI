@@ -9,7 +9,9 @@ const fetchSambaShares = async () => {
   return data;
 };
 
-const mapShares = (response: SambaSharesResponse | undefined): SambaShareEntry[] => {
+const mapShares = (
+  response: SambaSharesResponse | undefined
+): SambaShareEntry[] => {
   if (!response?.data) {
     return [];
   }

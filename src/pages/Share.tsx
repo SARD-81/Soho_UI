@@ -1,10 +1,10 @@
 import { Box, Button, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import type { SambaShareEntry } from '../@types/samba';
 import CreateShareModal from '../components/share/CreateShareModal';
 import SelectedSharesDetailsPanel from '../components/share/SelectedSharesDetailsPanel';
 import SharesTable from '../components/share/SharesTable';
-import type { SambaShareEntry } from '../@types/samba';
 import { useCreateShare } from '../hooks/useCreateShare';
 import { useDeleteShare } from '../hooks/useDeleteShare';
 import { useSambaShares } from '../hooks/useSambaShares';
@@ -26,7 +26,9 @@ const Share = () => {
       toast.success(`اشتراک ${shareName} با موفقیت حذف شد.`);
     },
     onError: (deleteError, shareName) => {
-      toast.error(`حذف اشتراک ${shareName} با خطا مواجه شد: ${deleteError.message}`);
+      toast.error(
+        `حذف اشتراک ${shareName} با خطا مواجه شد: ${deleteError.message}`
+      );
     },
   });
 
@@ -34,7 +36,9 @@ const Share = () => {
 
   useEffect(() => {
     setSelectedShares((prev) =>
-      prev.filter((shareName) => shares.some((share) => share.name === shareName))
+      prev.filter((shareName) =>
+        shares.some((share) => share.name === shareName)
+      )
     );
   }, [shares]);
 
@@ -81,8 +85,13 @@ const Share = () => {
             detail: targetShare.details,
           };
         })
-        .filter((item): item is { shareName: string; detail: SambaShareEntry['details'] } =>
-          item !== null
+        .filter(
+          (
+            item
+          ): item is {
+            shareName: string;
+            detail: SambaShareEntry['details'];
+          } => item !== null
         ),
     [selectedShares, shares]
   );
@@ -130,7 +139,8 @@ const Share = () => {
         </Box>
 
         <Typography variant="body2" sx={{ color: 'var(--color-secondary)' }}>
-          از جدول زیر می‌توانید اشتراک‌های موجود را مشاهده، حذف و برای مقایسه انتخاب کنید.
+          از جدول زیر می‌توانید اشتراک‌های موجود را مشاهده، حذف و برای مقایسه
+          انتخاب کنید.
         </Typography>
 
         <SharesTable
@@ -144,7 +154,10 @@ const Share = () => {
           isDeleting={deleteShare.isDeleting}
         />
 
-        <SelectedSharesDetailsPanel items={comparisonItems} onRemove={handleRemoveSelected} />
+        <SelectedSharesDetailsPanel
+          items={comparisonItems}
+          onRemove={handleRemoveSelected}
+        />
       </Box>
 
       <CreateShareModal controller={createShare} />

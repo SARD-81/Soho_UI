@@ -3,8 +3,8 @@ import type {
   SambaUserTableItem,
   SambaUsersResponseData,
 } from '../@types/samba';
-import formatDetailValue from './formatDetailValue';
 import { formatUtcDateTimeToIran } from './dateTime';
+import formatDetailValue from './formatDetailValue';
 
 const toOptionalString = (value: unknown): string | undefined => {
   if (value == null) {
@@ -23,7 +23,8 @@ const toOptionalString = (value: unknown): string | undefined => {
   return undefined;
 };
 
-const normalizeKey = (key: string): string => key.replace(/[\s_-]+/g, '').toLowerCase();
+const normalizeKey = (key: string): string =>
+  key.replace(/[\s_-]+/g, '').toLowerCase();
 
 const findValue = (
   record: RawSambaUserDetails,
@@ -125,7 +126,9 @@ const TIME_KEYS = new Set([
   'passwordcanchange',
 ]);
 
-const enhanceDetailsRecord = (record: RawSambaUserDetails): Record<string, string> => {
+const enhanceDetailsRecord = (
+  record: RawSambaUserDetails
+): Record<string, string> => {
   const enhanced: Record<string, string> = {};
 
   Object.entries(record ?? {}).forEach(([key, value]) => {
@@ -152,26 +155,45 @@ const normalizeSambaUser = (
   index: number
 ): SambaUserTableItem => {
   const record: RawSambaUserDetails =
-    typeof value === 'object' && value !== null ? (value as RawSambaUserDetails) : {};
+    typeof value === 'object' && value !== null
+      ? (value as RawSambaUserDetails)
+      : {};
 
   const usernameEntry =
     findValue(record, ['username', 'user', 'accountname', 'name']) ??
-    (typeof value === 'string'
-      ? { key: 'username', value }
-      : undefined);
+    (typeof value === 'string' ? { key: 'username', value } : undefined);
 
   const resolvedIdentifier = toOptionalString(identifier);
   const username =
-    toOptionalString(usernameEntry?.value) || resolvedIdentifier || `samba-user-${index + 1}`;
+    toOptionalString(usernameEntry?.value) ||
+    resolvedIdentifier ||
+    `samba-user-${index + 1}`;
 
   const domainEntry = findValue(record, ['domain', 'workgroup']);
-  const profilePathEntry = findValue(record, ['profilepath', 'profile_path', 'profile']);
-  const passwordMustChangeEntry = findValue(record, ['passwordmustchange', 'pwdmustchange']);
-  const logonTimeEntry = findValue(record, ['logontime', 'lastlogon', 'logon_time']);
+  const profilePathEntry = findValue(record, [
+    'profilepath',
+    'profile_path',
+    'profile',
+  ]);
+  const passwordMustChangeEntry = findValue(record, [
+    'passwordmustchange',
+    'pwdmustchange',
+  ]);
+  const logonTimeEntry = findValue(record, [
+    'logontime',
+    'lastlogon',
+    'logon_time',
+  ]);
   const logoffTimeEntry = findValue(record, ['logofftime', 'logoff_time']);
   const kickoffTimeEntry = findValue(record, ['kickofftime', 'kickoff_time']);
-  const passwordLastSetEntry = findValue(record, ['passwordlastset', 'pwdlastset']);
-  const passwordCanChangeEntry = findValue(record, ['passwordcanchange', 'pwdcanchange']);
+  const passwordLastSetEntry = findValue(record, [
+    'passwordlastset',
+    'pwdlastset',
+  ]);
+  const passwordCanChangeEntry = findValue(record, [
+    'passwordcanchange',
+    'pwdcanchange',
+  ]);
 
   const details = enhanceDetailsRecord(record);
 

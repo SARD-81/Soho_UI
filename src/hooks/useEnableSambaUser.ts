@@ -21,7 +21,11 @@ export const useEnableSambaUser = ({
 }: UseEnableSambaUserOptions = {}) => {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, AxiosError<ApiErrorResponse>, EnableSambaUserPayload>({
+  return useMutation<
+    unknown,
+    AxiosError<ApiErrorResponse>,
+    EnableSambaUserPayload
+  >({
     mutationFn: enableSambaUserRequest,
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sambaUsersQueryKey });

@@ -1,15 +1,13 @@
-import {
-  Box,
-  IconButton,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { FiEdit3 } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
-import DataTable from '../DataTable';
 import { useNetwork, type NetworkData } from '../../hooks/useNetwork';
-import { extractIPv4Info, formatInterfaceSpeed } from '../../utils/networkDetails';
+import {
+  extractIPv4Info,
+  formatInterfaceSpeed,
+} from '../../utils/networkDetails';
+import DataTable from '../DataTable';
 
 type NetworkSettingsTableRow = {
   id: string;
@@ -45,7 +43,8 @@ const createRows = (
         });
       } else {
         ipv4Info.forEach((entry, index) => {
-          const labelPrefix = ipv4Info.length > 1 ? `IPv4 ${index + 1}` : 'IPv4';
+          const labelPrefix =
+            ipv4Info.length > 1 ? `IPv4 ${index + 1}` : 'IPv4';
           rows.push({
             id: `${interfaceName}-ipv4-${index}`,
             interfaceName,

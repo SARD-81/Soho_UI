@@ -15,7 +15,8 @@ const toDate = (value: string | number | Date): Date | null => {
   }
 
   if (typeof value === 'number' && Number.isFinite(value)) {
-    const timestamp = Math.abs(value) < 1_000_000_000_000 ? value * 1000 : value;
+    const timestamp =
+      Math.abs(value) < 1_000_000_000_000 ? value * 1000 : value;
     const date = new Date(timestamp);
     return Number.isNaN(date.getTime()) ? null : date;
   }

@@ -99,7 +99,8 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             size="small"
             error={Boolean(fullPathError)}
             helperText={
-              fullPathError ?? 'مسیر کامل پوشه اشتراک را وارد کنید (مانند /mnt/data/share).'
+              fullPathError ??
+              'مسیر کامل پوشه اشتراک را وارد کنید (مانند /mnt/data/share).'
             }
             InputLabelProps={{ shrink: true }}
             InputProps={{ sx: inputBaseStyles }}
@@ -127,8 +128,12 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
           )}
 
           {!apiError && (
-            <Typography variant="body2" sx={{ color: 'var(--color-secondary)' }}>
-              پس از ایجاد اشتراک، اطلاعات به‌طور خودکار در جدول به‌روزرسانی می‌شود.
+            <Typography
+              variant="body2"
+              sx={{ color: 'var(--color-secondary)' }}
+            >
+              پس از ایجاد اشتراک، اطلاعات به‌طور خودکار در جدول به‌روزرسانی
+              می‌شود.
             </Typography>
           )}
         </Box>

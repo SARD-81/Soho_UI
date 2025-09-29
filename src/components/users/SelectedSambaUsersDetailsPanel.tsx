@@ -164,7 +164,9 @@ const SelectedSambaUsersDetailsPanel = ({
                           flex: 1,
                         }}
                       >
-                        {typeof value === 'string' ? value : formatDetailValue(value)}
+                        {typeof value === 'string'
+                          ? value
+                          : formatDetailValue(value)}
                       </Typography>
                     </Box>
                   ))}

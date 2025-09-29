@@ -20,18 +20,18 @@ export const navItems: NavigationItem[] = [
     icon: createElement(MdStorage),
     path: '/Integrated-space',
   },
-  {
-    text: 'فضای بلاکی',
-    icon: createElement(MdStorage),
-    path: '/block-space',
-  },
+  // {
+  //   text: 'فضای بلاکی',
+  //   icon: createElement(MdStorage),
+  //   path: '/block-space',
+  // },
   {
     text: 'سرویس ها',
     icon: createElement(GrServices),
     path: '/services',
   },
   { text: 'کاربران', icon: createElement(FiUsers), path: '/users' },
-  { text: 'تاریخچه', icon: createElement(BiHistory), path: '/history' },
   { text: 'اشتراک گذاری', icon: createElement(FaShare), path: '/share' },
   { text: 'تنظیمات', icon: createElement(RiSettings3Fill), path: '/settings' },
+  { text: 'تاریخچه', icon: createElement(BiHistory), path: '/history' },
 ];
