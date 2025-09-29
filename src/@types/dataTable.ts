@@ -3,8 +3,9 @@ import type {
   TableContainerProps,
   TableProps,
 } from '@mui/material';
+import type { TablePaginationProps } from '@mui/material/TablePagination';
 import type { SxProps, Theme } from '@mui/material/styles';
-import type { ReactNode } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 
 export interface DataTableColumn<T> {
   id: string;
@@ -34,4 +35,15 @@ export interface DataTableProps<T> {
   bodyRowSx?: SxProps<Theme> | ((row: T, index: number) => SxProps<Theme>);
   containerProps?: TableContainerProps;
   tableProps?: TableProps;
+  pagination?: {
+    page: number;
+    rowsPerPage: number;
+    count: number;
+    onPageChange: (event: unknown, newPage: number) => void;
+    onRowsPerPageChange: (event: ChangeEvent<HTMLInputElement>) => void;
+    rowsPerPageOptions?: number[];
+    labelRowsPerPage?: ReactNode;
+    labelDisplayedRows?: TablePaginationProps['labelDisplayedRows'];
+    rowCountFormatter?: (count: number) => ReactNode;
+  };
 }
