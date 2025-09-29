@@ -43,6 +43,7 @@ const OsUserCreateModal = ({
     onSubmit({
       username: username.trim(),
       login_shell: DEFAULT_LOGIN_SHELL,
+      shell: DEFAULT_LOGIN_SHELL,
     });
   };
 
@@ -57,6 +58,22 @@ const OsUserCreateModal = ({
           form="os-user-create-form"
           variant="contained"
           disabled={isSubmitting || !username.trim()}
+          sx={{
+            px: 3,
+            py: 1,
+            fontWeight: 600,
+            background:
+              'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+            color: 'var(--color-bg)',
+            '&:hover': {
+              background:
+                'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
+            },
+            '&.Mui-disabled': {
+              backgroundColor: 'color-mix(in srgb, var(--color-secondary) 25%, transparent)',
+              color: 'var(--color-secondary)',
+            },
+          }}
         >
           {isSubmitting ? 'در حال ایجاد...' : 'ایجاد کاربر'}
         </Button>
@@ -80,6 +97,14 @@ const OsUserCreateModal = ({
           required
           autoFocus
           fullWidth
+          InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
+          InputProps={{
+            sx: {
+              backgroundColor: 'var(--color-input-bg)',
+              borderRadius: 1,
+              '& .MuiInputBase-input': { color: 'var(--color-text)' },
+            },
+          }}
         />
 
         <TextField
@@ -88,8 +113,14 @@ const OsUserCreateModal = ({
           fullWidth
           disabled
           InputProps={{
-            sx: { direction: 'ltr' },
+            sx: {
+              direction: 'ltr',
+              backgroundColor: 'var(--color-input-bg)',
+              borderRadius: 1,
+              '& .MuiInputBase-input': { color: 'var(--color-secondary)' },
+            },
           }}
+          InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
         />
 
         {errorMessage ? (

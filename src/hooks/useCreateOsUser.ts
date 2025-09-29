@@ -6,8 +6,18 @@ import type { ApiErrorResponse } from '../utils/apiError';
 import { extractApiErrorMessage } from '../utils/apiError';
 import { osUsersBaseQueryKey } from './useOsUsers';
 
-const createOsUserRequest = async (payload: CreateOsUserPayload) => {
-  await axiosInstance.post('/api/os/user/create/', payload);
+const createOsUserRequest = async ({
+  username,
+  login_shell,
+  shell,
+}: CreateOsUserPayload) => {
+  const resolvedShell = shell ?? login_shell;
+
+  await axiosInstance.post('/api/os/user/create/', {
+    username,
+    login_shell: login_shell ?? resolvedShell,
+    shell: resolvedShell,
+  });
 };
 
 interface UseCreateOsUserOptions {

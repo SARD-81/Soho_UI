@@ -28,7 +28,9 @@ export const defaultBodyRowSx: SxProps<Theme> = {
     fontSize: '0.92rem',
   },
   '&:hover': {
-    backgroundColor: 'rgba(0, 198, 169, 0.08)',
+    backgroundColor:
+      'color-mix(in srgb, var(--color-primary) 12%, transparent)',
+    transition: 'background-color 0.2s ease',
   },
 };
 

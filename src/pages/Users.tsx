@@ -102,17 +102,37 @@ const Users = () => {
   );
 
   return (
-    <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
-      <Typography variant="h5" sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>
+    <Box
+      sx={{
+        p: 3,
+        fontFamily: 'var(--font-vazir)',
+        backgroundColor: 'var(--color-background)',
+        minHeight: '100%',
+      }}
+    >
+      <Typography
+        variant="h5"
+        sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+      >
         مدیریت کاربران
       </Typography>
 
       <Tabs
         value={activeTab}
         onChange={handleTabChange}
-        sx={{ mt: 2 }}
-        textColor="primary"
-        indicatorColor="primary"
+        sx={{
+          mt: 2,
+          '& .MuiTab-root': {
+            color: 'var(--color-secondary)',
+            fontWeight: 600,
+            '&.Mui-selected': {
+              color: 'var(--color-primary)',
+            },
+          },
+          '& .MuiTabs-indicator': {
+            backgroundColor: 'var(--color-primary)',
+          },
+        }}
       >
         <Tab label="کاربران سیستم عامل" value={USERS_TABS.os} />
         <Tab label="کاربران samba" value={USERS_TABS.samba} />
@@ -135,10 +155,21 @@ const Users = () => {
                 <Checkbox
                   checked={includeSystem}
                   onChange={handleToggleIncludeSystem}
-                  color="primary"
+                  sx={{
+                    color: 'var(--color-secondary)',
+                    '&.Mui-checked': {
+                      color: 'var(--color-primary)',
+                    },
+                  }}
                 />
               }
               label="نمایش کاربران سیستمی"
+              sx={{
+                '& .MuiTypography-root': {
+                  color: 'var(--color-secondary)',
+                  fontWeight: 600,
+                },
+              }}
             />
 
             <Button
@@ -151,9 +182,14 @@ const Users = () => {
                 fontWeight: 700,
                 fontSize: '0.95rem',
                 background:
-                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+                  'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
                 color: 'var(--color-bg)',
-                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+                boxShadow:
+                  '0 16px 32px -18px color-mix(in srgb, var(--color-primary) 55%, transparent)',
+                '&:hover': {
+                  background:
+                    'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
+                },
               }}
             >
               ایجاد کاربر جدید
