@@ -9,7 +9,8 @@ export interface OsUsersResponse {
 
 export interface CreateOsUserPayload {
   username: string;
-  login_shell: string;
+  login_shell?: string;
+  shell?: string;
 }
 
 export interface OsUserTableItem {

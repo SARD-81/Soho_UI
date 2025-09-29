@@ -19,10 +19,8 @@ const fetchOsUsers = async ({
   includeSystem,
   signal,
 }: FetchOsUsersParams): Promise<OsUsersResponse> => {
-  const { data } = await axiosInstance.request<OsUsersResponse>({
-    url: '/api/os/user',
-    method: 'GET',
-    data: { include_system: includeSystem },
+  const { data } = await axiosInstance.get<OsUsersResponse>('/api/os/user', {
+    params: { include_system: includeSystem },
     signal,
   });
 
