@@ -26,7 +26,8 @@
     --color-input-bg: rgba(255, 255, 255, 0.95);
     --color-input-border: rgba(0, 0, 0, 0.12);
     --color-input-focus-border: var(--color-primary);
-    --color-error : #ef4444
+    --color-error : #ef4444;
+    --color-success: #10b981;
 }
 
 [data-theme="dark"] {
@@ -41,7 +42,8 @@
     --color-input-bg: rgba(45, 45, 45, 0.95);
     --color-input-border: rgba(255, 255, 255, 0.12);
     --color-input-focus-border: var(--color-primary);
-    --color-error : #ef4444
+    --color-error : #ef4444;
+    --color-success: #10b981;
 }
 
 html {

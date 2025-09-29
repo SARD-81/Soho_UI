@@ -7,8 +7,8 @@ import {
 } from '@mui/material';
 import { useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
+import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { VolumeEntry } from '../../@types/volume';
-import type { DataTableColumn } from '../DataTable';
 import DataTable from '../DataTable';
 
 interface VolumesTableProps {

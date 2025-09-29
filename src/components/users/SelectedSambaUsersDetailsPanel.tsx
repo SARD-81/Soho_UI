@@ -1,30 +1,17 @@
-import {
-  Box,
-  CircularProgress,
-  IconButton,
-  Typography,
-  useTheme,
-} from '@mui/material';
+import { Box, IconButton, Typography, useTheme } from '@mui/material';
 import { MdClose } from 'react-icons/md';
-import type { ZpoolDetailEntry } from '../../@types/zpool';
+import type { SambaUserTableItem } from '../../@types/samba';
 import formatDetailValue from '../../utils/formatDetailValue';
 
-interface PoolDetailItem {
-  poolName: string;
-  detail: ZpoolDetailEntry | null;
-  isLoading: boolean;
-  error: Error | null;
+interface SelectedSambaUsersDetailsPanelProps {
+  items: SambaUserTableItem[];
+  onRemove: (username: string) => void;
 }
 
-interface SelectedPoolsDetailsPanelProps {
-  items: PoolDetailItem[];
-  onRemove: (poolName: string) => void;
-}
-
-const SelectedPoolsDetailsPanel = ({
+const SelectedSambaUsersDetailsPanel = ({
   items,
   onRemove,
-}: SelectedPoolsDetailsPanelProps) => {
+}: SelectedSambaUsersDetailsPanelProps) => {
   const theme = useTheme();
   const dividerColor =
     theme.palette.mode === 'dark'
@@ -61,7 +48,7 @@ const SelectedPoolsDetailsPanel = ({
           gap: 1,
         }}
       >
-        مقایسه جزئیات Pool ها
+        مقایسه جزئیات کاربران Samba
       </Typography>
 
       <Box
@@ -71,12 +58,14 @@ const SelectedPoolsDetailsPanel = ({
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
         }}
       >
-        {items.map(({ poolName, detail, isLoading, error }) => {
-          const entries = detail ? Object.entries(detail) : [];
+        {items.map((item) => {
+          const entries = Object.entries(item.details ?? {}).sort(([a], [b]) =>
+            a.localeCompare(b, 'fa-IR')
+          );
 
           return (
             <Box
-              key={poolName}
+              key={item.username}
               sx={{
                 borderRadius: 2,
                 border: `1px solid ${dividerColor}`,
@@ -105,45 +94,26 @@ const SelectedPoolsDetailsPanel = ({
                     fontSize: '1rem',
                   }}
                 >
-                  {poolName}
+                  {item.username}
                 </Typography>
 
                 <IconButton
-                  aria-label={`حذف ${poolName} از مقایسه`}
+                  aria-label={`حذف ${item.username} از مقایسه`}
                   size="small"
-                  onClick={() => onRemove(poolName)}
+                  onClick={() => onRemove(item.username)}
                   sx={{ color: 'var(--color-secondary)' }}
                 >
                   <MdClose size={18} />
                 </IconButton>
               </Box>
 
-              {isLoading && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    py: 3,
-                  }}
-                >
-                  <CircularProgress size={28} color="primary" />
-                </Box>
-              )}
-
-              {error && !isLoading && (
-                <Typography sx={{ color: 'var(--color-error)' }}>
-                  خطا در دریافت اطلاعات این Pool: {error.message}
-                </Typography>
-              )}
-
-              {!isLoading && !error && entries.length === 0 && (
+              {entries.length === 0 && (
                 <Typography sx={{ color: 'var(--color-secondary)' }}>
                   اطلاعاتی برای نمایش وجود ندارد.
                 </Typography>
               )}
 
-              {!isLoading && !error && entries.length > 0 && (
+              {entries.length > 0 && (
                 <Box
                   sx={{
                     width: '100%',
@@ -175,24 +145,28 @@ const SelectedPoolsDetailsPanel = ({
                       <Typography
                         variant="body2"
                         sx={{
-                          fontWeight: 500,
-                          color: theme.palette.text.secondary,
+                          fontWeight: 600,
+                          color: 'var(--color-secondary)',
+                          minWidth: 120,
                         }}
                       >
                         {key}
                       </Typography>
+
                       <Typography
-                        variant="subtitle2"
+                        variant="body2"
                         sx={{
-                          fontWeight: 700,
-                          color: 'var(--color-primary)',
+                          color: 'var(--color-text)',
                           textAlign: 'left',
                           direction: 'ltr',
-                          wordBreak: 'break-word',
                           whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          flex: 1,
                         }}
                       >
-                        {formatDetailValue(value)}
+                        {typeof value === 'string'
+                          ? value
+                          : formatDetailValue(value)}
                       </Typography>
                     </Box>
                   ))}
@@ -206,4 +180,4 @@ const SelectedPoolsDetailsPanel = ({
   );
 };
 
-export default SelectedPoolsDetailsPanel;
+export default SelectedSambaUsersDetailsPanel;
