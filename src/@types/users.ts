@@ -19,5 +19,6 @@ export interface OsUserTableItem {
   gid?: string;
   homeDirectory?: string;
   loginShell?: string;
+  hasSambaUser?: boolean;
   raw: RawOsUserDetails;
 }

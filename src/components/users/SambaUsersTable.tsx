@@ -118,7 +118,7 @@ const SambaUsersTable = ({
       },
       {
         id: 'logon-time',
-        header: 'زمان ورود',
+        header: 'Logon time',
         align: 'left',
         renderCell: (user) => (
           <Typography sx={{ color: 'var(--color-text)' }}>
