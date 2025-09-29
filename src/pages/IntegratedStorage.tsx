@@ -6,11 +6,12 @@ import { toast } from 'react-hot-toast';
 import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
+import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import SelectedPoolsDetailsPanel from '../components/integrated-storage/SelectedPoolsDetailsPanel';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
-import { useDisk } from '../hooks/useDisk';
+import { useDiskWwnMap } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
 import {
   fetchZpoolDetails,
@@ -45,24 +46,45 @@ const IntegratedStorage = () => {
   });
 
   const {
-    data: diskData,
-    isLoading: isDiskLoading,
-    error: diskError,
-  } = useDisk({
+    data: diskWwnMap,
+    isLoading: isDiskMapLoading,
+    isFetching: isDiskMapFetching,
+    error: diskMapError,
+  } = useDiskWwnMap({
     enabled: createPool.isOpen,
     refetchInterval: createPool.isOpen ? 5000 : undefined,
   });
 
-  const deviceOptions = useMemo(() => {
-    const summary = diskData?.summary.disk_io_summary;
-    if (!summary) {
-      return [] as string[];
+  const deviceOptions = useMemo<DeviceOption[]>(() => {
+    const data = diskWwnMap?.data;
+    if (!data) {
+      return [];
     }
 
-    return Object.keys(summary)
-      .filter((device) => device.length === 3 && device.startsWith('sd'))
-      .sort((a, b) => a.localeCompare(b, 'en'));
-  }, [diskData?.summary.disk_io_summary]);
+    return Object.entries(data)
+      .map(([devicePath, wwnPath]) => {
+        const deviceLabel = devicePath.split('/').pop() ?? devicePath;
+        const normalizedWwnPath =
+          typeof wwnPath === 'string' ? wwnPath : String(wwnPath ?? '');
+        const wwnValue =
+          normalizedWwnPath.split('/').pop() ?? normalizedWwnPath;
+
+        if (!wwnValue) {
+          return null;
+        }
+
+        return {
+          label: deviceLabel,
+          value: wwnValue,
+          tooltip: wwnValue,
+        } satisfies DeviceOption;
+      })
+      .filter((option): option is DeviceOption => option !== null)
+      .sort((a, b) => a.label.localeCompare(b.label, 'en'));
+  }, [diskWwnMap?.data]);
+
+  const isDiskLoading =
+    isDiskMapLoading || (createPool.isOpen && isDiskMapFetching && !diskWwnMap);
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
 
@@ -187,7 +209,7 @@ const IntegratedStorage = () => {
         controller={createPool}
         deviceOptions={deviceOptions}
         isDiskLoading={isDiskLoading}
-        diskError={diskError ?? null}
+        diskError={diskMapError ?? null}
       />
 
       <PoolsTable

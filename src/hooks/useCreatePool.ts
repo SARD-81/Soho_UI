@@ -101,6 +101,9 @@ export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
   });
 
   const handleDeviceToggle = useCallback((device: string) => {
+    setDevicesError(null);
+    setApiError(null);
+
     setSelectedDevices((prev) => {
       if (prev.includes(device)) {
         return prev.filter((item) => item !== device);
@@ -125,9 +128,21 @@ export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
         hasError = true;
       }
 
-      if (selectedDevices.length === 0) {
+      const deviceCount = selectedDevices.length;
+
+      if (deviceCount === 0) {
         setDevicesError('حداقل یک دیسک را انتخاب کنید.');
         hasError = true;
+      } else if (vdevType === 'mirror') {
+        if (deviceCount < 2 || deviceCount % 2 !== 0) {
+          setDevicesError('برای MIRROR تعداد دیسک‌ها باید عددی زوج و حداقل ۲ باشد.');
+          hasError = true;
+        }
+      } else if (vdevType === 'raidz') {
+        if (deviceCount < 3) {
+          setDevicesError('برای RAIDZ حداقل سه دیسک انتخاب کنید.');
+          hasError = true;
+        }
       }
 
       if (hasError) {

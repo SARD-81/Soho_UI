@@ -11,6 +11,7 @@ import {
   MenuItem,
   Select,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -18,9 +19,15 @@ import type { ChangeEvent } from 'react';
 import type { UseCreatePoolReturn } from '../../hooks/useCreatePool';
 import BlurModal from '../BlurModal';
 
+export interface DeviceOption {
+  label: string;
+  value: string;
+  tooltip: string;
+}
+
 interface CreatePoolModalProps {
   controller: UseCreatePoolReturn;
-  deviceOptions: string[];
+  deviceOptions: DeviceOption[];
   isDiskLoading: boolean;
   diskError: Error | null;
 }
@@ -151,7 +158,9 @@ const CreatePoolModal = ({
                 },
               }}
             >
-              <MenuItem value="disk">disk</MenuItem>
+              <MenuItem value="disk">DISK</MenuItem>
+              <MenuItem value="mirror">MIRROR</MenuItem>
+              <MenuItem value="raidz">RAIDZ</MenuItem>
             </Select>
           </FormControl>
 
@@ -200,11 +209,11 @@ const CreatePoolModal = ({
                 >
                   {deviceOptions.map((device) => (
                     <FormControlLabel
-                      key={device}
+                      key={device.value}
                       control={
                         <Checkbox
-                          checked={selectedDevices.includes(device)}
-                          onChange={() => toggleDevice(device)}
+                          checked={selectedDevices.includes(device.value)}
+                          onChange={() => toggleDevice(device.value)}
                           sx={{
                             color: 'var(--color-secondary)',
                             '&.Mui-checked': {
@@ -213,7 +222,13 @@ const CreatePoolModal = ({
                           }}
                         />
                       }
-                      label={device}
+                      label={
+                        <Tooltip title={device.tooltip} placement="top" arrow>
+                          <Typography component="span" sx={{ color: 'var(--color-text)' }}>
+                            {device.label}
+                          </Typography>
+                        </Tooltip>
+                      }
                       sx={{
                         alignItems: 'center',
                         m: 0,
