@@ -16,17 +16,109 @@ const toOptionalString = (value: unknown): string | undefined => {
   return undefined;
 };
 
+const parseKeyValueString = (
+  value: string,
+  keys: string[]
+): string | undefined => {
+  const separatorMatch = value.match(/[:=]/);
+
+  if (!separatorMatch) {
+    return undefined;
+  }
+
+  const separatorIndex = separatorMatch.index ?? -1;
+
+  if (separatorIndex === -1) {
+    return undefined;
+  }
+
+  const key = value.slice(0, separatorIndex).trim().toLowerCase();
+  const match = keys.find((candidate) => candidate.toLowerCase() === key);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const parsedValue = value.slice(separatorIndex + 1).trim();
+
+  return toOptionalString(parsedValue);
+};
+
 const pickFirstValue = (
   record: RawOsUserDetails,
   keys: string[]
 ): string | undefined => {
-  for (const key of keys) {
-    if (Object.prototype.hasOwnProperty.call(record, key)) {
-      const value = record[key];
-      const normalized = toOptionalString(value);
+  const queue: RawOsUserDetails[] = [record];
+  const visited = new WeakSet<object>();
 
-      if (normalized) {
-        return normalized;
+  while (queue.length > 0) {
+    const current = queue.shift();
+
+    if (!current || typeof current !== 'object') {
+      continue;
+    }
+
+    if (visited.has(current)) {
+      continue;
+    }
+
+    visited.add(current);
+
+    for (const key of keys) {
+      if (Object.prototype.hasOwnProperty.call(current, key)) {
+        const value = current[key];
+        const normalized = toOptionalString(value);
+
+        if (normalized) {
+          return normalized;
+        }
+      }
+    }
+
+    const descriptorCandidate = toOptionalString(
+      (current['key'] ??
+        current['name'] ??
+        current['field'] ??
+        current['label'] ??
+        current['title']) as unknown
+    );
+
+    if (descriptorCandidate) {
+      const descriptor = descriptorCandidate.toLowerCase();
+      const descriptorMatch = keys.find(
+        (key) => key.toLowerCase() === descriptor
+      );
+
+      if (descriptorMatch) {
+        const descriptorValue = toOptionalString(
+          (current['value'] ??
+            current['val'] ??
+            current['content'] ??
+            current['data'] ??
+            current['text']) as unknown
+        );
+
+        if (descriptorValue) {
+          return descriptorValue;
+        }
+      }
+    }
+
+    for (const value of Object.values(current)) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item && typeof item === 'object') {
+            queue.push(item as RawOsUserDetails);
+          } else if (typeof item === 'string') {
+            const parsed = parseKeyValueString(item, keys);
+
+            if (parsed) {
+              return parsed;
+            }
+          }
+        }
+      } else if (value && typeof value === 'object') {
+        queue.push(value as RawOsUserDetails);
       }
     }
   }
