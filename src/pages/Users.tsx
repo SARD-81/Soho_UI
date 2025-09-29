@@ -12,6 +12,7 @@ import {
   type ReactNode,
   type SyntheticEvent,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -20,9 +21,18 @@ import type { CreateOsUserPayload } from '../@types/users';
 import { USERS_TABS, type UsersTabValue } from '../constants/users';
 import OsUserCreateModal from '../components/users/OsUserCreateModal';
 import OsUsersTable from '../components/users/OsUsersTable';
+import SelectedSambaUsersDetailsPanel from '../components/users/SelectedSambaUsersDetailsPanel';
+import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
+import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
+import SambaUsersTable from '../components/users/SambaUsersTable';
 import { useCreateOsUser } from '../hooks/useCreateOsUser';
 import { useOsUsers } from '../hooks/useOsUsers';
+import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
+import { useEnableSambaUser } from '../hooks/useEnableSambaUser';
+import { useSambaUsers } from '../hooks/useSambaUsers';
+import { useUpdateSambaUserPassword } from '../hooks/useUpdateSambaUserPassword';
 import { normalizeOsUsers } from '../utils/osUsers';
+import { normalizeSambaUsers } from '../utils/sambaUsers';
 
 const TabPanel = ({
   value,
@@ -45,6 +55,14 @@ const Users = () => {
   const [includeSystem, setIncludeSystem] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [isSambaCreateModalOpen, setIsSambaCreateModalOpen] = useState(false);
+  const [sambaCreateError, setSambaCreateError] = useState<string | null>(null);
+  const [selectedSambaUsers, setSelectedSambaUsers] = useState<string[]>([]);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordModalUsername, setPasswordModalUsername] = useState<string | null>(null);
+  const [passwordModalError, setPasswordModalError] = useState<string | null>(null);
+  const [pendingEnableUsername, setPendingEnableUsername] = useState<string | null>(null);
+  const [pendingPasswordUsername, setPendingPasswordUsername] = useState<string | null>(null);
 
   const osUsersQuery = useOsUsers({
     includeSystem,
@@ -56,6 +74,15 @@ const Users = () => {
     [osUsersQuery.data?.data]
   );
 
+  const sambaUsersQuery = useSambaUsers({
+    enabled: activeTab === USERS_TABS.samba,
+  });
+
+  const sambaUsers = useMemo(
+    () => normalizeSambaUsers(sambaUsersQuery.data?.data),
+    [sambaUsersQuery.data?.data]
+  );
+
   const createOsUser = useCreateOsUser({
     onSuccess: (username) => {
       toast.success(`کاربر ${username} با موفقیت ایجاد شد.`);
@@ -65,6 +92,40 @@ const Users = () => {
     onError: (message) => {
       setCreateError(message);
       toast.error(`ایجاد کاربر با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const createSambaUser = useCreateSambaUser({
+    onSuccess: (username) => {
+      toast.success(`کاربر Samba ${username} با موفقیت ایجاد شد.`);
+      setIsSambaCreateModalOpen(false);
+      setSambaCreateError(null);
+    },
+    onError: (message) => {
+      setSambaCreateError(message);
+      toast.error(`ایجاد کاربر Samba با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const enableSambaUser = useEnableSambaUser({
+    onSuccess: (username) => {
+      toast.success(`کاربر ${username} فعال شد.`);
+    },
+    onError: (message) => {
+      toast.error(`فعال‌سازی کاربر با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const updateSambaPassword = useUpdateSambaUserPassword({
+    onSuccess: (username) => {
+      toast.success(`گذرواژه کاربر ${username} بروزرسانی شد.`);
+      setIsPasswordModalOpen(false);
+      setPasswordModalUsername(null);
+      setPasswordModalError(null);
+    },
+    onError: (message) => {
+      setPasswordModalError(message);
+      toast.error(`تغییر گذرواژه با خطا مواجه شد: ${message}`);
     },
   });
 
@@ -99,6 +160,103 @@ const Users = () => {
       createOsUser.mutate(payload);
     },
     [createOsUser]
+  );
+
+  const handleOpenSambaCreateModal = useCallback(() => {
+    setSambaCreateError(null);
+    createSambaUser.reset();
+    setIsSambaCreateModalOpen(true);
+  }, [createSambaUser]);
+
+  const handleCloseSambaCreateModal = useCallback(() => {
+    setIsSambaCreateModalOpen(false);
+    setSambaCreateError(null);
+    createSambaUser.reset();
+  }, [createSambaUser]);
+
+  const handleSubmitCreateSambaUser = useCallback(
+    (payload: { username: string; password: string }) => {
+      createSambaUser.mutate(payload);
+    },
+    [createSambaUser]
+  );
+
+  const handleToggleSelectSambaUser = useCallback(
+    (user: { username: string }, checked: boolean) => {
+      setSelectedSambaUsers((prev) => {
+        if (checked) {
+          if (prev.includes(user.username)) {
+            return prev;
+          }
+
+          return [...prev, user.username];
+        }
+
+        return prev.filter((username) => username !== user.username);
+      });
+    },
+    []
+  );
+
+  const handleRemoveSelectedSambaUser = useCallback((username: string) => {
+    setSelectedSambaUsers((prev) => prev.filter((item) => item !== username));
+  }, []);
+
+  const handleEnableSambaUser = useCallback(
+    (user: { username: string }) => {
+      setPendingEnableUsername(user.username);
+      enableSambaUser.mutate(
+        { username: user.username },
+        {
+          onSettled: () => {
+            setPendingEnableUsername(null);
+          },
+        }
+      );
+    },
+    [enableSambaUser]
+  );
+
+  const handleOpenPasswordModal = useCallback((user: { username: string }) => {
+    setPasswordModalUsername(user.username);
+    setPasswordModalError(null);
+    updateSambaPassword.reset();
+    setIsPasswordModalOpen(true);
+  }, [updateSambaPassword]);
+
+  const handleClosePasswordModal = useCallback(() => {
+    setIsPasswordModalOpen(false);
+    setPasswordModalUsername(null);
+    setPasswordModalError(null);
+    updateSambaPassword.reset();
+  }, [updateSambaPassword]);
+
+  const handleSubmitPasswordChange = useCallback(
+    (payload: { username: string; new_password: string }) => {
+      setPendingPasswordUsername(payload.username);
+      updateSambaPassword.mutate(payload, {
+        onSettled: () => {
+          setPendingPasswordUsername(null);
+        },
+      });
+    },
+    [updateSambaPassword]
+  );
+
+  useEffect(() => {
+    setSelectedSambaUsers((prev) =>
+      prev.filter((username) =>
+        sambaUsers.some((user) => user.username === username)
+      )
+    );
+  }, [sambaUsers]);
+
+  const selectedSambaUserItems = useMemo(
+    () =>
+      selectedSambaUsers
+        .map((username) => sambaUsers.find((user) => user.username === username))
+        .filter((user): user is (typeof sambaUsers)[number] => Boolean(user)),
+    [sambaUsers, selectedSambaUsers]
   );
 
   return (
@@ -205,9 +363,71 @@ const Users = () => {
       </TabPanel>
 
       <TabPanel value={USERS_TABS.samba} currentValue={activeTab}>
-        <Typography sx={{ color: 'var(--color-secondary)' }}>
-          مدیریت کاربران Samba به‌زودی افزوده می‌شود.
-        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+            >
+              مدیریت کاربران Samba
+            </Typography>
+
+            <Button
+              onClick={handleOpenSambaCreateModal}
+              variant="contained"
+              sx={{
+                px: 3,
+                py: 1.25,
+                borderRadius: '3px',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                background:
+                  'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+                color: 'var(--color-bg)',
+                boxShadow:
+                  '0 16px 32px -18px color-mix(in srgb, var(--color-primary) 55%, transparent)',
+                '&:hover': {
+                  background:
+                    'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
+                },
+              }}
+            >
+              افزودن کاربر Samba
+            </Button>
+          </Box>
+
+          <Typography variant="body2" sx={{ color: 'var(--color-secondary)' }}>
+            از جدول زیر می‌توانید کاربران Samba را مشاهده، برای مقایسه انتخاب و
+            عملیات فعال‌سازی یا تغییر گذرواژه را انجام دهید.
+          </Typography>
+
+          <SambaUsersTable
+            users={sambaUsers}
+            isLoading={sambaUsersQuery.isLoading || sambaUsersQuery.isFetching}
+            error={sambaUsersQuery.error ?? null}
+            selectedUsers={selectedSambaUsers}
+            onToggleSelect={handleToggleSelectSambaUser}
+            onEnable={handleEnableSambaUser}
+            onEditPassword={handleOpenPasswordModal}
+            pendingEnableUsername={pendingEnableUsername}
+            isEnabling={enableSambaUser.isPending}
+            pendingPasswordUsername={pendingPasswordUsername}
+            isUpdatingPassword={updateSambaPassword.isPending}
+          />
+
+          <SelectedSambaUsersDetailsPanel
+            items={selectedSambaUserItems}
+            onRemove={handleRemoveSelectedSambaUser}
+          />
+        </Box>
       </TabPanel>
 
       <TabPanel value={USERS_TABS.other} currentValue={activeTab}>
@@ -222,6 +442,23 @@ const Users = () => {
         onSubmit={handleSubmitCreateUser}
         isSubmitting={createOsUser.isPending}
         errorMessage={createError}
+      />
+
+      <SambaUserCreateModal
+        open={isSambaCreateModalOpen}
+        onClose={handleCloseSambaCreateModal}
+        onSubmit={handleSubmitCreateSambaUser}
+        isSubmitting={createSambaUser.isPending}
+        errorMessage={sambaCreateError}
+      />
+
+      <SambaUserPasswordModal
+        open={isPasswordModalOpen}
+        username={passwordModalUsername}
+        onClose={handleClosePasswordModal}
+        onSubmit={handleSubmitPasswordChange}
+        isSubmitting={updateSambaPassword.isPending}
+        errorMessage={passwordModalError}
       />
     </Box>
   );
