@@ -1,4 +1,12 @@
-import { Alert, Box, Button, TextField, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { type FormEvent, useEffect, useState } from 'react';
 import type { CreateSambaUserPayload } from '../../@types/samba';
 import BlurModal from '../BlurModal';
@@ -6,9 +14,10 @@ import BlurModal from '../BlurModal';
 interface SambaUserCreateModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: CreateSambaUserPayload) => void;
+  onSubmit: (payload: CreateSambaUserPayload & { createOsUser: boolean }) => void;
   isSubmitting: boolean;
   errorMessage: string | null;
+  initialUsername?: string;
 }
 
 const SambaUserCreateModal = ({
@@ -17,16 +26,19 @@ const SambaUserCreateModal = ({
   onSubmit,
   isSubmitting,
   errorMessage,
+  initialUsername = '',
 }: SambaUserCreateModalProps) => {
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(initialUsername);
   const [password, setPassword] = useState('');
+  const [createOsUser, setCreateOsUser] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setUsername('');
+      setUsername(initialUsername ?? '');
       setPassword('');
+      setCreateOsUser(false);
     }
-  }, [open]);
+  }, [initialUsername, open]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -38,6 +50,7 @@ const SambaUserCreateModal = ({
     onSubmit({
       username: username.trim(),
       password,
+      createOsUser,
     });
   };
 
@@ -123,6 +136,31 @@ const SambaUserCreateModal = ({
             {errorMessage}
           </Alert>
         ) : null}
+
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={createOsUser}
+              onChange={(event) => setCreateOsUser(event.target.checked)}
+              color="primary"
+              disabled={isSubmitting}
+              sx={{
+                color: 'var(--color-secondary)',
+                '&.Mui-checked': {
+                  color: 'var(--color-primary)',
+                },
+              }}
+            />
+          }
+          label="ابتدا کاربر سیستم عامل ایجاد شود"
+          sx={{
+            alignSelf: 'flex-start',
+            '& .MuiTypography-root': {
+              color: 'var(--color-secondary)',
+              fontWeight: 600,
+            },
+          }}
+        />
       </Box>
     </BlurModal>
   );

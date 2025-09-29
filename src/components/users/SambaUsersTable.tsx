@@ -25,6 +25,16 @@ interface SambaUsersTableProps {
 
 const valueOrDash = (value?: string) => (value && value.trim() ? value : '-');
 
+const findLogonTimeInDetails = (details: Record<string, string>) => {
+  for (const [key, value] of Object.entries(details)) {
+    if (key.trim().toLowerCase() === 'logon time') {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
 const SambaUsersTable = ({
   users,
   isLoading,
@@ -118,13 +128,18 @@ const SambaUsersTable = ({
       },
       {
         id: 'logon-time',
-        header: 'زمان ورود',
+        header: 'Logon time',
         align: 'left',
-        renderCell: (user) => (
-          <Typography sx={{ color: 'var(--color-text)' }}>
-            {valueOrDash(user.logonTime)}
-          </Typography>
-        ),
+        renderCell: (user) => {
+          const logonTime =
+            findLogonTimeInDetails(user.details) ?? user.logonTime;
+
+          return (
+            <Typography sx={{ color: 'var(--color-text)' }}>
+              {valueOrDash(logonTime)}
+            </Typography>
+          );
+        },
       },
       {
         id: 'actions',
