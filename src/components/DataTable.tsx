@@ -243,12 +243,15 @@ const DataTable = <T,>({
                     sx={{
                       '& .MuiTablePagination-displayedRows': {
                         fontFamily: 'var(--font-vazir)',
+                        color: 'var(--color-text)',
                       },
                       '& .MuiTablePagination-selectLabel': {
                         fontFamily: 'var(--font-vazir)',
+                        color: 'var(--color-text)',
                       },
                       '& .MuiTablePagination-input': {
                         fontFamily: 'var(--font-vazir)',
+                        color: 'var(--color-text)',
                       },
                     }}
                   />

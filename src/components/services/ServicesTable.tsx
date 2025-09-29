@@ -1,6 +1,12 @@
-import { Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import type { ChangeEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { IconType } from 'react-icons';
 import { FiPlay, FiRefreshCw, FiStopCircle } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
@@ -27,14 +33,24 @@ const actionConfigs: Array<{
   icon: IconType;
   color: string;
 }> = [
-  { action: 'start', label: 'شروع', icon: FiPlay, color: 'var(--color-success)' },
+  {
+    action: 'start',
+    label: 'شروع',
+    icon: FiPlay,
+    color: 'var(--color-success)',
+  },
   {
     action: 'restart',
     label: 'راه‌اندازی مجدد',
     icon: FiRefreshCw,
     color: 'var(--color-primary)',
   },
-  { action: 'stop', label: 'توقف', icon: FiStopCircle, color: 'var(--color-error)' },
+  {
+    action: 'stop',
+    label: 'توقف',
+    icon: FiStopCircle,
+    color: 'var(--color-error)',
+  },
 ];
 
 const formatServiceValue = (value: ServiceValue) => {
@@ -80,7 +96,10 @@ const ServicesTable = ({
 
   useEffect(() => {
     if (page > 0 && page * rowsPerPage >= services.length) {
-      const lastPage = Math.max(Math.ceil(services.length / rowsPerPage) - 1, 0);
+      const lastPage = Math.max(
+        Math.ceil(services.length / rowsPerPage) - 1,
+        0
+      );
       setPage(lastPage);
     }
   }, [page, rowsPerPage, services.length]);
@@ -124,11 +143,13 @@ const ServicesTable = ({
       ),
     };
 
-    const dynamicColumns = detailKeys.map<DataTableColumn<ServiceTableRow>>((key) => ({
-      id: key,
-      header: key,
-      renderCell: (row) => formatServiceValue(row.details[key]),
-    }));
+    const dynamicColumns = detailKeys.map<DataTableColumn<ServiceTableRow>>(
+      (key) => ({
+        id: key,
+        header: key,
+        renderCell: (row) => formatServiceValue(row.details[key]),
+      })
+    );
 
     const actionColumn: DataTableColumn<ServiceTableRow> = {
       id: 'actions',
@@ -138,7 +159,14 @@ const ServicesTable = ({
         const isPending = isActionLoading && activeServiceName === row.name;
 
         return (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1.5,
+            }}
+          >
             {actionConfigs.map(({ action, label, icon: Icon, color }) => (
               <Tooltip key={action} title={label} arrow>
                 <span>
@@ -163,14 +191,26 @@ const ServicesTable = ({
               </Tooltip>
             ))}
 
-            {isPending ? <CircularProgress size={18} sx={{ color: 'var(--color-primary)' }} /> : null}
+            {isPending ? (
+              <CircularProgress
+                size={18}
+                sx={{ color: 'var(--color-primary)' }}
+              />
+            ) : null}
           </Box>
         );
       },
     };
 
     return [indexColumn, baseColumn, ...dynamicColumns, actionColumn];
-  }, [activeServiceName, detailKeys, isActionLoading, onAction, page, rowsPerPage]);
+  }, [
+    activeServiceName,
+    detailKeys,
+    isActionLoading,
+    onAction,
+    page,
+    rowsPerPage,
+  ]);
 
   return (
     <DataTable<ServiceTableRow>

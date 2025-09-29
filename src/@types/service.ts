@@ -1,4 +1,9 @@
-export type ServicePrimitiveValue = string | number | boolean | null | undefined;
+export type ServicePrimitiveValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined;
 
 export type ServiceValue = ServicePrimitiveValue | ServicePrimitiveValue[];
 

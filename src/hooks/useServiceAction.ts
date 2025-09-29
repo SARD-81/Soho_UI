@@ -1,9 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
-import type {
-  ServiceActionType,
-  ServicesResponse,
-} from '../@types/service';
+import type { ServiceActionType, ServicesResponse } from '../@types/service';
 import axiosInstance from '../lib/axiosInstance';
 import { servicesQueryKey } from './useServices';
 
@@ -63,12 +60,14 @@ const extractErrorMessage = (error: AxiosError<ApiErrorResponse>) => {
   return error.message;
 };
 
-export const useServiceAction = (
-  options: UseServiceActionOptions = {}
-) => {
+export const useServiceAction = (options: UseServiceActionOptions = {}) => {
   const queryClient = useQueryClient();
 
-  return useMutation<ServicesResponse, AxiosError<ApiErrorResponse>, ServiceActionPayload>({
+  return useMutation<
+    ServicesResponse,
+    AxiosError<ApiErrorResponse>,
+    ServiceActionPayload
+  >({
     mutationFn: async (payload) => {
       const { data } = await axiosInstance.post<ServicesResponse>(
         '/api/service/',

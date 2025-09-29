@@ -53,7 +53,10 @@ const Services = () => {
   return (
     <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Typography variant="h5" sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>
+        <Typography
+          variant="h5"
+          sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+        >
           سرویس ها
         </Typography>
 
