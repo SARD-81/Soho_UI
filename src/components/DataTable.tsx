@@ -6,7 +6,9 @@ import {
   TableBody,
   TableCell,
   TableContainer,
+  TableFooter,
   TableHead,
+  TablePagination,
   TableRow,
   Typography,
 } from '@mui/material';
@@ -81,6 +83,7 @@ const DataTable = <T,>({
   bodyRowSx,
   containerProps,
   tableProps,
+  pagination,
 }: DataTableProps<T>) => {
   const renderStateRow = (content: ReactNode) => (
     <TableRow>
@@ -209,6 +212,51 @@ const DataTable = <T,>({
             );
           })}
         </TableBody>
+        {pagination ? (
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={columns.length} sx={{ py: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 2,
+                  }}
+                >
+                  <Typography sx={{ color: 'var(--color-secondary)' }}>
+                    {pagination.rowCountFormatter
+                      ? pagination.rowCountFormatter(pagination.count)
+                      : `تعداد سطرها: ${pagination.count.toLocaleString('fa-IR')}`}
+                  </Typography>
+                  <TablePagination
+                    component="div"
+                    count={pagination.count}
+                    page={pagination.page}
+                    onPageChange={pagination.onPageChange}
+                    rowsPerPage={pagination.rowsPerPage}
+                    onRowsPerPageChange={pagination.onRowsPerPageChange}
+                    rowsPerPageOptions={pagination.rowsPerPageOptions}
+                    labelRowsPerPage={pagination.labelRowsPerPage}
+                    labelDisplayedRows={pagination.labelDisplayedRows}
+                    sx={{
+                      '& .MuiTablePagination-displayedRows': {
+                        fontFamily: 'var(--font-vazir)',
+                      },
+                      '& .MuiTablePagination-selectLabel': {
+                        fontFamily: 'var(--font-vazir)',
+                      },
+                      '& .MuiTablePagination-input': {
+                        fontFamily: 'var(--font-vazir)',
+                      },
+                    }}
+                  />
+                </Box>
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        ) : null}
       </Table>
     </TableContainer>
   );
