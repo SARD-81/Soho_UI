@@ -10,7 +10,6 @@ import {
 import { isAxiosError } from 'axios';
 import {
   type ChangeEvent,
-  type ReactNode,
   type SyntheticEvent,
   useCallback,
   useEffect,
@@ -20,11 +19,8 @@ import {
 import { toast } from 'react-hot-toast';
 import type { CreateSambaUserPayload } from '../@types/samba';
 import type { CreateOsUserPayload } from '../@types/users';
-import {
-  DEFAULT_LOGIN_SHELL,
-  USERS_TABS,
-  type UsersTabValue,
-} from '../constants/users';
+import { USERS_TABS, type UsersTabValue } from '../constants/users';
+import TabPanel from '../components/TabPanel';
 import OsUserCreateModal from '../components/users/OsUserCreateModal';
 import OsUsersTable from '../components/users/OsUsersTable';
 import SelectedSambaUsersDetailsPanel from '../components/users/SelectedSambaUsersDetailsPanel';
@@ -41,22 +37,6 @@ import { normalizeOsUsers } from '../utils/osUsers';
 import { normalizeSambaUsers } from '../utils/sambaUsers';
 import type { ApiErrorResponse } from '../utils/apiError';
 import { extractApiErrorMessage } from '../utils/apiError';
-
-const TabPanel = ({
-  value,
-  currentValue,
-  children,
-}: {
-  value: UsersTabValue;
-  currentValue: UsersTabValue;
-  children: ReactNode;
-}) => {
-  if (value !== currentValue) {
-    return null;
-  }
-
-  return <Box sx={{ mt: 3 }}>{children}</Box>;
-};
 
 const Users = () => {
   const [activeTab, setActiveTab] = useState<UsersTabValue>(USERS_TABS.os);
