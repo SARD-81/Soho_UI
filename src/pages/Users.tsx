@@ -24,7 +24,11 @@ import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
 import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
 import SambaUsersTable from '../components/users/SambaUsersTable';
 import SelectedSambaUsersDetailsPanel from '../components/users/SelectedSambaUsersDetailsPanel';
-import { USERS_TABS, type UsersTabValue } from '../constants/users';
+import {
+  DEFAULT_LOGIN_SHELL,
+  USERS_TABS,
+  type UsersTabValue,
+} from '../constants/users';
 import { useCreateOsUser } from '../hooks/useCreateOsUser';
 import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
 import { useEnableSambaUser } from '../hooks/useEnableSambaUser';
@@ -199,10 +203,34 @@ const Users = () => {
   );
 
   const handleSubmitCreateSambaUser = useCallback(
-    (payload: { username: string; password: string }) => {
-      createSambaUser.mutate(payload);
+    ({
+      username,
+      password,
+      createOsUserFirst,
+    }: {
+      username: string;
+      password: string;
+      createOsUserFirst: boolean;
+    }) => {
+      const run = async () => {
+        if (createOsUserFirst) {
+          try {
+            await createOsUser.mutateAsync({
+              username,
+              login_shell: DEFAULT_LOGIN_SHELL,
+              shell: DEFAULT_LOGIN_SHELL,
+            });
+          } catch {
+            return;
+          }
+        }
+
+        createSambaUser.mutate({ username, password });
+      };
+
+      void run();
     },
-    [createSambaUser]
+    [createOsUser, createSambaUser]
   );
 
   const handleToggleSelectSambaUser = useCallback(
