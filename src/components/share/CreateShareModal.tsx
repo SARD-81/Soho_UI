@@ -3,6 +3,7 @@ import {
   Autocomplete,
   Box,
   Button,
+  ClickAwayListener,
   CircularProgress,
   InputAdornment,
   TextField,
@@ -10,7 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { ChangeEvent } from 'react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
@@ -56,12 +57,16 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     isCreating,
     pathValidationStatus,
     pathValidationMessage,
+    pathValidationDetails,
     isPathChecking,
     isPathValid,
   } = controller;
 
+  const [isPathDetailsOpen, setIsPathDetailsOpen] = useState(false);
+
   const handlePathChange = (event: ChangeEvent<HTMLInputElement>) => {
     setFullPath(event.target.value);
+    setIsPathDetailsOpen(false);
   };
 
   const sambaUsersQuery = useSambaUsers({ enabled: isOpen });
@@ -73,6 +78,80 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     () => sambaUsers.map((user) => user.username).filter(Boolean),
     [sambaUsers]
   );
+
+  const pathValidationDetailEntries = useMemo(() => {
+    if (!pathValidationDetails) {
+      return [] as Array<{ label: string; value: string }>;
+    }
+
+    const detailLabels: Array<{ key: 'path' | 'permissions' | 'owner' | 'group'; label: string }> = [
+      { key: 'path', label: 'مسیر' },
+      { key: 'permissions', label: 'دسترسی' },
+      { key: 'owner', label: 'مالک' },
+      { key: 'group', label: 'گروه' },
+    ];
+
+    return detailLabels
+      .map(({ key, label }) => {
+        const rawValue = (pathValidationDetails as Record<string, unknown>)[key];
+        const value =
+          rawValue === undefined || rawValue === null ? '' : String(rawValue);
+
+        return value.trim() ? { label, value: value.trim() } : null;
+      })
+      .filter((entry): entry is { label: string; value: string } => entry !== null);
+  }, [pathValidationDetails]);
+
+  useEffect(() => {
+    if (pathValidationStatus !== 'invalid') {
+      setIsPathDetailsOpen(false);
+    }
+  }, [pathValidationStatus]);
+
+  const shouldShowPathDetails =
+    pathValidationStatus === 'invalid' &&
+    (Boolean(pathValidationMessage) || pathValidationDetailEntries.length > 0);
+
+  const pathValidationTooltipContent = useMemo(() => {
+    if (!shouldShowPathDetails) {
+      return null;
+    }
+
+    return (
+      <Box sx={{ direction: 'rtl', textAlign: 'right' }}>
+        {pathValidationMessage && (
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            {pathValidationMessage}
+          </Typography>
+        )}
+        {pathValidationDetailEntries.length > 0 && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 1 }}>
+            {pathValidationDetailEntries.map((entry) => (
+              <Typography key={entry.label} variant="caption">
+                {`${entry.label}: ${entry.value}`}
+              </Typography>
+            ))}
+          </Box>
+        )}
+      </Box>
+    );
+  }, [
+    pathValidationDetailEntries,
+    pathValidationMessage,
+    shouldShowPathDetails,
+  ]);
+
+  const handleTogglePathDetails = () => {
+    if (!shouldShowPathDetails) {
+      return;
+    }
+
+    setIsPathDetailsOpen((prev) => !prev);
+  };
+
+  const handleClosePathDetails = () => {
+    setIsPathDetailsOpen(false);
+  };
 
   const hasPathError =
     Boolean(fullPathError) || pathValidationStatus === 'invalid';
@@ -90,17 +169,48 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
       );
     }
 
-    if (pathValidationStatus === 'invalid' && pathValidationMessage) {
+    if (pathValidationStatus === 'invalid') {
+      if (shouldShowPathDetails && pathValidationTooltipContent) {
+        return (
+          <InputAdornment position="end">
+            <ClickAwayListener onClickAway={handleClosePathDetails}>
+              <Tooltip
+                arrow
+                placement="top"
+                open={isPathDetailsOpen}
+                onClose={handleClosePathDetails}
+                disableFocusListener
+                disableHoverListener
+                disableTouchListener
+                title={pathValidationTooltipContent}
+              >
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={handleTogglePathDetails}
+                  aria-label="نمایش جزئیات مسیر"
+                  sx={{
+                    display: 'flex',
+                    color: 'error.main',
+                    cursor: 'pointer',
+                    background: 'none',
+                    border: 'none',
+                    p: 0,
+                  }}
+                >
+                  <FiAlertCircle size={18} />
+                </Box>
+              </Tooltip>
+            </ClickAwayListener>
+          </InputAdornment>
+        );
+      }
+
       return (
         <InputAdornment position="end">
-          <Tooltip title={pathValidationMessage} placement="top">
-            <Box
-              component="span"
-              sx={{ display: 'flex', color: 'error.main', cursor: 'pointer' }}
-            >
-              <FiAlertCircle size={18} />
-            </Box>
-          </Tooltip>
+          <Box component="span" sx={{ display: 'flex', color: 'error.main' }}>
+            <FiAlertCircle size={18} />
+          </Box>
         </InputAdornment>
       );
     }
