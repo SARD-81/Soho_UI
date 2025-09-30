@@ -7,7 +7,8 @@ import { MdSpaceDashboard, MdStorage } from 'react-icons/md';
 import { RiSettings3Fill } from 'react-icons/ri';
 import type { NavigationItem } from '../@types/navigationDrawer';
 
-export const drawerWidth = 200;
+export const drawerWidth = 240;
+export const collapsedDrawerWidth = 72;
 
 export const navItems: NavigationItem[] = [
   {

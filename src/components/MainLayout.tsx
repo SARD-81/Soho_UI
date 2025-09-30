@@ -15,18 +15,47 @@ import { MdClose, MdLogout, MdMenu, MdSearch } from 'react-icons/md';
 import { Outlet } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import '../index.css';
+import { collapsedDrawerWidth, drawerWidth } from '../constants/navigationDrawer';
 import NavigationDrawer from './NavigationDrawer';
 import ThemeToggle from './ThemeToggle';
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [desktopDrawerOpen, setDesktopDrawerOpen] = useState(true);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+
+  const drawerVariant = isDesktop ? 'permanent' : 'temporary';
+  const drawerOpen = isDesktop ? desktopDrawerOpen : mobileDrawerOpen;
+  const drawerOffset = isDesktop
+    ? desktopDrawerOpen
+      ? drawerWidth
+      : collapsedDrawerWidth
+    : 0;
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleDrawerToggle = () => {
+    if (isDesktop) {
+      setDesktopDrawerOpen((prev) => !prev);
+      return;
+    }
+
+    setMobileDrawerOpen((prev) => !prev);
+  };
+
+  const handleDrawerClose = () => {
+    if (isDesktop) {
+      setDesktopDrawerOpen(false);
+      return;
+    }
+
+    setMobileDrawerOpen(false);
   };
 
   return (
@@ -41,15 +70,22 @@ const MainLayout: React.FC = () => {
     >
       <AppBar
         position="fixed"
-        sx={{
-          zIndex: (theme) => theme.zIndex.drawer + 1,
+        sx={(muiTheme) => ({
+          zIndex: muiTheme.zIndex.drawer + 1,
           backgroundColor: 'var(--color-card-bg)',
           backdropFilter: 'saturate(140%) blur(8px)',
-          boxShadow: (theme) =>
-            `0 4px 20px ${
-              theme.palette.mode === 'dark' ? '#00000066' : '#00000022'
-            }`,
-        }}
+          boxShadow: `0 4px 20px ${
+            muiTheme.palette.mode === 'dark' ? '#00000066' : '#00000022'
+          }`,
+          marginLeft: { md: `${drawerOffset}px` },
+          width: { md: `calc(100% - ${drawerOffset}px)` },
+          transition: muiTheme.transitions.create(['margin-left', 'width'], {
+            easing: muiTheme.transitions.easing.sharp,
+            duration: drawerOpen
+              ? muiTheme.transitions.duration.enteringScreen
+              : muiTheme.transitions.duration.leavingScreen,
+          }),
+        })}
       >
         <Toolbar
           variant="dense"
@@ -62,7 +98,7 @@ const MainLayout: React.FC = () => {
           }}
         >
           <IconButton
-            onClick={() => setDrawerOpen((prev) => !prev)}
+            onClick={handleDrawerToggle}
             sx={{ color: 'var(--color-bg-primary)' }}
           >
             {drawerOpen ? <MdClose /> : <MdMenu />}
@@ -183,9 +219,24 @@ const MainLayout: React.FC = () => {
       </AppBar>
       <NavigationDrawer
         open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        variant={drawerVariant}
+        onClose={handleDrawerClose}
+        onToggle={isDesktop ? handleDrawerToggle : undefined}
       />
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box
+        component="main"
+        sx={(muiTheme) => ({
+          flexGrow: 1,
+          p: 3,
+          transition: muiTheme.transitions.create(['margin-left', 'width'], {
+            easing: muiTheme.transitions.easing.sharp,
+            duration: drawerOpen
+              ? muiTheme.transitions.duration.enteringScreen
+              : muiTheme.transitions.duration.leavingScreen,
+          }),
+          marginLeft: { md: `${drawerOffset}px` },
+        })}
+      >
         <Toolbar />
         <Outlet />
       </Box>
