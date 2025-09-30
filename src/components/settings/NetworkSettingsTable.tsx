@@ -12,8 +12,8 @@ import DataTable from '../DataTable';
 type NetworkSettingsTableRow = {
   id: string;
   interfaceName: string;
-  detailLabel: string;
-  value: string;
+  ipv4Address: string;
+  linkSpeed: string;
   netmask: string | null;
 };
 
@@ -37,20 +37,18 @@ const createRows = (
         rows.push({
           id: `${interfaceName}-ipv4-missing`,
           interfaceName,
-          detailLabel: 'آدرس IPv4',
-          value: 'آدرس IPv4 در دسترس نیست.',
+          ipv4Address: 'آدرس IPv4 در دسترس نیست.',
+          linkSpeed: '—',
           netmask: null,
         });
       } else {
         ipv4Info.forEach((entry, index) => {
-          const labelPrefix =
-            ipv4Info.length > 1 ? `IPv4 ${index + 1}` : 'IPv4';
           rows.push({
             id: `${interfaceName}-ipv4-${index}`,
             interfaceName,
-            detailLabel: `آدرس ${labelPrefix}`,
-            value: entry.address,
-            netmask: entry.netmask,
+            ipv4Address: entry.address ?? '—',
+            linkSpeed: '—',
+            netmask: entry.netmask ?? null,
           });
         });
       }
@@ -59,8 +57,8 @@ const createRows = (
       rows.push({
         id: `${interfaceName}-speed`,
         interfaceName,
-        detailLabel: 'سرعت لینک',
-        value: speedText,
+        ipv4Address: '—',
+        linkSpeed: speedText,
         netmask: null,
       });
 
@@ -127,16 +125,16 @@ const NetworkSettingsTable = () => {
       ),
     };
 
-    const detailColumn: DataTableColumn<NetworkSettingsTableRow> = {
-      id: 'detail-label',
-      header: 'جزئیات',
-      renderCell: (row) => row.detailLabel,
+    const ipv4Column: DataTableColumn<NetworkSettingsTableRow> = {
+      id: 'ipv4-address',
+      header: 'آدرس IPv4',
+      renderCell: (row) => row.ipv4Address,
     };
 
-    const valueColumn: DataTableColumn<NetworkSettingsTableRow> = {
-      id: 'detail-value',
-      header: 'مقدار',
-      renderCell: (row) => row.value,
+    const speedColumn: DataTableColumn<NetworkSettingsTableRow> = {
+      id: 'link-speed',
+      header: 'سرعت لینک',
+      renderCell: (row) => row.linkSpeed,
     };
 
     const netmaskColumn: DataTableColumn<NetworkSettingsTableRow> = {
@@ -168,8 +166,8 @@ const NetworkSettingsTable = () => {
     return [
       indexColumn,
       interfaceColumn,
-      detailColumn,
-      valueColumn,
+      ipv4Column,
+      speedColumn,
       netmaskColumn,
       actionColumn,
     ];
