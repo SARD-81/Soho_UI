@@ -1,7 +1,21 @@
-import { Alert, Box, Button, TextField, Typography } from '@mui/material';
+import {
+  Alert,
+  Autocomplete,
+  Box,
+  Button,
+  CircularProgress,
+  InputAdornment,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import type { ChangeEvent } from 'react';
+import { useMemo } from 'react';
+import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
+import { useSambaUsers } from '../../hooks/useSambaUsers';
 import BlurModal from '../BlurModal';
+import normalizeSambaUsers from '../../utils/sambaUsers';
 
 interface CreateShareModalProps {
   controller: UseCreateShareReturn;
@@ -40,15 +54,69 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     validUsersError,
     apiError,
     isCreating,
+    pathValidationStatus,
+    pathValidationMessage,
+    isPathChecking,
+    isPathValid,
   } = controller;
 
   const handlePathChange = (event: ChangeEvent<HTMLInputElement>) => {
     setFullPath(event.target.value);
   };
 
-  const handleValidUsersChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setValidUsers(event.target.value);
-  };
+  const sambaUsersQuery = useSambaUsers({ enabled: isOpen });
+  const sambaUsers = useMemo(
+    () => normalizeSambaUsers(sambaUsersQuery.data?.data),
+    [sambaUsersQuery.data?.data]
+  );
+  const sambaUsernames = useMemo(
+    () => sambaUsers.map((user) => user.username).filter(Boolean),
+    [sambaUsers]
+  );
+
+  const hasPathError =
+    Boolean(fullPathError) || pathValidationStatus === 'invalid';
+  const pathHelperText =
+    fullPathError ||
+    (pathValidationStatus === 'invalid' && pathValidationMessage) ||
+    'مسیر کامل پوشه اشتراک را وارد کنید (مانند /mnt/data/share).';
+
+  const pathValidationAdornment = (() => {
+    if (isPathChecking) {
+      return (
+        <InputAdornment position="end">
+          <CircularProgress size={18} thickness={5} />
+        </InputAdornment>
+      );
+    }
+
+    if (pathValidationStatus === 'invalid' && pathValidationMessage) {
+      return (
+        <InputAdornment position="end">
+          <Tooltip title={pathValidationMessage} placement="top">
+            <Box
+              component="span"
+              sx={{ display: 'flex', color: 'error.main', cursor: 'pointer' }}
+            >
+              <FiAlertCircle size={18} />
+            </Box>
+          </Tooltip>
+        </InputAdornment>
+      );
+    }
+
+    if (isPathValid) {
+      return (
+        <InputAdornment position="end">
+          <Box component="span" sx={{ display: 'flex', color: 'success.main' }}>
+            <FiCheckCircle size={18} />
+          </Box>
+        </InputAdornment>
+      );
+    }
+
+    return undefined;
+  })();
 
   return (
     <BlurModal
@@ -97,28 +165,43 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             autoFocus
             fullWidth
             size="small"
-            error={Boolean(fullPathError)}
-            helperText={
-              fullPathError ??
-              'مسیر کامل پوشه اشتراک را وارد کنید (مانند /mnt/data/share).'
-            }
+            error={hasPathError}
+            helperText={pathHelperText}
             InputLabelProps={{ shrink: true }}
-            InputProps={{ sx: inputBaseStyles }}
+            InputProps={{ sx: inputBaseStyles, endAdornment: pathValidationAdornment }}
           />
 
-          <TextField
-            label="کاربران مجاز"
-            value={validUsers}
-            onChange={handleValidUsersChange}
-            fullWidth
-            size="small"
-            error={Boolean(validUsersError)}
-            helperText={
-              validUsersError ??
-              'نام کاربر یا کاربران مجاز را وارد کنید (برای چند کاربر از ویرگول استفاده کنید).'
-            }
-            InputLabelProps={{ shrink: true }}
-            InputProps={{ sx: inputBaseStyles }}
+          <Autocomplete
+            options={sambaUsernames}
+            value={validUsers || null}
+            onChange={(_event, newValue) => setValidUsers(newValue ?? '')}
+            onInputChange={(_event, _newInput, reason) => {
+              if (reason === 'clear') {
+                setValidUsers('');
+              }
+            }}
+            loading={sambaUsersQuery.isLoading || sambaUsersQuery.isFetching}
+            noOptionsText="کاربری یافت نشد"
+            disabled={sambaUsersQuery.isError}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="کاربران مجاز"
+                error={Boolean(validUsersError)}
+                helperText={
+                  validUsersError ??
+                  (sambaUsersQuery.isError
+                    ? 'دریافت فهرست کاربران با خطا مواجه شد.'
+                    : 'یکی از کاربران Samba را برای اشتراک انتخاب کنید.')
+                }
+                InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
+                InputProps={{
+                  ...params.InputProps,
+                  sx: inputBaseStyles,
+                  endAdornment: params.InputProps?.endAdornment,
+                }}
+              />
+            )}
           />
 
           {apiError && (
