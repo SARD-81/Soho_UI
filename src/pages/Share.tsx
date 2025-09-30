@@ -8,6 +8,7 @@ import SharesTable from '../components/share/SharesTable';
 import { useCreateShare } from '../hooks/useCreateShare';
 import { useDeleteShare } from '../hooks/useDeleteShare';
 import { useSambaShares } from '../hooks/useSambaShares';
+import { useServiceAction } from '../hooks/useServiceAction';
 
 const Share = () => {
   const { data: shares = [], isLoading, error } = useSambaShares();
@@ -15,6 +16,7 @@ const Share = () => {
   const createShare = useCreateShare({
     onSuccess: (shareName) => {
       toast.success(`اشتراک ${shareName} با موفقیت ایجاد شد.`);
+      handleRestartSmbd();
     },
     onError: (message) => {
       toast.error(`ایجاد اشتراک با خطا مواجه شد: ${message}`);
@@ -33,6 +35,37 @@ const Share = () => {
   });
 
   const [selectedShares, setSelectedShares] = useState<string[]>([]);
+
+  const serviceAction = useServiceAction({
+    onSuccess: ({ service }) => {
+      toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
+    },
+    onError: (message, { service }) => {
+      toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const handleRestartSmbd = useCallback(() => {
+    if (serviceAction.isPending) {
+      toast(
+        'راه‌اندازی مجدد سرویس smbd.service در حال انجام است. لطفاً صبر کنید.'
+      );
+      return;
+    }
+
+    const toastId = toast.loading(
+      'در حال راه‌اندازی مجدد سرویس smbd.service...'
+    );
+
+    serviceAction.mutate(
+      { service: 'smbd.service', action: 'restart' },
+      {
+        onSettled: () => {
+          toast.dismiss(toastId);
+        },
+      }
+    );
+  }, [serviceAction]);
 
   useEffect(() => {
     setSelectedShares((prev) =>

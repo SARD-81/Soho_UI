@@ -21,6 +21,18 @@ export interface CreateSambaSharePayload {
   valid_users: string;
 }
 
+export interface CreateDirectoryPermissionsPayload {
+  path: string;
+  owner: string;
+  group: string;
+  mode?: string;
+}
+
+export interface CreateShareWithPermissionsPayload
+  extends CreateSambaSharePayload {
+  mode?: string;
+}
+
 export type RawSambaUserDetails = Record<string, unknown>;
 
 export type SambaUsersResponseData =
