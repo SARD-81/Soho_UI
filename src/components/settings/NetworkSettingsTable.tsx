@@ -2,6 +2,7 @@ import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { FiEdit3 } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
+import type { IPv4Info } from '../../@types/network';
 import { useNetwork, type NetworkData } from '../../hooks/useNetwork';
 import {
   extractIPv4Info,
@@ -12,9 +13,8 @@ import DataTable from '../DataTable';
 type NetworkSettingsTableRow = {
   id: string;
   interfaceName: string;
-  detailLabel: string;
-  value: string;
-  netmask: string | null;
+  ipv4Entries: IPv4Info[];
+  speed: string;
 };
 
 const createSpeedFormatter = () =>
@@ -28,43 +28,17 @@ const createRows = (
     return [];
   }
 
-  return Object.entries(interfaces).flatMap<NetworkSettingsTableRow>(
+  return Object.entries(interfaces).map<NetworkSettingsTableRow>(
     ([interfaceName, details]) => {
-      const ipv4Info = extractIPv4Info(details);
-      const rows: NetworkSettingsTableRow[] = [];
-
-      if (ipv4Info.length === 0) {
-        rows.push({
-          id: `${interfaceName}-ipv4-missing`,
-          interfaceName,
-          detailLabel: 'آدرس IPv4',
-          value: 'آدرس IPv4 در دسترس نیست.',
-          netmask: null,
-        });
-      } else {
-        ipv4Info.forEach((entry, index) => {
-          const labelPrefix =
-            ipv4Info.length > 1 ? `IPv4 ${index + 1}` : 'IPv4';
-          rows.push({
-            id: `${interfaceName}-ipv4-${index}`,
-            interfaceName,
-            detailLabel: `آدرس ${labelPrefix}`,
-            value: entry.address,
-            netmask: entry.netmask,
-          });
-        });
-      }
-
+      const ipv4Entries = extractIPv4Info(details);
       const speedText = formatInterfaceSpeed(details?.status, formatter);
-      rows.push({
-        id: `${interfaceName}-speed`,
-        interfaceName,
-        detailLabel: 'سرعت لینک',
-        value: speedText,
-        netmask: null,
-      });
 
-      return rows;
+      return {
+        id: interfaceName,
+        interfaceName,
+        ipv4Entries,
+        speed: speedText,
+      };
     }
   );
 };
@@ -127,22 +101,54 @@ const NetworkSettingsTable = () => {
       ),
     };
 
-    const detailColumn: DataTableColumn<NetworkSettingsTableRow> = {
-      id: 'detail-label',
-      header: 'جزئیات',
-      renderCell: (row) => row.detailLabel,
-    };
+    const ipv4Column: DataTableColumn<NetworkSettingsTableRow> = {
+      id: 'ipv4-addresses',
+      header: 'آدرس IPv4',
+      renderCell: (row) => {
+        if (row.ipv4Entries.length === 0) {
+          return (
+            <Typography component="span" sx={{ color: 'var(--color-secondary)' }}>
+              آدرس IPv4 در دسترس نیست.
+            </Typography>
+          );
+        }
 
-    const valueColumn: DataTableColumn<NetworkSettingsTableRow> = {
-      id: 'detail-value',
-      header: 'مقدار',
-      renderCell: (row) => row.value,
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            {row.ipv4Entries.map((entry, index) => (
+              <Typography component="span" key={`${row.id}-ipv4-${index}`} sx={{ fontWeight: 500 }}>
+                {entry.address}
+              </Typography>
+            ))}
+          </Box>
+        );
+      },
     };
 
     const netmaskColumn: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'detail-netmask',
       header: 'نت‌ماسک',
-      renderCell: (row) => row.netmask ?? '—',
+      renderCell: (row) => {
+        if (row.ipv4Entries.length === 0) {
+          return '—';
+        }
+
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            {row.ipv4Entries.map((entry, index) => (
+              <Typography component="span" key={`${row.id}-netmask-${index}`}>
+                {entry.netmask ?? '—'}
+              </Typography>
+            ))}
+          </Box>
+        );
+      },
+    };
+
+    const speedColumn: DataTableColumn<NetworkSettingsTableRow> = {
+      id: 'link-speed',
+      header: 'سرعت لینک',
+      renderCell: (row) => row.speed,
     };
 
     const actionColumn: DataTableColumn<NetworkSettingsTableRow> = {
@@ -168,8 +174,8 @@ const NetworkSettingsTable = () => {
     return [
       indexColumn,
       interfaceColumn,
-      detailColumn,
-      valueColumn,
+      ipv4Column,
+      speedColumn,
       netmaskColumn,
       actionColumn,
     ];
