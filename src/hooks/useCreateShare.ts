@@ -4,7 +4,6 @@ import type { FormEvent } from 'react';
 import { useCallback, useState } from 'react';
 import type { CreateSambaSharePayload } from '../@types/samba';
 import axiosInstance from '../lib/axiosInstance';
-import { useDirPermissionsValidation } from './useDirPermissionsValidation';
 import { sambaSharesQueryKey } from './useSambaShares';
 
 interface ApiErrorResponse {
@@ -66,28 +65,11 @@ export const useCreateShare = ({
 }: UseCreateShareOptions = {}) => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
-  const [fullPath, setFullPathState] = useState('');
-  const [validUsers, setValidUsersState] = useState('');
+  const [fullPath, setFullPath] = useState('');
+  const [validUsers, setValidUsers] = useState('');
   const [fullPathError, setFullPathError] = useState<string | null>(null);
   const [validUsersError, setValidUsersError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
-  const dirPermissionsValidation = useDirPermissionsValidation(fullPath);
-  const setFullPath = useCallback(
-    (value: string) => {
-      setFullPathState(value);
-      setFullPathError(null);
-      setApiError(null);
-    },
-    [setApiError, setFullPathError, setFullPathState]
-  );
-  const setValidUsers = useCallback(
-    (value: string) => {
-      setValidUsersState(value);
-      setValidUsersError(null);
-      setApiError(null);
-    },
-    [setApiError, setValidUsersError, setValidUsersState]
-  );
 
   const resetForm = useCallback(() => {
     setFullPath('');
@@ -95,13 +77,7 @@ export const useCreateShare = ({
     setFullPathError(null);
     setValidUsersError(null);
     setApiError(null);
-  }, [
-    setApiError,
-    setFullPath,
-    setFullPathError,
-    setValidUsers,
-    setValidUsersError,
-  ]);
+  }, []);
 
   const handleOpen = useCallback(() => {
     resetForm();
@@ -150,15 +126,6 @@ export const useCreateShare = ({
       if (!trimmedPath) {
         setFullPathError('لطفاً مسیر کامل اشتراک را وارد کنید.');
         hasError = true;
-      } else if (dirPermissionsValidation.isChecking) {
-        setFullPathError('در حال بررسی مسیر، لطفاً کمی صبر کنید.');
-        hasError = true;
-      } else if (!dirPermissionsValidation.isValid) {
-        setFullPathError(
-          dirPermissionsValidation.message ??
-            'لطفاً مسیری معتبر با دسترسی مناسب انتخاب کنید.'
-        );
-        hasError = true;
       }
 
       if (!trimmedUsers) {
@@ -175,14 +142,7 @@ export const useCreateShare = ({
         valid_users: trimmedUsers,
       });
     },
-    [
-      createShareMutation,
-      dirPermissionsValidation.isChecking,
-      dirPermissionsValidation.isValid,
-      dirPermissionsValidation.message,
-      fullPath,
-      validUsers,
-    ]
+    [createShareMutation, fullPath, validUsers]
   );
 
   return {
@@ -193,10 +153,6 @@ export const useCreateShare = ({
     validUsersError,
     apiError,
     isCreating: createShareMutation.isPending,
-    pathValidationStatus: dirPermissionsValidation.status,
-    pathValidationMessage: dirPermissionsValidation.message,
-    isPathChecking: dirPermissionsValidation.isChecking,
-    isPathValid: dirPermissionsValidation.isValid,
     openCreateModal: handleOpen,
     closeCreateModal,
     setFullPath,

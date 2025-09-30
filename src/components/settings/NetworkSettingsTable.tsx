@@ -1,5 +1,11 @@
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+} from 'react';
 import { toast } from 'react-hot-toast';
 import { FiEdit3 } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
@@ -52,14 +58,11 @@ const NetworkSettingsTable = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editModalError, setEditModalError] = useState<string | null>(null);
-  const [editModalData, setEditModalData] = useState<
-    | {
-        interfaceName: string;
-        ip: string;
-        netmask: string;
-      }
-    | null
-  >(null);
+  const [editModalData, setEditModalData] = useState<{
+    interfaceName: string;
+    ip: string;
+    netmask: string;
+  } | null>(null);
 
   const speedFormatter = useMemo(createSpeedFormatter, []);
 
@@ -174,7 +177,10 @@ const NetworkSettingsTable = () => {
       renderCell: (row) => {
         if (row.ipv4Entries.length === 0) {
           return (
-            <Typography component="span" sx={{ color: 'var(--color-secondary)' }}>
+            <Typography
+              component="span"
+              sx={{ color: 'var(--color-secondary)' }}
+            >
               آدرس IPv4 در دسترس نیست.
             </Typography>
           );
@@ -183,7 +189,11 @@ const NetworkSettingsTable = () => {
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             {row.ipv4Entries.map((entry, index) => (
-              <Typography component="span" key={`${row.id}-ipv4-${index}`} sx={{ fontWeight: 500 }}>
+              <Typography
+                component="span"
+                key={`${row.id}-ipv4-${index}`}
+                sx={{ fontWeight: 500 }}
+              >
                 {entry.address}
               </Typography>
             ))}

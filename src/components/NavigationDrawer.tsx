@@ -1,17 +1,17 @@
 import {
-  Drawer as MuiDrawer,
   IconButton,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Drawer as MuiDrawer,
   Toolbar,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
 import type { CSSObject, Theme } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import React from 'react';
 import { MdClose } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
@@ -125,7 +125,9 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
               <ListItemText
                 primary={item.text}
                 sx={{ opacity: open ? 1 : 0 }}
-                primaryTypographyProps={{ sx: { fontFamily: 'var(--font-vazir)' } }}
+                primaryTypographyProps={{
+                  sx: { fontFamily: 'var(--font-vazir)' },
+                }}
               />
             </ListItemButton>
           </ListItem>
@@ -152,7 +154,10 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         }}
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <IconButton onClick={onClose} sx={{ color: 'var(--color-bg-primary)' }}>
+          <IconButton
+            onClick={onClose}
+            sx={{ color: 'var(--color-bg-primary)' }}
+          >
             <MdClose />
           </IconButton>
         </Toolbar>
@@ -165,7 +170,10 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     <StyledDrawer variant="permanent" open={open}>
       <Toolbar sx={{ justifyContent: open ? 'flex-end' : 'center' }}>
         {open && (
-          <IconButton onClick={onClose} sx={{ color: 'var(--color-bg-primary)' }}>
+          <IconButton
+            onClick={onClose}
+            sx={{ color: 'var(--color-bg-primary)' }}
+          >
             <MdClose />
           </IconButton>
         )}

@@ -14,8 +14,8 @@ import { useMemo } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
-import BlurModal from '../BlurModal';
 import normalizeSambaUsers from '../../utils/sambaUsers';
+import BlurModal from '../BlurModal';
 
 interface CreateShareModalProps {
   controller: UseCreateShareReturn;
@@ -168,7 +168,10 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             error={hasPathError}
             helperText={pathHelperText}
             InputLabelProps={{ shrink: true }}
-            InputProps={{ sx: inputBaseStyles, endAdornment: pathValidationAdornment }}
+            InputProps={{
+              sx: inputBaseStyles,
+              endAdornment: pathValidationAdornment,
+            }}
           />
 
           <Autocomplete
@@ -183,6 +186,26 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             loading={sambaUsersQuery.isLoading || sambaUsersQuery.isFetching}
             noOptionsText="کاربری یافت نشد"
             disabled={sambaUsersQuery.isError}
+            slotProps={{
+              paper: {
+                sx: {
+                  bgcolor: 'var(--color-input-bg)',
+                  '& .MuiAutocomplete-option': {
+                    color: 'var(--color-text)',
+                    // item hovered or keyboard-focused
+                    '&.Mui-focused': {
+                      bgcolor: 'var(--color-input-focus-border)',
+                      color: '#fff',
+                    },
+                    // item selected (aria-selected="true")
+                    '&[aria-selected="true"]': {
+                      bgcolor: 'var(--color-primary)',
+                      color: '#fff',
+                    },
+                  },
+                },
+              },
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}

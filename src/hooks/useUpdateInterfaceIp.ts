@@ -46,4 +46,6 @@ export const useUpdateInterfaceIp = ({
   });
 };
 
-export type UseUpdateInterfaceIpReturn = ReturnType<typeof useUpdateInterfaceIp>;
+export type UseUpdateInterfaceIpReturn = ReturnType<
+  typeof useUpdateInterfaceIp
+>;

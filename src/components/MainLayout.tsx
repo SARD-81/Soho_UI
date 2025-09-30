@@ -2,33 +2,98 @@ import {
   AppBar,
   Box,
   Button,
+  CircularProgress,
   IconButton,
   TextField,
   Toolbar,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
-import { MdClose, MdLogout, MdMenu, MdSearch } from 'react-icons/md';
+import {
+  MdClose,
+  MdLogout,
+  MdMenu,
+  MdPowerSettingsNew,
+  MdRestartAlt,
+  MdSearch,
+} from 'react-icons/md';
 import { Outlet } from 'react-router';
+import { drawerWidth } from '../constants/navigationDrawer';
 import { useAuth } from '../contexts/AuthContext';
+import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
 import '../index.css';
 import NavigationDrawer from './NavigationDrawer';
 import ThemeToggle from './ThemeToggle';
-import { drawerWidth } from '../constants/navigationDrawer';
+
+const powerButtonBaseSx = {
+  color: '#fff',
+  borderRadius: '12px',
+  padding: '8px',
+  minWidth: 0,
+  boxShadow: '0 10px 24px rgba(0, 0, 0, 0.18)',
+  transition: 'transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-3px) scale(1.05)',
+    boxShadow: '0 14px 28px rgba(0, 0, 0, 0.25)',
+    filter: 'brightness(1.05)',
+  },
+  '&:active': {
+    transform: 'scale(0.95)',
+  },
+  '&:disabled': {
+    opacity: 0.65,
+    boxShadow: 'none',
+    transform: 'none',
+    filter: 'none',
+  },
+} as const;
+
+const createPowerButtonSx = (gradient: string) => ({
+  ...powerButtonBaseSx,
+  background: gradient,
+});
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [activePowerAction, setActivePowerAction] =
+    useState<PowerAction | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
+  const { mutate: triggerPowerAction, isPending: isPowerActionPending } =
+    usePowerAction({
+      onSuccess: (_data, action) => {
+        const successMessage =
+          action === 'restart'
+            ? 'سیستم در حال راه‌اندازی مجدد است.'
+            : 'سیستم در حال خاموش شدن است.';
+        toast.success(successMessage);
+      },
+      onError: (message, action) => {
+        const actionLabel =
+          action === 'restart' ? 'راه‌اندازی مجدد' : 'خاموش کردن';
+        toast.error(`${actionLabel} سیستم با خطا مواجه شد: ${message}`);
+      },
+      onSettled: () => {
+        setActivePowerAction(null);
+      },
+    });
+
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handlePowerAction = (action: PowerAction) => {
+    setActivePowerAction(action);
+    triggerPowerAction(action);
   };
 
   return (
@@ -179,6 +244,42 @@ const MainLayout: React.FC = () => {
                 خروج
               </Button>
             )}
+            <Tooltip title="راه‌اندازی مجدد سیستم" placement="bottom">
+              <span>
+                <IconButton
+                  aria-label="راه‌اندازی مجدد سیستم"
+                  onClick={() => handlePowerAction('restart')}
+                  disabled={isPowerActionPending}
+                  sx={createPowerButtonSx(
+                    'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))'
+                  )}
+                >
+                  {isPowerActionPending && activePowerAction === 'restart' ? (
+                    <CircularProgress size={18} sx={{ color: '#fff' }} />
+                  ) : (
+                    <MdRestartAlt size={22} />
+                  )}
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="خاموش کردن سیستم" placement="bottom">
+              <span>
+                <IconButton
+                  aria-label="خاموش کردن سیستم"
+                  onClick={() => handlePowerAction('shutdown')}
+                  disabled={isPowerActionPending}
+                  sx={createPowerButtonSx(
+                    'linear-gradient(135deg, #f97316, var(--color-secondary))'
+                  )}
+                >
+                  {isPowerActionPending && activePowerAction === 'shutdown' ? (
+                    <CircularProgress size={18} sx={{ color: '#fff' }} />
+                  ) : (
+                    <MdPowerSettingsNew size={22} />
+                  )}
+                </IconButton>
+              </span>
+            </Tooltip>
             <ThemeToggle fixed={false} />
           </Box>
         </Toolbar>
