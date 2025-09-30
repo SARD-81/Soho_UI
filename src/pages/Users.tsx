@@ -16,7 +16,7 @@ import {
   useState,
 } from 'react';
 import { toast } from 'react-hot-toast';
-import type { CreateOsUserPayload } from '../@types/users';
+import type { CreateOsUserPayload, OsUserTableItem } from '../@types/users';
 import TabPanel from '../components/TabPanel';
 import OsUserCreateModal from '../components/users/OsUserCreateModal';
 import OsUsersTable from '../components/users/OsUsersTable';
@@ -41,6 +41,9 @@ const Users = () => {
   const [createError, setCreateError] = useState<string | null>(null);
   const [isSambaCreateModalOpen, setIsSambaCreateModalOpen] = useState(false);
   const [sambaCreateError, setSambaCreateError] = useState<string | null>(null);
+  const [sambaCreateInitialUsername, setSambaCreateInitialUsername] = useState<
+    string | undefined
+  >(undefined);
   const [selectedSambaUsers, setSelectedSambaUsers] = useState<string[]>([]);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordModalUsername, setPasswordModalUsername] = useState<
@@ -67,12 +70,29 @@ const Users = () => {
   );
 
   const sambaUsersQuery = useSambaUsers({
-    enabled: activeTab === USERS_TABS.samba,
+    enabled: activeTab !== USERS_TABS.other,
   });
 
   const sambaUsers = useMemo(
     () => normalizeSambaUsers(sambaUsersQuery.data?.data),
     [sambaUsersQuery.data?.data]
+  );
+
+  const sambaUsernames = useMemo(
+    () => new Set(sambaUsers.map((user) => user.username)),
+    [sambaUsers]
+  );
+
+  const osUsersWithSambaStatus = useMemo(
+    () =>
+      osUsers.map((user) => ({
+        ...user,
+        hasSambaUser:
+          user.hasSambaUser !== undefined
+            ? user.hasSambaUser
+            : sambaUsernames.has(user.username),
+      })),
+    [osUsers, sambaUsernames]
   );
 
   const createOsUser = useCreateOsUser({
@@ -154,17 +174,29 @@ const Users = () => {
     [createOsUser]
   );
 
-  const handleOpenSambaCreateModal = useCallback(() => {
-    setSambaCreateError(null);
-    createSambaUser.reset();
-    setIsSambaCreateModalOpen(true);
-  }, [createSambaUser]);
+  const handleOpenSambaCreateModal = useCallback(
+    (username?: string) => {
+      setSambaCreateError(null);
+      createSambaUser.reset();
+      setSambaCreateInitialUsername(username);
+      setIsSambaCreateModalOpen(true);
+    },
+    [createSambaUser]
+  );
 
   const handleCloseSambaCreateModal = useCallback(() => {
     setIsSambaCreateModalOpen(false);
     setSambaCreateError(null);
     createSambaUser.reset();
+    setSambaCreateInitialUsername(undefined);
   }, [createSambaUser]);
+
+  const handleCreateSambaUserFromOsUser = useCallback(
+    (user: OsUserTableItem) => {
+      handleOpenSambaCreateModal(user.username);
+    },
+    [handleOpenSambaCreateModal]
+  );
 
   const handleSubmitCreateSambaUser = useCallback(
     (payload: { username: string; password: string }) => {
@@ -352,9 +384,13 @@ const Users = () => {
           </Box>
 
           <OsUsersTable
-            users={osUsers}
+            users={osUsersWithSambaStatus}
             isLoading={osUsersQuery.isLoading || osUsersQuery.isFetching}
             error={osUsersQuery.error ?? null}
+            isSambaStatusLoading={
+              sambaUsersQuery.isLoading || sambaUsersQuery.isFetching
+            }
+            onCreateSambaUser={handleCreateSambaUserFromOsUser}
           />
         </Box>
       </TabPanel>
@@ -378,7 +414,7 @@ const Users = () => {
             </Typography>
 
             <Button
-              onClick={handleOpenSambaCreateModal}
+              onClick={() => handleOpenSambaCreateModal()}
               variant="contained"
               sx={{
                 px: 3,
@@ -447,6 +483,7 @@ const Users = () => {
         onSubmit={handleSubmitCreateSambaUser}
         isSubmitting={createSambaUser.isPending}
         errorMessage={sambaCreateError}
+        initialUsername={sambaCreateInitialUsername}
       />
 
       <SambaUserPasswordModal
