@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
+import axios from 'axios';
 import type { FormEvent } from 'react';
 import { useCallback, useState } from 'react';
 import type { CreateSambaSharePayload } from '../@types/samba';
@@ -50,6 +51,17 @@ const createShareRequest = async (payload: CreateSambaSharePayload) => {
   await axiosInstance.post('/api/samba/create/', payload);
 };
 
+interface CreateDirectoryPayload {
+  path: string;
+  owner: string;
+  group: string;
+  mode: string;
+}
+
+const createDirectoryRequest = async (payload: CreateDirectoryPayload) => {
+  await axiosInstance.post('/api/dir/create/permissions/', payload);
+};
+
 const deriveShareDisplayName = (fullPath: string) => {
   const segments = fullPath.split('/').filter(Boolean);
   return segments[segments.length - 1] ?? fullPath;
@@ -72,6 +84,7 @@ export const useCreateShare = ({
   const [validUsersError, setValidUsersError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const dirPermissionsValidation = useDirPermissionsValidation(fullPath);
+  const [isProcessing, setIsProcessing] = useState(false);
   const setFullPath = useCallback(
     (value: string) => {
       setFullPathState(value);
@@ -137,7 +150,7 @@ export const useCreateShare = ({
   }, [createShareMutation, handleClose]);
 
   const handleSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
+    async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       setFullPathError(null);
       setValidUsersError(null);
@@ -170,18 +183,54 @@ export const useCreateShare = ({
         return;
       }
 
-      createShareMutation.mutate({
-        full_path: trimmedPath,
-        valid_users: trimmedUsers,
-      });
+      const shouldCreateDirectory = dirPermissionsValidation.shouldCreateDirectory;
+
+      try {
+        setIsProcessing(true);
+
+        if (shouldCreateDirectory) {
+          await createDirectoryRequest({
+            path: trimmedPath,
+            owner: trimmedUsers,
+            group: trimmedUsers,
+            mode: '0700',
+          });
+        }
+
+        await createShareMutation.mutateAsync({
+          full_path: trimmedPath,
+          valid_users: trimmedUsers,
+        });
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          const requestUrl = error.config?.url ?? '';
+
+          if (requestUrl.includes('/api/dir/create/permissions/')) {
+            const message = extractApiMessage(error as AxiosError<ApiErrorResponse>);
+            setApiError(message);
+            onError?.(message);
+          }
+        } else if (error instanceof Error) {
+          setApiError(error.message);
+          onError?.(error.message);
+        } else {
+          const message = 'خطایی در فرآیند ایجاد اشتراک رخ داد.';
+          setApiError(message);
+          onError?.(message);
+        }
+      } finally {
+        setIsProcessing(false);
+      }
     },
     [
       createShareMutation,
       dirPermissionsValidation.isChecking,
       dirPermissionsValidation.isValid,
       dirPermissionsValidation.message,
+      dirPermissionsValidation.shouldCreateDirectory,
       fullPath,
       validUsers,
+      onError,
     ]
   );
 
@@ -192,11 +241,12 @@ export const useCreateShare = ({
     fullPathError,
     validUsersError,
     apiError,
-    isCreating: createShareMutation.isPending,
+    isCreating: isProcessing || createShareMutation.isPending,
     pathValidationStatus: dirPermissionsValidation.status,
     pathValidationMessage: dirPermissionsValidation.message,
     isPathChecking: dirPermissionsValidation.isChecking,
     isPathValid: dirPermissionsValidation.isValid,
+    pathValidationDetails: dirPermissionsValidation.details,
     openCreateModal: handleOpen,
     closeCreateModal,
     setFullPath,

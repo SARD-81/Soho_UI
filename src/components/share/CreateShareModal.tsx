@@ -4,13 +4,15 @@ import {
   Box,
   Button,
   CircularProgress,
+  IconButton,
   InputAdornment,
+  Popover,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { ChangeEvent } from 'react';
-import { useMemo } from 'react';
+import type { ChangeEvent, MouseEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
@@ -58,11 +60,29 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     pathValidationMessage,
     isPathChecking,
     isPathValid,
+    pathValidationDetails,
   } = controller;
 
   const handlePathChange = (event: ChangeEvent<HTMLInputElement>) => {
     setFullPath(event.target.value);
   };
+
+  const [detailsAnchorEl, setDetailsAnchorEl] = useState<HTMLElement | null>(null);
+  const isDetailsPopoverOpen = Boolean(detailsAnchorEl);
+
+  const handleOpenDetails = (event: MouseEvent<HTMLElement>) => {
+    setDetailsAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsAnchorEl(null);
+  };
+
+  useEffect(() => {
+    if (pathValidationStatus !== 'invalid' && isDetailsPopoverOpen) {
+      setDetailsAnchorEl(null);
+    }
+  }, [isDetailsPopoverOpen, pathValidationStatus]);
 
   const sambaUsersQuery = useSambaUsers({ enabled: isOpen });
   const sambaUsers = useMemo(
@@ -90,18 +110,69 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
       );
     }
 
-    if (pathValidationStatus === 'invalid' && pathValidationMessage) {
+    if (pathValidationStatus === 'invalid') {
+      const tooltipTitle =
+        pathValidationMessage || 'این مسیر در حال حاضر قابل استفاده نیست.';
+
+      const detailsContent = pathValidationDetails ? (
+        <Box sx={{ p: 2, maxWidth: 280 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            جزئیات مسیر موجود
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+            {pathValidationDetails.path && (
+              <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                <strong>مسیر:</strong> {pathValidationDetails.path}
+              </Typography>
+            )}
+            {pathValidationDetails.permissions && (
+              <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                <strong>دسترسی‌ها:</strong> {pathValidationDetails.permissions}
+              </Typography>
+            )}
+            {pathValidationDetails.owner && (
+              <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                <strong>مالک:</strong> {pathValidationDetails.owner}
+              </Typography>
+            )}
+            {pathValidationDetails.group && (
+              <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                <strong>گروه:</strong> {pathValidationDetails.group}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      ) : (
+        <Box sx={{ p: 2, maxWidth: 280 }}>
+          <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+            {tooltipTitle}
+          </Typography>
+        </Box>
+      );
+
       return (
-        <InputAdornment position="end">
-          <Tooltip title={pathValidationMessage} placement="top">
-            <Box
-              component="span"
-              sx={{ display: 'flex', color: 'error.main', cursor: 'pointer' }}
-            >
-              <FiAlertCircle size={18} />
-            </Box>
-          </Tooltip>
-        </InputAdornment>
+        <>
+          <InputAdornment position="end">
+            <Tooltip title={tooltipTitle} placement="top">
+              <IconButton
+                size="small"
+                sx={{ color: 'error.main' }}
+                onClick={handleOpenDetails}
+              >
+                <FiAlertCircle size={18} />
+              </IconButton>
+            </Tooltip>
+          </InputAdornment>
+          <Popover
+            open={isDetailsPopoverOpen}
+            anchorEl={detailsAnchorEl}
+            onClose={handleCloseDetails}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+          >
+            {detailsContent}
+          </Popover>
+        </>
       );
     }
 

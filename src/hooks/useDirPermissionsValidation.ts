@@ -8,8 +8,17 @@ interface DirPermissionsErrorPayload {
   [key: string]: unknown;
 }
 
+interface DirPermissionsData {
+  path?: string;
+  permissions?: string;
+  owner?: string;
+  group?: string;
+  [key: string]: unknown;
+}
+
 interface DirPermissionsResponse {
   ok?: boolean;
+  data?: DirPermissionsData | null;
   error?: DirPermissionsErrorPayload | null;
   [key: string]: unknown;
 }
@@ -27,6 +36,7 @@ interface UseDirPermissionsValidationOptions {
 interface DirPermissionsValidationState {
   status: DirPermissionsValidationStatus;
   message: string | null;
+  details: DirPermissionsData | null;
   lastCheckedPath: string | null;
 }
 
@@ -105,6 +115,7 @@ export const useDirPermissionsValidation = (
   const [state, setState] = useState<DirPermissionsValidationState>({
     status: 'idle',
     message: null,
+    details: null,
     lastCheckedPath: null,
   });
 
@@ -112,13 +123,19 @@ export const useDirPermissionsValidation = (
     const trimmedPath = path.trim();
 
     if (!trimmedPath) {
-      setState({ status: 'idle', message: null, lastCheckedPath: null });
+      setState({
+        status: 'idle',
+        message: null,
+        details: null,
+        lastCheckedPath: null,
+      });
       return undefined;
     }
 
     setState((prev) => ({
       status: 'checking',
       message: prev.lastCheckedPath === trimmedPath ? prev.message : null,
+      details: prev.lastCheckedPath === trimmedPath ? prev.details : null,
       lastCheckedPath: prev.lastCheckedPath,
     }));
 
@@ -127,18 +144,25 @@ export const useDirPermissionsValidation = (
       const requestConfig = {
         url: '/api/dir/info/permissions/',
         method: 'GET' as const,
-        data: { path: trimmedPath },
+        params: { path: trimmedPath },
         signal: controller.signal,
       };
 
       axiosInstance
         .request<DirPermissionsResponse>(requestConfig)
         .then(({ data }) => {
-          const message = resolveResponseMessage(data);
+          const message =
+            resolveResponseMessage(data) ||
+            'این مسیر در حال حاضر وجود دارد و قابل استفاده نیست.';
+          const details =
+            data && typeof data === 'object' && data.data && typeof data.data === 'object'
+              ? (data.data as DirPermissionsData)
+              : null;
 
           setState({
-            status: message ? 'invalid' : 'valid',
+            status: 'invalid',
             message,
+            details,
             lastCheckedPath: trimmedPath,
           });
         })
@@ -147,11 +171,52 @@ export const useDirPermissionsValidation = (
             return;
           }
 
-          const message = extractErrorMessage(error);
+          if (axios.isAxiosError(error) && error.response) {
+            const statusCode = error.response.status;
+
+            if (statusCode >= 500 || statusCode === 404) {
+              setState({
+                status: 'valid',
+                message: null,
+                details: null,
+                lastCheckedPath: trimmedPath,
+              });
+              return;
+            }
+
+            const responseData = error.response.data as
+              | DirPermissionsResponse
+              | DirPermissionsErrorPayload
+              | undefined;
+            const details =
+              responseData &&
+              typeof responseData === 'object' &&
+              'data' in responseData &&
+              responseData.data &&
+              typeof responseData.data === 'object'
+                ? (responseData.data as DirPermissionsData)
+                : null;
+
+            const message =
+              extractErrorMessage(error) ||
+              'خطا در بررسی مسیر انتخاب‌شده رخ داد.';
+
+            setState({
+              status: 'invalid',
+              message,
+              details,
+              lastCheckedPath: trimmedPath,
+            });
+            return;
+          }
+
+          const message =
+            extractErrorMessage(error) || 'خطا در بررسی مسیر انتخاب‌شده رخ داد.';
 
           setState({
             status: 'invalid',
-            message: message || 'خطا در بررسی مسیر انتخاب‌شده رخ داد.',
+            message,
+            details: null,
             lastCheckedPath: trimmedPath,
           });
         });
@@ -166,8 +231,10 @@ export const useDirPermissionsValidation = (
   return {
     status: state.status,
     message: state.message,
+    details: state.details,
     isChecking: state.status === 'checking',
     isValid: state.status === 'valid',
+    shouldCreateDirectory: state.status === 'valid',
   };
 };
 
