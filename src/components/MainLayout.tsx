@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 import '../index.css';
 import NavigationDrawer from './NavigationDrawer';
 import ThemeToggle from './ThemeToggle';
+import { drawerWidth } from '../constants/navigationDrawer';
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
@@ -24,6 +25,7 @@ const MainLayout: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
   const handleLogout = async () => {
     await logout();
@@ -185,7 +187,22 @@ const MainLayout: React.FC = () => {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       />
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box
+        component="main"
+        sx={(theme) => ({
+          flexGrow: 1,
+          p: 3,
+          transition: theme.transitions.create('margin-left', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
+          marginLeft: isDesktop
+            ? drawerOpen
+              ? `${drawerWidth}px`
+              : `calc(${theme.spacing(7)} + 1px)`
+            : 0,
+        })}
+      >
         <Toolbar />
         <Outlet />
       </Box>
