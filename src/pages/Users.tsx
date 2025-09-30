@@ -7,6 +7,7 @@ import {
   Tabs,
   Typography,
 } from '@mui/material';
+import type { AxiosError } from 'axios';
 import {
   type ChangeEvent,
   type SyntheticEvent,
@@ -33,6 +34,8 @@ import { useSambaUsers } from '../hooks/useSambaUsers';
 import { useUpdateSambaUserPassword } from '../hooks/useUpdateSambaUserPassword';
 import { normalizeOsUsers } from '../utils/osUsers';
 import { normalizeSambaUsers } from '../utils/sambaUsers';
+import type { ApiErrorResponse } from '../utils/apiError';
+import { extractApiErrorMessage } from '../utils/apiError';
 
 const Users = () => {
   const [activeTab, setActiveTab] = useState<UsersTabValue>(USERS_TABS.os);
@@ -199,10 +202,30 @@ const Users = () => {
   );
 
   const handleSubmitCreateSambaUser = useCallback(
-    (payload: { username: string; password: string }) => {
-      createSambaUser.mutate(payload);
+    async (
+      payload: { username: string; password: string; createOsUserFirst: boolean }
+    ) => {
+      const { username, password, createOsUserFirst } = payload;
+
+      setSambaCreateError(null);
+
+      if (createOsUserFirst) {
+        try {
+          await createOsUser.mutateAsync({ username });
+        } catch (error) {
+          const message = extractApiErrorMessage(
+            error as AxiosError<ApiErrorResponse>
+          );
+
+          setSambaCreateError(message);
+
+          return;
+        }
+      }
+
+      createSambaUser.mutate({ username, password });
     },
-    [createSambaUser]
+    [createOsUser, createSambaUser]
   );
 
   const handleToggleSelectSambaUser = useCallback(
