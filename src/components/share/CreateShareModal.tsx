@@ -4,13 +4,15 @@ import {
   Box,
   Button,
   CircularProgress,
+  IconButton,
   InputAdornment,
+  Popover,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { ChangeEvent } from 'react';
-import { useMemo } from 'react';
+import type { ChangeEvent, MouseEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
@@ -58,11 +60,34 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     pathValidationMessage,
     isPathChecking,
     isPathValid,
+    pathValidationDetails,
   } = controller;
 
   const handlePathChange = (event: ChangeEvent<HTMLInputElement>) => {
     setFullPath(event.target.value);
   };
+
+  const [pathDetailsAnchorEl, setPathDetailsAnchorEl] = useState<HTMLElement | null>(
+    null
+  );
+
+  const handleOpenPathDetails = (event: MouseEvent<HTMLElement>) => {
+    const { currentTarget } = event;
+
+    setPathDetailsAnchorEl((prev) => (prev ? null : currentTarget));
+  };
+
+  const handleClosePathDetails = () => {
+    setPathDetailsAnchorEl(null);
+  };
+
+  const isPathDetailsOpen = Boolean(pathDetailsAnchorEl);
+
+  useEffect(() => {
+    if (pathValidationStatus !== 'invalid') {
+      setPathDetailsAnchorEl(null);
+    }
+  }, [pathValidationStatus]);
 
   const sambaUsersQuery = useSambaUsers({ enabled: isOpen });
   const sambaUsers = useMemo(
@@ -81,6 +106,17 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     (pathValidationStatus === 'invalid' && pathValidationMessage) ||
     'مسیر کامل پوشه اشتراک را وارد کنید (مانند /mnt/data/share).';
 
+  const pathDetailEntries = useMemo(
+    () =>
+      [
+        { label: 'مسیر', value: pathValidationDetails?.path },
+        { label: 'سطح دسترسی', value: pathValidationDetails?.permissions },
+        { label: 'مالک', value: pathValidationDetails?.owner },
+        { label: 'گروه', value: pathValidationDetails?.group },
+      ].filter((entry) => Boolean(entry.value)),
+    [pathValidationDetails]
+  );
+
   const pathValidationAdornment = (() => {
     if (isPathChecking) {
       return (
@@ -94,12 +130,13 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
       return (
         <InputAdornment position="end">
           <Tooltip title={pathValidationMessage} placement="top">
-            <Box
-              component="span"
-              sx={{ display: 'flex', color: 'error.main', cursor: 'pointer' }}
+            <IconButton
+              size="small"
+              onClick={handleOpenPathDetails}
+              sx={{ color: 'error.main', p: 0.5 }}
             >
               <FiAlertCircle size={18} />
-            </Box>
+            </IconButton>
           </Tooltip>
         </InputAdornment>
       );
@@ -170,6 +207,36 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             InputLabelProps={{ shrink: true }}
             InputProps={{ sx: inputBaseStyles, endAdornment: pathValidationAdornment }}
           />
+          <Popover
+            open={isPathDetailsOpen && pathValidationStatus === 'invalid'}
+            anchorEl={pathDetailsAnchorEl}
+            onClose={handleClosePathDetails}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            slotProps={{ paper: { sx: { p: 2, maxWidth: 280 } } }}
+          >
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                جزئیات مسیر موجود
+              </Typography>
+              {pathDetailEntries.length > 0 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {pathDetailEntries.map((detail) => (
+                    <Box key={detail.label} sx={{ display: 'flex', gap: 1 }}>
+                      <Typography sx={{ fontWeight: 600 }}>{detail.label}:</Typography>
+                      <Typography sx={{ wordBreak: 'break-all' }}>
+                        {detail.value}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  اطلاعاتی برای نمایش موجود نیست.
+                </Typography>
+              )}
+            </Box>
+          </Popover>
 
           <Autocomplete
             options={sambaUsernames}

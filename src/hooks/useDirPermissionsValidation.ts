@@ -8,9 +8,18 @@ interface DirPermissionsErrorPayload {
   [key: string]: unknown;
 }
 
+interface DirPermissionsInfoPayload {
+  path?: string;
+  permissions?: string;
+  owner?: string;
+  group?: string;
+  [key: string]: unknown;
+}
+
 interface DirPermissionsResponse {
   ok?: boolean;
   error?: DirPermissionsErrorPayload | null;
+  data?: DirPermissionsInfoPayload | null;
   [key: string]: unknown;
 }
 
@@ -28,6 +37,9 @@ interface DirPermissionsValidationState {
   status: DirPermissionsValidationStatus;
   message: string | null;
   lastCheckedPath: string | null;
+  details: DirPermissionsInfoPayload | null;
+  shouldCreateDirectory: boolean;
+  httpStatus: number | null;
 }
 
 const DEFAULT_OPTIONS: Required<UseDirPermissionsValidationOptions> = {
@@ -94,6 +106,40 @@ const resolveResponseMessage = (
   return 'اجازه دسترسی به این مسیر وجود ندارد.';
 };
 
+const extractInfoPayload = (
+  payload: DirPermissionsResponse | DirPermissionsInfoPayload | undefined
+): DirPermissionsInfoPayload | null => {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  if ('data' in payload && payload.data && typeof payload.data === 'object') {
+    return extractInfoPayload(payload.data as DirPermissionsInfoPayload);
+  }
+
+  const candidate = payload as DirPermissionsInfoPayload;
+
+  const info: DirPermissionsInfoPayload = {};
+
+  if (typeof candidate.path === 'string') {
+    info.path = candidate.path;
+  }
+
+  if (typeof candidate.permissions === 'string') {
+    info.permissions = candidate.permissions;
+  }
+
+  if (typeof candidate.owner === 'string') {
+    info.owner = candidate.owner;
+  }
+
+  if (typeof candidate.group === 'string') {
+    info.group = candidate.group;
+  }
+
+  return Object.keys(info).length > 0 ? info : null;
+};
+
 export const useDirPermissionsValidation = (
   path: string,
   options?: UseDirPermissionsValidationOptions
@@ -106,13 +152,23 @@ export const useDirPermissionsValidation = (
     status: 'idle',
     message: null,
     lastCheckedPath: null,
+    details: null,
+    shouldCreateDirectory: false,
+    httpStatus: null,
   });
 
   useEffect(() => {
     const trimmedPath = path.trim();
 
     if (!trimmedPath) {
-      setState({ status: 'idle', message: null, lastCheckedPath: null });
+      setState({
+        status: 'idle',
+        message: null,
+        lastCheckedPath: null,
+        details: null,
+        shouldCreateDirectory: false,
+        httpStatus: null,
+      });
       return undefined;
     }
 
@@ -120,6 +176,9 @@ export const useDirPermissionsValidation = (
       status: 'checking',
       message: prev.lastCheckedPath === trimmedPath ? prev.message : null,
       lastCheckedPath: prev.lastCheckedPath,
+      details: null,
+      shouldCreateDirectory: false,
+      httpStatus: null,
     }));
 
     const controller = new AbortController();
@@ -133,13 +192,19 @@ export const useDirPermissionsValidation = (
 
       axiosInstance
         .request<DirPermissionsResponse>(requestConfig)
-        .then(({ data }) => {
-          const message = resolveResponseMessage(data);
+        .then(({ data, status }) => {
+          const message =
+            resolveResponseMessage(data) ??
+            'این مسیر در حال حاضر موجود است و امکان ایجاد اشتراک جدید وجود ندارد.';
+          const infoDetails = extractInfoPayload(data);
 
           setState({
-            status: message ? 'invalid' : 'valid',
+            status: 'invalid',
             message,
             lastCheckedPath: trimmedPath,
+            details: infoDetails,
+            shouldCreateDirectory: false,
+            httpStatus: status,
           });
         })
         .catch((error: AxiosError | Error) => {
@@ -147,12 +212,49 @@ export const useDirPermissionsValidation = (
             return;
           }
 
-          const message = extractErrorMessage(error);
+          if (axios.isAxiosError(error) && error.response) {
+            const { status, data } = error.response;
+
+            if (status === 500) {
+              setState({
+                status: 'valid',
+                message: null,
+                lastCheckedPath: trimmedPath,
+                details: null,
+                shouldCreateDirectory: true,
+                httpStatus: status,
+              });
+              return;
+            }
+
+            const infoDetails = extractInfoPayload(
+              data as DirPermissionsResponse | DirPermissionsInfoPayload
+            );
+            const message =
+              extractErrorMessage(error) ||
+              'خطا در بررسی مسیر انتخاب‌شده رخ داد.';
+
+            setState({
+              status: 'invalid',
+              message,
+              lastCheckedPath: trimmedPath,
+              details: infoDetails,
+              shouldCreateDirectory: false,
+              httpStatus: status,
+            });
+            return;
+          }
+
+          const message =
+            extractErrorMessage(error) || 'خطا در بررسی مسیر انتخاب‌شده رخ داد.';
 
           setState({
             status: 'invalid',
-            message: message || 'خطا در بررسی مسیر انتخاب‌شده رخ داد.',
+            message,
             lastCheckedPath: trimmedPath,
+            details: null,
+            shouldCreateDirectory: false,
+            httpStatus: null,
           });
         });
     }, debounceMs);
@@ -168,6 +270,9 @@ export const useDirPermissionsValidation = (
     message: state.message,
     isChecking: state.status === 'checking',
     isValid: state.status === 'valid',
+    details: state.details,
+    shouldCreateDirectory: state.shouldCreateDirectory,
+    httpStatus: state.httpStatus,
   };
 };
 
