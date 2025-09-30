@@ -107,6 +107,13 @@ const Users = () => {
     },
   });
 
+  const createOsUserForSamba = useCreateOsUser({
+    onError: (message) => {
+      setSambaCreateError(message);
+      toast.error(`ایجاد کاربر سیستم عامل با خطا مواجه شد: ${message}`);
+    },
+  });
+
   const createSambaUser = useCreateSambaUser({
     onSuccess: (username) => {
       toast.success(`کاربر Samba ${username} با موفقیت ایجاد شد.`);
@@ -178,10 +185,11 @@ const Users = () => {
     (username?: string) => {
       setSambaCreateError(null);
       createSambaUser.reset();
+      createOsUserForSamba.reset();
       setSambaCreateInitialUsername(username);
       setIsSambaCreateModalOpen(true);
     },
-    [createSambaUser]
+    [createOsUserForSamba, createSambaUser]
   );
 
   const handleCloseSambaCreateModal = useCallback(() => {
@@ -189,7 +197,8 @@ const Users = () => {
     setSambaCreateError(null);
     createSambaUser.reset();
     setSambaCreateInitialUsername(undefined);
-  }, [createSambaUser]);
+    createOsUserForSamba.reset();
+  }, [createOsUserForSamba, createSambaUser]);
 
   const handleCreateSambaUserFromOsUser = useCallback(
     (user: OsUserTableItem) => {
@@ -199,10 +208,32 @@ const Users = () => {
   );
 
   const handleSubmitCreateSambaUser = useCallback(
-    (payload: { username: string; password: string }) => {
-      createSambaUser.mutate(payload);
+    ({
+      username,
+      password,
+      createOsUserFirst,
+    }: {
+      username: string;
+      password: string;
+      createOsUserFirst: boolean;
+    }) => {
+      setSambaCreateError(null);
+
+      const submit = async () => {
+        try {
+          if (createOsUserFirst) {
+            await createOsUserForSamba.mutateAsync({ username });
+          }
+
+          await createSambaUser.mutateAsync({ username, password });
+        } catch {
+          // Errors are handled via the mutation onError callbacks to show in the modal.
+        }
+      };
+
+      void submit();
     },
-    [createSambaUser]
+    [createOsUserForSamba, createSambaUser]
   );
 
   const handleToggleSelectSambaUser = useCallback(
@@ -481,7 +512,9 @@ const Users = () => {
         open={isSambaCreateModalOpen}
         onClose={handleCloseSambaCreateModal}
         onSubmit={handleSubmitCreateSambaUser}
-        isSubmitting={createSambaUser.isPending}
+        isSubmitting={
+          createSambaUser.isPending || createOsUserForSamba.isPending
+        }
         errorMessage={sambaCreateError}
         initialUsername={sambaCreateInitialUsername}
       />
