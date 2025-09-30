@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AxiosError } from 'axios';
 import axios from 'axios';
 import axiosInstance from '../lib/axiosInstance';
@@ -8,8 +8,17 @@ interface DirPermissionsErrorPayload {
   [key: string]: unknown;
 }
 
+export interface DirPermissionsDetails {
+  path?: string;
+  permissions?: string;
+  owner?: string;
+  group?: string;
+  [key: string]: unknown;
+}
+
 interface DirPermissionsResponse {
   ok?: boolean;
+  data?: DirPermissionsDetails | null;
   error?: DirPermissionsErrorPayload | null;
   [key: string]: unknown;
 }
@@ -28,6 +37,8 @@ interface DirPermissionsValidationState {
   status: DirPermissionsValidationStatus;
   message: string | null;
   lastCheckedPath: string | null;
+  details: DirPermissionsDetails | null;
+  shouldCreateDirectory: boolean;
 }
 
 const DEFAULT_OPTIONS: Required<UseDirPermissionsValidationOptions> = {
@@ -106,19 +117,29 @@ export const useDirPermissionsValidation = (
     status: 'idle',
     message: null,
     lastCheckedPath: null,
+    details: null,
+    shouldCreateDirectory: false,
   });
 
   useEffect(() => {
     const trimmedPath = path.trim();
 
     if (!trimmedPath) {
-      setState({ status: 'idle', message: null, lastCheckedPath: null });
+      setState({
+        status: 'idle',
+        message: null,
+        lastCheckedPath: null,
+        details: null,
+        shouldCreateDirectory: false,
+      });
       return undefined;
     }
 
     setState((prev) => ({
       status: 'checking',
       message: prev.lastCheckedPath === trimmedPath ? prev.message : null,
+      details: prev.lastCheckedPath === trimmedPath ? prev.details : null,
+      shouldCreateDirectory: false,
       lastCheckedPath: prev.lastCheckedPath,
     }));
 
@@ -127,24 +148,47 @@ export const useDirPermissionsValidation = (
       const requestConfig = {
         url: '/api/dir/info/permissions/',
         method: 'GET' as const,
-        data: { path: trimmedPath },
+        params: { path: trimmedPath },
         signal: controller.signal,
       };
 
       axiosInstance
         .request<DirPermissionsResponse>(requestConfig)
         .then(({ data }) => {
-          const message = resolveResponseMessage(data);
+          const message =
+            resolveResponseMessage(data) ??
+            'این مسیر از قبل وجود دارد و نمی‌توان اشتراک جدید ایجاد کرد.';
+          const details =
+            data && typeof data === 'object' && 'data' in data
+              ? (data.data as DirPermissionsDetails | null)
+              : null;
 
           setState({
-            status: message ? 'invalid' : 'valid',
+            status: 'invalid',
             message,
             lastCheckedPath: trimmedPath,
+            details: details ?? null,
+            shouldCreateDirectory: false,
           });
         })
         .catch((error: AxiosError | Error) => {
           if (axios.isCancel(error)) {
             return;
+          }
+
+          if (axios.isAxiosError(error)) {
+            const statusCode = error.response?.status;
+
+            if (statusCode && statusCode >= 500) {
+              setState({
+                status: 'valid',
+                message: 'این مسیر وجود ندارد و امکان ایجاد آن فراهم است.',
+                lastCheckedPath: trimmedPath,
+                details: null,
+                shouldCreateDirectory: true,
+              });
+              return;
+            }
           }
 
           const message = extractErrorMessage(error);
@@ -153,6 +197,8 @@ export const useDirPermissionsValidation = (
             status: 'invalid',
             message: message || 'خطا در بررسی مسیر انتخاب‌شده رخ داد.',
             lastCheckedPath: trimmedPath,
+            details: null,
+            shouldCreateDirectory: false,
           });
         });
     }, debounceMs);
@@ -163,11 +209,21 @@ export const useDirPermissionsValidation = (
     };
   }, [debounceMs, path]);
 
+  const markDirectoryHandled = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      shouldCreateDirectory: false,
+    }));
+  }, []);
+
   return {
     status: state.status,
     message: state.message,
     isChecking: state.status === 'checking',
     isValid: state.status === 'valid',
+    details: state.details,
+    shouldCreateDirectory: state.shouldCreateDirectory,
+    markDirectoryHandled,
   };
 };
 

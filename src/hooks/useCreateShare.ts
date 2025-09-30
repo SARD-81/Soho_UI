@@ -50,6 +50,17 @@ const createShareRequest = async (payload: CreateSambaSharePayload) => {
   await axiosInstance.post('/api/samba/create/', payload);
 };
 
+interface CreateDirectoryPayload {
+  path: string;
+  mode: string;
+  owner: string;
+  group: string;
+}
+
+const createDirectoryWithPermissions = async (payload: CreateDirectoryPayload) => {
+  await axiosInstance.post('/api/dir/create/permissions/', payload);
+};
+
 const deriveShareDisplayName = (fullPath: string) => {
   const segments = fullPath.split('/').filter(Boolean);
   return segments[segments.length - 1] ?? fullPath;
@@ -72,6 +83,7 @@ export const useCreateShare = ({
   const [validUsersError, setValidUsersError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const dirPermissionsValidation = useDirPermissionsValidation(fullPath);
+  const [isEnsuringDirectory, setIsEnsuringDirectory] = useState(false);
   const setFullPath = useCallback(
     (value: string) => {
       setFullPathState(value);
@@ -95,12 +107,14 @@ export const useCreateShare = ({
     setFullPathError(null);
     setValidUsersError(null);
     setApiError(null);
+    setIsEnsuringDirectory(false);
   }, [
     setApiError,
     setFullPath,
     setFullPathError,
     setValidUsers,
     setValidUsersError,
+    setIsEnsuringDirectory,
   ]);
 
   const handleOpen = useCallback(() => {
@@ -137,7 +151,7 @@ export const useCreateShare = ({
   }, [createShareMutation, handleClose]);
 
   const handleSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
+    async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       setFullPathError(null);
       setValidUsersError(null);
@@ -170,6 +184,28 @@ export const useCreateShare = ({
         return;
       }
 
+      if (dirPermissionsValidation.shouldCreateDirectory) {
+        setIsEnsuringDirectory(true);
+
+        try {
+          await createDirectoryWithPermissions({
+            path: trimmedPath,
+            mode: '0700',
+            owner: trimmedUsers,
+            group: trimmedUsers,
+          });
+          dirPermissionsValidation.markDirectoryHandled();
+        } catch (error) {
+          const message = extractApiMessage(error as AxiosError<ApiErrorResponse>);
+          setFullPathError(
+            message || 'ایجاد پوشه مقصد با خطا مواجه شد، لطفاً دوباره تلاش کنید.'
+          );
+          return;
+        } finally {
+          setIsEnsuringDirectory(false);
+        }
+      }
+
       createShareMutation.mutate({
         full_path: trimmedPath,
         valid_users: trimmedUsers,
@@ -180,6 +216,8 @@ export const useCreateShare = ({
       dirPermissionsValidation.isChecking,
       dirPermissionsValidation.isValid,
       dirPermissionsValidation.message,
+      dirPermissionsValidation.markDirectoryHandled,
+      dirPermissionsValidation.shouldCreateDirectory,
       fullPath,
       validUsers,
     ]
@@ -192,9 +230,10 @@ export const useCreateShare = ({
     fullPathError,
     validUsersError,
     apiError,
-    isCreating: createShareMutation.isPending,
+    isCreating: createShareMutation.isPending || isEnsuringDirectory,
     pathValidationStatus: dirPermissionsValidation.status,
     pathValidationMessage: dirPermissionsValidation.message,
+    pathValidationDetails: dirPermissionsValidation.details,
     isPathChecking: dirPermissionsValidation.isChecking,
     isPathValid: dirPermissionsValidation.isValid,
     openCreateModal: handleOpen,

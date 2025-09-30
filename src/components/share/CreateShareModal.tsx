@@ -4,18 +4,22 @@ import {
   Box,
   Button,
   CircularProgress,
+  IconButton,
   InputAdornment,
+  Popover,
+  Stack,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { ChangeEvent } from 'react';
-import { useMemo } from 'react';
+import type { ChangeEvent, MouseEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
 import BlurModal from '../BlurModal';
 import normalizeSambaUsers from '../../utils/sambaUsers';
+import type { DirPermissionsDetails } from '../../hooks/useDirPermissionsValidation';
 
 interface CreateShareModalProps {
   controller: UseCreateShareReturn;
@@ -56,6 +60,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     isCreating,
     pathValidationStatus,
     pathValidationMessage,
+    pathValidationDetails,
     isPathChecking,
     isPathValid,
   } = controller;
@@ -63,6 +68,16 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   const handlePathChange = (event: ChangeEvent<HTMLInputElement>) => {
     setFullPath(event.target.value);
   };
+
+  const [validationAnchorEl, setValidationAnchorEl] = useState<HTMLElement | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (pathValidationStatus !== 'invalid') {
+      setValidationAnchorEl(null);
+    }
+  }, [pathValidationStatus]);
 
   const sambaUsersQuery = useSambaUsers({ enabled: isOpen });
   const sambaUsers = useMemo(
@@ -74,12 +89,68 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     [sambaUsers]
   );
 
+  const validationDetailEntries = useMemo(() => {
+    if (!pathValidationDetails) {
+      return [];
+    }
+
+    const keys: Array<keyof DirPermissionsDetails> = [
+      'path',
+      'permissions',
+      'owner',
+      'group',
+    ];
+
+    return keys
+      .map((key) => {
+        const value = pathValidationDetails[key];
+
+        if (value === undefined || value === null || value === '') {
+          return null;
+        }
+
+        return { key, value: String(value) };
+      })
+      .filter(Boolean) as Array<{ key: keyof DirPermissionsDetails; value: string }>;
+  }, [pathValidationDetails]);
+
   const hasPathError =
     Boolean(fullPathError) || pathValidationStatus === 'invalid';
-  const pathHelperText =
-    fullPathError ||
-    (pathValidationStatus === 'invalid' && pathValidationMessage) ||
+  const defaultPathHelperText =
     'مسیر کامل پوشه اشتراک را وارد کنید (مانند /mnt/data/share).';
+  const pathHelperText = (() => {
+    if (fullPathError) {
+      return fullPathError;
+    }
+
+    if (pathValidationStatus === 'invalid') {
+      return (
+        pathValidationMessage ||
+        'این مسیر از قبل وجود دارد و امکان ایجاد اشتراک جدید وجود ندارد.'
+      );
+    }
+
+    if (pathValidationStatus === 'valid') {
+      return (
+        pathValidationMessage ||
+        'این مسیر وجود ندارد و در صورت نیاز ایجاد خواهد شد.'
+      );
+    }
+
+    return defaultPathHelperText;
+  })();
+
+  const handleValidationIconClick = (event: MouseEvent<HTMLElement>) => {
+    setValidationAnchorEl((prev) =>
+      prev ? null : (event.currentTarget as HTMLElement)
+    );
+  };
+
+  const closeValidationPopover = () => {
+    setValidationAnchorEl(null);
+  };
+
+  const validationPopoverOpen = Boolean(validationAnchorEl);
 
   const pathValidationAdornment = (() => {
     if (isPathChecking) {
@@ -90,16 +161,24 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
       );
     }
 
-    if (pathValidationStatus === 'invalid' && pathValidationMessage) {
+    if (pathValidationStatus === 'invalid') {
       return (
         <InputAdornment position="end">
-          <Tooltip title={pathValidationMessage} placement="top">
-            <Box
-              component="span"
-              sx={{ display: 'flex', color: 'error.main', cursor: 'pointer' }}
+          <Tooltip
+            title={
+              pathValidationMessage ||
+              'این مسیر از قبل وجود دارد و امکان ایجاد اشتراک جدید وجود ندارد.'
+            }
+            placement="top"
+          >
+            <IconButton
+              color="error"
+              size="small"
+              aria-label="نمایش اطلاعات مسیر"
+              onClick={handleValidationIconClick}
             >
               <FiAlertCircle size={18} />
-            </Box>
+            </IconButton>
           </Tooltip>
         </InputAdornment>
       );
@@ -221,6 +300,44 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
           )}
         </Box>
       </Box>
+      <Popover
+        open={validationPopoverOpen}
+        anchorEl={validationAnchorEl}
+        onClose={closeValidationPopover}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Box sx={{ p: 2, maxWidth: 280 }}>
+          <Stack spacing={1}>
+            {validationDetailEntries.length > 0 ? (
+              validationDetailEntries.map((item) => (
+                <Box
+                  key={item.key}
+                  sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, textTransform: 'capitalize' }}
+                  >
+                    {item.key}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: 'var(--color-secondary)', wordBreak: 'break-all' }}
+                  >
+                    {item.value}
+                  </Typography>
+                </Box>
+              ))
+            ) : (
+              <Typography variant="body2">
+                {pathValidationMessage ||
+                  'این مسیر از قبل وجود دارد و امکان ایجاد اشتراک جدید وجود ندارد.'}
+              </Typography>
+            )}
+          </Stack>
+        </Box>
+      </Popover>
     </BlurModal>
   );
 };
