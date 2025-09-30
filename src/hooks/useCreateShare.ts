@@ -2,8 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { FormEvent } from 'react';
 import { useCallback, useState } from 'react';
-import type { CreateSambaSharePayload } from '../@types/samba';
-import axiosInstance from '../lib/axiosInstance';
+import type { CreateShareWithPermissionsPayload } from '../@types/samba';
+import { createShareWithDirectoryPermissions } from '../lib/shareService';
 import { sambaSharesQueryKey } from './useSambaShares';
 
 interface ApiErrorResponse {
@@ -43,10 +43,6 @@ const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
   }
 
   return error.message;
-};
-
-const createShareRequest = async (payload: CreateSambaSharePayload) => {
-  await axiosInstance.post('/api/samba/create/', payload);
 };
 
 const deriveShareDisplayName = (fullPath: string) => {
@@ -92,9 +88,9 @@ export const useCreateShare = ({
   const createShareMutation = useMutation<
     unknown,
     AxiosError<ApiErrorResponse>,
-    CreateSambaSharePayload
+    CreateShareWithPermissionsPayload
   >({
-    mutationFn: createShareRequest,
+    mutationFn: createShareWithDirectoryPermissions,
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sambaSharesQueryKey });
       handleClose();

@@ -10,3 +10,9 @@ export type IPv4Info = {
   address: string;
   netmask: string | null;
 };
+
+export type UpdateInterfaceIpPayload = {
+  interfaceName: string;
+  ip: string;
+  netmask: string;
+};

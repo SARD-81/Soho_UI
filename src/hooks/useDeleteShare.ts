@@ -8,7 +8,7 @@ interface DeleteSharePayload {
 }
 
 const deleteShareRequest = async ({ share_name }: DeleteSharePayload) => {
-  await axiosInstance.delete('/api/samba/delete/', {
+  await axiosInstance.delete('/api/samba/config/remove/', {
     data: { share_name },
   });
 };

@@ -34,6 +34,8 @@ export interface NetworkData {
   interfaces: Record<string, NetworkInterface>;
 }
 
+export const networkQueryKey = ['network'] as const;
+
 const fetchNetwork = async () => {
   const { data } = await axiosInstance.get<NetworkData>('/api/net');
   return data;
@@ -41,7 +43,7 @@ const fetchNetwork = async () => {
 
 export const useNetwork = (enabled = true) => {
   return useQuery<NetworkData, Error>({
-    queryKey: ['network'],
+    queryKey: networkQueryKey,
     queryFn: fetchNetwork,
     refetchInterval: enabled ? 1000 : false,
     enabled,

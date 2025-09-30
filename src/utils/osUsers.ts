@@ -16,6 +16,46 @@ const toOptionalString = (value: unknown): string | undefined => {
   return undefined;
 };
 
+const toOptionalBoolean = (value: unknown): boolean | undefined => {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+
+    if (['true', '1', 'yes', 'y'].includes(normalized)) {
+      return true;
+    }
+
+    if (['false', '0', 'no', 'n'].includes(normalized)) {
+      return false;
+    }
+
+    return undefined;
+  }
+
+  if (typeof value === 'number') {
+    if (Number.isNaN(value)) {
+      return undefined;
+    }
+
+    if (value === 1) {
+      return true;
+    }
+
+    if (value === 0) {
+      return false;
+    }
+  }
+
+  return undefined;
+};
+
 const pickFirstValue = (
   record: Record<string, unknown>,
   keys: string[]
@@ -27,6 +67,23 @@ const pickFirstValue = (
 
       if (normalized) {
         return normalized;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const pickBooleanValue = (
+  record: Record<string, unknown>,
+  keys: string[]
+): boolean | undefined => {
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(record, key)) {
+      const value = toOptionalBoolean(record[key]);
+
+      if (value !== undefined) {
+        return value;
       }
     }
   }
@@ -75,6 +132,12 @@ const normalizeRecord = (
     'shell',
     'shell_path',
   ]);
+  const hasSambaUser = pickBooleanValue(record, [
+    'hasSambaUser',
+    'has_samba_user',
+    'sambaUserExists',
+    'samba_user_exists',
+  ]);
 
   const raw: RawOsUserDetails =
     typeof value === 'object' && value !== null
@@ -89,6 +152,7 @@ const normalizeRecord = (
     gid,
     homeDirectory,
     loginShell,
+    hasSambaUser,
     raw,
   };
 };
