@@ -9,9 +9,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IoPersonCircleOutline } from 'react-icons/io5';
-import { MdClose, MdLogout, MdMenu, MdSearch } from 'react-icons/md';
+import { MdClose, MdLogout, MdMenu, MdMenuOpen, MdSearch } from 'react-icons/md';
 import { Outlet } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import '../index.css';
@@ -22,8 +22,42 @@ const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+
+  useEffect(() => {
+    if (isDesktop) {
+      setDrawerOpen(false);
+    } else {
+      setIsCollapsed(false);
+    }
+  }, [isDesktop]);
+
+  const handleDrawerToggle = () => {
+    if (isDesktop) {
+      setIsCollapsed((prev) => !prev);
+    } else {
+      setDrawerOpen((prev) => !prev);
+    }
+  };
+
+  const toggleButtonIcon = isDesktop
+    ? isCollapsed
+      ? <MdMenu />
+      : <MdMenuOpen />
+    : drawerOpen
+      ? <MdClose />
+      : <MdMenu />;
+
+  const toggleButtonAriaLabel = isDesktop
+    ? isCollapsed
+      ? 'باز کردن منو'
+      : 'جمع کردن منو'
+    : drawerOpen
+      ? 'بستن منو'
+      : 'باز کردن منو';
 
   const handleLogout = async () => {
     await logout();
@@ -62,10 +96,11 @@ const MainLayout: React.FC = () => {
           }}
         >
           <IconButton
-            onClick={() => setDrawerOpen((prev) => !prev)}
+            aria-label={toggleButtonAriaLabel}
+            onClick={handleDrawerToggle}
             sx={{ color: 'var(--color-bg-primary)' }}
           >
-            {drawerOpen ? <MdClose /> : <MdMenu />}
+            {toggleButtonIcon}
           </IconButton>
           <Box
             component="img"
@@ -182,8 +217,11 @@ const MainLayout: React.FC = () => {
         </Toolbar>
       </AppBar>
       <NavigationDrawer
+        variant={isDesktop ? 'permanent' : 'temporary'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        isCollapsed={isDesktop ? isCollapsed : false}
+        onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
       />
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />

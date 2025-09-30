@@ -8,6 +8,7 @@ import { RiSettings3Fill } from 'react-icons/ri';
 import type { NavigationItem } from '../@types/navigationDrawer';
 
 export const drawerWidth = 200;
+export const collapsedDrawerWidth = 72;
 
 export const navItems: NavigationItem[] = [
   {
