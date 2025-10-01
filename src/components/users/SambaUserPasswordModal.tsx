@@ -1,7 +1,8 @@
-import { Alert, Box, Button, TextField, Typography } from '@mui/material';
+import { Alert, Box, TextField, Typography } from '@mui/material';
 import { type FormEvent, useEffect, useState } from 'react';
 import type { UpdateSambaUserPasswordPayload } from '../../@types/samba';
 import BlurModal from '../BlurModal';
+import ModalActionButtons from '../common/ModalActionButtons';
 
 interface SambaUserPasswordModalProps {
   open: boolean;
@@ -41,37 +42,42 @@ const SambaUserPasswordModal = ({
     });
   };
 
+  const isConfirmDisabled = isSubmitting || !username || !password;
+
   return (
     <BlurModal
       open={open}
       onClose={onClose}
       title="تغییر گذرواژه کاربر"
       actions={
-        <Button
-          type="submit"
-          form="samba-user-password-form"
-          variant="contained"
-          disabled={isSubmitting || !username || !password}
-          sx={{
-            px: 3,
-            py: 1,
-            fontWeight: 600,
-            background:
-              'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
-            color: 'var(--color-bg)',
-            '&:hover': {
+        <ModalActionButtons
+          confirmLabel="ثبت گذرواژه جدید"
+          loadingLabel="در حال بروزرسانی..."
+          isLoading={isSubmitting}
+          disabled={isConfirmDisabled}
+          disableConfirmGradient
+          confirmProps={{
+            type: 'submit',
+            form: 'samba-user-password-form',
+            sx: {
+              px: 3,
+              py: 1,
+              fontWeight: 600,
               background:
-                'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
-            },
-            '&.Mui-disabled': {
-              backgroundColor:
-                'color-mix(in srgb, var(--color-secondary) 25%, transparent)',
-              color: 'var(--color-secondary)',
+                'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+              color: 'var(--color-bg)',
+              '&:hover': {
+                background:
+                  'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
+              },
+              '&.Mui-disabled': {
+                backgroundColor:
+                  'color-mix(in srgb, var(--color-secondary) 25%, transparent)',
+                color: 'var(--color-secondary)',
+              },
             },
           }}
-        >
-          {isSubmitting ? 'در حال بروزرسانی...' : 'ثبت گذرواژه جدید'}
-        </Button>
+        />
       }
     >
       <Box
@@ -94,7 +100,7 @@ const SambaUserPasswordModal = ({
           InputProps={{
             sx: {
               backgroundColor: 'var(--color-input-bg)',
-              borderRadius: 1,
+              borderRadius: '5px',
               '& .MuiInputBase-input': { color: 'var(--color-secondary)' },
             },
           }}
@@ -111,7 +117,7 @@ const SambaUserPasswordModal = ({
           InputProps={{
             sx: {
               backgroundColor: 'var(--color-input-bg)',
-              borderRadius: 1,
+              borderRadius: '5px',
               '& .MuiInputBase-input': { color: 'var(--color-text)' },
             },
           }}

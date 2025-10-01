@@ -253,7 +253,7 @@ const Cpu = () => {
         sx={{
           width: '100%',
           bgcolor: statsBackground,
-          borderRadius: 2,
+          borderRadius: '5px',
           alignSelf: 'end',
           px: 2,
           py: 2,

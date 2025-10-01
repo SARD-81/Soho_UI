@@ -149,7 +149,7 @@ const Network = () => {
         <Box component="span" sx={{ fontSize: 20 }}>
           📉
         </Box>
-        نمودار های شبکه
+        وضعیت شبکه
       </Typography>
       {names.length === 0 ? (
         <ResponsiveChartContainer height={chartSize}>
@@ -176,7 +176,7 @@ const Network = () => {
                 },
               ]}
               slotProps={{
-                noDataOverlay: { message: 'No network data' },
+                noDataOverlay: { message: 'اطلاعات شبکه در دسترس نیست' },
               }}
             />
           )}
@@ -212,7 +212,7 @@ const Network = () => {
                 p: 2,
                 bgcolor: 'var(--color-card-bg)',
                 mb: 2,
-                borderRadius: '10px',
+                borderRadius: '5px',
                 border: '2px solid var(--color-primary)',
                 width: '100%',
               }}
@@ -279,11 +279,12 @@ const Network = () => {
                   mt: 2,
                   width: '100%',
                   bgcolor: metaInfoBackground,
-                  borderRadius: 2,
+                  borderRadius: '5px',
                   px: 2,
                   py: 1.5,
                   border: `1px dashed ${metaInfoBorderColor}`,
                   display: 'flex',
+                  alignItems: 'flex-start',
                   flexDirection: 'column',
                   gap: 0.75,
                 }}
@@ -295,7 +296,7 @@ const Network = () => {
                         ? ` IPv4 ${index + 1}: `
                         : ' IPv4: ';
                     const netmaskText = entry.netmask
-                      ? ` نت‌ماسک: ${entry.netmask}`
+                      ? `${entry.netmask} : Netmask`
                       : null;
                     const baseKey = entry.address ?? `ipv4-${index}`;
 
@@ -337,7 +338,7 @@ const Network = () => {
                   variant="body2"
                   sx={{ color: theme.palette.text.secondary }}
                 >
-                  سرعت لینک: {speedText}
+                  link-speed: {speedText}
                 </Typography>
               </Box>
             </Box>

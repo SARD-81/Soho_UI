@@ -1,15 +1,11 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import type { UseDeleteZpoolReturn } from '../../hooks/useDeleteZpool';
 import BlurModal from '../BlurModal';
+import ModalActionButtons from '../common/ModalActionButtons';
 
 interface ConfirmDeletePoolModalProps {
   controller: UseDeleteZpoolReturn;
 }
-
-const buttonStyles = {
-  borderRadius: '10px',
-  fontWeight: 600,
-};
 
 const ConfirmDeletePoolModal = ({
   controller,
@@ -29,26 +25,16 @@ const ConfirmDeletePoolModal = ({
       onClose={closeModal}
       title="حذف Pool"
       actions={
-        <>
-          <Button
-            onClick={closeModal}
-            color="inherit"
-            variant="outlined"
-            disabled={isDeleting}
-            sx={buttonStyles}
-          >
-            انصراف
-          </Button>
-          <Button
-            onClick={confirmDelete}
-            variant="contained"
-            color="error"
-            disabled={isDeleting}
-            sx={buttonStyles}
-          >
-            {isDeleting ? 'در حال حذف…' : 'حذف'}
-          </Button>
-        </>
+        <ModalActionButtons
+          onCancel={closeModal}
+          onConfirm={confirmDelete}
+          confirmLabel="حذف"
+          loadingLabel="در حال حذف…"
+          isLoading={isDeleting}
+          disabled={isDeleting}
+          disableConfirmGradient
+          confirmProps={{ color: 'error' }}
+        />
       }
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

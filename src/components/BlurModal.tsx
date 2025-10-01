@@ -41,7 +41,7 @@ const BlurModal = ({
           transform: 'translate(-50%, -50%)',
           width: '100%',
           maxWidth,
-          borderRadius: 2,
+          borderRadius: '5px',
           bgcolor: 'var(--color-card-bg)',
           boxShadow: '0 30px 60px -32px rgba(0, 0, 0, 0.6)',
           border: '1px solid rgba(255, 255, 255, 0.08)',

@@ -10,7 +10,7 @@ export const createCardSx = (theme: Theme): SxProps<Theme> => {
     // width: '100%',
     p: 3,
     bgcolor: 'var(--color-card-bg)',
-    borderRadius: 3,
+    borderRadius: '5px',
     mb: 3,
     color: 'var(--color-bg-primary)',
     display: 'flex',

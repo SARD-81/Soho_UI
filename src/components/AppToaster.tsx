@@ -14,7 +14,7 @@ export default function AppToaster({
           background: 'var(--color-card-bg)',
           color: 'var(--color-text)',
           border: '1px solid var(--color-primary)',
-          borderRadius: '8px',
+          borderRadius: '5px',
           fontFamily: 'var(--font-vazir)',
           direction: 'rtl',
         },

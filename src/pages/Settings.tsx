@@ -70,7 +70,7 @@ const Settings = () => {
             justifyContent: 'center',
             minHeight: 160,
             backgroundColor: 'var(--color-card-bg)',
-            borderRadius: 2,
+            borderRadius: '5px',
             border: '1px dashed var(--color-secondary)',
           }}
         >

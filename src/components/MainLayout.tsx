@@ -4,7 +4,6 @@ import {
   Button,
   CircularProgress,
   IconButton,
-  TextField,
   Toolbar,
   Tooltip,
   Typography,
@@ -20,10 +19,8 @@ import {
   MdMenu,
   MdPowerSettingsNew,
   MdRestartAlt,
-  MdSearch,
 } from 'react-icons/md';
 import { Outlet } from 'react-router';
-import { drawerWidth } from '../constants/navigationDrawer';
 import { useAuth } from '../contexts/AuthContext';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
 import '../index.css';
@@ -32,7 +29,7 @@ import ThemeToggle from './ThemeToggle';
 
 const powerButtonBaseSx = {
   color: '#fff',
-  borderRadius: '12px',
+  borderRadius: '5px',
   padding: '8px',
   minWidth: 0,
   boxShadow: '0 10px 24px rgba(0, 0, 0, 0.18)',
@@ -60,13 +57,11 @@ const createPowerButtonSx = (gradient: string) => ({
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activePowerAction, setActivePowerAction] =
     useState<PowerAction | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
   const { mutate: triggerPowerAction, isPending: isPowerActionPending } =
     usePowerAction({
@@ -141,62 +136,13 @@ const MainLayout: React.FC = () => {
             sx={{ height: 30 }}
           />
 
-          {/*<Typography*/}
-          {/*  variant="h6"*/}
-          {/*  component="div"*/}
-          {/*  sx={{ color: 'var(--color-primary)', flexShrink: 0 }}*/}
-          {/*>*/}
-          {/*  سوهو*/}
-          {/*</Typography>*/}
-          <TextField
-            placeholder="جستجو در سوهو..."
-            size={'small'}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            slotProps={{
-              input: {
-                sx: {
-                  padding: '6px 8px',
-                  height: '28px',
-                  fontSize: '0.8rem',
-                  color: 'var(--color-bg-primary)',
-                  '&::placeholder': {
-                    color: 'var(--color-bg-primary)',
-                    opacity: 0.7,
-                  },
-                },
-                endAdornment: (
-                  <IconButton
-                    size="small"
-                    sx={{
-                      color: 'var(--color-bg-primary)',
-                      padding: '4px',
-                      marginRight: '-4px',
-                    }}
-                  >
-                    <MdSearch />
-                  </IconButton>
-                ),
-              },
-            }}
-            sx={{
-              order: { xs: 4, sm: 'initial' },
-              flexGrow: { xs: 1, md: 0.3 },
-              width: { xs: '100%', md: 'auto' },
-              mr: { xs: 0, md: 4 },
-              mt: { xs: 1, sm: 0 },
-              '& .MuiOutlinedInput-input::placeholder': {
-                color: 'var(--color-bg-primary)',
-              },
-              '& .MuiOutlinedInput-input': {
-                height: 1,
-              },
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: 'var(--color-input-bg)',
-                borderRadius: '10px',
-              },
-            }}
-          />
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ color: 'var(--color-primary)', flexShrink: 0 }}
+          >
+            ذخیره ساز اداری استورکس
+          </Typography>
           <Box
             sx={{
               display: 'flex',
@@ -233,11 +179,11 @@ const MainLayout: React.FC = () => {
                   color: 'var(--color-bg-primary)',
                   height: 30,
                   backgroundColor: 'var(--color-primary)',
-                  borderRadius: '10px',
+                  borderRadius: '5px',
                   '&:hover': {
                     backgroundColor: 'unset',
                     border: '2px solid var(--color-primary)',
-                    borderRadius: '10px',
+                    borderRadius: '5px',
                   },
                 }}
               >
@@ -297,11 +243,6 @@ const MainLayout: React.FC = () => {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
           }),
-          marginLeft: isDesktop
-            ? drawerOpen
-              ? `${drawerWidth}px`
-              : `calc(${theme.spacing(7)} + 1px)`
-            : 0,
         })}
       >
         <Toolbar />

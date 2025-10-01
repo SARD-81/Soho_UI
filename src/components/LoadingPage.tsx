@@ -22,9 +22,9 @@ function LoadingPage() {
       <Paper
         elevation={10}
         sx={{
-          p: 6,
+          p: 4,
           textAlign: 'center',
-          borderRadius: 4,
+          borderRadius: '5px',
           backdropFilter: 'saturate(140%) blur(8px)',
           bgcolor: 'var(--color-card-bg)',
           boxShadow: (theme) =>
@@ -33,17 +33,22 @@ function LoadingPage() {
             }`,
         }}
       >
-        <Box component="img" src="/logo/Logo.png" alt="لوگو" sx={{ mb: 3 }} />
+        <Box
+          component="img"
+          src="/logo/Logo.png"
+          alt="لوگو"
+          sx={{ mb: 3, marginX: 'auto' }}
+        />
         <Typography
           variant="h4"
           fontWeight={900}
           letterSpacing={0.4}
           sx={{
             color: 'var(--color-primary)',
-            fontFamily: 'var(--font-didot)',
+            fontFamily: 'var(--font-رشظهق)',
           }}
         >
-          Soho
+          ذخیره ساز اداری استورکس
         </Typography>
         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
           <CircularProgress sx={{ color: 'var(--color-primary)' }} />

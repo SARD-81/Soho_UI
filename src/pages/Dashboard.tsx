@@ -74,7 +74,7 @@ const dashboardWidgets: DashboardWidget[] = [
   {
     id: 'zpool-overview',
     component: Zpool,
-    columns: { xs: 12, md: 12, xl: 6 },
+    columns: { xs: 12, md: 10, xl: 10 },
   },
   {
     id: 'disk',

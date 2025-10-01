@@ -202,7 +202,7 @@ function LoginForm() {
           }
           sx={{
             py: 1.2,
-            borderRadius: 2.5,
+            borderRadius: '5px',
             textTransform: 'none',
             fontWeight: 700,
             letterSpacing: 0.2,

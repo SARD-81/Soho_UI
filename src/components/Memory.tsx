@@ -270,32 +270,32 @@ const Memory = () => {
         وضعیت حافظه
       </Typography>
 
-      <Box
-        sx={{
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 0.5,
-        }}
-      >
-        <Typography
-          variant="body2"
-          sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
-        >
-          درصد استفاده در لحظه
-        </Typography>
-        <Typography
-          variant="h3"
-          sx={{
-            fontFamily: 'var(--font-vazir)',
-            fontWeight: 600,
-            color: 'var(--color-primary)',
-          }}
-        >
-          {percentDisplay}
-        </Typography>
-      </Box>
+      {/*<Box*/}
+      {/*  sx={{*/}
+      {/*    textAlign: 'center',*/}
+      {/*    display: 'flex',*/}
+      {/*    flexDirection: 'column',*/}
+      {/*    alignItems: 'center',*/}
+      {/*    gap: 0.5,*/}
+      {/*  }}*/}
+      {/*>*/}
+      {/*  <Typography*/}
+      {/*    variant="body2"*/}
+      {/*    sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}*/}
+      {/*  >*/}
+      {/*    درصد استفاده در لحظه*/}
+      {/*  </Typography>*/}
+      {/*  <Typography*/}
+      {/*    variant="h3"*/}
+      {/*    sx={{*/}
+      {/*      fontFamily: 'var(--font-vazir)',*/}
+      {/*      fontWeight: 600,*/}
+      {/*      color: 'var(--color-primary)',*/}
+      {/*    }}*/}
+      {/*  >*/}
+      {/*    {percentDisplay}*/}
+      {/*  </Typography>*/}
+      {/*</Box>*/}
 
       <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
         <AppPieChart
@@ -367,7 +367,7 @@ const Memory = () => {
         sx={{
           width: '100%',
           bgcolor: statsBackground,
-          borderRadius: 2,
+          borderRadius: '5px',
           px: 2,
           py: 2,
           border: `1px solid ${statsDividerColor}`,

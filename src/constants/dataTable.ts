@@ -3,7 +3,7 @@ import '../index.css';
 
 export const defaultContainerSx: SxProps<Theme> = {
   mt: 4,
-  borderRadius: 2,
+  borderRadius: '5px',
   backgroundColor: 'var(--color-card-bg)',
   border: '1px solid var(--color-input-border)',
   boxShadow: '0 18px 40px -24px rgba(0, 0, 0, 0.35)',
