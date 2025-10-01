@@ -15,7 +15,10 @@ import { styled } from '@mui/material/styles';
 import React from 'react';
 import { MdClose } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
-import type { NavigationDrawerProps } from '../@types/navigationDrawer';
+import type {
+  NavigationDrawerProps,
+  NavigationItem,
+} from '../@types/navigationDrawer';
 import { drawerWidth, navItems } from '../constants/navigationDrawer';
 
 const openedMixin = (theme: Theme): CSSObject => ({
@@ -76,61 +79,83 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     }
   };
 
-  const renderNavItems = () => (
-    <List>
-      {navItems.map((item) => {
-        const isActive = location.pathname.startsWith(item.path);
+  const isItemActive = (item: NavigationItem): boolean => {
+    const matchesCurrentPath =
+      location.pathname === item.path ||
+      location.pathname.startsWith(`${item.path}/`);
+
+    return (
+      matchesCurrentPath ||
+      (item.children?.some((child) => isItemActive(child)) ?? false)
+    );
+  };
+
+  const renderNavItems = (
+    items: NavigationItem[],
+    depth = 0,
+  ): React.ReactNode => (
+    <List disablePadding={depth > 0} sx={{ pl: open && depth > 0 ? 2 : 0 }}>
+      {items.map((item) => {
+        const isActive = isItemActive(item);
 
         return (
-          <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
-            <ListItemButton
-              component={Link}
-              to={item.path}
-              onClick={handleItemClick}
-              selected={isActive}
-              sx={{
-                color: 'var(--color-bg-primary)',
-                minHeight: 48,
-                justifyContent: open ? 'initial' : 'center',
-                px: 2.5,
-                '&.Mui-selected': {
-                  backgroundColor: 'var(--color-primary)',
-                  color: 'var(--color-card-bg)',
-                  '& .MuiListItemIcon-root': {
-                    color: 'var(--color-card-bg)',
-                  },
-                },
-                '&.Mui-selected:hover': {
-                  backgroundColor: 'var(--color-primary)',
-                },
-                '&:hover': {
-                  backgroundColor: 'var(--color-primary)',
-                  color: 'var(--color-card-bg)',
-                  '& .MuiListItemIcon-root': {
-                    color: 'var(--color-card-bg)',
-                  },
-                },
-              }}
-            >
-              <ListItemIcon
+          <React.Fragment key={`${item.text}-${item.path}`}>
+            <ListItem disablePadding sx={{ display: 'block' }}>
+              <ListItemButton
+                component={Link}
+                to={item.path}
+                onClick={handleItemClick}
+                selected={isActive}
                 sx={{
-                  minWidth: 0,
-                  mr: open ? 2 : 'auto',
-                  justifyContent: 'center',
                   color: 'var(--color-bg-primary)',
+                  minHeight: 48,
+                  justifyContent: open ? 'initial' : 'center',
+                  px: 2.5,
+                  ...(depth > 0 && open
+                    ? {
+                        pl: 2.5 + depth * 2,
+                      }
+                    : {}),
+                  '&.Mui-selected': {
+                    backgroundColor: 'var(--color-primary)',
+                    color: 'var(--color-card-bg)',
+                    '& .MuiListItemIcon-root': {
+                      color: 'var(--color-card-bg)',
+                    },
+                  },
+                  '&.Mui-selected:hover': {
+                    backgroundColor: 'var(--color-primary)',
+                  },
+                  '&:hover': {
+                    backgroundColor: 'var(--color-primary)',
+                    color: 'var(--color-card-bg)',
+                    '& .MuiListItemIcon-root': {
+                      color: 'var(--color-card-bg)',
+                    },
+                  },
                 }}
               >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                sx={{ opacity: open ? 1 : 0 }}
-                primaryTypographyProps={{
-                  sx: { fontFamily: 'var(--font-vazir)' },
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: open ? 2 : 'auto',
+                    justifyContent: 'center',
+                    color: 'var(--color-bg-primary)',
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.text}
+                  sx={{ opacity: open ? 1 : 0 }}
+                  primaryTypographyProps={{
+                    sx: { fontFamily: 'var(--font-vazir)' },
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+            {item.children && renderNavItems(item.children, depth + 1)}
+          </React.Fragment>
         );
       })}
     </List>
@@ -161,7 +186,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
             <MdClose />
           </IconButton>
         </Toolbar>
-        {renderNavItems()}
+        {renderNavItems(navItems)}
       </MuiDrawer>
     );
   }
@@ -178,7 +203,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           </IconButton>
         )}
       </Toolbar>
-      {renderNavItems()}
+      {renderNavItems(navItems)}
     </StyledDrawer>
   );
 };
