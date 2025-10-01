@@ -1,6 +1,7 @@
-import { Alert, Box, Button, TextField, Typography } from '@mui/material';
+import { Alert, Box, TextField, Typography } from '@mui/material';
 import { type FormEvent, useEffect, useState } from 'react';
 import BlurModal from '../BlurModal';
+import ModalActionButtons from '../common/ModalActionButtons';
 
 interface NetworkInterfaceIpEditModalProps {
   open: boolean;
@@ -43,37 +44,43 @@ const NetworkInterfaceIpEditModal = ({
     onSubmit({ ip, netmask });
   };
 
+  const isConfirmDisabled =
+    isSubmitting || !interfaceName || !ip || !netmask;
+
   return (
     <BlurModal
       open={open}
       onClose={onClose}
       title="ویرایش آدرس IP"
       actions={
-        <Button
-          type="submit"
-          form="network-interface-ip-edit-form"
-          variant="contained"
-          disabled={isSubmitting || !interfaceName || !ip || !netmask}
-          sx={{
-            px: 3,
-            py: 1,
-            fontWeight: 600,
-            background:
-              'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
-            color: 'var(--color-bg)',
-            '&:hover': {
+        <ModalActionButtons
+          confirmLabel="ثبت تغییرات"
+          loadingLabel="در حال ارسال..."
+          isLoading={isSubmitting}
+          disabled={isConfirmDisabled}
+          disableConfirmGradient
+          confirmProps={{
+            type: 'submit',
+            form: 'network-interface-ip-edit-form',
+            sx: {
+              px: 3,
+              py: 1,
+              fontWeight: 600,
               background:
-                'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
-            },
-            '&.Mui-disabled': {
-              backgroundColor:
-                'color-mix(in srgb, var(--color-secondary) 25%, transparent)',
-              color: 'var(--color-secondary)',
+                'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+              color: 'var(--color-bg)',
+              '&:hover': {
+                background:
+                  'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
+              },
+              '&.Mui-disabled': {
+                backgroundColor:
+                  'color-mix(in srgb, var(--color-secondary) 25%, transparent)',
+                color: 'var(--color-secondary)',
+              },
             },
           }}
-        >
-          {isSubmitting ? 'در حال ارسال...' : 'ثبت تغییرات'}
-        </Button>
+        />
       }
     >
       <Box

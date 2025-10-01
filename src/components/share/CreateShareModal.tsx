@@ -2,7 +2,6 @@ import {
   Alert,
   Autocomplete,
   Box,
-  Button,
   CircularProgress,
   InputAdornment,
   TextField,
@@ -16,15 +15,11 @@ import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
 import normalizeSambaUsers from '../../utils/sambaUsers';
 import BlurModal from '../BlurModal';
+import ModalActionButtons from '../common/ModalActionButtons';
 
 interface CreateShareModalProps {
   controller: UseCreateShareReturn;
 }
-
-const buttonBaseStyles = {
-  borderRadius: '3px',
-  fontWeight: 600,
-};
 
 const inputBaseStyles = {
   backgroundColor: 'var(--color-input-bg)',
@@ -124,36 +119,21 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
       onClose={closeCreateModal}
       title="ایجاد اشتراک جدید"
       actions={
-        <>
-          <Button
-            onClick={closeCreateModal}
-            variant="outlined"
-            color="inherit"
-            disabled={isCreating}
-            sx={{ ...buttonBaseStyles, px: 3 }}
-          >
-            انصراف
-          </Button>
-          <Button
-            type="submit"
-            form="create-share-form"
-            variant="contained"
-            disabled={isCreating}
-            sx={{
-              ...buttonBaseStyles,
-              px: 4,
-              background:
-                'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-              boxShadow: '0 14px 28px -18px rgba(0, 198, 169, 0.8)',
-              '&:hover': {
-                background:
-                  'linear-gradient(135deg, rgba(0, 198, 169, 0.95) 0%, rgba(18, 140, 200, 0.95) 100%)',
-              },
-            }}
-          >
-            {isCreating ? 'در حال ایجاد…' : 'ایجاد'}
-          </Button>
-        </>
+        <ModalActionButtons
+          onCancel={closeCreateModal}
+          confirmLabel="ایجاد"
+          loadingLabel="در حال ایجاد…"
+          isLoading={isCreating}
+          disabled={isCreating}
+          cancelProps={{
+            sx: { borderRadius: '3px', px: 3 },
+          }}
+          confirmProps={{
+            type: 'submit',
+            form: 'create-share-form',
+            sx: { borderRadius: '3px' },
+          }}
+        />
       }
     >
       <Box component="form" id="create-share-form" onSubmit={handleSubmit}>

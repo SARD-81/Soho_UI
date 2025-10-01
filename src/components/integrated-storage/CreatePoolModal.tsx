@@ -1,6 +1,5 @@
 import {
   Box,
-  Button,
   Checkbox,
   FormControl,
   FormControlLabel,
@@ -18,6 +17,7 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent } from 'react';
 import type { UseCreatePoolReturn } from '../../hooks/useCreatePool';
 import BlurModal from '../BlurModal';
+import ModalActionButtons from '../common/ModalActionButtons';
 
 export interface DeviceOption {
   label: string;
@@ -31,11 +31,6 @@ interface CreatePoolModalProps {
   isDiskLoading: boolean;
   diskError: Error | null;
 }
-
-const buttonBaseStyles = {
-  borderRadius: '3px',
-  fontWeight: 600,
-};
 
 const inputBaseStyles = {
   backgroundColor: 'var(--color-input-bg)',
@@ -89,36 +84,21 @@ const CreatePoolModal = ({
       onClose={closeCreateModal}
       title="ایجاد Pool جدید"
       actions={
-        <>
-          <Button
-            onClick={closeCreateModal}
-            variant="outlined"
-            color="inherit"
-            disabled={isCreating}
-            sx={{ ...buttonBaseStyles, px: 3 }}
-          >
-            انصراف
-          </Button>
-          <Button
-            type="submit"
-            form="create-pool-form"
-            variant="contained"
-            disabled={isCreating}
-            sx={{
-              ...buttonBaseStyles,
-              px: 4,
-              background:
-                'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-              boxShadow: '0 14px 28px -18px rgba(0, 198, 169, 0.8)',
-              '&:hover': {
-                background:
-                  'linear-gradient(135deg, rgba(0, 198, 169, 0.95) 0%, rgba(18, 140, 200, 0.95) 100%)',
-              },
-            }}
-          >
-            {isCreating ? 'در حال ایجاد…' : 'ایجاد'}
-          </Button>
-        </>
+        <ModalActionButtons
+          onCancel={closeCreateModal}
+          confirmLabel="ایجاد"
+          loadingLabel="در حال ایجاد…"
+          isLoading={isCreating}
+          disabled={isCreating}
+          cancelProps={{
+            sx: { borderRadius: '3px', px: 3 },
+          }}
+          confirmProps={{
+            type: 'submit',
+            form: 'create-pool-form',
+            sx: { borderRadius: '3px' },
+          }}
+        />
       }
     >
       <Box component="form" id="create-pool-form" onSubmit={handleSubmit}>
