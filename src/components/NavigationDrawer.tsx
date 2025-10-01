@@ -18,27 +18,39 @@ import { Link, useLocation } from 'react-router-dom';
 import type { NavigationDrawerProps } from '../@types/navigationDrawer';
 import { drawerWidth, navItems } from '../constants/navigationDrawer';
 
+const drawerPaperLayout = (theme: Theme): CSSObject => {
+  const drawerOffset = theme.spacing(6);
+
+  return {
+    position: 'sticky',
+    top: drawerOffset,
+    height: `calc(100svh - ${drawerOffset})`,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    backgroundColor: 'var(--color-card-bg)',
+    backdropFilter: 'saturate(140%) blur(8px)',
+    boxSizing: 'border-box' as const,
+  };
+};
+
 const openedMixin = (theme: Theme): CSSObject => ({
+  ...drawerPaperLayout(theme),
   width: drawerWidth,
   transition: theme.transitions.create('width', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.enteringScreen,
   }),
   overflowX: 'hidden',
-  backgroundColor: 'var(--color-card-bg)',
-  backdropFilter: 'saturate(140%) blur(8px)',
-  boxSizing: 'border-box' as const,
 });
 
 const closedMixin = (theme: Theme): CSSObject => ({
+  ...drawerPaperLayout(theme),
   transition: theme.transitions.create('width', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
   overflowX: 'hidden',
-  backgroundColor: 'var(--color-card-bg)',
-  backdropFilter: 'saturate(140%) blur(8px)',
-  boxSizing: 'border-box' as const,
   width: `calc(${theme.spacing(7)} + 1px)`,
   [theme.breakpoints.up('sm')]: {
     width: `calc(${theme.spacing(8)} + 1px)`,
@@ -60,6 +72,10 @@ const StyledDrawer = styled(MuiDrawer, {
     ...closedMixin(theme),
     '& .MuiDrawer-paper': closedMixin(theme),
   }),
+  '& .MuiDrawer-paper > .MuiList-root': {
+    flexGrow: 1,
+    overflowY: 'auto',
+  },
 }));
 
 const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
@@ -147,13 +163,11 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         sx={{
           '& .MuiDrawer-paper': {
             width: drawerWidth,
-            boxSizing: 'border-box',
-            backgroundColor: 'var(--color-card-bg)',
-            backdropFilter: 'saturate(140%) blur(8px)',
+            ...drawerPaperLayout(theme),
           },
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
+        <Toolbar variant="dense" sx={{ justifyContent: 'space-between' }}>
           <IconButton
             onClick={onClose}
             sx={{ color: 'var(--color-bg-primary)' }}
@@ -168,7 +182,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
   return (
     <StyledDrawer variant="permanent" open={open}>
-      <Toolbar sx={{ justifyContent: open ? 'flex-end' : 'center' }}>
+      <Toolbar variant="dense" sx={{ justifyContent: open ? 'flex-end' : 'center' }}>
         {open && (
           <IconButton
             onClick={onClose}
