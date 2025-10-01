@@ -1,4 +1,6 @@
 import {
+  Box,
+  Collapse,
   IconButton,
   List,
   ListItem,
@@ -13,7 +15,7 @@ import {
 import type { CSSObject, Theme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import React from 'react';
-import { MdClose } from 'react-icons/md';
+import { MdClose, MdKeyboardArrowDown, MdKeyboardArrowUp } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
 import type {
   NavigationDrawerProps,
@@ -72,6 +74,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const location = useLocation();
+  const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({});
 
   const handleItemClick = () => {
     if (!isDesktop) {
@@ -90,6 +93,27 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     );
   };
 
+  React.useEffect(() => {
+    setExpandedItems((prev) => {
+      const next = { ...prev };
+
+      const ensureActiveParentsExpanded = (items: NavigationItem[]) => {
+        items.forEach((item) => {
+          if (item.children?.length) {
+            if (isItemActive(item) && next[item.path] === undefined) {
+              next[item.path] = true;
+            }
+            ensureActiveParentsExpanded(item.children);
+          }
+        });
+      };
+
+      ensureActiveParentsExpanded(navItems);
+
+      return next;
+    });
+  }, [location.pathname]);
+
   const renderNavItems = (
     items: NavigationItem[],
     depth = 0,
@@ -97,6 +121,10 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     <List disablePadding={depth > 0} sx={{ pl: open && depth > 0 ? 2 : 0 }}>
       {items.map((item) => {
         const isActive = isItemActive(item);
+        const hasChildren = Boolean(item.children?.length);
+        const isExpanded = hasChildren
+          ? expandedItems[item.path] ?? false
+          : false;
 
         return (
           <React.Fragment key={`${item.text}-${item.path}`}>
@@ -152,9 +180,35 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                     sx: { fontFamily: 'var(--font-vazir)' },
                   }}
                 />
+                {hasChildren && open && (
+                  <Box
+                    component="span"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setExpandedItems((prev) => ({
+                        ...prev,
+                        [item.path]: !(prev[item.path] ?? false),
+                      }));
+                    }}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      ml: 'auto',
+                      color: 'var(--color-bg-primary)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isExpanded ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />}
+                  </Box>
+                )}
               </ListItemButton>
             </ListItem>
-            {item.children && renderNavItems(item.children, depth + 1)}
+            {item.children && (
+              <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                {renderNavItems(item.children, depth + 1)}
+              </Collapse>
+            )}
           </React.Fragment>
         );
       })}
