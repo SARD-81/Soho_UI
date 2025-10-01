@@ -9,4 +9,5 @@ export interface NavigationItem {
   text: string;
   icon: ReactNode;
   path: string;
+  children?: NavigationItem[];
 }

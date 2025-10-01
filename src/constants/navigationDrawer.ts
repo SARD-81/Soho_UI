@@ -30,8 +30,14 @@ export const navItems: NavigationItem[] = [
     icon: createElement(GrServices),
     path: '/services',
   },
-  { text: 'کاربران', icon: createElement(FiUsers), path: '/users' },
   { text: 'اشتراک گذاری', icon: createElement(FaShare), path: '/share' },
-  { text: 'تنظیمات', icon: createElement(RiSettings3Fill), path: '/settings' },
+  {
+    text: 'تنظیمات',
+    icon: createElement(RiSettings3Fill),
+    path: '/settings',
+    children: [
+      { text: 'کاربران', icon: createElement(FiUsers), path: '/users' },
+    ],
+  },
   { text: 'تاریخچه', icon: createElement(BiHistory), path: '/history' },
 ];
