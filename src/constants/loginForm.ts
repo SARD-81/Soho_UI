@@ -2,7 +2,7 @@ import type { SxProps, Theme } from '@mui/material';
 
 export const loginTextFieldSx: SxProps<Theme> = {
   '& .MuiOutlinedInput-root': {
-    borderRadius: 2.5,
+    borderRadius: '5px',
     color: 'var(--color-text)',
     backgroundColor: 'var(--color-input-bg)',
     border: '1px solid var(--color-input-border)',

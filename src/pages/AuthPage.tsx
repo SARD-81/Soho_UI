@@ -1,10 +1,4 @@
-import {
-  Box,
-  Card,
-  CardContent,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
 import ThemeToggle from '../components/ThemeToggle.tsx';
 import LoginForm from '../components/auth/LoginForm.tsx';
 import '../index.css';
@@ -43,7 +37,7 @@ export default function AuthPage() {
         sx={{
           width: '100%',
           maxWidth: 440,
-          borderRadius: 4,
+          borderRadius: '5px',
           backdropFilter: 'saturate(140%) blur(8px)',
           bgcolor: 'var(--color-card-bg)',
           boxShadow: (theme) =>

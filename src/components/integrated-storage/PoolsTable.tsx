@@ -11,6 +11,7 @@ import { useMemo } from 'react';
 import { MdDeleteOutline, MdEdit } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
+import { formatBytes } from '../../utils/formatters.ts';
 import DataTable from '../DataTable';
 import {
   clampPercent,
@@ -102,7 +103,7 @@ const PoolsTable = ({
                 sx={{
                   position: 'relative',
                   height: 5,
-                  borderRadius: '10px',
+                  borderRadius: '5px',
                   backgroundColor: 'rgba(0, 198, 169, 0.12)',
                   overflow: 'hidden',
                 }}
@@ -117,15 +118,21 @@ const PoolsTable = ({
                   }}
                 />
               </Box>
-              <Typography variant="body2" sx={{ color: 'var(--color-text)' }}>
-                {formatCapacity(pool.usedBytes)}
-                <Typography
-                  component="span"
-                  sx={{ mx: 0.5, color: 'var(--color-secondary)' }}
-                >
-                  از
-                </Typography>
-                {formatCapacity(pool.totalBytes)}
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'var(--color-text)',
+                  // fontFamily: 'var(--font-didot)',
+                }}
+              >
+                {formatBytes(pool.usedBytes)}
+                {/*<Typography*/}
+                {/*  component="span"*/}
+                {/*  sx={{ mx: 0.5, color: 'var(--color-secondary)' }}*/}
+                {/*>*/}
+                {/*  از*/}
+                {/*</Typography>*/}
+                {/*{formatCapacity(pool.totalBytes)}*/}
               </Typography>
             </Box>
           );
@@ -157,7 +164,7 @@ const PoolsTable = ({
                 fontWeight: 600,
                 backgroundColor: statusStyle.bg,
                 color: statusStyle.color,
-                borderRadius: 2,
+                borderRadius: '5px',
               }}
             />
           );

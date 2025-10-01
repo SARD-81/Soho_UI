@@ -95,7 +95,7 @@ const BlockStorage = () => {
             sx={{
               px: 3,
               py: 1.25,
-              borderRadius: '3px',
+              borderRadius: '5px',
               fontWeight: 700,
               fontSize: '0.95rem',
               background:

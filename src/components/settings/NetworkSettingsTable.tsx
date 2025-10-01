@@ -204,7 +204,7 @@ const NetworkSettingsTable = () => {
 
     const netmaskColumn: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'detail-netmask',
-      header: 'نت‌ماسک',
+      header: 'Netmask',
       renderCell: (row) => {
         if (row.ipv4Entries.length === 0) {
           return '—';
@@ -224,7 +224,7 @@ const NetworkSettingsTable = () => {
 
     const speedColumn: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'link-speed',
-      header: 'سرعت لینک',
+      header: 'link-speed',
       renderCell: (row) => row.speed,
     };
 

@@ -465,10 +465,10 @@ const Users = () => {
             </Button>
           </Box>
 
-          <Typography variant="body2" sx={{ color: 'var(--color-secondary)' }}>
-            از جدول زیر می‌توانید کاربران Samba را مشاهده، برای مقایسه انتخاب و
-            عملیات فعال‌سازی یا تغییر گذرواژه را انجام دهید.
-          </Typography>
+          {/*<Typography variant="body2" sx={{ color: 'var(--color-secondary)' }}>*/}
+          {/*  از جدول زیر می‌توانید کاربران Samba را مشاهده، برای مقایسه انتخاب و*/}
+          {/*  عملیات فعال‌سازی یا تغییر گذرواژه را انجام دهید.*/}
+          {/*</Typography>*/}
 
           <SambaUsersTable
             users={sambaUsers}

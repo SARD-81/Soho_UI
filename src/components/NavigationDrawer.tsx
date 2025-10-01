@@ -15,7 +15,11 @@ import {
 import type { CSSObject, Theme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import React from 'react';
-import { MdClose, MdKeyboardArrowDown, MdKeyboardArrowUp } from 'react-icons/md';
+import {
+  MdClose,
+  MdKeyboardArrowDown,
+  MdKeyboardArrowUp,
+} from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
 import type {
   NavigationDrawerProps,
@@ -74,7 +78,9 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({});
+  const [expandedItems, setExpandedItems] = React.useState<
+    Record<string, boolean>
+  >({});
 
   const handleItemClick = () => {
     if (!isDesktop) {
@@ -116,14 +122,14 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
   const renderNavItems = (
     items: NavigationItem[],
-    depth = 0,
+    depth = 0
   ): React.ReactNode => (
     <List disablePadding={depth > 0} sx={{ pl: open && depth > 0 ? 2 : 0 }}>
       {items.map((item) => {
         const isActive = isItemActive(item);
         const hasChildren = Boolean(item.children?.length);
         const isExpanded = hasChildren
-          ? expandedItems[item.path] ?? false
+          ? (expandedItems[item.path] ?? false)
           : false;
 
         return (
@@ -199,7 +205,11 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                       cursor: 'pointer',
                     }}
                   >
-                    {isExpanded ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />}
+                    {isExpanded ? (
+                      <MdKeyboardArrowUp />
+                    ) : (
+                      <MdKeyboardArrowDown />
+                    )}
                   </Box>
                 )}
               </ListItemButton>

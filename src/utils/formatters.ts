@@ -54,7 +54,7 @@ export const formatBytes = (
   const formattedValue = formatter.format(currentValue);
 
   return unitLabel
-    ? `${sign}${formattedValue} ${unitLabel}`
+    ? `${sign} ${unitLabel}${formattedValue}`
     : `${sign}${formattedValue}`;
 };
 

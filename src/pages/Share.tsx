@@ -46,22 +46,22 @@ const Share = () => {
   });
 
   const handleRestartSmbd = useCallback(() => {
-    if (serviceAction.isPending) {
-      toast(
-        'راه‌اندازی مجدد سرویس smbd.service در حال انجام است. لطفاً صبر کنید.'
-      );
-      return;
-    }
-
-    const toastId = toast.loading(
-      'در حال راه‌اندازی مجدد سرویس smbd.service...'
-    );
+    // if (serviceAction.isPending) {
+    //   toast(
+    //     'راه‌اندازی مجدد سرویس smbd.service در حال انجام است. لطفاً صبر کنید.'
+    //   );
+    //   return;
+    // }
+    //
+    // const toastId = toast.loading(
+    //   'در حال راه‌اندازی مجدد سرویس smbd.service...'
+    // );
 
     serviceAction.mutate(
       { service: 'smbd.service', action: 'restart' },
       {
         onSettled: () => {
-          toast.dismiss(toastId);
+          // toast.dismiss(toastId);
         },
       }
     );

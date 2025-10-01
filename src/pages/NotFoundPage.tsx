@@ -52,7 +52,7 @@ const NotFoundPage = () => {
           height: { xs: 200, sm: 260 },
           top: { xs: '-70px', sm: '-90px' },
           right: { xs: '-70px', sm: '-90px' },
-          borderRadius: '50%',
+          borderRadius: '5px',
           background:
             'linear-gradient(140deg, rgba(35,167,213,0.24), rgba(0,198,169,0.18))',
           filter: 'blur(0px)',
@@ -68,7 +68,7 @@ const NotFoundPage = () => {
           height: { xs: 220, sm: 280 },
           bottom: { xs: '-90px', sm: '-110px' },
           left: { xs: '-80px', sm: '-100px' },
-          borderRadius: '50%',
+          borderRadius: '5px',
           background:
             'linear-gradient(160deg, rgba(163,146,75,0.22), rgba(35,167,213,0.14))',
           filter: 'blur(0px)',
@@ -85,7 +85,7 @@ const NotFoundPage = () => {
           textAlign: 'center',
           px: { xs: 4, sm: 6 },
           py: { xs: 6, sm: 8 },
-          borderRadius: 4,
+          borderRadius: '5px',
           backgroundColor: 'var(--color-card-bg)',
           backdropFilter: 'saturate(160%) blur(12px)',
           border: '1px solid rgba(0, 0, 0, 0.08)',
@@ -148,7 +148,7 @@ const NotFoundPage = () => {
               startIcon={<MdHome size={22} />}
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
-                borderRadius: '12px',
+                borderRadius: '5px',
                 py: 1.5,
                 fontWeight: 600,
                 fontSize: '1rem',
@@ -173,7 +173,7 @@ const NotFoundPage = () => {
               startIcon={<MdArrowBack size={22} />}
               sx={{
                 minWidth: { xs: '100%', sm: 220 },
-                borderRadius: '12px',
+                borderRadius: '5px',
                 py: 1.5,
                 fontWeight: 600,
                 fontSize: '1rem',

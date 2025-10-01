@@ -1,6 +1,5 @@
 import {
   Box,
-  Button,
   Checkbox,
   FormControl,
   FormControlLabel,
@@ -18,6 +17,7 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent } from 'react';
 import type { UseCreatePoolReturn } from '../../hooks/useCreatePool';
 import BlurModal from '../BlurModal';
+import ModalActionButtons from '../common/ModalActionButtons';
 
 export interface DeviceOption {
   label: string;
@@ -31,11 +31,6 @@ interface CreatePoolModalProps {
   isDiskLoading: boolean;
   diskError: Error | null;
 }
-
-const buttonBaseStyles = {
-  borderRadius: '3px',
-  fontWeight: 600,
-};
 
 const inputBaseStyles = {
   backgroundColor: 'var(--color-input-bg)',
@@ -89,36 +84,21 @@ const CreatePoolModal = ({
       onClose={closeCreateModal}
       title="ایجاد Pool جدید"
       actions={
-        <>
-          <Button
-            onClick={closeCreateModal}
-            variant="outlined"
-            color="inherit"
-            disabled={isCreating}
-            sx={{ ...buttonBaseStyles, px: 3 }}
-          >
-            انصراف
-          </Button>
-          <Button
-            type="submit"
-            form="create-pool-form"
-            variant="contained"
-            disabled={isCreating}
-            sx={{
-              ...buttonBaseStyles,
-              px: 4,
-              background:
-                'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-              boxShadow: '0 14px 28px -18px rgba(0, 198, 169, 0.8)',
-              '&:hover': {
-                background:
-                  'linear-gradient(135deg, rgba(0, 198, 169, 0.95) 0%, rgba(18, 140, 200, 0.95) 100%)',
-              },
-            }}
-          >
-            {isCreating ? 'در حال ایجاد…' : 'ایجاد'}
-          </Button>
-        </>
+        <ModalActionButtons
+          onCancel={closeCreateModal}
+          confirmLabel="ایجاد"
+          loadingLabel="در حال ایجاد…"
+          isLoading={isCreating}
+          disabled={isCreating}
+          cancelProps={{
+            sx: { borderRadius: '3px', px: 3 },
+          }}
+          confirmProps={{
+            type: 'submit',
+            form: 'create-pool-form',
+            sx: { borderRadius: '3px' },
+          }}
+        />
       }
     >
       <Box component="form" id="create-pool-form" onSubmit={handleSubmit}>
@@ -128,10 +108,11 @@ const CreatePoolModal = ({
             value={poolName}
             onChange={handlePoolNameChange}
             autoFocus
+            placeholder={'نام یکتا برای Pool جدید وارد کنید.'}
             fullWidth
             size="small"
             error={Boolean(poolNameError)}
-            helperText={poolNameError ?? 'نام یکتا برای Pool جدید وارد کنید.'}
+            helperText={poolNameError}
             InputLabelProps={{ shrink: true }}
             InputProps={{ sx: inputBaseStyles }}
           />
@@ -172,7 +153,7 @@ const CreatePoolModal = ({
             </Typography>
 
             {isDiskLoading && (
-              <LinearProgress sx={{ borderRadius: '10px', height: 6 }} />
+              <LinearProgress sx={{ borderRadius: '5px', height: 6 }} />
             )}
 
             {diskError && !isDiskLoading && (
@@ -193,7 +174,7 @@ const CreatePoolModal = ({
                   maxHeight: 260,
                   overflowY: 'auto',
                   pr: 0.5,
-                  borderRadius: '10px',
+                  borderRadius: '5px',
                   border: '1px solid var(--color-input-border)',
                   backgroundColor: 'var(--color-input-bg)',
                 }}
@@ -235,7 +216,7 @@ const CreatePoolModal = ({
                       sx={{
                         alignItems: 'center',
                         m: 0,
-                        borderRadius: '8px',
+                        borderRadius: '5px',
                         px: 1,
                         '&:hover': {
                           backgroundColor: 'rgba(0, 198, 169, 0.08)',

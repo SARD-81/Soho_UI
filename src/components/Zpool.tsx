@@ -155,14 +155,14 @@ const Zpool = () => {
     return (
       <Box sx={cardSx}>
         <Typography variant="body2" sx={{ color: 'var(--color-error)' }}>
-          خطا در دریافت اطلاعات Pool ها: {error.message}
+          خطا در دریافت اطلاعات فضا های یکپارچه : {error.message}
         </Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={cardSx}>
+    <Box sx={{ ...cardSx, width: '100%' }}>
       <Typography
         variant="subtitle2"
         sx={{
@@ -175,7 +175,7 @@ const Zpool = () => {
         <Box component="span" sx={{ fontSize: 20 }}>
           🗃️
         </Box>
-        نمای کلی Pool های ZFS
+        نمای کلی فضا های یکپارچه
       </Typography>
 
       {failedPools.length > 0 && (
@@ -184,7 +184,7 @@ const Zpool = () => {
           variant="outlined"
           sx={{ direction: 'rtl', fontSize: '0.875rem' }}
         >
-          بازیابی اطلاعات برای Pool های زیر با خطا مواجه شد:{' '}
+          بازیابی اطلاعات برای فضا های یکپارچه زیر با خطا مواجه شد:{' '}
           {failedPools.join('، ')}
         </Alert>
       )}
@@ -252,12 +252,12 @@ const Zpool = () => {
                   label: 'استفاده‌شده',
                   value: formatBytes(boundedUsed),
                 },
-                { key: 'free', label: 'خالی', value: formatBytes(boundedFree) },
+                { key: 'free', label: 'آزاد', value: formatBytes(boundedFree) },
                 { key: 'total', label: 'کل', value: formatBytes(safeTotal) },
               ];
 
             if (pool.health) {
-              stats.push({ key: 'health', label: 'سلامت', value: pool.health });
+              stats.push({ key: 'health', label: 'وضعیت', value: pool.health });
             }
 
             const usedColor = theme.palette.primary.main;
@@ -275,7 +275,7 @@ const Zpool = () => {
                   flex: '1 1 260px',
                   minWidth: 240,
                   p: 2.5,
-                  borderRadius: 3,
+                  borderRadius: '5px',
                   bgcolor: 'var(--color-card-bg)',
                   border: `1px solid ${cardBorderColor}`,
                   boxShadow: '0 16px 32px rgba(0, 0, 0, 0.18)',
@@ -295,7 +295,7 @@ const Zpool = () => {
                       variant="caption"
                       sx={{ color: theme.palette.text.secondary }}
                     >
-                      وضعیت سلامت: {pool.health}
+                      وضعیت : {pool.health}
                     </Typography>
                   )}
                 </Stack>
@@ -346,7 +346,7 @@ const Zpool = () => {
                             return [
                               `${formatBytes(boundedUsed)} : استفاده‌شده`,
                               `${formatBytes(safeTotal)} : کل`,
-                              `${formatBytes(boundedFree)} : خالی`,
+                              `${formatBytes(boundedFree)} : آزاد`,
                               `${percentText} : درصد استفاده`,
                             ].join('\n');
                           }
@@ -399,7 +399,7 @@ const Zpool = () => {
                   sx={{
                     width: '100%',
                     bgcolor: statsBackground,
-                    borderRadius: 2,
+                    borderRadius: '5px',
                     px: 2,
                     py: 1.5,
                     border: `1px solid ${statsDividerColor}`,

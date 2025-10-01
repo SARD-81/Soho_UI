@@ -20,7 +20,7 @@ const Memory = () => {
 
   const percentFormatter = useMemo(
     () =>
-      new Intl.NumberFormat('fa-IR', {
+      new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 1,
         maximumFractionDigits: 1,
       }),
@@ -38,7 +38,7 @@ const Memory = () => {
     }
 
     return formatBytes(Math.max(numericValue, 0), {
-      locale: 'fa-IR',
+      locale: 'en-US',
       maximumFractionDigits: 2,
       units: BYTE_UNITS,
       fallback: '—',
@@ -233,24 +233,24 @@ const Memory = () => {
 
   const stats = [
     { key: 'total', label: 'کل', value: formatBytesForDisplay(safeTotal) },
-    {
-      key: 'available',
-      label: 'در دسترس',
-      value: formatBytesForDisplay(safeAvailable),
-    },
-    { key: 'percent', label: 'درصد استفاده', value: percentDisplay },
-    {
-      key: 'used',
-      label: 'استفاده‌شده',
-      value: formatBytesForDisplay(safeUsed),
-    },
-    { key: 'free', label: 'آزاد', value: formatBytesForDisplay(safeFree) },
-    {
-      key: 'buffers',
-      label: 'بافر',
-      value: formatBytesForDisplay(buffersValue),
-    },
-    { key: 'cached', label: 'کش', value: formatBytesForDisplay(cachedValue) },
+    // {
+    //   key: 'available',
+    //   label: 'در دسترس',
+    //   value: formatBytesForDisplay(safeAvailable),
+    // },
+    // { key: 'percent', label: 'درصد استفاده', value: percentDisplay },
+    // {
+    //   key: 'used',
+    //   label: 'استفاده‌شده',
+    //   value: formatBytesForDisplay(safeUsed),
+    // },
+    // { key: 'free', label: 'آزاد', value: formatBytesForDisplay(safeFree) },
+    // {
+    //   key: 'buffers',
+    //   label: 'بافر',
+    //   value: formatBytesForDisplay(buffersValue),
+    // },
+    // { key: 'cached', label: 'کش', value: formatBytesForDisplay(cachedValue) },
   ];
 
   return (
@@ -270,32 +270,32 @@ const Memory = () => {
         وضعیت حافظه
       </Typography>
 
-      <Box
-        sx={{
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 0.5,
-        }}
-      >
-        <Typography
-          variant="body2"
-          sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
-        >
-          درصد استفاده در لحظه
-        </Typography>
-        <Typography
-          variant="h3"
-          sx={{
-            fontFamily: 'var(--font-vazir)',
-            fontWeight: 600,
-            color: 'var(--color-primary)',
-          }}
-        >
-          {percentDisplay}
-        </Typography>
-      </Box>
+      {/*<Box*/}
+      {/*  sx={{*/}
+      {/*    textAlign: 'center',*/}
+      {/*    display: 'flex',*/}
+      {/*    flexDirection: 'column',*/}
+      {/*    alignItems: 'center',*/}
+      {/*    gap: 0.5,*/}
+      {/*  }}*/}
+      {/*>*/}
+      {/*  <Typography*/}
+      {/*    variant="body2"*/}
+      {/*    sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}*/}
+      {/*  >*/}
+      {/*    درصد استفاده در لحظه*/}
+      {/*  </Typography>*/}
+      {/*  <Typography*/}
+      {/*    variant="h3"*/}
+      {/*    sx={{*/}
+      {/*      fontFamily: 'var(--font-vazir)',*/}
+      {/*      fontWeight: 600,*/}
+      {/*      color: 'var(--color-primary)',*/}
+      {/*    }}*/}
+      {/*  >*/}
+      {/*    {percentDisplay}*/}
+      {/*  </Typography>*/}
+      {/*</Box>*/}
 
       <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
         <AppPieChart
@@ -367,7 +367,7 @@ const Memory = () => {
         sx={{
           width: '100%',
           bgcolor: statsBackground,
-          borderRadius: 2,
+          borderRadius: '5px',
           px: 2,
           py: 2,
           border: `1px solid ${statsDividerColor}`,

@@ -20,11 +20,7 @@ import {
 } from '../constants/disk';
 import { useDisk } from '../hooks/useDisk';
 import '../index.css';
-import {
-  formatBytes,
-  formatDuration,
-  formatLargeNumber,
-} from '../utils/formatters';
+import { formatBytes, formatDuration } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
 import AppBarChart from './charts/AppBarChart';
 import AppLineChart from './charts/AppLineChart';
@@ -254,7 +250,7 @@ export const DiskOverview = () => {
                   label: 'استفاده‌شده',
                   value: formatBytes(boundedUsed),
                 },
-                { key: 'free', label: 'خالی', value: formatBytes(boundedFree) },
+                { key: 'free', label: 'آزاد', value: formatBytes(boundedFree) },
                 { key: 'total', label: 'کل', value: formatBytes(safeTotal) },
                 { key: 'percent', label: 'درصد استفاده', value: percentText },
               ];
@@ -272,7 +268,7 @@ export const DiskOverview = () => {
                 sx={{
                   // width: '100%',
                   p: 2.5,
-                  borderRadius: 3,
+                  borderRadius: '5px',
                   bgcolor: 'var(--color-card-bg)',
                   border: `1px solid ${cardBorderColor}`,
                   boxShadow: '0 16px 32px rgba(0, 0, 0, 0.18)',
@@ -343,7 +339,7 @@ export const DiskOverview = () => {
                             return [
                               `${formatBytes(boundedUsed)} : استفاده‌شده `,
                               `${formatBytes(safeTotal)} : کل `,
-                              `${formatBytes(boundedFree)} : خالی `,
+                              `${formatBytes(boundedFree)} : آزاد `,
                               `${percentText} : درصد استفاده `,
                             ].join('\n');
                           }
@@ -396,7 +392,7 @@ export const DiskOverview = () => {
                   sx={{
                     width: '100%',
                     bgcolor: statsBackground,
-                    borderRadius: 2,
+                    borderRadius: '5px',
                     px: 2,
                     py: 1.5,
                     border: `1px solid ${statsDividerColor}`,
@@ -500,13 +496,13 @@ const Disk = () => {
     [topDevices]
   );
 
-  const ioCountMax = useMemo(() => {
-    const values = ioChartDataset.flatMap((item) => [
-      item.read_count,
-      item.write_count,
-    ]);
-    return Math.max(...values, 0);
-  }, [ioChartDataset]);
+  // const ioCountMax = useMemo(() => {
+  //   const values = ioChartDataset.flatMap((item) => [
+  //     item.read_count,
+  //     item.write_count,
+  //   ]);
+  //   return Math.max(...values, 0);
+  // }, [ioChartDataset]);
 
   const ioBytesMax = useMemo(() => {
     const values = ioChartDataset.flatMap((item) => [
@@ -519,40 +515,40 @@ const Disk = () => {
   const readColor = theme.palette.primary.main;
   const writeColor = theme.palette.warning.main;
 
-  const ioCountSeries = useMemo(
-    () => [
-      {
-        id: 'read_count',
-        dataKey: 'read_count',
-        label: 'تعداد خواندن',
-        color: readColor,
-        curve: 'monotoneX' as const,
-        showMark: true,
-        valueFormatter: (
-          value: number | null,
-          { dataIndex }: { dataIndex: number }
-        ) => {
-          const safeValue = Math.max(safeNumber(value), 0);
-          const busyTime = ioChartDataset[dataIndex]?.busy_time ?? 0;
-          const busyLine = `زمان مشغولی: ${formatDuration(busyTime)}`;
-          return `${formatLargeNumber(safeValue)} عملیات\n${busyLine}`;
-        },
-      },
-      {
-        id: 'write_count',
-        dataKey: 'write_count',
-        label: 'تعداد نوشتن',
-        color: writeColor,
-        curve: 'monotoneX' as const,
-        showMark: true,
-        valueFormatter: (value: number | null) => {
-          const safeValue = Math.max(safeNumber(value), 0);
-          return `${formatLargeNumber(safeValue)} عملیات`;
-        },
-      },
-    ],
-    [ioChartDataset, readColor, writeColor]
-  );
+  // const ioCountSeries = useMemo(
+  //   () => [
+  //     {
+  //       id: 'read_count',
+  //       dataKey: 'read_count',
+  //       label: 'تعداد خواندن',
+  //       color: readColor,
+  //       curve: 'monotoneX' as const,
+  //       showMark: true,
+  //       valueFormatter: (
+  //         value: number | null,
+  //         { dataIndex }: { dataIndex: number }
+  //       ) => {
+  //         const safeValue = Math.max(safeNumber(value), 0);
+  //         const busyTime = ioChartDataset[dataIndex]?.busy_time ?? 0;
+  //         const busyLine = `زمان مشغولی: ${formatDuration(busyTime)}`;
+  //         return `${formatLargeNumber(safeValue)} عملیات\n${busyLine}`;
+  //       },
+  //     },
+  //     {
+  //       id: 'write_count',
+  //       dataKey: 'write_count',
+  //       label: 'تعداد نوشتن',
+  //       color: writeColor,
+  //       curve: 'monotoneX' as const,
+  //       showMark: true,
+  //       valueFormatter: (value: number | null) => {
+  //         const safeValue = Math.max(safeNumber(value), 0);
+  //         return `${formatLargeNumber(safeValue)} عملیات`;
+  //       },
+  //     },
+  //   ],
+  //   [ioChartDataset, readColor, writeColor]
+  // );
 
   const ioBytesSeries = useMemo(
     () => [
@@ -710,47 +706,47 @@ const Disk = () => {
         </Typography>
         {ioChartDataset.length > 0 ? (
           <Stack spacing={4}>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                تعداد عملیات خواندن/نوشتن
-              </Typography>
-              <Box sx={{ width: '100%', direction: 'ltr' }}>
-                <AppLineChart
-                  dataset={ioChartDataset}
-                  series={ioCountSeries}
-                  xAxis={[
-                    {
-                      dataKey: 'device',
-                      scaleType: 'band',
-                      tickLabelStyle: { fill: 'var(--color-text)' },
-                      labelStyle: { fill: 'var(--color-text)' },
-                    },
-                  ]}
-                  yAxis={[
-                    {
-                      min: 0,
-                      max: ioCountMax > 0 ? ioCountMax : undefined,
-                      label: 'تعداد عملیات',
-                      valueFormatter: (value: number) =>
-                        formatLargeNumber(Math.max(value, 0)),
-                      tickLabelStyle: { fill: 'var(--color-text)' },
-                      labelStyle: { fill: 'var(--color-text)' },
-                      position: 'left',
-                      tickSize: 38,
-                      width: 96,
-                    },
-                  ]}
-                  axisHighlight={{ x: 'line' }}
-                  grid={{ horizontal: true, vertical: false }}
-                  height={300}
-                  margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
-                  slotProps={{
-                    tooltip: { sx: tooltipMultilineSx },
-                  }}
-                />
-              </Box>
-            </Box>
-            <Divider sx={{ my: 1 }} />
+            {/*<Box>*/}
+            {/*  <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>*/}
+            {/*    تعداد عملیات خواندن/نوشتن*/}
+            {/*  </Typography>*/}
+            {/*  <Box sx={{ width: '100%', direction: 'ltr' }}>*/}
+            {/*    <AppLineChart*/}
+            {/*      dataset={ioChartDataset}*/}
+            {/*      series={ioCountSeries}*/}
+            {/*      xAxis={[*/}
+            {/*        {*/}
+            {/*          dataKey: 'device',*/}
+            {/*          scaleType: 'band',*/}
+            {/*          tickLabelStyle: { fill: 'var(--color-text)' },*/}
+            {/*          labelStyle: { fill: 'var(--color-text)' },*/}
+            {/*        },*/}
+            {/*      ]}*/}
+            {/*      yAxis={[*/}
+            {/*        {*/}
+            {/*          min: 0,*/}
+            {/*          max: ioCountMax > 0 ? ioCountMax : undefined,*/}
+            {/*          label: 'تعداد عملیات',*/}
+            {/*          valueFormatter: (value: number) =>*/}
+            {/*            formatLargeNumber(Math.max(value, 0)),*/}
+            {/*          tickLabelStyle: { fill: 'var(--color-text)' },*/}
+            {/*          labelStyle: { fill: 'var(--color-text)' },*/}
+            {/*          position: 'left',*/}
+            {/*          tickSize: 38,*/}
+            {/*          width: 96,*/}
+            {/*        },*/}
+            {/*      ]}*/}
+            {/*      axisHighlight={{ x: 'line' }}*/}
+            {/*      grid={{ horizontal: true, vertical: false }}*/}
+            {/*      height={300}*/}
+            {/*      margin={{ top: 40, right: 32, left: 56, bottom: 64 }}*/}
+            {/*      slotProps={{*/}
+            {/*        tooltip: { sx: tooltipMultilineSx },*/}
+            {/*      }}*/}
+            {/*    />*/}
+            {/*  </Box>*/}
+            {/*</Box>*/}
+            {/*<Divider sx={{ my: 1 }} />*/}
             <Box>
               <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
                 حجم داده خواندن/نوشتن

@@ -75,16 +75,16 @@ const SambaUsersTable = ({
           </Typography>
         ),
       },
-      {
-        id: 'domain',
-        header: 'دامنه',
-        align: 'left',
-        renderCell: (user) => (
-          <Typography sx={{ color: 'var(--color-text)' }}>
-            {valueOrDash(user.domain)}
-          </Typography>
-        ),
-      },
+      // {
+      //   id: 'domain',
+      //   header: 'دامنه',
+      //   align: 'left',
+      //   renderCell: (user) => (
+      //     <Typography sx={{ color: 'var(--color-text)' }}>
+      //       {valueOrDash(user.domain)}
+      //     </Typography>
+      //   ),
+      // },
       {
         id: 'profile-path',
         header: 'مسیر پروفایل',

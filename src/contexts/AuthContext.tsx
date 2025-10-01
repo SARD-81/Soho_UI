@@ -31,16 +31,16 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    () => !!sessionStorage.getItem('authToken')
+    () => !!localStorage.getItem('authToken')
   );
   // const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [username, setUsername] = useState<string | null>(() =>
-    sessionStorage.getItem('username')
+    localStorage.getItem('username')
   );
 
   useEffect(() => {
-    const token = sessionStorage.getItem('authToken');
-    const savedUsername = sessionStorage.getItem('username');
+    const token = localStorage.getItem('authToken');
+    const savedUsername = localStorage.getItem('username');
 
     if (token) {
       setIsAuthenticated(true);
@@ -49,30 +49,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const loginAction = useCallback((token: string, username: string) => {
-    sessionStorage.setItem('authToken', token);
-    sessionStorage.setItem('username', username);
+    localStorage.setItem('authToken', token);
+    localStorage.setItem('username', username);
     setIsAuthenticated(true);
     setUsername(username);
   }, []);
 
   const logout = useCallback(() => {
-    sessionStorage.removeItem('authToken');
-    sessionStorage.removeItem('username');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('username');
     setIsAuthenticated(false);
     setUsername(null);
   }, []);
-
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      logout();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [logout]);
 
   const value = useMemo(
     () => ({ isAuthenticated, loginAction, logout, username }),

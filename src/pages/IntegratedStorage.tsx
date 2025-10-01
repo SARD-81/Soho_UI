@@ -21,19 +21,21 @@ import {
 const IntegratedStorage = () => {
   const createPool = useCreatePool({
     onSuccess: (poolName) => {
-      toast.success(`Pool ${poolName} با موفقیت ایجاد شد.`);
+      toast.success(`فضای یکپارچه ${poolName} با موفقیت ایجاد شد.`);
     },
     onError: (errorMessage) => {
-      toast.error(`ایجاد Pool با خطا مواجه شد: ${errorMessage}`);
+      toast.error(`ایجاد فضای یکپارچه با خطا مواجه شد: ${errorMessage}`);
     },
   });
 
   const poolDeletion = useDeleteZpool({
     onSuccess: (poolName) => {
-      toast.success(`Pool ${poolName} با موفقیت حذف شد.`);
+      toast.success(`فضای یکپارچه ${poolName} با موفقیت حذف شد.`);
     },
     onError: (error, poolName) => {
-      toast.error(`حذف Pool ${poolName} با خطا مواجه شد: ${error.message}`);
+      toast.error(
+        `حذف فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`
+      );
     },
   });
 

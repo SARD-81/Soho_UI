@@ -26,7 +26,7 @@ function LoginPage() {
         sx={{
           width: '100%',
           maxWidth: 440,
-          borderRadius: 4,
+          borderRadius: '5px',
           backdropFilter: 'saturate(140%) blur(8px)',
           bgcolor: 'var(--color-card-bg)',
           boxShadow: (theme) =>
@@ -46,7 +46,7 @@ function LoginPage() {
         className="shadow-2xl"
       >
         <ThemeToggle />
-        <CardContent sx={{ p: { xs: 4, md: 5 } }}>
+        <CardContent sx={{ py: { xs: 4, md: 5 }, px: { xs: 2, md: 3 } }}>
           <Stack spacing={2.5} alignItems="center">
             <Box sx={{ width: 100, height: 100 }}>
               <img
@@ -66,19 +66,19 @@ function LoginPage() {
                 fontWeight={900}
                 letterSpacing={0.4}
                 sx={{
-                  marginTop: '-15px',
+                  marginTop: '-10px',
                   color: 'var(--color-primary)',
-                  fontFamily: 'var(--font-didot)',
+                  fontFamily: 'var(--font-vazir)',
                 }}
               >
-                Soho
+                ذخیره ساز اداری استورکس
               </Typography>
             </Box>
 
             <Box textAlign="center">
               <Typography
-                variant="h5"
-                fontWeight={600}
+                variant="h6"
+                fontWeight={500}
                 letterSpacing={0.4}
                 sx={{ color: 'var(--color-primary)' }}
               >

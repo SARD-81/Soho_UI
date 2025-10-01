@@ -101,16 +101,16 @@ const Cpu = () => {
       : 'rgba(0, 0, 0, 0.03)';
 
   const stats = [
-    {
-      key: 'percent',
-      label: 'درصد استفاده',
-      value: `${percentFormatter.format(Math.round(cpuPercent))}٪`,
-    },
-    { key: 'freq-current', label: 'فرکانس فعلی', value: frequencyText },
-    { key: 'freq-min', label: 'کمینه فرکانس', value: frequencyMinText },
-    { key: 'freq-max', label: 'بیشینه فرکانس', value: frequencyMaxText },
-    { key: 'physical', label: 'هسته‌های فیزیکی', value: physicalCoresText },
-    { key: 'logical', label: 'هسته‌های منطقی', value: logicalCoresText },
+    // {
+    //   key: 'percent',
+    //   label: 'درصد استفاده',
+    //   value: `${percentFormatter.format(Math.round(cpuPercent))}٪`,
+    // },
+    // { key: 'freq-current', label: 'فرکانس فعلی', value: frequencyText },
+    // { key: 'freq-min', label: 'کمینه فرکانس', value: frequencyMinText },
+    // { key: 'freq-max', label: 'بیشینه فرکانس', value: frequencyMaxText },
+    // { key: 'physical', label: 'هسته‌های فیزیکی', value: physicalCoresText },
+    // { key: 'logical', label: 'هسته‌های منطقی', value: logicalCoresText },
     { key: 'total', label: 'مجموع هسته‌ها', value: totalCoresText },
   ];
 
@@ -253,7 +253,7 @@ const Cpu = () => {
         sx={{
           width: '100%',
           bgcolor: statsBackground,
-          borderRadius: 2,
+          borderRadius: '5px',
           alignSelf: 'end',
           px: 2,
           py: 2,

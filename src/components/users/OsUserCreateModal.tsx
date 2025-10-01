@@ -1,4 +1,4 @@
-import { Alert, Box, Button, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, TextField } from '@mui/material';
 import { type FormEvent, useEffect, useState } from 'react';
 import type { CreateOsUserPayload } from '../../@types/users';
 import { DEFAULT_LOGIN_SHELL } from '../../constants/users';
@@ -53,6 +53,7 @@ const OsUserCreateModal = ({
           variant="contained"
           disabled={isSubmitting || !username.trim()}
           sx={{
+            marginX: 'auto',
             px: 3,
             py: 1,
             fontWeight: 600,
@@ -80,10 +81,10 @@ const OsUserCreateModal = ({
         onSubmit={handleSubmit}
         sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
       >
-        <Typography sx={{ color: 'var(--color-secondary)' }}>
-          لطفاً اطلاعات کاربر جدید را وارد کنید. پوسته ورود به صورت پیش‌فرض
-          تنظیم شده است.
-        </Typography>
+        {/*<Typography sx={{ color: 'var(--color-secondary)' }}>*/}
+        {/*  لطفاً اطلاعات کاربر جدید را وارد کنید. پوسته ورود به صورت پیش‌فرض*/}
+        {/*  تنظیم شده است.*/}
+        {/*</Typography>*/}
 
         <TextField
           label="نام کاربری"
@@ -96,7 +97,7 @@ const OsUserCreateModal = ({
           InputProps={{
             sx: {
               backgroundColor: 'var(--color-input-bg)',
-              borderRadius: 1,
+              borderRadius: '5px',
               '& .MuiInputBase-input': { color: 'var(--color-text)' },
             },
           }}
@@ -111,7 +112,7 @@ const OsUserCreateModal = ({
             sx: {
               direction: 'ltr',
               backgroundColor: 'var(--color-input-bg)',
-              borderRadius: 1,
+              borderRadius: '5px',
               '& .MuiInputBase-input': { color: 'var(--color-secondary)' },
             },
           }}

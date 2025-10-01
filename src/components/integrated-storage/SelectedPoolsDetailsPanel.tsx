@@ -43,7 +43,7 @@ const SelectedPoolsDetailsPanel = ({
     <Box
       sx={{
         mt: 3,
-        borderRadius: 3,
+        borderRadius: '5px',
         border: '1px solid var(--color-input-border)',
         backgroundColor: 'var(--color-card-bg)',
         boxShadow: '0 20px 45px -25px rgba(0, 0, 0, 0.35)',
@@ -78,7 +78,7 @@ const SelectedPoolsDetailsPanel = ({
             <Box
               key={poolName}
               sx={{
-                borderRadius: 2,
+                borderRadius: '5px',
                 border: `1px solid ${dividerColor}`,
                 backgroundColor:
                   theme.palette.mode === 'dark'
@@ -148,7 +148,7 @@ const SelectedPoolsDetailsPanel = ({
                   sx={{
                     width: '100%',
                     bgcolor: listBackground,
-                    borderRadius: 2,
+                    borderRadius: '5px',
                     px: 2,
                     py: 2,
                     border: `1px solid ${dividerColor}`,
