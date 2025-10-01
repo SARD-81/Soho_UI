@@ -20,7 +20,7 @@ const Memory = () => {
 
   const percentFormatter = useMemo(
     () =>
-      new Intl.NumberFormat('fa-IR', {
+      new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 1,
         maximumFractionDigits: 1,
       }),
@@ -38,7 +38,7 @@ const Memory = () => {
     }
 
     return formatBytes(Math.max(numericValue, 0), {
-      locale: 'fa-IR',
+      locale: 'en-US',
       maximumFractionDigits: 2,
       units: BYTE_UNITS,
       fallback: '—',
@@ -233,24 +233,24 @@ const Memory = () => {
 
   const stats = [
     { key: 'total', label: 'کل', value: formatBytesForDisplay(safeTotal) },
-    {
-      key: 'available',
-      label: 'در دسترس',
-      value: formatBytesForDisplay(safeAvailable),
-    },
-    { key: 'percent', label: 'درصد استفاده', value: percentDisplay },
-    {
-      key: 'used',
-      label: 'استفاده‌شده',
-      value: formatBytesForDisplay(safeUsed),
-    },
-    { key: 'free', label: 'آزاد', value: formatBytesForDisplay(safeFree) },
-    {
-      key: 'buffers',
-      label: 'بافر',
-      value: formatBytesForDisplay(buffersValue),
-    },
-    { key: 'cached', label: 'کش', value: formatBytesForDisplay(cachedValue) },
+    // {
+    //   key: 'available',
+    //   label: 'در دسترس',
+    //   value: formatBytesForDisplay(safeAvailable),
+    // },
+    // { key: 'percent', label: 'درصد استفاده', value: percentDisplay },
+    // {
+    //   key: 'used',
+    //   label: 'استفاده‌شده',
+    //   value: formatBytesForDisplay(safeUsed),
+    // },
+    // { key: 'free', label: 'آزاد', value: formatBytesForDisplay(safeFree) },
+    // {
+    //   key: 'buffers',
+    //   label: 'بافر',
+    //   value: formatBytesForDisplay(buffersValue),
+    // },
+    // { key: 'cached', label: 'کش', value: formatBytesForDisplay(cachedValue) },
   ];
 
   return (
