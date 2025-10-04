@@ -23,6 +23,7 @@ export interface DeviceOption {
   label: string;
   value: string;
   tooltip: string;
+  wwn: string;
 }
 
 interface CreatePoolModalProps {
@@ -205,12 +206,24 @@ const CreatePoolModal = ({
                       }
                       label={
                         <Tooltip title={device.tooltip} placement="top" arrow>
-                          <Typography
-                            component="span"
-                            sx={{ color: 'var(--color-text)' }}
-                          >
-                            {device.label}
-                          </Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                            <Typography
+                              component="span"
+                              sx={{ color: 'var(--color-text)', fontWeight: 600 }}
+                            >
+                              {device.label}
+                            </Typography>
+                            <Typography
+                              component="span"
+                              sx={{
+                                color: 'var(--color-secondary)',
+                                fontSize: '0.78rem',
+                                direction: 'ltr',
+                              }}
+                            >
+                              {device.wwn}
+                            </Typography>
+                          </Box>
                         </Tooltip>
                       }
                       sx={{
