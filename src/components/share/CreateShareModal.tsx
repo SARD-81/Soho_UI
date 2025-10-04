@@ -35,6 +35,25 @@ const inputBaseStyles = {
   },
 };
 
+const autocompletePaperSlotProps = {
+  paper: {
+    sx: {
+      bgcolor: 'var(--color-input-bg)',
+      '& .MuiAutocomplete-option': {
+        color: 'var(--color-text)',
+        '&.Mui-focused': {
+          bgcolor: 'var(--color-input-focus-border)',
+          color: '#fff',
+        },
+        '&[aria-selected="true"]': {
+          bgcolor: 'var(--color-primary)',
+          color: '#fff',
+        },
+      },
+    },
+  },
+} as const;
+
 const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   const {
     isOpen,
@@ -151,14 +170,13 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             size="small"
             loading={filesystemMountpointsQuery.isLoading}
             noOptionsText="مسیر (mountpoint) یافت نشد"
+            slotProps={autocompletePaperSlotProps}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label="مسیر کامل"
                 autoFocus
-                placeholder={
-                  'مسیر کامل پوشه اشتراک را وارد کنید (مانند /mnt/data/share)'
-                }
+                placeholder="مانند /mnt/data/share"
                 error={hasPathError}
                 helperText={pathHelperText}
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
@@ -191,30 +209,12 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             loading={sambaUsersQuery.isLoading || sambaUsersQuery.isFetching}
             noOptionsText="کاربری یافت نشد"
             disabled={sambaUsersQuery.isError}
-            slotProps={{
-              paper: {
-                sx: {
-                  bgcolor: 'var(--color-input-bg)',
-                  '& .MuiAutocomplete-option': {
-                    color: 'var(--color-text)',
-                    // item hovered or keyboard-focused
-                    '&.Mui-focused': {
-                      bgcolor: 'var(--color-input-focus-border)',
-                      color: '#fff',
-                    },
-                    // item selected (aria-selected="true")
-                    '&[aria-selected="true"]': {
-                      bgcolor: 'var(--color-primary)',
-                      color: '#fff',
-                    },
-                  },
-                },
-              },
-            }}
+            slotProps={autocompletePaperSlotProps}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label="کاربران مجاز"
+                placeholder="نام کاربر مجاز را انتخاب یا جست‌وجو کنید"
                 error={Boolean(validUsersError)}
                 helperText={
                   validUsersError ??
