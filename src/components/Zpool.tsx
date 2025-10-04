@@ -379,7 +379,7 @@ const Zpool = () => {
                     <Typography
                       variant="h5"
                       sx={{
-                        fontFamily: 'var(--font-didot)',
+                        fontFamily: 'var(--font-vazir)',
                         fontWeight: 700,
                         color: 'var(--color-primary)',
                       }}

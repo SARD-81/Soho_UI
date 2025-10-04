@@ -255,7 +255,7 @@ const Memory = () => {
 
   const chartOuterRadius = Math.min(110, chartSize / 2 - 8);
   const chartInnerRadius = Math.max(
-    chartOuterRadius - 24,
+    chartOuterRadius - 64,
     chartOuterRadius * 0.22
   );
   const chartFadedInnerRadius = Math.max(
@@ -394,7 +394,7 @@ const Memory = () => {
           <Typography
             variant="h5"
             sx={{
-              fontFamily: 'var(--font-didot)',
+              fontFamily: 'var(--font-vazir)',
               fontWeight: 700,
               color: 'var(--color-primary)',
             }}

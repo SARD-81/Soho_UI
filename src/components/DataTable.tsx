@@ -228,7 +228,7 @@ const DataTable = <T,>({
                   <Typography sx={{ color: 'var(--color-secondary)' }}>
                     {pagination.rowCountFormatter
                       ? pagination.rowCountFormatter(pagination.count)
-                      : `تعداد سطرها: ${pagination.count.toLocaleString('fa-IR')}`}
+                      : `تعداد سطرها: ${pagination.count.toLocaleString('en-US')}`}
                   </Typography>
                   <TablePagination
                     component="div"

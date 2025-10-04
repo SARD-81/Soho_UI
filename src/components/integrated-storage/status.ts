@@ -79,7 +79,7 @@ export const resolveStatus = (health?: string) => {
 
 export const formatCapacity = (value: number | null | undefined) =>
   formatBytes(value, {
-    locale: 'fa-IR',
+    locale: 'en-US',
     maximumFractionDigits: 1,
     fallback: '-',
   });

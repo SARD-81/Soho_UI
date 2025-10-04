@@ -38,7 +38,7 @@ const Cpu = () => {
   const cardSx = createCardSx(theme);
 
   const percentFormatter = useMemo(
-    () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }),
+    () => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }),
     []
   );
   // const frequencyFormatter = useMemo(
@@ -46,7 +46,7 @@ const Cpu = () => {
   //   []
   // );
   const integerFormatter = useMemo(
-    () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }),
+    () => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }),
     []
   );
 

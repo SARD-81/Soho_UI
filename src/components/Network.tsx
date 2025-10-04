@@ -48,7 +48,7 @@ const Network = () => {
   }, [data]);
 
   const speedFormatter = useMemo(
-    () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }),
+    () => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }),
     []
   );
 
@@ -306,12 +306,16 @@ const Network = () => {
                         sx={{
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: 0.25,
+                          gap: 0.85,
                         }}
                       >
                         <Typography
                           variant="body2"
-                          sx={{ color: theme.palette.text.secondary }}
+                          sx={{
+                            color: theme.palette.text.secondary,
+                            marginLeft: 2,
+                            alignSelf: 'self-end',
+                          }}
                         >
                           {`${labelPrefix}${entry.address}`}
                         </Typography>

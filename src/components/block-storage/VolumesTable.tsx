@@ -23,6 +23,14 @@ interface VolumesTableProps {
 const valueTypographySx = {
   fontWeight: 600,
   color: 'var(--color-text)',
+} as const;
+
+const numericValueTypographySx = {
+  ...valueTypographySx,
+  display: 'block',
+  textAlign: 'right' as const,
+  direction: 'ltr' as const,
+  fontVariantNumeric: 'tabular-nums',
 };
 
 const VolumesTable = ({
@@ -70,11 +78,21 @@ const VolumesTable = ({
         id: `attribute-${key}`,
         header: key,
         align: 'left',
-        renderCell: (volume) => (
-          <Typography sx={valueTypographySx}>
-            {volume.attributeMap[key] ?? '—'}
-          </Typography>
-        ),
+        renderCell: (volume) => {
+          const rawValue = volume.attributeMap[key];
+          const isNumericValue =
+            typeof rawValue === 'number' && Number.isFinite(rawValue);
+
+          return (
+            <Typography
+              sx={isNumericValue ? numericValueTypographySx : valueTypographySx}
+            >
+              {isNumericValue
+                ? new Intl.NumberFormat('en-US').format(rawValue)
+                : (rawValue ?? '—')}
+            </Typography>
+          );
+        },
       })
     );
 

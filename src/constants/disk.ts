@@ -68,7 +68,7 @@ export const safeNumber = (value: unknown) => {
   return Number.isFinite(numeric) ? numeric : 0;
 };
 
-export const diskPercentFormatter = new Intl.NumberFormat('fa-IR', {
+export const diskPercentFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
 });
