@@ -253,6 +253,16 @@ const Memory = () => {
     // { key: 'cached', label: 'کش', value: formatBytesForDisplay(cachedValue) },
   ];
 
+  const chartOuterRadius = Math.min(110, chartSize / 2 - 8);
+  const chartInnerRadius = Math.max(
+    chartOuterRadius - 64,
+    chartOuterRadius * 0.22
+  );
+  const chartFadedInnerRadius = Math.max(
+    chartInnerRadius - 6,
+    chartInnerRadius * 0.9
+  );
+
   return (
     <Box sx={{ ...cardSx, width: '100%' }}>
       <Typography
@@ -297,7 +307,14 @@ const Memory = () => {
       {/*  </Typography>*/}
       {/*</Box>*/}
 
-      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          position: 'relative',
+        }}
+      >
         <AppPieChart
           series={[
             {
@@ -316,14 +333,15 @@ const Memory = () => {
                   color: remainingArcColor,
                 },
               ],
-              outerRadius: 120,
+              outerRadius: chartOuterRadius,
+              innerRadius: chartInnerRadius,
               paddingAngle: 2,
               cornerRadius: 6,
               startAngle: 0,
               endAngle: 360,
               highlightScope: { fade: 'global', highlight: 'item' },
               faded: {
-                innerRadius: 70,
+                innerRadius: chartFadedInnerRadius,
                 additionalRadius: -18,
                 color: fadedArcColor,
               },
@@ -361,6 +379,35 @@ const Memory = () => {
             },
           }}
         />
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            pointerEvents: 'none',
+            gap: 0.5,
+          }}
+        >
+          <Typography
+            variant="h5"
+            sx={{
+              fontFamily: 'var(--font-vazir)',
+              fontWeight: 700,
+              color: 'var(--color-primary)',
+            }}
+          >
+            {percentDisplay}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: theme.palette.text.secondary }}
+          >
+            درصد استفاده
+          </Typography>
+        </Box>
       </Box>
 
       <Box
@@ -399,7 +446,11 @@ const Memory = () => {
             </Typography>
             <Typography
               variant="subtitle2"
-              sx={{ fontWeight: 700, color: 'var(--color-primary)' }}
+              sx={{
+                fontWeight: 700,
+                color: 'var(--color-primary)',
+                direction: 'rtl',
+              }}
             >
               {stat.value}
             </Typography>

@@ -8,7 +8,6 @@ import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDele
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
-import SelectedPoolsDetailsPanel from '../components/integrated-storage/SelectedPoolsDetailsPanel';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { useDiskWwnMap } from '../hooks/useDisk';
@@ -78,7 +77,8 @@ const IntegratedStorage = () => {
         return {
           label: deviceLabel,
           value: wwnValue,
-          tooltip: wwnValue,
+          tooltip: normalizedWwnPath,
+          wwn: normalizedWwnPath,
         } satisfies DeviceOption;
       })
       .filter((option): option is DeviceOption => option !== null)
@@ -100,7 +100,7 @@ const IntegratedStorage = () => {
 
   const handleEdit = useCallback((pool: ZpoolCapacityEntry) => {
     if (typeof window !== 'undefined') {
-      window.alert(`ویرایش Pool ${pool.name}`);
+      window.alert(`ویرایش فضای یکپارچه ${pool.name}`);
     }
   }, []);
 
@@ -124,7 +124,7 @@ const IntegratedStorage = () => {
           }
 
           if (prev.length >= 3) {
-            toast.error('امکان مقایسه بیش از سه Pool وجود ندارد.');
+            toast.error('امکان مقایسه بیش از سه فضای یکپارچه وجود ندارد.');
             return prev;
           }
 
@@ -225,12 +225,12 @@ const IntegratedStorage = () => {
         onToggleSelect={handleToggleSelect}
       />
 
-      {selectedPools.length > 0 && (
-        <SelectedPoolsDetailsPanel
-          items={selectedPoolDetailItems}
-          onRemove={handleRemoveSelected}
-        />
-      )}
+      {/*{selectedPools.length > 0 && (*/}
+      {/*  <SelectedPoolsDetailsPanel*/}
+      {/*    items={selectedPoolDetailItems}*/}
+      {/*    onRemove={handleRemoveSelected}*/}
+      {/*  />*/}
+      {/*)}*/}
 
       <ConfirmDeletePoolModal controller={poolDeletion} />
     </Box>

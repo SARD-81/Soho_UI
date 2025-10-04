@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout.tsx';
 import BlockStorage from '../pages/BlockStorage.tsx';
 import Dashboard from '../pages/Dashboard.tsx';
+import FileSystem from '../pages/FileSystem.tsx';
 import History from '../pages/History.tsx';
 import IntegratedStorage from '../pages/IntegratedStorage.tsx';
 import LoginPage from '../pages/LoginPage.tsx';
@@ -29,6 +30,7 @@ const router = createBrowserRouter([
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'Integrated-space', element: <IntegratedStorage /> },
       { path: 'block-space', element: <BlockStorage /> },
+      { path: 'file-system', element: <FileSystem /> },
       { path: 'services', element: <Services /> },
       { path: 'users', element: <Users /> },
       { path: 'settings', element: <Settings /> },

@@ -14,10 +14,19 @@ import {
   Typography,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { useQuery } from '@tanstack/react-query';
 import type { ChangeEvent } from 'react';
+import { useMemo } from 'react';
 import type { UseCreatePoolReturn } from '../../hooks/useCreatePool';
+import axiosInstance from '../../lib/axiosInstance';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
+
+interface FreeDiskResponse {
+  ok: boolean;
+  error: string | null;
+  data: string[];
+}
 
 export interface DeviceOption {
   label: string;
@@ -27,9 +36,6 @@ export interface DeviceOption {
 
 interface CreatePoolModalProps {
   controller: UseCreatePoolReturn;
-  deviceOptions: DeviceOption[];
-  isDiskLoading: boolean;
-  diskError: Error | null;
 }
 
 const inputBaseStyles = {
@@ -48,12 +54,7 @@ const inputBaseStyles = {
   },
 };
 
-const CreatePoolModal = ({
-  controller,
-  deviceOptions,
-  isDiskLoading,
-  diskError,
-}: CreatePoolModalProps) => {
+const CreatePoolModal = ({ controller }: CreatePoolModalProps) => {
   const {
     isOpen,
     closeCreateModal,
@@ -70,6 +71,37 @@ const CreatePoolModal = ({
     isCreating,
   } = controller;
 
+  const {
+    data: freeDiskResponse,
+    isLoading: isDiskLoading,
+    isFetching: isDiskFetching,
+    error: diskError,
+  } = useQuery<FreeDiskResponse, Error>({
+    queryKey: ['disk', 'free'],
+    queryFn: async () => {
+      const { data } =
+        await axiosInstance.get<FreeDiskResponse>('/api/disk/free');
+      return data;
+    },
+    enabled: isOpen,
+    refetchOnWindowFocus: false,
+  });
+
+  const deviceOptions = useMemo<DeviceOption[]>(() => {
+    if (!freeDiskResponse?.data) {
+      return [];
+    }
+
+    return freeDiskResponse.data.map((disk) => ({
+      label: disk,
+      value: disk,
+      tooltip: disk,
+    }));
+  }, [freeDiskResponse?.data]);
+
+  const isDiskListLoading =
+    isDiskLoading || (isOpen && isDiskFetching && !freeDiskResponse);
+
   const handlePoolNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPoolName(event.target.value);
   };
@@ -82,7 +114,7 @@ const CreatePoolModal = ({
     <BlurModal
       open={isOpen}
       onClose={closeCreateModal}
-      title="ایجاد Pool جدید"
+      title="ایجاد فضای یکپارچه"
       actions={
         <ModalActionButtons
           onCancel={closeCreateModal}
@@ -104,11 +136,11 @@ const CreatePoolModal = ({
       <Box component="form" id="create-pool-form" onSubmit={handleSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <TextField
-            label="نام Pool"
+            label="نام فضای یکپارچه"
             value={poolName}
             onChange={handlePoolNameChange}
             autoFocus
-            placeholder={'نام یکتا برای Pool جدید وارد کنید.'}
+            placeholder={'نام یکتا برای فضای یکپارچه وارد کنید.'}
             fullWidth
             size="small"
             error={Boolean(poolNameError)}
@@ -122,7 +154,7 @@ const CreatePoolModal = ({
               id="vdev-type-label"
               sx={{ color: 'var(--color-text)' }}
             >
-              نوع VDEV
+              نوع آرایه
             </InputLabel>
             <Select
               labelId="vdev-type-label"
@@ -139,9 +171,9 @@ const CreatePoolModal = ({
                 },
               }}
             >
-              <MenuItem value="disk">DISK</MenuItem>
+              <MenuItem value="disk">STRIPE</MenuItem>
               <MenuItem value="mirror">MIRROR</MenuItem>
-              <MenuItem value="raidz">RAIDZ</MenuItem>
+              <MenuItem value="raidz">RAID5</MenuItem>
             </Select>
           </FormControl>
 
@@ -152,23 +184,23 @@ const CreatePoolModal = ({
               انتخاب دیسک‌ها
             </Typography>
 
-            {isDiskLoading && (
+            {isDiskListLoading && (
               <LinearProgress sx={{ borderRadius: '5px', height: 6 }} />
             )}
 
-            {diskError && !isDiskLoading && (
+            {diskError && !isDiskListLoading && (
               <Typography sx={{ color: 'var(--color-error)' }}>
                 خطا در دریافت اطلاعات دیسک‌ها: {diskError.message}
               </Typography>
             )}
 
-            {!isDiskLoading && !diskError && deviceOptions.length === 0 && (
+            {!isDiskListLoading && !diskError && deviceOptions.length === 0 && (
               <Typography sx={{ color: 'var(--color-secondary)' }}>
                 دیسکی برای انتخاب موجود نیست.
               </Typography>
             )}
 
-            {!isDiskLoading && !diskError && deviceOptions.length > 0 && (
+            {!isDiskListLoading && !diskError && deviceOptions.length > 0 && (
               <Box
                 sx={{
                   maxHeight: 260,

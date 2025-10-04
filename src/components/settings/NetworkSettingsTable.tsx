@@ -27,7 +27,7 @@ type NetworkSettingsTableRow = {
 };
 
 const createSpeedFormatter = () =>
-  new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 });
+  new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 
 const createRows = (
   interfaces: NetworkData['interfaces'] | undefined,
@@ -156,7 +156,7 @@ const NetworkSettingsTable = () => {
       width: 64,
       renderCell: (_, index) => (
         <Typography component="span" sx={{ fontWeight: 500 }}>
-          {(page * rowsPerPage + index + 1).toLocaleString('fa-IR')}
+          {(page * rowsPerPage + index + 1).toLocaleString('en-US')}
         </Typography>
       ),
     };
@@ -225,7 +225,21 @@ const NetworkSettingsTable = () => {
     const speedColumn: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'link-speed',
       header: 'link-speed',
-      renderCell: (row) => row.speed,
+      align: 'right',
+      renderCell: (row) => (
+        <Typography
+          component="span"
+          sx={{
+            display: 'block',
+            textAlign: 'right',
+            direction: 'ltr',
+            fontVariantNumeric: 'tabular-nums',
+            color: 'var(--color-text)',
+          }}
+        >
+          {row.speed}
+        </Typography>
+      ),
     };
 
     const actionColumn: DataTableColumn<NetworkSettingsTableRow> = {
@@ -282,17 +296,17 @@ const NetworkSettingsTable = () => {
           rowsPerPageOptions: [5, 10, 25],
           labelRowsPerPage: 'ردیف در هر صفحه',
           labelDisplayedRows: ({ from, to, count }) => {
-            const localizedFrom = from.toLocaleString('fa-IR');
-            const localizedTo = to.toLocaleString('fa-IR');
+            const localizedFrom = from.toLocaleString('en-US');
+            const localizedTo = to.toLocaleString('en-US');
             const localizedCount =
               count !== -1
-                ? count.toLocaleString('fa-IR')
+                ? count.toLocaleString('en-US')
                 : `بیش از ${localizedTo}`;
 
             return `${localizedFrom}–${localizedTo} از ${localizedCount}`;
           },
           rowCountFormatter: (count) =>
-            `تعداد کل موارد: ${count.toLocaleString('fa-IR')}`,
+            `تعداد کل موارد: ${count.toLocaleString('en-US')}`,
         }}
       />
 

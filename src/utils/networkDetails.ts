@@ -121,7 +121,7 @@ const formatInterfaceSpeed = (
   const numericSpeed = Number(rawSpeed);
 
   if (!Number.isFinite(numericSpeed) || numericSpeed <= 0) {
-    return 'نامشخص';
+    return 'undefined';
   }
 
   return `${formatter.format(numericSpeed)} Mbps`;

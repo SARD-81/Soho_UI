@@ -61,7 +61,7 @@ const SelectedPoolsDetailsPanel = ({
           gap: 1,
         }}
       >
-        مقایسه جزئیات Pool ها
+        مقایسه جزئیات فضا های یکپارچه
       </Typography>
 
       <Box
@@ -133,7 +133,7 @@ const SelectedPoolsDetailsPanel = ({
 
               {error && !isLoading && (
                 <Typography sx={{ color: 'var(--color-error)' }}>
-                  خطا در دریافت اطلاعات این Pool: {error.message}
+                  خطا در دریافت اطلاعات این فضا یکپارچه: {error.message}
                 </Typography>
               )}
 

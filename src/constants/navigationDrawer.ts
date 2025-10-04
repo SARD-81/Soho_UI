@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { BiHistory } from 'react-icons/bi';
 import { FaShare } from 'react-icons/fa';
 import { FiUsers } from 'react-icons/fi';
-import { GrServices } from 'react-icons/gr';
+import { GrServices, GrStorage } from 'react-icons/gr';
 import { MdSpaceDashboard, MdStorage } from 'react-icons/md';
 import { RiSettings3Fill } from 'react-icons/ri';
 import type { NavigationItem } from '../@types/navigationDrawer';
@@ -17,7 +17,7 @@ export const navItems: NavigationItem[] = [
   },
   {
     text: 'فضای یکپارچه',
-    icon: createElement(MdStorage),
+    icon: createElement(GrStorage),
     path: '/Integrated-space',
   },
   // {
@@ -25,6 +25,11 @@ export const navItems: NavigationItem[] = [
   //   icon: createElement(MdStorage),
   //   path: '/block-space',
   // },
+  {
+    text: 'فایل سیستم',
+    icon: createElement(MdStorage),
+    path: '/file-system',
+  },
   {
     text: 'سرویس ها',
     icon: createElement(GrServices),

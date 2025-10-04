@@ -33,6 +33,14 @@ export interface CreateShareWithPermissionsPayload
   mode?: string;
 }
 
+export interface SetDirectoryPermissionsPayload {
+  path: string;
+  owner: string;
+  group: string;
+  mode: string;
+  recursive: string;
+}
+
 export type RawSambaUserDetails = Record<string, unknown>;
 
 export type SambaUsersResponseData =

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { setupAxiosMockAdapter } from '../mocks/setupMocks';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -7,6 +8,20 @@ const axiosInstance = axios.create({
     Accept: 'application/json',
   },
 });
+
+const shouldUseMockApi = (() => {
+  const raw = import.meta.env.VITE_USE_MOCKS;
+  if (raw == null) {
+    return false;
+  }
+
+  const normalized = String(raw).trim().toLowerCase();
+  return ['1', 'true', 'yes', 'on'].includes(normalized);
+})();
+
+if (shouldUseMockApi) {
+  setupAxiosMockAdapter(axiosInstance);
+}
 
 axiosInstance.interceptors.request.use(
   (config) => {

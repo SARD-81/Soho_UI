@@ -2,6 +2,7 @@ import type {
   CreateDirectoryPermissionsPayload,
   CreateSambaSharePayload,
   CreateShareWithPermissionsPayload,
+  SetDirectoryPermissionsPayload,
 } from '../@types/samba';
 import axiosInstance from './axiosInstance';
 
@@ -25,6 +26,22 @@ const createSambaShare = async (payload: CreateSambaSharePayload) => {
   await axiosInstance.post('/api/samba/config/append/', payload);
 };
 
+const setDirectoryPermissions = async ({
+  path,
+  mode,
+  owner,
+  group,
+  recursive,
+}: SetDirectoryPermissionsPayload) => {
+  await axiosInstance.post('/api/dir/set/permissions/', {
+    path,
+    mode,
+    owner,
+    group,
+    recursive,
+  });
+};
+
 export const createShareWithDirectoryPermissions = async ({
   full_path,
   valid_users,
@@ -42,5 +59,13 @@ export const createShareWithDirectoryPermissions = async ({
   await createSambaShare({
     full_path,
     valid_users,
+  });
+
+  await setDirectoryPermissions({
+    path: full_path,
+    mode: '0755',
+    owner: sanitizedUser,
+    group: sanitizedUser,
+    recursive: 'True',
   });
 };

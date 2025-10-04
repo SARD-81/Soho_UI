@@ -1,6 +1,5 @@
 import {
   Box,
-  Checkbox,
   Chip,
   CircularProgress,
   IconButton,
@@ -8,7 +7,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
-import { MdDeleteOutline, MdEdit } from 'react-icons/md';
+import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
 import { formatBytes } from '../../utils/formatters.ts';
@@ -31,6 +30,15 @@ interface PoolsTableProps {
   onToggleSelect: (pool: ZpoolCapacityEntry, checked: boolean) => void;
 }
 
+const numberValueSx = {
+  fontWeight: 600,
+  color: 'var(--color-text)',
+  direction: 'rtl' as const,
+  // textAlign: 'right' as const,
+  display: 'block',
+  fontVariantNumeric: 'tabular-nums',
+};
+
 const PoolsTable = ({
   pools,
   isLoading,
@@ -43,27 +51,27 @@ const PoolsTable = ({
 }: PoolsTableProps) => {
   const columns: DataTableColumn<ZpoolCapacityEntry>[] = useMemo(
     () => [
-      {
-        id: 'select',
-        header: '',
-        align: 'center',
-        padding: 'checkbox',
-        width: 52,
-        headerSx: { width: 52 },
-        cellSx: { width: 52 },
-        getCellProps: () => ({ padding: 'checkbox' }),
-        renderCell: (pool) => (
-          <Checkbox
-            checked={selectedPools.includes(pool.name)}
-            onChange={(event) => onToggleSelect(pool, event.target.checked)}
-            color="primary"
-            inputProps={{ 'aria-label': `انتخاب ${pool.name}` }}
-          />
-        ),
-      },
+      // {
+      //   id: 'select',
+      //   header: '',
+      //   align: 'center',
+      //   padding: 'checkbox',
+      //   width: 52,
+      //   headerSx: { width: 52 },
+      //   cellSx: { width: 52 },
+      //   getCellProps: () => ({ padding: 'checkbox' }),
+      //   renderCell: (pool) => (
+      //     <Checkbox
+      //       checked={selectedPools.includes(pool.name)}
+      //       onChange={(event) => onToggleSelect(pool, event.target.checked)}
+      //       color="primary"
+      //       inputProps={{ 'aria-label': `انتخاب ${pool.name}` }}
+      //     />
+      //   ),
+      // },
       {
         id: 'name',
-        header: 'نام Pool',
+        header: 'نام فضای یکپارچه',
         align: 'left',
         renderCell: (pool) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
@@ -84,7 +92,7 @@ const PoolsTable = ({
         header: 'ظرفیت کل',
         align: 'left',
         renderCell: (pool) => (
-          <Typography sx={{ fontWeight: 600, color: 'var(--color-text)' }}>
+          <Typography sx={numberValueSx}>
             {formatCapacity(pool.totalBytes)}
           </Typography>
         ),
@@ -118,13 +126,7 @@ const PoolsTable = ({
                   }}
                 />
               </Box>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: 'var(--color-text)',
-                  // fontFamily: 'var(--font-didot)',
-                }}
-              >
+              <Typography variant="body2" sx={numberValueSx}>
                 {formatBytes(pool.usedBytes)}
                 {/*<Typography*/}
                 {/*  component="span"*/}
@@ -143,7 +145,7 @@ const PoolsTable = ({
         header: 'حجم آزاد',
         align: 'right',
         renderCell: (pool) => (
-          <Typography sx={{ color: 'var(--color-text)' }}>
+          <Typography sx={numberValueSx}>
             {formatCapacity(pool.freeBytes)}
           </Typography>
         ),
@@ -176,15 +178,15 @@ const PoolsTable = ({
         align: 'center',
         renderCell: (pool) => (
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-            <Tooltip title="ویرایش">
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={() => onEdit(pool)}
-              >
-                <MdEdit size={18} />
-              </IconButton>
-            </Tooltip>
+            {/*<Tooltip title="ویرایش">*/}
+            {/*  <IconButton*/}
+            {/*    size="small"*/}
+            {/*    color="primary"*/}
+            {/*    onClick={() => onEdit(pool)}*/}
+            {/*  >*/}
+            {/*    <MdEdit size={18} />*/}
+            {/*  </IconButton>*/}
+            {/*</Tooltip>*/}
             <Tooltip title="حذف">
               <IconButton
                 size="small"
@@ -220,18 +222,18 @@ const PoolsTable = ({
         >
           <CircularProgress color="primary" size={32} />
           <Typography sx={{ color: 'var(--color-secondary)' }}>
-            در حال دریافت اطلاعات Pool ها...
+            در حال دریافت اطلاعات فضا های یکپارچه ...
           </Typography>
         </Box>
       )}
       renderErrorState={(tableError) => (
         <Typography sx={{ color: 'var(--color-error)' }}>
-          خطا در دریافت اطلاعات Pool ها: {tableError.message}
+          خطا در دریافت اطلاعات فضا های یکپارچه: {tableError.message}
         </Typography>
       )}
       renderEmptyState={() => (
         <Typography sx={{ color: 'var(--color-secondary)' }}>
-          هیچ Pool فعالی برای نمایش وجود ندارد.
+          هیچ فضا یکپارچه فعالی برای نمایش وجود ندارد.
         </Typography>
       )}
     />

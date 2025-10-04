@@ -1,18 +1,18 @@
 import { Box, Typography } from '@mui/material';
-import type { UseDeleteZpoolReturn } from '../../hooks/useDeleteZpool';
+import type { UseDeleteFileSystemReturn } from '../../hooks/useDeleteFileSystem';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
-interface ConfirmDeletePoolModalProps {
-  controller: UseDeleteZpoolReturn;
+interface ConfirmDeleteFileSystemModalProps {
+  controller: UseDeleteFileSystemReturn;
 }
 
-const ConfirmDeletePoolModal = ({
+const ConfirmDeleteFileSystemModal = ({
   controller,
-}: ConfirmDeletePoolModalProps) => {
+}: ConfirmDeleteFileSystemModalProps) => {
   const {
     isOpen,
-    targetPool,
+    targetFileSystem,
     closeModal,
     confirmDelete,
     isDeleting,
@@ -23,7 +23,7 @@ const ConfirmDeletePoolModal = ({
     <BlurModal
       open={isOpen}
       onClose={closeModal}
-      title="حذف Pool"
+      title="حذف فایل سیستم"
       actions={
         <ModalActionButtons
           onCancel={closeModal}
@@ -39,11 +39,11 @@ const ConfirmDeletePoolModal = ({
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Typography sx={{ color: 'var(--color-text)' }}>
-          آیا از حذف فضای یکپارچه{' '}
+          آیا از حذف فایل سیستم{' '}
           <Typography component="span" sx={{ fontWeight: 700 }}>
-            {targetPool?.name}
+            {targetFileSystem?.fullName}
           </Typography>{' '}
-          مطمئن هستید؟ با انجام این عملیات تمام اطلاعات شما حذف خواهد شد.
+          مطمئن هستید؟ این عملیات قابل بازگشت نیست.
         </Typography>
 
         {errorMessage && (
@@ -56,4 +56,4 @@ const ConfirmDeletePoolModal = ({
   );
 };
 
-export default ConfirmDeletePoolModal;
+export default ConfirmDeleteFileSystemModal;

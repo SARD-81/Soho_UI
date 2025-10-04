@@ -7,16 +7,16 @@ import {
 } from '@mui/material';
 import { useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
-import type { DataTableColumn } from '../../@types/dataTable.ts';
-import type { VolumeEntry } from '../../@types/volume';
+import type { DataTableColumn } from '../../@types/dataTable';
+import type { FileSystemEntry } from '../../@types/filesystem';
 import DataTable from '../DataTable';
 
-interface VolumesTableProps {
-  volumes: VolumeEntry[];
+interface FileSystemsTableProps {
+  filesystems: FileSystemEntry[];
   attributeKeys: string[];
   isLoading: boolean;
   error: Error | null;
-  onDeleteVolume: (volume: VolumeEntry) => void;
+  onDeleteFilesystem: (filesystem: FileSystemEntry) => void;
   isDeleteDisabled: boolean;
 }
 
@@ -33,53 +33,53 @@ const numericValueTypographySx = {
   fontVariantNumeric: 'tabular-nums',
 };
 
-const VolumesTable = ({
-  volumes,
+const FileSystemsTable = ({
+  filesystems,
   attributeKeys,
   isLoading,
   error,
-  onDeleteVolume,
+  onDeleteFilesystem,
   isDeleteDisabled,
-}: VolumesTableProps) => {
-  const columns = useMemo<DataTableColumn<VolumeEntry>[]>(() => {
-    const baseColumns: DataTableColumn<VolumeEntry>[] = [
+}: FileSystemsTableProps) => {
+  const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
+    const baseColumns: DataTableColumn<FileSystemEntry>[] = [
       {
         id: 'pool',
         header: 'نام Pool',
         align: 'left',
-        renderCell: (volume) => (
+        renderCell: (filesystem) => (
           <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-            {volume.poolName}
+            {filesystem.poolName}
           </Typography>
         ),
       },
       {
-        id: 'volume',
-        header: 'نام Volume',
+        id: 'filesystem',
+        header: 'نام فایل سیستم',
         align: 'left',
-        renderCell: (volume) => (
+        renderCell: (filesystem) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {volume.volumeName}
+              {filesystem.filesystemName}
             </Typography>
             <Typography
               variant="caption"
               sx={{ color: 'var(--color-secondary)' }}
             >
-              {volume.fullName}
+              {filesystem.fullName}
             </Typography>
           </Box>
         ),
       },
     ];
 
-    const dynamicColumns = attributeKeys.map<DataTableColumn<VolumeEntry>>(
+    const dynamicColumns = attributeKeys.map<DataTableColumn<FileSystemEntry>>(
       (key) => ({
         id: `attribute-${key}`,
         header: key,
         align: 'left',
-        renderCell: (volume) => {
-          const rawValue = volume.attributeMap[key];
+        renderCell: (filesystem) => {
+          const rawValue = filesystem.attributeMap[key];
           const isNumericValue =
             typeof rawValue === 'number' && Number.isFinite(rawValue);
 
@@ -96,17 +96,17 @@ const VolumesTable = ({
       })
     );
 
-    const actionColumn: DataTableColumn<VolumeEntry> = {
+    const actionColumn: DataTableColumn<FileSystemEntry> = {
       id: 'actions',
       header: 'عملیات',
       align: 'center',
-      renderCell: (volume) => (
-        <Tooltip title="حذف Volume">
+      renderCell: (filesystem) => (
+        <Tooltip title="حذف فایل سیستم">
           <span>
             <IconButton
               size="small"
               color="error"
-              onClick={() => onDeleteVolume(volume)}
+              onClick={() => onDeleteFilesystem(filesystem)}
               disabled={isDeleteDisabled}
             >
               <MdDeleteOutline size={18} />
@@ -117,13 +117,13 @@ const VolumesTable = ({
     };
 
     return [...baseColumns, ...dynamicColumns, actionColumn];
-  }, [attributeKeys, isDeleteDisabled, onDeleteVolume]);
+  }, [attributeKeys, isDeleteDisabled, onDeleteFilesystem]);
 
   return (
-    <DataTable<VolumeEntry>
+    <DataTable<FileSystemEntry>
       columns={columns}
-      data={volumes}
-      getRowId={(volume) => volume.id}
+      data={filesystems}
+      getRowId={(filesystem) => filesystem.id}
       isLoading={isLoading}
       error={error}
       renderLoadingState={() => (
@@ -137,22 +137,22 @@ const VolumesTable = ({
         >
           <CircularProgress color="primary" size={32} />
           <Typography sx={{ color: 'var(--color-secondary)' }}>
-            در حال دریافت اطلاعات Volume ها...
+            در حال دریافت اطلاعات فایل سیستم‌ها...
           </Typography>
         </Box>
       )}
       renderErrorState={(tableError) => (
         <Typography sx={{ color: 'var(--color-error)' }}>
-          خطا در دریافت اطلاعات Volume ها: {tableError.message}
+          خطا در دریافت اطلاعات فایل سیستم‌ها: {tableError.message}
         </Typography>
       )}
       renderEmptyState={() => (
         <Typography sx={{ color: 'var(--color-secondary)' }}>
-          هیچ Volumeی برای نمایش وجود ندارد.
+          هیچ فایل سیستمی برای نمایش وجود ندارد.
         </Typography>
       )}
     />
   );
 };
 
-export default VolumesTable;
+export default FileSystemsTable;

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
+import type { SambaShareEntry } from '../@types/samba';
 import axiosInstance from '../lib/axiosInstance';
 import { sambaSharesQueryKey } from './useSambaShares';
 
@@ -23,6 +24,8 @@ export const useDeleteShare = ({
   onError,
 }: UseDeleteShareOptions = {}) => {
   const queryClient = useQueryClient();
+  const [targetShare, setTargetShare] = useState<SambaShareEntry | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pendingShareName, setPendingShareName] = useState<string | null>(null);
 
   const deleteMutation = useMutation<unknown, Error, string>({
@@ -32,28 +35,51 @@ export const useDeleteShare = ({
     onMutate: (shareName) => {
       setPendingShareName(shareName);
     },
-    onSuccess: (_data, shareName) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sambaSharesQueryKey });
-      onSuccess?.(shareName);
-    },
-    onError: (error, shareName) => {
-      onError?.(error, shareName);
     },
     onSettled: () => {
       setPendingShareName(null);
     },
   });
 
-  const handleDelete = useCallback(
-    (shareName: string) => {
-      deleteMutation.mutate(shareName);
-    },
-    [deleteMutation]
-  );
+  const requestDelete = useCallback((share: SambaShareEntry) => {
+    setErrorMessage(null);
+    setTargetShare(share);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setTargetShare(null);
+    setErrorMessage(null);
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (!targetShare || deleteMutation.isPending) {
+      return;
+    }
+
+    setErrorMessage(null);
+
+    deleteMutation.mutate(targetShare.name, {
+      onSuccess: () => {
+        onSuccess?.(targetShare.name);
+        closeModal();
+      },
+      onError: (error) => {
+        setErrorMessage(error.message);
+        onError?.(error, targetShare.name);
+      },
+    });
+  }, [closeModal, deleteMutation, onError, onSuccess, targetShare]);
 
   return {
-    deleteShare: handleDelete,
+    isOpen: Boolean(targetShare),
+    targetShare,
+    requestDelete,
+    closeModal,
+    confirmDelete,
     isDeleting: deleteMutation.isPending,
+    errorMessage,
     pendingShareName,
   };
 };

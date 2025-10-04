@@ -1,18 +1,18 @@
 import { Box, Typography } from '@mui/material';
-import type { UseDeleteZpoolReturn } from '../../hooks/useDeleteZpool';
+import type { UseDeleteShareReturn } from '../../hooks/useDeleteShare';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
-interface ConfirmDeletePoolModalProps {
-  controller: UseDeleteZpoolReturn;
+interface ConfirmDeleteShareModalProps {
+  controller: UseDeleteShareReturn;
 }
 
-const ConfirmDeletePoolModal = ({
+const ConfirmDeleteShareModal = ({
   controller,
-}: ConfirmDeletePoolModalProps) => {
+}: ConfirmDeleteShareModalProps) => {
   const {
     isOpen,
-    targetPool,
+    targetShare,
     closeModal,
     confirmDelete,
     isDeleting,
@@ -23,7 +23,7 @@ const ConfirmDeletePoolModal = ({
     <BlurModal
       open={isOpen}
       onClose={closeModal}
-      title="حذف Pool"
+      title="حذف اشتراک"
       actions={
         <ModalActionButtons
           onCancel={closeModal}
@@ -39,21 +39,21 @@ const ConfirmDeletePoolModal = ({
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Typography sx={{ color: 'var(--color-text)' }}>
-          آیا از حذف فضای یکپارچه{' '}
+          آیا از حذف اشتراک{' '}
           <Typography component="span" sx={{ fontWeight: 700 }}>
-            {targetPool?.name}
+            {targetShare?.name}
           </Typography>{' '}
-          مطمئن هستید؟ با انجام این عملیات تمام اطلاعات شما حذف خواهد شد.
+          مطمئن هستید؟ این عملیات قابل بازگشت نیست.
         </Typography>
 
-        {errorMessage && (
+        {errorMessage ? (
           <Typography sx={{ color: 'var(--color-error)', fontWeight: 600 }}>
             {errorMessage}
           </Typography>
-        )}
+        ) : null}
       </Box>
     </BlurModal>
   );
 };
 
-export default ConfirmDeletePoolModal;
+export default ConfirmDeleteShareModal;

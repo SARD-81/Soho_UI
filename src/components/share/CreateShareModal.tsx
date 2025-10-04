@@ -7,10 +7,10 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
-import type { ChangeEvent } from 'react';
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
+import { useFilesystemMountpoints } from '../../hooks/useFilesystemMountpoints';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
 import normalizeSambaUsers from '../../utils/sambaUsers';
 import BlurModal from '../BlurModal';
@@ -35,6 +35,25 @@ const inputBaseStyles = {
   },
 };
 
+const autocompletePaperSlotProps = {
+  paper: {
+    sx: {
+      bgcolor: 'var(--color-input-bg)',
+      '& .MuiAutocomplete-option': {
+        color: 'var(--color-text)',
+        '&.Mui-focused': {
+          bgcolor: 'var(--color-input-focus-border)',
+          color: '#fff',
+        },
+        '&[aria-selected="true"]': {
+          bgcolor: 'var(--color-primary)',
+          color: '#fff',
+        },
+      },
+    },
+  },
+} as const;
+
 const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   const {
     isOpen,
@@ -54,10 +73,6 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     isPathValid,
   } = controller;
 
-  const handlePathChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setFullPath(event.target.value);
-  };
-
   const sambaUsersQuery = useSambaUsers({ enabled: isOpen });
   const sambaUsers = useMemo(
     () => normalizeSambaUsers(sambaUsersQuery.data?.data),
@@ -66,6 +81,14 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   const sambaUsernames = useMemo(
     () => sambaUsers.map((user) => user.username).filter(Boolean),
     [sambaUsers]
+  );
+
+  const filesystemMountpointsQuery = useFilesystemMountpoints({
+    enabled: isOpen,
+  });
+  const mountpointOptions = useMemo(
+    () => filesystemMountpointsQuery.data ?? [],
+    [filesystemMountpointsQuery.data]
   );
 
   const hasPathError =
@@ -135,23 +158,53 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     >
       <Box component="form" id="create-share-form" onSubmit={handleSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <TextField
-            label="مسیر کامل"
+          <Autocomplete
+            // freeSolo
+            options={mountpointOptions}
             value={fullPath}
-            onChange={handlePathChange}
-            autoFocus
-            fullWidth
-            placeholder={
-              'مسیر کامل پوشه اشتراک را وارد کنید (مانند /mnt/data/share)'
-            }
-            size="small"
-            error={hasPathError}
-            helperText={pathHelperText}
-            InputLabelProps={{ shrink: true }}
-            InputProps={{
-              sx: inputBaseStyles,
-              endAdornment: pathValidationAdornment,
+            onChange={(_event, newValue) => setFullPath(newValue ?? '')}
+            onInputChange={(_event, newInputValue, reason) => {
+              if (
+                reason === 'input' ||
+                reason === 'clear' ||
+                reason === 'reset'
+              ) {
+                setFullPath(newInputValue ?? '');
+              }
             }}
+            fullWidth
+            size="small"
+            loading={filesystemMountpointsQuery.isLoading}
+            noOptionsText="مسیر (mountpoint) یافت نشد"
+            slotProps={autocompletePaperSlotProps}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="مسیر کامل"
+                autoFocus
+                placeholder="مانند /mnt/data/share"
+                error={hasPathError}
+                helperText={pathHelperText}
+                InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
+                InputProps={{
+                  ...params.InputProps,
+                  sx: inputBaseStyles,
+                  endAdornment: (
+                    <Fragment>
+                      {pathValidationAdornment}
+                      {filesystemMountpointsQuery.isLoading && (
+                        <CircularProgress
+                          size={18}
+                          thickness={5}
+                          sx={{ mr: 1 }}
+                        />
+                      )}
+                      {params.InputProps?.endAdornment}
+                    </Fragment>
+                  ),
+                }}
+              />
+            )}
           />
 
           <Autocomplete
@@ -166,30 +219,12 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             loading={sambaUsersQuery.isLoading || sambaUsersQuery.isFetching}
             noOptionsText="کاربری یافت نشد"
             disabled={sambaUsersQuery.isError}
-            slotProps={{
-              paper: {
-                sx: {
-                  bgcolor: 'var(--color-input-bg)',
-                  '& .MuiAutocomplete-option': {
-                    color: 'var(--color-text)',
-                    // item hovered or keyboard-focused
-                    '&.Mui-focused': {
-                      bgcolor: 'var(--color-input-focus-border)',
-                      color: '#fff',
-                    },
-                    // item selected (aria-selected="true")
-                    '&[aria-selected="true"]': {
-                      bgcolor: 'var(--color-primary)',
-                      color: '#fff',
-                    },
-                  },
-                },
-              },
-            }}
+            slotProps={autocompletePaperSlotProps}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label="کاربران مجاز"
+                placeholder="نام کاربر مجاز را انتخاب یا جست‌وجو کنید"
                 error={Boolean(validUsersError)}
                 helperText={
                   validUsersError ??

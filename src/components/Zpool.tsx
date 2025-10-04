@@ -379,7 +379,7 @@ const Zpool = () => {
                     <Typography
                       variant="h5"
                       sx={{
-                        fontFamily: 'var(--font-didot)',
+                        fontFamily: 'var(--font-vazir)',
                         fontWeight: 700,
                         color: 'var(--color-primary)',
                       }}
@@ -433,7 +433,11 @@ const Zpool = () => {
                       </Typography>
                       <Typography
                         variant="subtitle2"
-                        sx={{ fontWeight: 700, color: 'var(--color-primary)' }}
+                        sx={{
+                          fontWeight: 700,
+                          color: 'var(--color-primary)',
+                          direction: 'rtl',
+                        }}
                       >
                         {stat.value}
                       </Typography>
@@ -449,7 +453,7 @@ const Zpool = () => {
           variant="body2"
           sx={{ color: theme.palette.text.secondary }}
         >
-          هیچ Pool فعالی یافت نشد.
+          هیچ فضای یکپارچه فعالی یافت نشد.
         </Typography>
       )}
     </Box>
