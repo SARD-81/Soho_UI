@@ -2,7 +2,6 @@ export const DEFAULT_LOGIN_SHELL = '/usr/sbin/nologin';
 
 export const USERS_TABS = {
   os: 'os-users',
-  samba: 'samba-users',
   other: 'other-users',
 } as const;
 
