@@ -57,7 +57,7 @@ const createPowerButtonSx = (gradient: string) => ({
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(true);
   const [activePowerAction, setActivePowerAction] =
     useState<PowerAction | null>(null);
   const theme = useTheme();
