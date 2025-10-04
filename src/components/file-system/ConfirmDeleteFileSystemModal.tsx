@@ -23,7 +23,7 @@ const ConfirmDeleteFileSystemModal = ({
     <BlurModal
       open={isOpen}
       onClose={closeModal}
-      title="حذف فایل سیستم"
+      title="حذف فضای فایلی"
       actions={
         <ModalActionButtons
           onCancel={closeModal}
@@ -39,7 +39,7 @@ const ConfirmDeleteFileSystemModal = ({
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Typography sx={{ color: 'var(--color-text)' }}>
-          آیا از حذف فایل سیستم{' '}
+          آیا از حذف فضای فایلی{' '}
           <Typography component="span" sx={{ fontWeight: 700 }}>
             {targetFileSystem?.fullName}
           </Typography>{' '}

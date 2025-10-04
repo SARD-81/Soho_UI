@@ -12,6 +12,7 @@ export interface FileSystemEntry {
   fullName: string;
   poolName: string;
   filesystemName: string;
+  mountpoint: string;
   attributes: FileSystemAttributeEntry[];
   attributeMap: Record<string, string>;
   raw: FileSystemRawEntry;

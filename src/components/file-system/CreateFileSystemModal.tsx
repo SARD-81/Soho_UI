@@ -64,7 +64,7 @@ const CreateFileSystemModal = ({
     <BlurModal
       open={isOpen}
       onClose={closeCreateModal}
-      title="ایجاد فایل سیستم"
+      title="ایجاد فضای فایلی"
       actions={
         <ModalActionButtons
           onCancel={closeCreateModal}
@@ -105,7 +105,7 @@ const CreateFileSystemModal = ({
             >
               {poolOptions.length === 0 && (
                 <MenuItem value="" disabled>
-                  یک فضای یکپارچه برای ایجاد فایل سیستم موجود نیست.
+                  یک فضای یکپارچه برای ایجاد فضای فایلی موجود نیست.
                 </MenuItem>
               )}
               {poolOptions.map((pool) => (
@@ -118,13 +118,13 @@ const CreateFileSystemModal = ({
           </FormControl>
 
           <TextField
-            label="نام فایل سیستم"
+            label="نام فضای فایلی"
             value={filesystemName}
             onChange={handleNameChange}
             fullWidth
             autoComplete="off"
             error={Boolean(nameError)}
-            helperText={nameError ?? 'نامی یکتا برای فایل سیستم وارد کنید.'}
+            helperText={nameError ?? 'نامی یکتا برای فضای فایلی وارد کنید.'}
             InputLabelProps={{ shrink: true }}
             InputProps={{ sx: inputBaseStyles }}
           />

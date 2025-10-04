@@ -26,16 +26,17 @@ export const navItems: NavigationItem[] = [
   //   path: '/block-space',
   // },
   {
-    text: 'فایل سیستم',
+    text: 'فضای فایلی',
     icon: createElement(MdStorage),
     path: '/file-system',
   },
+  { text: 'اشتراک گذاری', icon: createElement(FaShare), path: '/share' },
   {
     text: 'سرویس ها',
     icon: createElement(GrServices),
     path: '/services',
   },
-  { text: 'اشتراک گذاری', icon: createElement(FaShare), path: '/share' },
+
   {
     text: 'تنظیمات',
     icon: createElement(RiSettings3Fill),

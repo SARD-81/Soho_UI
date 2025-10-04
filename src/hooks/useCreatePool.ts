@@ -124,7 +124,7 @@ export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
       let hasError = false;
 
       if (!trimmedName) {
-        setPoolNameError('لطفاً نام Pool را وارد کنید.');
+        setPoolNameError('لطفاً نام فضای یکپارچه را وارد کنید.');
         hasError = true;
       }
 
@@ -142,7 +142,7 @@ export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
         }
       } else if (vdevType === 'raidz') {
         if (deviceCount < 3) {
-          setDevicesError('برای RAIDZ حداقل سه دیسک انتخاب کنید.');
+          setDevicesError('برای RAID5 حداقل سه دیسک انتخاب کنید.');
           hasError = true;
         }
       }

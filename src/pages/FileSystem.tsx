@@ -13,20 +13,20 @@ import { useZpool } from '../hooks/useZpool';
 const FileSystem = () => {
   const createFileSystem = useCreateFileSystem({
     onSuccess: (filesystemName) => {
-      toast.success(`فایل سیستم ${filesystemName} با موفقیت ایجاد شد.`);
+      toast.success(`فضای فایلی ${filesystemName} با موفقیت ایجاد شد.`);
     },
     onError: (errorMessage) => {
-      toast.error(`ایجاد فایل سیستم با خطا مواجه شد: ${errorMessage}`);
+      toast.error(`ایجاد فضای فایلی با خطا مواجه شد: ${errorMessage}`);
     },
   });
 
   const deleteFileSystem = useDeleteFileSystem({
     onSuccess: (filesystemName) => {
-      toast.success(`فایل سیستم ${filesystemName} با موفقیت حذف شد.`);
+      toast.success(`فضای فایلی ${filesystemName} با موفقیت حذف شد.`);
     },
     onError: (error, filesystemName) => {
       toast.error(
-        `حذف فایل سیستم ${filesystemName} با خطا مواجه شد: ${error.message}`
+        `حذف فضای فایلی ${filesystemName} با خطا مواجه شد: ${error.message}`
       );
     },
   });
@@ -88,7 +88,7 @@ const FileSystem = () => {
             variant="h5"
             sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
           >
-            فایل سیستم
+            فضای فایلی
           </Typography>
 
           <Button
@@ -111,7 +111,7 @@ const FileSystem = () => {
               },
             }}
           >
-            ایجاد فایل سیستم
+            ایجاد فضای فایلی
           </Button>
         </Box>
       </Box>

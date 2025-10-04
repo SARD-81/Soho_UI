@@ -78,12 +78,12 @@ const PoolsTable = ({
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
               {pool.name}
             </Typography>
-            <Typography
-              variant="caption"
-              sx={{ color: 'var(--color-secondary)' }}
-            >
-              وضعیت گزارش‌شده: {pool.health ?? 'نامشخص'}
-            </Typography>
+            {/*<Typography*/}
+            {/*  variant="caption"*/}
+            {/*  sx={{ color: 'var(--color-secondary)' }}*/}
+            {/*>*/}
+            {/*  وضعیت گزارش‌شده: {pool.health ?? 'نامشخص'}*/}
+            {/*</Typography>*/}
           </Box>
         ),
       },
@@ -110,8 +110,9 @@ const PoolsTable = ({
               <Box
                 sx={{
                   position: 'relative',
-                  height: 5,
+                  height: 7,
                   borderRadius: '5px',
+                  marginTop: 1,
                   backgroundColor: 'rgba(0, 198, 169, 0.12)',
                   overflow: 'hidden',
                 }}

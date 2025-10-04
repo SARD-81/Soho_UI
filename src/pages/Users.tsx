@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  Checkbox,
-  FormControlLabel,
-  Tab,
-  Tabs,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Tab, Tabs, Typography } from '@mui/material';
 import {
   type ChangeEvent,
   type SyntheticEvent,
@@ -235,36 +227,37 @@ const Users = () => {
               display: 'flex',
               flexWrap: 'wrap',
               alignItems: 'center',
-              justifyContent: 'space-between',
+              justifyContent: 'flex-end',
               gap: 2,
             }}
           >
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={includeSystem}
-                  onChange={handleToggleIncludeSystem}
-                  sx={{
-                    color: 'var(--color-secondary)',
-                    '&.Mui-checked': {
-                      color: 'var(--color-primary)',
-                    },
-                  }}
-                />
-              }
-              label="نمایش کاربران سیستمی"
-              sx={{
-                '& .MuiTypography-root': {
-                  color: 'var(--color-secondary)',
-                  fontWeight: 600,
-                },
-              }}
-            />
+            {/*<FormControlLabel*/}
+            {/*  control={*/}
+            {/*    <Checkbox*/}
+            {/*      checked={includeSystem}*/}
+            {/*      onChange={handleToggleIncludeSystem}*/}
+            {/*      sx={{*/}
+            {/*        color: 'var(--color-secondary)',*/}
+            {/*        '&.Mui-checked': {*/}
+            {/*          color: 'var(--color-primary)',*/}
+            {/*        },*/}
+            {/*      }}*/}
+            {/*    />*/}
+            {/*  }*/}
+            {/*  label="نمایش کاربران سیستمی"*/}
+            {/*  sx={{*/}
+            {/*    '& .MuiTypography-root': {*/}
+            {/*      color: 'var(--color-secondary)',*/}
+            {/*      fontWeight: 600,*/}
+            {/*    },*/}
+            {/*  }}*/}
+            {/*/>*/}
 
             <Button
               onClick={handleOpenCreateModal}
               variant="contained"
               sx={{
+                alignSelf: 'flex-start',
                 px: 3,
                 py: 1.25,
                 borderRadius: '3px',
