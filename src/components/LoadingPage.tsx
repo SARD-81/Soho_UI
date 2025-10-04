@@ -68,7 +68,7 @@ function LoadingPage() {
           letterSpacing={0.2}
           sx={{ color: 'var(--color-primary)', mb: 1 }}
         >
-          استورکس
+          Storex
         </Typography>
 
         <Typography
