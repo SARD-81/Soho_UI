@@ -34,14 +34,14 @@ const SharesTable = ({
   isDeleting,
 }: SharesTableProps) => {
   const columns = useMemo<DataTableColumn<SambaShareEntry>[]>(() => {
-    const resolvePath = (share: SambaShareEntry) => {
-      const { details } = share;
-      const rawPath =
-        (typeof details.path === 'string' && details.path.trim()) ||
-        (typeof details.full_path === 'string' && details.full_path.trim());
-
-      return rawPath ?? '-';
-    };
+    // const resolvePath = (share: SambaShareEntry) => {
+    //   const { details } = share;
+    //   const rawPath =
+    //     (typeof details.path === 'string' && details.path.trim()) ||
+    //     (typeof details.full_path === 'string' && details.full_path.trim());
+    //
+    //   return rawPath ?? '-';
+    // };
 
     const resolveValidUsers = (share: SambaShareEntry) => {
       const { details } = share;
@@ -94,23 +94,23 @@ const SharesTable = ({
           </Typography>
         ),
       },
-      {
-        id: 'path',
-        header: 'مسیر',
-        align: 'left',
-        renderCell: (share) => (
-          <Typography
-            sx={{
-              color: 'var(--color-text)',
-              direction: 'ltr',
-              fontFamily: 'var(--font-vazir)',
-              wordBreak: 'break-all',
-            }}
-          >
-            {resolvePath(share)}
-          </Typography>
-        ),
-      },
+      // {
+      //   id: 'path',
+      //   header: 'مسیر',
+      //   align: 'left',
+      //   renderCell: (share) => (
+      //     <Typography
+      //       sx={{
+      //         color: 'var(--color-text)',
+      //         direction: 'ltr',
+      //         fontFamily: 'var(--font-vazir)',
+      //         wordBreak: 'break-all',
+      //       }}
+      //     >
+      //       {resolvePath(share)}
+      //     </Typography>
+      //   ),
+      // },
       {
         id: 'valid-users',
         header: 'کاربران مجاز',

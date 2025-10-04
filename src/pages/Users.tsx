@@ -349,7 +349,7 @@ const Users = () => {
           },
         }}
       >
-        <Tab label="کاربران سیستم عامل" value={USERS_TABS.os} />
+        <Tab label="کاربران سامانه" value={USERS_TABS.os} />
         <Tab label="کاربران samba" value={USERS_TABS.samba} />
         <Tab label="سایر کاربران" value={USERS_TABS.other} />
       </Tabs>

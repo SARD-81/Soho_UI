@@ -1,4 +1,6 @@
-import { Box, CircularProgress, Paper, Typography } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
+import { TailChase } from 'ldrs/react';
+import 'ldrs/react/TailChase.css';
 import '../index.css';
 
 function LoadingPage() {
@@ -33,25 +35,26 @@ function LoadingPage() {
             }`,
         }}
       >
-        <Box
-          component="img"
-          src="/logo/Logo.png"
-          alt="لوگو"
-          sx={{ mb: 3, marginX: 'auto' }}
-        />
-        <Typography
-          variant="h4"
-          fontWeight={900}
-          letterSpacing={0.4}
-          sx={{
-            color: 'var(--color-primary)',
-            fontFamily: 'var(--font-رشظهق)',
-          }}
-        >
-          ذخیره ساز اداری استورکس
-        </Typography>
+        {/*<Box*/}
+        {/*  component="img"*/}
+        {/*  src="/logo/Logo.png"*/}
+        {/*  alt="لوگو"*/}
+        {/*  sx={{ mb: 3, marginX: 'auto' }}*/}
+        {/*/>*/}
+        {/*<Typography*/}
+        {/*  variant="h4"*/}
+        {/*  fontWeight={900}*/}
+        {/*  letterSpacing={0.4}*/}
+        {/*  sx={{*/}
+        {/*    color: 'var(--color-primary)',*/}
+        {/*    fontFamily: 'var(--font-رشظهق)',*/}
+        {/*  }}*/}
+        {/*>*/}
+        {/*  ذخیره ساز اداری استورکس*/}
+        {/*</Typography>*/}
         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-          <CircularProgress sx={{ color: 'var(--color-primary)' }} />
+          {/*<CircularProgress sx={{ color: 'var(--color-primary)' }} />*/}
+          <TailChase size="60" speed="1.75" color="var(--color-primary)" />
         </Box>
         <Typography variant="h6" sx={{ mt: 2, color: 'var(--color-primary)' }}>
           در حال بارگذاری...

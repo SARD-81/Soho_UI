@@ -39,11 +39,11 @@ const ConfirmDeletePoolModal = ({
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Typography sx={{ color: 'var(--color-text)' }}>
-          آیا از حذف Pool{' '}
+          آیا از حذف فضای یکپارچه{' '}
           <Typography component="span" sx={{ fontWeight: 700 }}>
             {targetPool?.name}
           </Typography>{' '}
-          مطمئن هستید؟ این عملیات قابل بازگشت نیست.
+          مطمئن هستید؟ با انجام این عملیات تمام اطلاعات شما حذف خواهد شد.
         </Typography>
 
         {errorMessage && (

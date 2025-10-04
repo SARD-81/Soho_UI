@@ -171,10 +171,10 @@ const Share = () => {
           </Button>
         </Box>
 
-        <Typography variant="body2" sx={{ color: 'var(--color-secondary)' }}>
-          از جدول زیر می‌توانید اشتراک‌های موجود را مشاهده، حذف و برای مقایسه
-          انتخاب کنید.
-        </Typography>
+        {/*<Typography variant="body2" sx={{ color: 'var(--color-secondary)' }}>*/}
+        {/*  از جدول زیر می‌توانید اشتراک‌های موجود را مشاهده، حذف و برای مقایسه*/}
+        {/*  انتخاب کنید.*/}
+        {/*</Typography>*/}
 
         <SharesTable
           shares={shares}

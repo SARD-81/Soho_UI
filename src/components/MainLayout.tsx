@@ -137,11 +137,15 @@ const MainLayout: React.FC = () => {
           />
 
           <Typography
-            variant="h6"
+            variant="h4"
             component="div"
-            sx={{ color: 'var(--color-primary)', flexShrink: 0 }}
+            sx={{
+              color: 'var(--color-primary)',
+              flexShrink: 0,
+              fontFamily: 'var(--font-didot)',
+            }}
           >
-            ذخیره ساز اداری استورکس
+            Storex
           </Typography>
           <Box
             sx={{

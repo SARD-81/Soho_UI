@@ -21,6 +21,7 @@
     "@tanstack/react-query-devtools": "^5.90.2",
     "@types/react-router-dom": "^5.3.3",
     "axios": "^1.11.0",
+    "ldrs": "^1.1.7",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.62.0",

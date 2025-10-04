@@ -41,10 +41,10 @@ const Cpu = () => {
     () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }),
     []
   );
-  const frequencyFormatter = useMemo(
-    () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 2 }),
-    []
-  );
+  // const frequencyFormatter = useMemo(
+  //   () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 2 }),
+  //   []
+  // );
   const integerFormatter = useMemo(
     () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }),
     []
@@ -55,14 +55,14 @@ const Cpu = () => {
   const cpuPercent = clampPercent(safePercent);
   const gaugeColor = useMemo(() => getGaugeColor(cpuPercent), [cpuPercent]);
 
-  const frequencyCurrent =
-    data?.cpu_frequency?.current != null
-      ? Number(data.cpu_frequency.current)
-      : null;
-  const frequencyMin =
-    data?.cpu_frequency?.min != null ? Number(data.cpu_frequency.min) : null;
-  const frequencyMax =
-    data?.cpu_frequency?.max != null ? Number(data.cpu_frequency.max) : null;
+  // const frequencyCurrent =
+  //   data?.cpu_frequency?.current != null
+  //     ? Number(data.cpu_frequency.current)
+  //     : null;
+  // const frequencyMin =
+  //   data?.cpu_frequency?.min != null ? Number(data.cpu_frequency.min) : null;
+  // const frequencyMax =
+  //   data?.cpu_frequency?.max != null ? Number(data.cpu_frequency.max) : null;
 
   const hasPhysical = data?.cpu_cores?.physical != null;
   const hasLogical = data?.cpu_cores?.logical != null;
@@ -72,14 +72,14 @@ const Cpu = () => {
         Number(data?.cpu_cores?.logical ?? 0)
       : null;
 
-  const formatFrequency = (value: number | null) =>
-    value != null && Number.isFinite(value)
-      ? `${frequencyFormatter.format(value)} MHz`
-      : '—';
+  // const formatFrequency = (value: number | null) =>
+  //   value != null && Number.isFinite(value)
+  //     ? `${frequencyFormatter.format(value)} MHz`
+  //     : '—';
 
-  const frequencyText = formatFrequency(frequencyCurrent);
-  const frequencyMinText = formatFrequency(frequencyMin);
-  const frequencyMaxText = formatFrequency(frequencyMax);
+  // const frequencyText = formatFrequency(frequencyCurrent);
+  // const frequencyMinText = formatFrequency(frequencyMin);
+  // const frequencyMaxText = formatFrequency(frequencyMax);
 
   const formatInteger = (value: number | null | undefined) =>
     value != null && Number.isFinite(value)
@@ -87,8 +87,8 @@ const Cpu = () => {
       : '—';
 
   const totalCoresText = formatInteger(totalCores);
-  const physicalCoresText = formatInteger(data?.cpu_cores?.physical);
-  const logicalCoresText = formatInteger(data?.cpu_cores?.logical);
+  // const physicalCoresText = formatInteger(data?.cpu_cores?.physical);
+  // const logicalCoresText = formatInteger(data?.cpu_cores?.logical);
 
   const statsDividerColor =
     theme.palette.mode === 'dark'

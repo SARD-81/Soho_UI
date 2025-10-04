@@ -7,7 +7,7 @@ export const STATUS_STYLES: Record<
   active: {
     bg: 'rgba(0, 198, 169, 0.18)',
     color: 'var(--color-primary)',
-    label: 'فعال',
+    label: 'Online',
   },
   warning: {
     bg: 'rgba(227, 160, 8, 0.18)',

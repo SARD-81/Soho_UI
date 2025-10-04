@@ -82,7 +82,7 @@ const CreatePoolModal = ({
     <BlurModal
       open={isOpen}
       onClose={closeCreateModal}
-      title="ایجاد Pool جدید"
+      title="ایجاد فضای یکپارچه"
       actions={
         <ModalActionButtons
           onCancel={closeCreateModal}
@@ -104,11 +104,11 @@ const CreatePoolModal = ({
       <Box component="form" id="create-pool-form" onSubmit={handleSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <TextField
-            label="نام Pool"
+            label="نام فضای یکپارچه"
             value={poolName}
             onChange={handlePoolNameChange}
             autoFocus
-            placeholder={'نام یکتا برای Pool جدید وارد کنید.'}
+            placeholder={'نام یکتا برای فضای یکپارچه وارد کنید.'}
             fullWidth
             size="small"
             error={Boolean(poolNameError)}
@@ -122,7 +122,7 @@ const CreatePoolModal = ({
               id="vdev-type-label"
               sx={{ color: 'var(--color-text)' }}
             >
-              نوع VDEV
+              نوع آرایه
             </InputLabel>
             <Select
               labelId="vdev-type-label"
@@ -139,9 +139,9 @@ const CreatePoolModal = ({
                 },
               }}
             >
-              <MenuItem value="disk">DISK</MenuItem>
+              <MenuItem value="disk">STRIPE</MenuItem>
               <MenuItem value="mirror">MIRROR</MenuItem>
-              <MenuItem value="raidz">RAIDZ</MenuItem>
+              <MenuItem value="raidz">RAID5</MenuItem>
             </Select>
           </FormControl>
 

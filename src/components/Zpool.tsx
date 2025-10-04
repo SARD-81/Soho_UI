@@ -449,7 +449,7 @@ const Zpool = () => {
           variant="body2"
           sx={{ color: theme.palette.text.secondary }}
         >
-          هیچ Pool فعالی یافت نشد.
+          هیچ فضای یکپارچه فعالی یافت نشد.
         </Typography>
       )}
     </Box>

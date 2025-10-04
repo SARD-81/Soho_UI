@@ -8,7 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
-import { MdDeleteOutline, MdEdit } from 'react-icons/md';
+import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
 import { formatBytes } from '../../utils/formatters.ts';
@@ -63,7 +63,7 @@ const PoolsTable = ({
       },
       {
         id: 'name',
-        header: 'نام Pool',
+        header: 'نام فضای یکپارچه',
         align: 'left',
         renderCell: (pool) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
@@ -176,15 +176,15 @@ const PoolsTable = ({
         align: 'center',
         renderCell: (pool) => (
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-            <Tooltip title="ویرایش">
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={() => onEdit(pool)}
-              >
-                <MdEdit size={18} />
-              </IconButton>
-            </Tooltip>
+            {/*<Tooltip title="ویرایش">*/}
+            {/*  <IconButton*/}
+            {/*    size="small"*/}
+            {/*    color="primary"*/}
+            {/*    onClick={() => onEdit(pool)}*/}
+            {/*  >*/}
+            {/*    <MdEdit size={18} />*/}
+            {/*  </IconButton>*/}
+            {/*</Tooltip>*/}
             <Tooltip title="حذف">
               <IconButton
                 size="small"
@@ -220,18 +220,18 @@ const PoolsTable = ({
         >
           <CircularProgress color="primary" size={32} />
           <Typography sx={{ color: 'var(--color-secondary)' }}>
-            در حال دریافت اطلاعات Pool ها...
+            در حال دریافت اطلاعات فضا های یکپارچه ...
           </Typography>
         </Box>
       )}
       renderErrorState={(tableError) => (
         <Typography sx={{ color: 'var(--color-error)' }}>
-          خطا در دریافت اطلاعات Pool ها: {tableError.message}
+          خطا در دریافت اطلاعات Poolفضا های یکپارچه: {tableError.message}
         </Typography>
       )}
       renderEmptyState={() => (
         <Typography sx={{ color: 'var(--color-secondary)' }}>
-          هیچ Pool فعالی برای نمایش وجود ندارد.
+          هیچ فضا یکپارچه فعالی برای نمایش وجود ندارد.
         </Typography>
       )}
     />

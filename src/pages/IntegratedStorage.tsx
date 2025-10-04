@@ -124,7 +124,7 @@ const IntegratedStorage = () => {
           }
 
           if (prev.length >= 3) {
-            toast.error('امکان مقایسه بیش از سه Pool وجود ندارد.');
+            toast.error('امکان مقایسه بیش از سه فضای یکپارچه وجود ندارد.');
             return prev;
           }
 

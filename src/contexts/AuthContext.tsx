@@ -30,10 +30,10 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    () => !!localStorage.getItem('authToken')
-  );
-  // const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  // const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
+  //   () => !!localStorage.getItem('authToken')
+  // );
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [username, setUsername] = useState<string | null>(() =>
     localStorage.getItem('username')
   );
