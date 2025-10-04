@@ -31,6 +31,15 @@ interface PoolsTableProps {
   onToggleSelect: (pool: ZpoolCapacityEntry, checked: boolean) => void;
 }
 
+const numberValueSx = {
+  fontWeight: 600,
+  color: 'var(--color-text)',
+  direction: 'ltr' as const,
+  textAlign: 'right' as const,
+  display: 'block',
+  fontVariantNumeric: 'tabular-nums',
+};
+
 const PoolsTable = ({
   pools,
   isLoading,
@@ -82,9 +91,9 @@ const PoolsTable = ({
       {
         id: 'total',
         header: 'ظرفیت کل',
-        align: 'left',
+        align: 'right',
         renderCell: (pool) => (
-          <Typography sx={{ fontWeight: 600, color: 'var(--color-text)' }}>
+          <Typography sx={numberValueSx}>
             {formatCapacity(pool.totalBytes)}
           </Typography>
         ),
@@ -92,13 +101,15 @@ const PoolsTable = ({
       {
         id: 'used',
         header: 'حجم مصرف‌شده',
-        align: 'center',
+        align: 'right',
         cellSx: { minWidth: 180 },
         renderCell: (pool) => {
           const utilization = clampPercent(pool.capacityPercent);
 
           return (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box
+              sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}
+            >
               <Box
                 sx={{
                   position: 'relative',
@@ -122,7 +133,10 @@ const PoolsTable = ({
                 variant="body2"
                 sx={{
                   color: 'var(--color-text)',
-                  // fontFamily: 'var(--font-didot)',
+                  textAlign: 'right',
+                  direction: 'ltr',
+                  display: 'block',
+                  fontVariantNumeric: 'tabular-nums',
                 }}
               >
                 {formatBytes(pool.usedBytes)}
@@ -143,7 +157,7 @@ const PoolsTable = ({
         header: 'حجم آزاد',
         align: 'right',
         renderCell: (pool) => (
-          <Typography sx={{ color: 'var(--color-text)' }}>
+          <Typography sx={{ ...numberValueSx, fontWeight: 500 }}>
             {formatCapacity(pool.freeBytes)}
           </Typography>
         ),

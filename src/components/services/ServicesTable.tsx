@@ -53,6 +53,13 @@ const actionConfigs: Array<{
   },
 ];
 
+const numberTypographySx = {
+  display: 'block',
+  textAlign: 'right' as const,
+  direction: 'ltr' as const,
+  fontVariantNumeric: 'tabular-nums',
+};
+
 const formatServiceValue = (value: ServiceValue) => {
   if (value === null || value === undefined) {
     return '—';
@@ -64,6 +71,10 @@ const formatServiceValue = (value: ServiceValue) => {
 
   if (Array.isArray(value)) {
     return value.map((item) => (item ?? '—').toString()).join(', ');
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return new Intl.NumberFormat('en-US').format(value);
   }
 
   return String(value);
@@ -128,7 +139,7 @@ const ServicesTable = ({
       width: 64,
       renderCell: (_, index) => (
         <Typography component="span" sx={{ fontWeight: 500 }}>
-          {(page * rowsPerPage + index + 1).toLocaleString('fa-IR')}
+          {(page * rowsPerPage + index + 1).toLocaleString('en-US')}
         </Typography>
       ),
     };
@@ -147,7 +158,17 @@ const ServicesTable = ({
       (key) => ({
         id: key,
         header: key,
-        renderCell: (row) => formatServiceValue(row.details[key]),
+        renderCell: (row) => {
+          const rawValue = row.details[key];
+          const formatted = formatServiceValue(rawValue);
+          const isNumeric = typeof rawValue === 'number' && Number.isFinite(rawValue);
+
+          return (
+            <Typography component="span" sx={isNumeric ? numberTypographySx : undefined}>
+              {formatted}
+            </Typography>
+          );
+        },
       })
     );
 
@@ -228,17 +249,17 @@ const ServicesTable = ({
         rowsPerPageOptions: [5, 10, 25],
         labelRowsPerPage: 'ردیف در هر صفحه',
         labelDisplayedRows: ({ from, to, count }) => {
-          const localizedFrom = from.toLocaleString('fa-IR');
-          const localizedTo = to.toLocaleString('fa-IR');
+          const localizedFrom = from.toLocaleString('en-US');
+          const localizedTo = to.toLocaleString('en-US');
           const localizedCount =
             count !== -1
-              ? count.toLocaleString('fa-IR')
+              ? count.toLocaleString('en-US')
               : `بیش از ${localizedTo}`;
 
           return `${localizedFrom}–${localizedTo} از ${localizedCount}`;
         },
         rowCountFormatter: (count) =>
-          `تعداد کل سرویس‌ها: ${count.toLocaleString('fa-IR')}`,
+          `تعداد کل سرویس‌ها: ${count.toLocaleString('en-US')}`,
       }}
     />
   );

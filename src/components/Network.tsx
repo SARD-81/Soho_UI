@@ -48,7 +48,7 @@ const Network = () => {
   }, [data]);
 
   const speedFormatter = useMemo(
-    () => new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }),
+    () => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }),
     []
   );
 

@@ -4,7 +4,7 @@ const formatDetailValue = (value: unknown): string => {
   }
 
   if (typeof value === 'number' && Number.isFinite(value)) {
-    return new Intl.NumberFormat('fa-IR').format(value);
+    return new Intl.NumberFormat('en-US').format(value);
   }
 
   if (Array.isArray(value)) {

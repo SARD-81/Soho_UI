@@ -56,7 +56,7 @@ const OsUsersTable = ({
         width: 64,
         renderCell: (_row, index) => (
           <Typography component="span" sx={{ fontWeight: 600 }}>
-            {(page * rowsPerPage + index + 1).toLocaleString('fa-IR')}
+            {(page * rowsPerPage + index + 1).toLocaleString('en-US')}
           </Typography>
         ),
       },
@@ -199,17 +199,17 @@ const OsUsersTable = ({
         rowsPerPageOptions: [5, 10, 25],
         labelRowsPerPage: 'ردیف در هر صفحه',
         labelDisplayedRows: ({ from, to, count }) => {
-          const localizedFrom = from.toLocaleString('fa-IR');
-          const localizedTo = to.toLocaleString('fa-IR');
+          const localizedFrom = from.toLocaleString('en-US');
+          const localizedTo = to.toLocaleString('en-US');
           const localizedCount =
             count !== -1
-              ? count.toLocaleString('fa-IR')
+              ? count.toLocaleString('en-US')
               : `بیش از ${localizedTo}`;
 
           return `${localizedFrom}–${localizedTo} از ${localizedCount}`;
         },
         rowCountFormatter: (count) =>
-          `تعداد کل کاربران: ${count.toLocaleString('fa-IR')}`,
+          `تعداد کل کاربران: ${count.toLocaleString('en-US')}`,
       }}
     />
   );

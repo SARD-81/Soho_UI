@@ -52,10 +52,9 @@ export const formatBytes = (
     resolvedUnits[unitIndex] ?? resolvedUnits[resolvedUnits.length - 1] ?? '';
 
   const formattedValue = formatter.format(currentValue);
+  const signedValue = `${sign}${formattedValue}`;
 
-  return unitLabel
-    ? `${sign} ${unitLabel}${formattedValue}`
-    : `${sign}${formattedValue}`;
+  return unitLabel ? `${signedValue} ${unitLabel}`.trim() : signedValue;
 };
 
 export type FormatDurationOptions = {

@@ -1,6 +1,6 @@
 const IRAN_TIME_ZONE = 'Asia/Tehran';
 
-const IRAN_DATE_TIME_FORMATTER = new Intl.DateTimeFormat('fa-IR', {
+const IRAN_DATE_TIME_FORMATTER = new Intl.DateTimeFormat('fa-IR-u-nu-latn', {
   dateStyle: 'medium',
   timeStyle: 'short',
   hourCycle: 'h23',
