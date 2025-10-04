@@ -77,7 +77,8 @@ const IntegratedStorage = () => {
         return {
           label: deviceLabel,
           value: wwnValue,
-          tooltip: wwnValue,
+          tooltip: normalizedWwnPath,
+          wwn: normalizedWwnPath,
         } satisfies DeviceOption;
       })
       .filter((option): option is DeviceOption => option !== null)
