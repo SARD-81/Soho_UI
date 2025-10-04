@@ -1,10 +1,4 @@
-import {
-  Alert,
-  Box,
-  Checkbox,
-  FormControlLabel,
-  TextField,
-} from '@mui/material';
+import { Alert, Box, TextField } from '@mui/material';
 import { type FormEvent, useEffect, useState } from 'react';
 import type { CreateSambaUserPayload } from '../../@types/samba';
 import BlurModal from '../BlurModal';
@@ -31,13 +25,11 @@ const SambaUserCreateModal = ({
 }: SambaUserCreateModalProps) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [createOsUserFirst, setCreateOsUserFirst] = useState(false);
 
   useEffect(() => {
     if (open) {
       setUsername(initialUsername ?? '');
       setPassword('');
-      setCreateOsUserFirst(false);
     }
   }, [initialUsername, open]);
 
@@ -51,7 +43,7 @@ const SambaUserCreateModal = ({
     onSubmit({
       username: username.trim(),
       password,
-      createOsUserFirst,
+      createOsUserFirst: true,
     });
   };
 
@@ -133,24 +125,6 @@ const SambaUserCreateModal = ({
               backgroundColor: 'var(--color-input-bg)',
               borderRadius: '5px',
               '& .MuiInputBase-input': { color: 'var(--color-text)' },
-            },
-          }}
-        />
-
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={createOsUserFirst}
-              onChange={(event) => setCreateOsUserFirst(event.target.checked)}
-              color="primary"
-            />
-          }
-          label="ابتدا کاربر سیستم عامل ایجاد شود"
-          sx={{
-            alignSelf: 'flex-start',
-            '& .MuiTypography-root': {
-              color: 'var(--color-secondary)',
-              fontWeight: 500,
             },
           }}
         />
