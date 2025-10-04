@@ -10,8 +10,8 @@ import {
 import { Fragment, useMemo } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
-import { useSambaUsers } from '../../hooks/useSambaUsers';
 import { useFilesystemMountpoints } from '../../hooks/useFilesystemMountpoints';
+import { useSambaUsers } from '../../hooks/useSambaUsers';
 import normalizeSambaUsers from '../../utils/sambaUsers';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
@@ -83,7 +83,9 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     [sambaUsers]
   );
 
-  const filesystemMountpointsQuery = useFilesystemMountpoints({ enabled: isOpen });
+  const filesystemMountpointsQuery = useFilesystemMountpoints({
+    enabled: isOpen,
+  });
   const mountpointOptions = useMemo(
     () => filesystemMountpointsQuery.data ?? [],
     [filesystemMountpointsQuery.data]
@@ -157,12 +159,16 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
       <Box component="form" id="create-share-form" onSubmit={handleSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <Autocomplete
-            freeSolo
+            // freeSolo
             options={mountpointOptions}
             value={fullPath}
             onChange={(_event, newValue) => setFullPath(newValue ?? '')}
             onInputChange={(_event, newInputValue, reason) => {
-              if (reason === 'input' || reason === 'clear' || reason === 'reset') {
+              if (
+                reason === 'input' ||
+                reason === 'clear' ||
+                reason === 'reset'
+              ) {
                 setFullPath(newInputValue ?? '');
               }
             }}
@@ -187,7 +193,11 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                     <Fragment>
                       {pathValidationAdornment}
                       {filesystemMountpointsQuery.isLoading && (
-                        <CircularProgress size={18} thickness={5} sx={{ mr: 1 }} />
+                        <CircularProgress
+                          size={18}
+                          thickness={5}
+                          sx={{ mr: 1 }}
+                        />
                       )}
                       {params.InputProps?.endAdornment}
                     </Fragment>

@@ -43,62 +43,71 @@ const FileSystemsTable = ({
 }: FileSystemsTableProps) => {
   const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
     const baseColumns: DataTableColumn<FileSystemEntry>[] = [
-      {
-        id: 'pool',
-        header: 'نام Pool',
-        align: 'left',
-        renderCell: (filesystem) => (
-          <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-            {filesystem.poolName}
-          </Typography>
-        ),
-      },
+      // {
+      //   id: 'pool',
+      //   header: 'نام Pool',
+      //   align: 'left',
+      //   renderCell: (filesystem) => (
+      //     <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+      //       {filesystem.poolName}
+      //     </Typography>
+      //   ),
+      // },
       {
         id: 'filesystem',
-        header: 'نام فایل سیستم',
+        header: 'نام فضای فایلی',
         align: 'left',
         renderCell: (filesystem) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
               {filesystem.filesystemName}
             </Typography>
-            <Typography variant="caption" sx={{ color: 'var(--color-secondary)' }}>
-              {filesystem.fullName}
+          </Box>
+        ),
+      },
+      {
+        id: 'mountpoint',
+        header: 'mountpoint',
+        align: 'left',
+        renderCell: (filesystem) => (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+            <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+              {filesystem.attributeMap['mountpoint']}
             </Typography>
           </Box>
         ),
       },
     ];
 
-    const dynamicColumns = attributeKeys.map<DataTableColumn<FileSystemEntry>>(
-      (key) => ({
-        id: `attribute-${key}`,
-        header: key,
-        align: 'left',
-        renderCell: (filesystem) => {
-          const rawValue = filesystem.attributeMap[key];
-          const isNumericValue =
-            typeof rawValue === 'number' && Number.isFinite(rawValue);
-
-          return (
-            <Typography
-              sx={isNumericValue ? numericValueTypographySx : valueTypographySx}
-            >
-              {isNumericValue
-                ? new Intl.NumberFormat('en-US').format(rawValue)
-                : rawValue ?? '—'}
-            </Typography>
-          );
-        },
-      })
-    );
+    // const dynamicColumns = attributeKeys.map<DataTableColumn<FileSystemEntry>>(
+    //   (key) => ({
+    //     id: `attribute-${key}`,
+    //     header: key,
+    //     align: 'left',
+    //     renderCell: (filesystem) => {
+    //       const rawValue = filesystem.attributeMap[key];
+    //       const isNumericValue =
+    //         typeof rawValue === 'number' && Number.isFinite(rawValue);
+    //
+    //       return (
+    //         <Typography
+    //           sx={isNumericValue ? numericValueTypographySx : valueTypographySx}
+    //         >
+    //           {isNumericValue
+    //             ? new Intl.NumberFormat('en-US').format(rawValue)
+    //             : (rawValue ?? '—')}
+    //         </Typography>
+    //       );
+    //     },
+    //   })
+    // );
 
     const actionColumn: DataTableColumn<FileSystemEntry> = {
       id: 'actions',
       header: 'عملیات',
       align: 'center',
       renderCell: (filesystem) => (
-        <Tooltip title="حذف فایل سیستم">
+        <Tooltip title="حذف فضای فایلی">
           <span>
             <IconButton
               size="small"
@@ -113,7 +122,7 @@ const FileSystemsTable = ({
       ),
     };
 
-    return [...baseColumns, ...dynamicColumns, actionColumn];
+    return [...baseColumns, actionColumn];
   }, [attributeKeys, isDeleteDisabled, onDeleteFilesystem]);
 
   return (
@@ -134,18 +143,18 @@ const FileSystemsTable = ({
         >
           <CircularProgress color="primary" size={32} />
           <Typography sx={{ color: 'var(--color-secondary)' }}>
-            در حال دریافت اطلاعات فایل سیستم‌ها...
+            در حال دریافت اطلاعات فضا های فایلی ...
           </Typography>
         </Box>
       )}
       renderErrorState={(tableError) => (
         <Typography sx={{ color: 'var(--color-error)' }}>
-          خطا در دریافت اطلاعات فایل سیستم‌ها: {tableError.message}
+          خطا در دریافت اطلاعات فضا های فایلی‌: {tableError.message}
         </Typography>
       )}
       renderEmptyState={() => (
         <Typography sx={{ color: 'var(--color-secondary)' }}>
-          هیچ فایل سیستمی برای نمایش وجود ندارد.
+          هیچ فضای فایلیی برای نمایش وجود ندارد.
         </Typography>
       )}
     />

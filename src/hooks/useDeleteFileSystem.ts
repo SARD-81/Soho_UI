@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
-import type { FileSystemEntry, FileSystemQueryResult } from '../@types/filesystem';
+import type {
+  FileSystemEntry,
+  FileSystemQueryResult,
+} from '../@types/filesystem';
 import axiosInstance from '../lib/axiosInstance';
 
 interface DeleteFileSystemPayload {
@@ -36,9 +39,8 @@ export const useDeleteFileSystem = ({
   onError,
 }: UseDeleteFileSystemOptions = {}) => {
   const queryClient = useQueryClient();
-  const [targetFileSystem, setTargetFileSystem] = useState<FileSystemEntry | null>(
-    null
-  );
+  const [targetFileSystem, setTargetFileSystem] =
+    useState<FileSystemEntry | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const deleteMutation = useMutation<

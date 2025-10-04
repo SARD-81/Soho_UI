@@ -446,7 +446,11 @@ const Memory = () => {
             </Typography>
             <Typography
               variant="subtitle2"
-              sx={{ fontWeight: 700, color: 'var(--color-primary)' }}
+              sx={{
+                fontWeight: 700,
+                color: 'var(--color-primary)',
+                direction: 'rtl',
+              }}
             >
               {stat.value}
             </Typography>

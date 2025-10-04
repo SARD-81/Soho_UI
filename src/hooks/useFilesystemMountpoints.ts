@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance from '../lib/axiosInstance';
 import type { FileSystemApiResponse } from '../@types/filesystem';
+import axiosInstance from '../lib/axiosInstance';
 
 const FILESYSTEM_LIST_ENDPOINT = '/api/filesystem/';
 
@@ -54,4 +54,3 @@ export const useFilesystemMountpoints = ({
 export type UseFilesystemMountpointsReturn = ReturnType<
   typeof useFilesystemMountpoints
 >;
-

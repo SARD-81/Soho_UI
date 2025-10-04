@@ -218,6 +218,18 @@ function LoginForm() {
         >
           {isPending ? 'در حال ورود...' : 'ورود'}
         </Button>
+        <Box
+          textAlign="center"
+          sx={{ marginTop: '25px', marginBottom: '-5px' }}
+        >
+          <Typography
+            variant="h6"
+            color="var(--color-secondary)"
+            sx={{ fontSize: 12, marginBottom: -15 }}
+          >
+            نسخه BETA
+          </Typography>
+        </Box>
       </Stack>
     </Box>
   );

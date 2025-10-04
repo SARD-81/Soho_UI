@@ -14,23 +14,28 @@ import {
   Typography,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { useQuery } from '@tanstack/react-query';
 import type { ChangeEvent } from 'react';
+import { useMemo } from 'react';
 import type { UseCreatePoolReturn } from '../../hooks/useCreatePool';
+import axiosInstance from '../../lib/axiosInstance';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
+
+interface FreeDiskResponse {
+  ok: boolean;
+  error: string | null;
+  data: string[];
+}
 
 export interface DeviceOption {
   label: string;
   value: string;
   tooltip: string;
-  wwn: string;
 }
 
 interface CreatePoolModalProps {
   controller: UseCreatePoolReturn;
-  deviceOptions: DeviceOption[];
-  isDiskLoading: boolean;
-  diskError: Error | null;
 }
 
 const inputBaseStyles = {
@@ -49,12 +54,7 @@ const inputBaseStyles = {
   },
 };
 
-const CreatePoolModal = ({
-  controller,
-  deviceOptions,
-  isDiskLoading,
-  diskError,
-}: CreatePoolModalProps) => {
+const CreatePoolModal = ({ controller }: CreatePoolModalProps) => {
   const {
     isOpen,
     closeCreateModal,
@@ -70,6 +70,37 @@ const CreatePoolModal = ({
     apiError,
     isCreating,
   } = controller;
+
+  const {
+    data: freeDiskResponse,
+    isLoading: isDiskLoading,
+    isFetching: isDiskFetching,
+    error: diskError,
+  } = useQuery<FreeDiskResponse, Error>({
+    queryKey: ['disk', 'free'],
+    queryFn: async () => {
+      const { data } =
+        await axiosInstance.get<FreeDiskResponse>('/api/disk/free');
+      return data;
+    },
+    enabled: isOpen,
+    refetchOnWindowFocus: false,
+  });
+
+  const deviceOptions = useMemo<DeviceOption[]>(() => {
+    if (!freeDiskResponse?.data) {
+      return [];
+    }
+
+    return freeDiskResponse.data.map((disk) => ({
+      label: disk,
+      value: disk,
+      tooltip: disk,
+    }));
+  }, [freeDiskResponse?.data]);
+
+  const isDiskListLoading =
+    isDiskLoading || (isOpen && isDiskFetching && !freeDiskResponse);
 
   const handlePoolNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPoolName(event.target.value);
@@ -153,23 +184,23 @@ const CreatePoolModal = ({
               انتخاب دیسک‌ها
             </Typography>
 
-            {isDiskLoading && (
+            {isDiskListLoading && (
               <LinearProgress sx={{ borderRadius: '5px', height: 6 }} />
             )}
 
-            {diskError && !isDiskLoading && (
+            {diskError && !isDiskListLoading && (
               <Typography sx={{ color: 'var(--color-error)' }}>
                 خطا در دریافت اطلاعات دیسک‌ها: {diskError.message}
               </Typography>
             )}
 
-            {!isDiskLoading && !diskError && deviceOptions.length === 0 && (
+            {!isDiskListLoading && !diskError && deviceOptions.length === 0 && (
               <Typography sx={{ color: 'var(--color-secondary)' }}>
                 دیسکی برای انتخاب موجود نیست.
               </Typography>
             )}
 
-            {!isDiskLoading && !diskError && deviceOptions.length > 0 && (
+            {!isDiskListLoading && !diskError && deviceOptions.length > 0 && (
               <Box
                 sx={{
                   maxHeight: 260,
@@ -206,24 +237,12 @@ const CreatePoolModal = ({
                       }
                       label={
                         <Tooltip title={device.tooltip} placement="top" arrow>
-                          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                            <Typography
-                              component="span"
-                              sx={{ color: 'var(--color-text)', fontWeight: 600 }}
-                            >
-                              {device.label}
-                            </Typography>
-                            <Typography
-                              component="span"
-                              sx={{
-                                color: 'var(--color-secondary)',
-                                fontSize: '0.78rem',
-                                direction: 'ltr',
-                              }}
-                            >
-                              {device.wwn}
-                            </Typography>
-                          </Box>
+                          <Typography
+                            component="span"
+                            sx={{ color: 'var(--color-text)' }}
+                          >
+                            {device.label}
+                          </Typography>
                         </Tooltip>
                       }
                       sx={{

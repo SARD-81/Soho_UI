@@ -67,7 +67,8 @@ const deriveNameParts = (
 
   const [poolPart, ...rest] = fullNameSource.split('/');
   const poolName = poolPart?.trim() ? poolPart.trim() : 'نامشخص';
-  const filesystemNameSource = rest.length > 0 ? rest.join('/') : fullNameSource;
+  const filesystemNameSource =
+    rest.length > 0 ? rest.join('/') : fullNameSource;
   const filesystemName =
     filesystemNameSource.trim().length > 0
       ? filesystemNameSource.trim()
@@ -83,7 +84,10 @@ const deriveNameParts = (
 const enrichAttributes = (raw: FileSystemRawEntry, fullName: string) => {
   const normalized = { ...raw };
 
-  if (typeof normalized.name !== 'string' || normalized.name.trim().length === 0) {
+  if (
+    typeof normalized.name !== 'string' ||
+    normalized.name.trim().length === 0
+  ) {
     normalized.name = fullName;
   }
 
@@ -92,10 +96,13 @@ const enrichAttributes = (raw: FileSystemRawEntry, fullName: string) => {
     value: formatAttributeValue(value),
   }));
 
-  const attributeMap = entries.reduce<Record<string, string>>((acc, attribute) => {
-    acc[attribute.key] = attribute.value;
-    return acc;
-  }, {});
+  const attributeMap = entries.reduce<Record<string, string>>(
+    (acc, attribute) => {
+      acc[attribute.key] = attribute.value;
+      return acc;
+    },
+    {}
+  );
 
   return { entries, attributeMap };
 };
@@ -134,7 +141,9 @@ const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
 
   const filesystems = (() => {
     if (Array.isArray(data)) {
-      return data.map((raw, index) => normalizeFileSystemEntry(undefined, raw, index));
+      return data.map((raw, index) =>
+        normalizeFileSystemEntry(undefined, raw, index)
+      );
     }
 
     if (data && typeof data === 'object') {

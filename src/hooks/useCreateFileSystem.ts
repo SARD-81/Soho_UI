@@ -115,12 +115,12 @@ export const useCreateFileSystem = ({
       let hasError = false;
 
       if (!trimmedPool) {
-        setPoolError('لطفاً Pool مقصد را انتخاب کنید.');
+        setPoolError('لطفاً فضای یکپارچه مقصد را انتخاب کنید.');
         hasError = true;
       }
 
       if (!trimmedName) {
-        setNameError('نام فایل سیستم را وارد کنید.');
+        setNameError('نام فضای فایلی را وارد کنید.');
         hasError = true;
       }
 
