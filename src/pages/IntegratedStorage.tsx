@@ -5,13 +5,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
-import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import SelectedPoolsDetailsPanel from '../components/integrated-storage/SelectedPoolsDetailsPanel';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
-import { useDiskWwnMap } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
 import {
   fetchZpoolDetails,
@@ -46,47 +44,6 @@ const IntegratedStorage = () => {
   } = useZpool({
     refetchInterval: 1000,
   });
-
-  const {
-    data: diskWwnMap,
-    isLoading: isDiskMapLoading,
-    isFetching: isDiskMapFetching,
-    error: diskMapError,
-  } = useDiskWwnMap({
-    enabled: createPool.isOpen,
-    refetchInterval: createPool.isOpen ? 5000 : undefined,
-  });
-
-  const deviceOptions = useMemo<DeviceOption[]>(() => {
-    const data = diskWwnMap?.data;
-    if (!data) {
-      return [];
-    }
-
-    return Object.entries(data)
-      .map(([devicePath, wwnPath]) => {
-        const deviceLabel = devicePath.split('/').pop() ?? devicePath;
-        const normalizedWwnPath =
-          typeof wwnPath === 'string' ? wwnPath : String(wwnPath ?? '');
-        const wwnValue =
-          normalizedWwnPath.split('/').pop() ?? normalizedWwnPath;
-
-        if (!wwnValue) {
-          return null;
-        }
-
-        return {
-          label: deviceLabel,
-          value: wwnValue,
-          tooltip: wwnValue,
-        } satisfies DeviceOption;
-      })
-      .filter((option): option is DeviceOption => option !== null)
-      .sort((a, b) => a.label.localeCompare(b.label, 'en'));
-  }, [diskWwnMap?.data]);
-
-  const isDiskLoading =
-    isDiskMapLoading || (createPool.isOpen && isDiskMapFetching && !diskWwnMap);
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
 
@@ -209,9 +166,6 @@ const IntegratedStorage = () => {
 
       <CreatePoolModal
         controller={createPool}
-        deviceOptions={deviceOptions}
-        isDiskLoading={isDiskLoading}
-        diskError={diskMapError ?? null}
       />
 
       <PoolsTable
