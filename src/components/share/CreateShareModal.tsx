@@ -7,11 +7,11 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
-import type { ChangeEvent } from 'react';
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
+import { useFilesystemMountpoints } from '../../hooks/useFilesystemMountpoints';
 import normalizeSambaUsers from '../../utils/sambaUsers';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
@@ -54,10 +54,6 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     isPathValid,
   } = controller;
 
-  const handlePathChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setFullPath(event.target.value);
-  };
-
   const sambaUsersQuery = useSambaUsers({ enabled: isOpen });
   const sambaUsers = useMemo(
     () => normalizeSambaUsers(sambaUsersQuery.data?.data),
@@ -66,6 +62,12 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   const sambaUsernames = useMemo(
     () => sambaUsers.map((user) => user.username).filter(Boolean),
     [sambaUsers]
+  );
+
+  const filesystemMountpointsQuery = useFilesystemMountpoints({ enabled: isOpen });
+  const mountpointOptions = useMemo(
+    () => filesystemMountpointsQuery.data ?? [],
+    [filesystemMountpointsQuery.data]
   );
 
   const hasPathError =
@@ -135,23 +137,46 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     >
       <Box component="form" id="create-share-form" onSubmit={handleSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <TextField
-            label="مسیر کامل"
+          <Autocomplete
+            freeSolo
+            options={mountpointOptions}
             value={fullPath}
-            onChange={handlePathChange}
-            autoFocus
-            fullWidth
-            placeholder={
-              'مسیر کامل پوشه اشتراک را وارد کنید (مانند /mnt/data/share)'
-            }
-            size="small"
-            error={hasPathError}
-            helperText={pathHelperText}
-            InputLabelProps={{ shrink: true }}
-            InputProps={{
-              sx: inputBaseStyles,
-              endAdornment: pathValidationAdornment,
+            onChange={(_event, newValue) => setFullPath(newValue ?? '')}
+            onInputChange={(_event, newInputValue, reason) => {
+              if (reason === 'input' || reason === 'clear' || reason === 'reset') {
+                setFullPath(newInputValue ?? '');
+              }
             }}
+            fullWidth
+            size="small"
+            loading={filesystemMountpointsQuery.isLoading}
+            noOptionsText="مسیر (mountpoint) یافت نشد"
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="مسیر کامل"
+                autoFocus
+                placeholder={
+                  'مسیر کامل پوشه اشتراک را وارد کنید (مانند /mnt/data/share)'
+                }
+                error={hasPathError}
+                helperText={pathHelperText}
+                InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
+                InputProps={{
+                  ...params.InputProps,
+                  sx: inputBaseStyles,
+                  endAdornment: (
+                    <Fragment>
+                      {pathValidationAdornment}
+                      {filesystemMountpointsQuery.isLoading && (
+                        <CircularProgress size={18} thickness={5} sx={{ mr: 1 }} />
+                      )}
+                      {params.InputProps?.endAdornment}
+                    </Fragment>
+                  ),
+                }}
+              />
+            )}
           />
 
           <Autocomplete

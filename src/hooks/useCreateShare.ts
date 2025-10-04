@@ -6,6 +6,8 @@ import type { CreateShareWithPermissionsPayload } from '../@types/samba';
 import { createShareWithDirectoryPermissions } from '../lib/shareService';
 import { sambaSharesQueryKey } from './useSambaShares';
 
+type PathValidationStatus = 'idle' | 'valid' | 'invalid';
+
 interface ApiErrorResponse {
   detail?: string;
   message?: string;
@@ -149,6 +151,10 @@ export const useCreateShare = ({
     validUsersError,
     apiError,
     isCreating: createShareMutation.isPending,
+    pathValidationStatus: 'idle' as PathValidationStatus,
+    pathValidationMessage: null as string | null,
+    isPathChecking: false,
+    isPathValid: false,
     openCreateModal: handleOpen,
     closeCreateModal,
     setFullPath,
