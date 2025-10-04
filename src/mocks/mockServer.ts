@@ -8,6 +8,13 @@ import {
 import type { RawSambaUserDetails } from '../@types/samba';
 import type { DirPermissionsEntry, MockOsUser, MockState } from './mockState';
 import { mockState } from './mockState';
+import {
+  updateCpuMetrics,
+  updateDiskMetrics,
+  updateMemoryMetrics,
+  updateNetworkMetrics,
+  updateZpoolMetrics,
+} from './telemetry';
 
 interface MockRouteContext {
   config: InternalAxiosRequestConfig;
@@ -205,17 +212,21 @@ const mockRoutes: MockRoute[] = [
   {
     method: 'GET',
     pattern: /^\/api\/zpool\/?$/,
-    handler: ({ state }) => ({
-      status: 200,
-      data: { data: state.zpool.capacities },
-    }),
+    handler: ({ state }) => {
+      const zpool = updateZpoolMetrics(state);
+      return {
+        status: 200,
+        data: { data: zpool.capacities },
+      };
+    },
   },
   {
     method: 'GET',
     pattern: /^\/api\/zpool\/([^/]+)\/?$/,
     handler: ({ match, state }) => {
       const poolName = decodeURIComponent(match[1]);
-      const details = state.zpool.details[poolName];
+      const zpool = updateZpoolMetrics(state);
+      const details = zpool.details[poolName];
 
       return {
         status: 200,
@@ -380,7 +391,7 @@ const mockRoutes: MockRoute[] = [
     pattern: /^\/api\/disk\/?$/,
     handler: ({ state }) => ({
       status: 200,
-      data: state.disk,
+      data: updateDiskMetrics(state),
     }),
   },
   {
@@ -396,7 +407,7 @@ const mockRoutes: MockRoute[] = [
     pattern: /^\/api\/net\/?$/,
     handler: ({ state }) => ({
       status: 200,
-      data: state.network,
+      data: updateNetworkMetrics(state),
     }),
   },
   {
@@ -458,7 +469,7 @@ const mockRoutes: MockRoute[] = [
     pattern: /^\/api\/cpu\/?$/,
     handler: ({ state }) => ({
       status: 200,
-      data: state.cpu,
+      data: updateCpuMetrics(state),
     }),
   },
   {
@@ -466,7 +477,7 @@ const mockRoutes: MockRoute[] = [
     pattern: /^\/api\/memory\/?$/,
     handler: ({ state }) => ({
       status: 200,
-      data: state.memory,
+      data: updateMemoryMetrics(state),
     }),
   },
   {
