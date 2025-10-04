@@ -9,6 +9,7 @@ import {
 import { toast } from 'react-hot-toast';
 import type { SambaShareEntry } from '../@types/samba';
 import TabPanel from '../components/TabPanel';
+import ConfirmDeleteShareModal from '../components/share/ConfirmDeleteShareModal';
 import CreateShareModal from '../components/share/CreateShareModal';
 import SelectedSharesDetailsPanel from '../components/share/SelectedSharesDetailsPanel';
 import SharesTable from '../components/share/SharesTable';
@@ -70,7 +71,7 @@ const Share = () => {
     },
   });
 
-  const deleteShare = useDeleteShare({
+  const shareDeletion = useDeleteShare({
     onSuccess: (shareName) => {
       toast.success(`اشتراک ${shareName} با موفقیت حذف شد.`);
     },
@@ -150,9 +151,9 @@ const Share = () => {
 
   const handleDeleteShare = useCallback(
     (share: SambaShareEntry) => {
-      deleteShare.deleteShare(share.name);
+      shareDeletion.requestDelete(share);
     },
-    [deleteShare]
+    [shareDeletion]
   );
 
   const comparisonItems = useMemo(
@@ -442,8 +443,8 @@ const Share = () => {
             selectedShares={selectedShares}
             onToggleSelect={handleToggleSelect}
             onDelete={handleDeleteShare}
-            pendingShareName={deleteShare.pendingShareName}
-            isDeleting={deleteShare.isDeleting}
+            pendingShareName={shareDeletion.pendingShareName}
+            isDeleting={shareDeletion.isDeleting}
           />
 
           <SelectedSharesDetailsPanel
@@ -517,6 +518,8 @@ const Share = () => {
       </TabPanel>
 
       <CreateShareModal controller={createShare} />
+
+      <ConfirmDeleteShareModal controller={shareDeletion} />
 
       <SambaUserCreateModal
         open={isSambaCreateModalOpen}
