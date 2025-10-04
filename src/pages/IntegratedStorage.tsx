@@ -11,7 +11,7 @@ import PoolsTable from '../components/integrated-storage/PoolsTable';
 import SelectedPoolsDetailsPanel from '../components/integrated-storage/SelectedPoolsDetailsPanel';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
-import { useDiskWwnMap } from '../hooks/useDisk';
+import { useFreeDisks } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
 import {
   fetchZpoolDetails,
@@ -48,45 +48,124 @@ const IntegratedStorage = () => {
   });
 
   const {
-    data: diskWwnMap,
-    isLoading: isDiskMapLoading,
-    isFetching: isDiskMapFetching,
-    error: diskMapError,
-  } = useDiskWwnMap({
+    data: freeDiskData,
+    isLoading: isFreeDiskLoading,
+    isFetching: isFreeDiskFetching,
+    error: freeDiskError,
+  } = useFreeDisks({
     enabled: createPool.isOpen,
     refetchInterval: createPool.isOpen ? 5000 : undefined,
   });
 
   const deviceOptions = useMemo<DeviceOption[]>(() => {
-    const data = diskWwnMap?.data;
-    if (!data) {
+    if (!freeDiskData) {
       return [];
     }
 
-    return Object.entries(data)
-      .map(([devicePath, wwnPath]) => {
-        const deviceLabel = devicePath.split('/').pop() ?? devicePath;
-        const normalizedWwnPath =
-          typeof wwnPath === 'string' ? wwnPath : String(wwnPath ?? '');
-        const wwnValue =
-          normalizedWwnPath.split('/').pop() ?? normalizedWwnPath;
+    const disks = (() => {
+      if (Array.isArray(freeDiskData)) {
+        return freeDiskData;
+      }
 
-        if (!wwnValue) {
+      if (typeof freeDiskData === 'object' && freeDiskData !== null) {
+        const withLists = freeDiskData as {
+          disks?: unknown;
+          data?: unknown;
+        };
+
+        if (Array.isArray(withLists.disks)) {
+          return withLists.disks;
+        }
+
+        if (Array.isArray(withLists.data)) {
+          return withLists.data;
+        }
+      }
+
+      return [];
+    })();
+
+    const pickString = (...values: unknown[]): string | undefined => {
+      for (const value of values) {
+        if (typeof value === 'string') {
+          const trimmed = value.trim();
+          if (trimmed) {
+            return trimmed;
+          }
+        }
+
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          return String(value);
+        }
+      }
+
+      return undefined;
+    };
+
+    return disks
+      .map((disk) => {
+        if (typeof disk === 'string') {
+          const value = disk.trim();
+          if (!value) {
+            return null;
+          }
+
+          return {
+            label: value,
+            value,
+            tooltip: value,
+          } satisfies DeviceOption;
+        }
+
+        if (!disk || typeof disk !== 'object') {
+          return null;
+        }
+
+        const diskRecord = disk as Record<string, unknown>;
+
+        const label =
+          pickString(
+            diskRecord.name,
+            diskRecord.device,
+            diskRecord.path,
+            diskRecord.wwn,
+            diskRecord.serial
+          ) ?? undefined;
+
+        const value =
+          pickString(
+            diskRecord.wwn,
+            diskRecord.serial,
+            diskRecord.path,
+            diskRecord.device,
+            diskRecord.name
+          ) ?? undefined;
+
+        const tooltip =
+          pickString(
+            diskRecord.path,
+            diskRecord.wwn,
+            diskRecord.serial,
+            diskRecord.model
+          ) ?? label ?? value;
+
+        if (!value) {
           return null;
         }
 
         return {
-          label: deviceLabel,
-          value: wwnValue,
-          tooltip: wwnValue,
+          label: label ?? value,
+          value,
+          tooltip: tooltip ?? value,
         } satisfies DeviceOption;
       })
       .filter((option): option is DeviceOption => option !== null)
       .sort((a, b) => a.label.localeCompare(b.label, 'en'));
-  }, [diskWwnMap?.data]);
+  }, [freeDiskData]);
 
   const isDiskLoading =
-    isDiskMapLoading || (createPool.isOpen && isDiskMapFetching && !diskWwnMap);
+    isFreeDiskLoading ||
+    (createPool.isOpen && isFreeDiskFetching && !freeDiskData);
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
 
@@ -211,7 +290,7 @@ const IntegratedStorage = () => {
         controller={createPool}
         deviceOptions={deviceOptions}
         isDiskLoading={isDiskLoading}
-        diskError={diskMapError ?? null}
+        diskError={freeDiskError ?? null}
       />
 
       <PoolsTable

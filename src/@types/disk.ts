@@ -41,6 +41,22 @@ export interface DiskWwnMapResponse {
   data: Record<string, string>;
 }
 
+export type FreeDiskItem =
+  | string
+  | {
+      name?: string;
+      device?: string;
+      path?: string;
+      wwn?: string;
+      serial?: string;
+      model?: string;
+      [key: string]: unknown;
+    };
+
+export type FreeDiskResponse =
+  | { disks?: FreeDiskItem[]; data?: FreeDiskItem[] }
+  | FreeDiskItem[];
+
 export type NormalizedMetrics = Record<keyof DiskIOStats, number>;
 
 export type DiskMetricConfig = {
