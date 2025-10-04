@@ -284,7 +284,7 @@ const Network = () => {
                   py: 1.5,
                   border: `1px dashed ${metaInfoBorderColor}`,
                   display: 'flex',
-                  alignItems: 'flex-start',
+                  alignItems: 'flex-end',
                   flexDirection: 'column',
                   gap: 0.75,
                 }}

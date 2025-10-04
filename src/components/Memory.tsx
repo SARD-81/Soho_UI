@@ -254,8 +254,14 @@ const Memory = () => {
   ];
 
   const chartOuterRadius = Math.min(110, chartSize / 2 - 8);
-  const chartInnerRadius = Math.max(chartOuterRadius - 24, chartOuterRadius * 0.22);
-  const chartFadedInnerRadius = Math.max(chartInnerRadius - 6, chartInnerRadius * 0.9);
+  const chartInnerRadius = Math.max(
+    chartOuterRadius - 24,
+    chartOuterRadius * 0.22
+  );
+  const chartFadedInnerRadius = Math.max(
+    chartInnerRadius - 6,
+    chartInnerRadius * 0.9
+  );
 
   return (
     <Box sx={{ ...cardSx, width: '100%' }}>

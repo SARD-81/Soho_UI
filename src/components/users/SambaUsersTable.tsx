@@ -85,23 +85,23 @@ const SambaUsersTable = ({
       //     </Typography>
       //   ),
       // },
-      {
-        id: 'profile-path',
-        header: 'مسیر پروفایل',
-        align: 'left',
-        renderCell: (user) => (
-          <Typography
-            sx={{
-              color: 'var(--color-text)',
-              direction: 'ltr',
-              wordBreak: 'break-all',
-              fontFamily: 'var(--font-vazir)',
-            }}
-          >
-            {valueOrDash(user.profilePath)}
-          </Typography>
-        ),
-      },
+      // {
+      //   id: 'profile-path',
+      //   header: 'مسیر پروفایل',
+      //   align: 'left',
+      //   renderCell: (user) => (
+      //     <Typography
+      //       sx={{
+      //         color: 'var(--color-text)',
+      //         direction: 'ltr',
+      //         wordBreak: 'break-all',
+      //         fontFamily: 'var(--font-vazir)',
+      //       }}
+      //     >
+      //       {valueOrDash(user.profilePath)}
+      //     </Typography>
+      //   ),
+      // },
       {
         id: 'password-must-change',
         header: 'تغییر اجباری گذرواژه',

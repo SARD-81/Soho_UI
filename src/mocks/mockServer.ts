@@ -1,10 +1,10 @@
+import type { Method } from 'axios';
 import {
   AxiosError,
   type AxiosAdapter,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios';
-import type { Method } from 'axios';
 import type { RawSambaUserDetails } from '../@types/samba';
 import type { DirPermissionsEntry, MockOsUser, MockState } from './mockState';
 import { mockState } from './mockState';
@@ -45,8 +45,7 @@ const STATUS_TEXT: Record<number, string> = {
   409: 'Conflict',
 };
 
-const normalizeMethod = (method?: string) =>
-  (method ?? 'get').toUpperCase();
+const normalizeMethod = (method?: string) => (method ?? 'get').toUpperCase();
 
 const getStatusText = (status: number) => STATUS_TEXT[status] ?? 'OK';
 
@@ -236,12 +235,9 @@ const mockRoutes: MockRoute[] = [
         : [];
 
       if (!poolName) {
-        throw createAxiosError(
-          'نام Pool ارسال نشده است.',
-          config,
-          400,
-          { detail: 'نام Pool الزامی است.' }
-        );
+        throw createAxiosError('نام Pool ارسال نشده است.', config, 400, {
+          detail: 'نام Pool الزامی است.',
+        });
       }
 
       if (state.zpool.capacities.some((pool) => pool.name === poolName)) {
@@ -295,12 +291,9 @@ const mockRoutes: MockRoute[] = [
       const poolName = String(body.pool_name ?? '').trim();
 
       if (!poolName) {
-        throw createAxiosError(
-          'Pool مورد نظر مشخص نشده است.',
-          config,
-          400,
-          { detail: 'نام Pool الزامی است.' }
-        );
+        throw createAxiosError('Pool مورد نظر مشخص نشده است.', config, 400, {
+          detail: 'نام Pool الزامی است.',
+        });
       }
 
       state.zpool.capacities = state.zpool.capacities.filter(
@@ -337,12 +330,9 @@ const mockRoutes: MockRoute[] = [
       const volsize = String(body.volsize ?? '').trim();
 
       if (!volumeName) {
-        throw createAxiosError(
-          'نام Volume ارسال نشده است.',
-          config,
-          400,
-          { detail: 'نام Volume الزامی است.' }
-        );
+        throw createAxiosError('نام Volume ارسال نشده است.', config, 400, {
+          detail: 'نام Volume الزامی است.',
+        });
       }
 
       state.volumes[volumeName] = {
@@ -372,12 +362,9 @@ const mockRoutes: MockRoute[] = [
       const volumeName = String(body.volume_name ?? '').trim();
 
       if (!volumeName) {
-        throw createAxiosError(
-          'Volume مورد نظر مشخص نشده است.',
-          config,
-          400,
-          { detail: 'نام Volume الزامی است.' }
-        );
+        throw createAxiosError('Volume مورد نظر مشخص نشده است.', config, 400, {
+          detail: 'نام Volume الزامی است.',
+        });
       }
 
       delete state.volumes[volumeName];
@@ -422,23 +409,17 @@ const mockRoutes: MockRoute[] = [
       const netmask = String(body.netmask ?? '').trim();
 
       if (!ip || !netmask) {
-        throw createAxiosError(
-          'آی‌پی یا نت‌ماسک معتبر نیست.',
-          config,
-          400,
-          { detail: 'ip و netmask الزامی هستند.' }
-        );
+        throw createAxiosError('آی‌پی یا نت‌ماسک معتبر نیست.', config, 400, {
+          detail: 'ip و netmask الزامی هستند.',
+        });
       }
 
       const networkInterface = state.network.interfaces[interfaceName];
 
       if (!networkInterface) {
-        throw createAxiosError(
-          'اینترفیس مورد نظر یافت نشد.',
-          config,
-          404,
-          { detail: 'رابط شبکه وجود ندارد.' }
-        );
+        throw createAxiosError('اینترفیس مورد نظر یافت نشد.', config, 404, {
+          detail: 'رابط شبکه وجود ندارد.',
+        });
       }
 
       const addresses = Array.isArray(networkInterface.addresses)
@@ -505,23 +486,17 @@ const mockRoutes: MockRoute[] = [
       const serviceName = String(body.service ?? '').trim();
 
       if (!serviceName) {
-        throw createAxiosError(
-          'نام سرویس ارسال نشده است.',
-          config,
-          400,
-          { detail: 'نام سرویس الزامی است.' }
-        );
+        throw createAxiosError('نام سرویس ارسال نشده است.', config, 400, {
+          detail: 'نام سرویس الزامی است.',
+        });
       }
 
       const service = state.services[serviceName];
 
       if (!service) {
-        throw createAxiosError(
-          'سرویس یافت نشد.',
-          config,
-          404,
-          { detail: 'سرویس مورد نظر وجود ندارد.' }
-        );
+        throw createAxiosError('سرویس یافت نشد.', config, 404, {
+          detail: 'سرویس مورد نظر وجود ندارد.',
+        });
       }
 
       if (action === 'stop') {
@@ -541,12 +516,9 @@ const mockRoutes: MockRoute[] = [
         service.last_action = 'restarted via mock service';
         service.last_restart = new Date().toISOString();
       } else {
-        throw createAxiosError(
-          'عملیات نامعتبر است.',
-          config,
-          400,
-          { detail: 'نوع عملیات پشتیبانی نمی‌شود.' }
-        );
+        throw createAxiosError('عملیات نامعتبر است.', config, 400, {
+          detail: 'نوع عملیات پشتیبانی نمی‌شود.',
+        });
       }
 
       return {
@@ -600,12 +572,9 @@ const mockRoutes: MockRoute[] = [
       const loginShell = String(body.login_shell ?? body.shell ?? '').trim();
 
       if (!username) {
-        throw createAxiosError(
-          'نام کاربری ارسال نشده است.',
-          config,
-          400,
-          { detail: 'نام کاربری الزامی است.' }
-        );
+        throw createAxiosError('نام کاربری ارسال نشده است.', config, 400, {
+          detail: 'نام کاربری الزامی است.',
+        });
       }
 
       upsertOsUser(state, {
@@ -660,12 +629,9 @@ const mockRoutes: MockRoute[] = [
       const username = String(body.username ?? '').trim();
 
       if (!username) {
-        throw createAxiosError(
-          'نام کاربری ارسال نشده است.',
-          config,
-          400,
-          { detail: 'نام کاربری الزامی است.' }
-        );
+        throw createAxiosError('نام کاربری ارسال نشده است.', config, 400, {
+          detail: 'نام کاربری الزامی است.',
+        });
       }
 
       state.sambaUsers[username] = {
@@ -706,12 +672,9 @@ const mockRoutes: MockRoute[] = [
       const entry = username ? state.sambaUsers[username] : undefined;
 
       if (!entry) {
-        throw createAxiosError(
-          'کاربر سامبا یافت نشد.',
-          config,
-          404,
-          { detail: 'کاربر مورد نظر وجود ندارد.' }
-        );
+        throw createAxiosError('کاربر سامبا یافت نشد.', config, 404, {
+          detail: 'کاربر مورد نظر وجود ندارد.',
+        });
       }
 
       entry.disabled = false;
@@ -736,12 +699,9 @@ const mockRoutes: MockRoute[] = [
       const entry = username ? state.sambaUsers[username] : undefined;
 
       if (!entry) {
-        throw createAxiosError(
-          'کاربر سامبا یافت نشد.',
-          config,
-          404,
-          { detail: 'کاربر مورد نظر وجود ندارد.' }
-        );
+        throw createAxiosError('کاربر سامبا یافت نشد.', config, 404, {
+          detail: 'کاربر مورد نظر وجود ندارد.',
+        });
       }
 
       entry.details = {
@@ -811,12 +771,9 @@ const mockRoutes: MockRoute[] = [
       const shareName = String(body.share_name ?? '').trim();
 
       if (!shareName) {
-        throw createAxiosError(
-          'نام اشتراک ارسال نشده است.',
-          config,
-          400,
-          { detail: 'نام اشتراک الزامی است.' }
-        );
+        throw createAxiosError('نام اشتراک ارسال نشده است.', config, 400, {
+          detail: 'نام اشتراک الزامی است.',
+        });
       }
 
       delete state.sambaShares[shareName];
@@ -835,12 +792,9 @@ const mockRoutes: MockRoute[] = [
       const path = String(body.path ?? '').trim();
 
       if (!path) {
-        throw createAxiosError(
-          'مسیر ارسال نشده است.',
-          config,
-          400,
-          { detail: 'path الزامی است.' }
-        );
+        throw createAxiosError('مسیر ارسال نشده است.', config, 400, {
+          detail: 'path الزامی است.',
+        });
       }
 
       ensureDirectoryEntry(state, path, {
@@ -915,10 +869,7 @@ export const mockAxiosAdapter: AxiosAdapter = async (config) => {
   const method = normalizeMethod(config.method);
 
   for (const route of mockRoutes) {
-    if (
-      normalizeMethod(route.method) === method &&
-      route.pattern.test(path)
-    ) {
+    if (normalizeMethod(route.method) === method && route.pattern.test(path)) {
       const match = path.match(route.pattern);
 
       if (!match) {
@@ -945,10 +896,7 @@ export const mockAxiosAdapter: AxiosAdapter = async (config) => {
     }
   }
 
-  throw createAxiosError(
-    `No mock handler for ${method} ${path}`,
-    config,
-    404,
-    { detail: 'مسیر در حالت آفلاین پشتیبانی نمی‌شود.' }
-  );
+  throw createAxiosError(`No mock handler for ${method} ${path}`, config, 404, {
+    detail: 'مسیر در حالت آفلاین پشتیبانی نمی‌شود.',
+  });
 };

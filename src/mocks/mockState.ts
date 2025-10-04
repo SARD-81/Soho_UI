@@ -2,10 +2,7 @@ import type { DiskResponse } from '../@types/disk';
 import type { RawSambaUserDetails, SambaShareDetails } from '../@types/samba';
 import type { ServiceDetails } from '../@types/service';
 import type { VolumeRawEntry } from '../@types/volume';
-import type {
-  ZpoolCapacityPayload,
-  ZpoolDetailEntry,
-} from '../@types/zpool';
+import type { ZpoolCapacityPayload, ZpoolDetailEntry } from '../@types/zpool';
 import type { CpuResponse } from '../hooks/useCpu';
 import type { MemoryResponse } from '../hooks/useMemory';
 import type { NetworkData } from '../hooks/useNetwork';

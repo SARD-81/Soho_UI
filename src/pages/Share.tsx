@@ -1,5 +1,11 @@
 import { Box, Button, Tab, Tabs, Typography } from '@mui/material';
-import { type SyntheticEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  type SyntheticEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { toast } from 'react-hot-toast';
 import type { SambaShareEntry } from '../@types/samba';
 import TabPanel from '../components/TabPanel';
@@ -11,14 +17,14 @@ import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
 import SambaUsersTable from '../components/users/SambaUsersTable';
 import SelectedSambaUsersDetailsPanel from '../components/users/SelectedSambaUsersDetailsPanel';
 import { DEFAULT_LOGIN_SHELL } from '../constants/users';
+import { useCreateOsUser } from '../hooks/useCreateOsUser';
+import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
 import { useCreateShare } from '../hooks/useCreateShare';
 import { useDeleteShare } from '../hooks/useDeleteShare';
-import { useCreateOsUser } from '../hooks/useCreateOsUser';
-import { useSambaShares } from '../hooks/useSambaShares';
-import { useServiceAction } from '../hooks/useServiceAction';
-import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
 import { useEnableSambaUser } from '../hooks/useEnableSambaUser';
+import { useSambaShares } from '../hooks/useSambaShares';
 import { useSambaUsers } from '../hooks/useSambaUsers';
+import { useServiceAction } from '../hooks/useServiceAction';
 import { useUpdateSambaUserPassword } from '../hooks/useUpdateSambaUserPassword';
 import { normalizeSambaUsers } from '../utils/sambaUsers';
 
@@ -385,7 +391,7 @@ const Share = () => {
         }}
       >
         <Tab label="اشتراک‌ها" value={SHARE_TABS.shares} />
-        <Tab label="کاربران Samba" value={SHARE_TABS.sambaUsers} />
+        <Tab label="کاربران اشتراک فایل" value={SHARE_TABS.sambaUsers} />
       </Tabs>
 
       <TabPanel value={SHARE_TABS.shares} currentValue={activeTab}>
@@ -462,7 +468,7 @@ const Share = () => {
               variant="h6"
               sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
             >
-              مدیریت کاربران Samba
+              مدیریت کاربران
             </Typography>
 
             <Button
@@ -485,7 +491,7 @@ const Share = () => {
                 },
               }}
             >
-              افزودن کاربر Samba
+              افزودن کاربر
             </Button>
           </Box>
 

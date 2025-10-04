@@ -1,18 +1,7 @@
-import {
-  Box,
-  CircularProgress,
-  IconButton,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
-import {
-  MdCancel,
-  MdCheckCircle,
-  MdDeleteOutline,
-  MdHelpOutline,
-  MdPersonAddAlt1,
-} from 'react-icons/md';
+import { FiEdit3 } from 'react-icons/fi';
+import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { OsUserTableItem } from '../../@types/users';
 import DataTable from '../DataTable';
@@ -83,90 +72,90 @@ const OsUsersTable = ({
           </Typography>
         ),
       },
-      {
-        id: 'samba-status',
-        header: 'وضعیت Samba',
-        align: 'center',
-        width: 120,
-        renderCell: (row) => {
-          if (isSambaStatusLoading && row.hasSambaUser === undefined) {
-            return (
-              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                <CircularProgress
-                  size={18}
-                  sx={{ color: 'var(--color-secondary)' }}
-                />
-              </Box>
-            );
-          }
-
-          const iconProps = {
-            size: 20,
-          };
-
-          if (row.hasSambaUser) {
-            return (
-              <Tooltip title="کاربر Samba موجود است" arrow>
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <MdCheckCircle
-                    {...iconProps}
-                    color="var(--color-success)"
-                    aria-label="دارای کاربر Samba"
-                  />
-                </Box>
-              </Tooltip>
-            );
-          }
-
-          if (row.hasSambaUser === false) {
-            return (
-              <Tooltip title="کاربر Samba موجود نیست" arrow>
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <MdCancel
-                    {...iconProps}
-                    color="var(--color-error)"
-                    aria-label="فاقد کاربر Samba"
-                  />
-                </Box>
-              </Tooltip>
-            );
-          }
-
-          return (
-            <Tooltip title="نامشخص" arrow>
-              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                <MdHelpOutline
-                  {...iconProps}
-                  color="var(--color-secondary)"
-                  aria-label="وضعیت نامشخص"
-                />
-              </Box>
-            </Tooltip>
-          );
-        },
-      },
+      // {
+      //   id: 'samba-status',
+      //   header: 'وضعیت Samba',
+      //   align: 'center',
+      //   width: 120,
+      //   renderCell: (row) => {
+      //     if (isSambaStatusLoading && row.hasSambaUser === undefined) {
+      //       return (
+      //         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      //           <CircularProgress
+      //             size={18}
+      //             sx={{ color: 'var(--color-secondary)' }}
+      //           />
+      //         </Box>
+      //       );
+      //     }
+      //
+      //     const iconProps = {
+      //       size: 20,
+      //     };
+      //
+      //     if (row.hasSambaUser) {
+      //       return (
+      //         <Tooltip title="کاربر Samba موجود است" arrow>
+      //           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      //             <MdCheckCircle
+      //               {...iconProps}
+      //               color="var(--color-success)"
+      //               aria-label="دارای کاربر Samba"
+      //             />
+      //           </Box>
+      //         </Tooltip>
+      //       );
+      //     }
+      //
+      //     if (row.hasSambaUser === false) {
+      //       return (
+      //         <Tooltip title="کاربر Samba موجود نیست" arrow>
+      //           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      //             <MdCancel
+      //               {...iconProps}
+      //               color="var(--color-error)"
+      //               aria-label="فاقد کاربر Samba"
+      //             />
+      //           </Box>
+      //         </Tooltip>
+      //       );
+      //     }
+      //
+      //     return (
+      //       <Tooltip title="نامشخص" arrow>
+      //         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      //           <MdHelpOutline
+      //             {...iconProps}
+      //             color="var(--color-secondary)"
+      //             aria-label="وضعیت نامشخص"
+      //           />
+      //         </Box>
+      //       </Tooltip>
+      //     );
+      //   },
+      // },
       {
         id: 'actions',
         header: 'عملیات',
         align: 'center',
         width: 180,
-        renderCell: (row) => (
+        renderCell: () => (
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-            <Tooltip title="ایجاد کاربر Samba" arrow>
+            <Tooltip title="ویرایش کاربر " arrow>
               <span>
                 <IconButton
                   size="small"
-                  onClick={() => onCreateSambaUser(row)}
-                  disabled={Boolean(row.hasSambaUser) || isSambaStatusLoading}
+                  onClick={() => alert('edit')}
+                  // disabled={updateInterfaceIp.isPending}
                   sx={{
                     color: 'var(--color-primary)',
                     '&.Mui-disabled': {
-                      color: 'var(--color-secondary)',
-                      opacity: 0.7,
+                      color:
+                        'color-mix(in srgb, var(--color-secondary) 45%, transparent)',
                     },
                   }}
                 >
-                  <MdPersonAddAlt1 size={18} />
+                  <FiEdit3 size={18} />
                 </IconButton>
               </span>
             </Tooltip>
