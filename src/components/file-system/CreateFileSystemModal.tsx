@@ -8,6 +8,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import InputAdornment from '@mui/material/InputAdornment';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent } from 'react';
 import type { UseCreateFileSystemReturn } from '../../hooks/useCreateFileSystem';
@@ -48,6 +49,9 @@ const CreateFileSystemModal = ({
     filesystemName,
     setFileSystemName,
     nameError,
+    quotaAmount,
+    setQuotaAmount,
+    quotaError,
     apiError,
     isCreating,
   } = controller;
@@ -58,6 +62,10 @@ const CreateFileSystemModal = ({
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     setFileSystemName(event.target.value);
+  };
+
+  const handleQuotaChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setQuotaAmount(event.target.value);
   };
 
   return (
@@ -127,6 +135,25 @@ const CreateFileSystemModal = ({
             helperText={nameError ?? 'نامی یکتا برای فضای فایلی وارد کنید.'}
             InputLabelProps={{ shrink: true }}
             InputProps={{ sx: inputBaseStyles }}
+          />
+
+          <TextField
+            label="حجم فضای فایلی (GB)"
+            value={quotaAmount}
+            onChange={handleQuotaChange}
+            fullWidth
+            autoComplete="off"
+            error={Boolean(quotaError)}
+            helperText={
+              quotaError ?? 'حجم فضای فایلی را به گیگابایت وارد کنید (مثلاً 50).'
+            }
+            type="number"
+            InputLabelProps={{ shrink: true }}
+            InputProps={{
+              sx: inputBaseStyles,
+              endAdornment: <InputAdornment position="end">GB</InputAdornment>,
+              inputProps: { min: 0, step: '0.01' },
+            }}
           />
 
           {apiError && (

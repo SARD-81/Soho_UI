@@ -1,9 +1,7 @@
 import { Box, Button, Typography } from '@mui/material';
-import type { UseQueryResult } from '@tanstack/react-query';
-import { useQueries } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
+import type { ZpoolCapacityEntry } from '../@types/zpool';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
@@ -12,10 +10,6 @@ import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { useDiskWwnMap } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
-import {
-  fetchZpoolDetails,
-  zpoolDetailQueryKey,
-} from '../hooks/useZpoolDetails';
 
 const IntegratedStorage = () => {
   const createPool = useCreatePool({
@@ -135,37 +129,6 @@ const IntegratedStorage = () => {
       });
     },
     []
-  );
-
-  const handleRemoveSelected = useCallback((poolName: string) => {
-    setSelectedPools((prev) => prev.filter((name) => name !== poolName));
-  }, []);
-
-  const selectedPoolQueries = useQueries({
-    queries: selectedPools.map((poolName) => ({
-      queryKey: zpoolDetailQueryKey(poolName),
-      queryFn: () => fetchZpoolDetails(poolName),
-      staleTime: 15000,
-      refetchInterval: 15000,
-      enabled: selectedPools.length > 0,
-    })),
-  }) as UseQueryResult<ZpoolDetailEntry | null, Error>[];
-
-  const selectedPoolDetailItems = useMemo(
-    () =>
-      selectedPools.map((poolName, index) => {
-        const query = selectedPoolQueries[index];
-        const isLoading =
-          query?.isPending ?? query?.isLoading ?? query?.isFetching ?? false;
-
-        return {
-          poolName,
-          detail: (query?.data as ZpoolDetailEntry | null) ?? null,
-          isLoading,
-          error: (query?.error as Error) ?? null,
-        };
-      }),
-    [selectedPools, selectedPoolQueries]
   );
 
   return (

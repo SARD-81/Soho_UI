@@ -154,7 +154,7 @@ const FileSystemsTable = ({
       )}
       renderEmptyState={() => (
         <Typography sx={{ color: 'var(--color-secondary)' }}>
-          هیچ فضای فایلیی برای نمایش وجود ندارد.
+          هیچ فضای فایلی ای برای نمایش وجود ندارد.
         </Typography>
       )}
     />

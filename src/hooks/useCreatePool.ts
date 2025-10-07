@@ -126,6 +126,11 @@ export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
       if (!trimmedName) {
         setPoolNameError('لطفاً نام فضای یکپارچه را وارد کنید.');
         hasError = true;
+      } else if (!/^[A-Za-z0-9]+$/.test(trimmedName)) {
+        setPoolNameError(
+          'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.'
+        );
+        hasError = true;
       }
 
       const deviceCount = selectedDevices.length;
