@@ -130,6 +130,9 @@ export const useCreateFileSystem = ({
       if (!trimmedName) {
         setNameError('نام فضای فایلی را وارد کنید.');
         hasError = true;
+      } else if (!/^[A-Za-z]+$/.test(trimmedName)) {
+        setNameError('نام فضای فایلی باید فقط شامل حروف انگلیسی باشد.');
+        hasError = true;
       }
 
       if (!trimmedQuota) {
