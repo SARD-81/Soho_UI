@@ -16,7 +16,7 @@ const IntegratedStorage = () => {
     onSuccess: (poolName) => {
       toast.success(`فضای یکپارچه ${poolName} با موفقیت ایجاد شد.`);
     },
-    onError: (errorMessage) => {
+    onError: (errorMessage: string) => {
       toast.error(`ایجاد فضای یکپارچه با خطا مواجه شد: ${errorMessage}`);
     },
   });
@@ -57,7 +57,7 @@ const IntegratedStorage = () => {
     }
 
     return Object.entries(data)
-      .map(([devicePath, wwnPath]) => {
+      .reduce<DeviceOption[]>((acc, [devicePath, wwnPath]) => {
         const deviceLabel = devicePath.split('/').pop() ?? devicePath;
         const normalizedWwnPath =
           typeof wwnPath === 'string' ? wwnPath : String(wwnPath ?? '');
@@ -65,17 +65,18 @@ const IntegratedStorage = () => {
           normalizedWwnPath.split('/').pop() ?? normalizedWwnPath;
 
         if (!wwnValue) {
-          return null;
+          return acc;
         }
 
-        return {
+        acc.push({
           label: deviceLabel,
           value: wwnValue,
           tooltip: normalizedWwnPath,
           wwn: normalizedWwnPath,
-        } satisfies DeviceOption;
-      })
-      .filter((option): option is DeviceOption => option !== null)
+        });
+
+        return acc;
+      }, [])
       .sort((a, b) => a.label.localeCompare(b.label, 'en'));
   }, [diskWwnMap?.data]);
 
