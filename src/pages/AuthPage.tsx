@@ -1,6 +1,6 @@
 import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
 import ThemeToggle from '../components/ThemeToggle.tsx';
-import LoginForm from '../components/auth/LoginForm.tsx';
+import LoginForm from '../components/LoginForm';
 import '../index.css';
 
 export default function AuthPage() {
