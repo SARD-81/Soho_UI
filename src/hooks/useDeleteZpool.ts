@@ -26,8 +26,14 @@ interface PoolDiskResponse {
 }
 
 const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
-  const poolName = encodeURIComponent(name);
+  const deleteResponse = await axiosInstance.delete<DeleteZpoolResponse>(
+    '/api/zpool/delete',
+    {
+      data: { pool_name: name },
+    }
+  );
 
+  const poolName = encodeURIComponent(name);
   const poolDiskResponse = await axiosInstance.get<PoolDiskResponse>(
     `/api/zpool/disk/${poolName}/`
   );
@@ -48,18 +54,11 @@ const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
 
   for (const deviceName of deviceNames) {
     await axiosInstance.delete('/api/disk/delete/', {
-      data: { device_name: deviceName },
+      data: { disk_path: deviceName },
     });
   }
 
-  const response = await axiosInstance.delete<DeleteZpoolResponse>(
-    '/api/zpool/delete',
-    {
-      data: { pool_name: name },
-    }
-  );
-
-  return response.data;
+  return deleteResponse.data;
 };
 
 interface UseDeleteZpoolOptions {

@@ -6,12 +6,6 @@ import {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import type { RawSambaUserDetails } from '../@types/samba';
-import {
-  generateCpuMetrics,
-  generateDiskMetrics,
-  generateMemoryMetrics,
-  generateNetworkMetrics,
-} from './dashboardGenerators';
 import type { DirPermissionsEntry, MockOsUser, MockState } from './mockState';
 import { mockState } from './mockState';
 
@@ -166,46 +160,6 @@ const upsertOsUser = (state: MockState, payload: MockOsUser) => {
 };
 
 const mockRoutes: MockRoute[] = [
-  {
-    method: 'GET',
-    pattern: /^\/api\/cpu\/?$/,
-    handler: ({ state }) => ({
-      status: 200,
-      data: generateCpuMetrics(state),
-    }),
-  },
-  {
-    method: 'GET',
-    pattern: /^\/api\/memory\/?$/,
-    handler: ({ state }) => ({
-      status: 200,
-      data: generateMemoryMetrics(state),
-    }),
-  },
-  {
-    method: 'GET',
-    pattern: /^\/api\/net\/?$/,
-    handler: ({ state }) => ({
-      status: 200,
-      data: generateNetworkMetrics(state),
-    }),
-  },
-  {
-    method: 'GET',
-    pattern: /^\/api\/disk\/?$/,
-    handler: ({ state }) => ({
-      status: 200,
-      data: generateDiskMetrics(state),
-    }),
-  },
-  {
-    method: 'GET',
-    pattern: /^\/api\/disk\/wwn\/map\/?$/,
-    handler: ({ state }) => ({
-      status: 200,
-      data: { data: state.diskWwnMap },
-    }),
-  },
   {
     method: 'GET',
     pattern: /^\/auth-token\/?$/,

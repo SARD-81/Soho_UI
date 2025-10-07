@@ -71,7 +71,7 @@ function LoginPage() {
                   fontFamily: 'var(--font-vazir)',
                 }}
               >
-                ذخیره ساز اداری استورکس
+                ذخیره ساز اداری Storex
               </Typography>
             </Box>
 
