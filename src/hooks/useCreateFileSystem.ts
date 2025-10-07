@@ -13,6 +13,8 @@ interface ApiErrorResponse {
 
 interface CreateFileSystemPayload {
   filesystem_name: string;
+  quota: string;
+  reservation: string;
 }
 
 interface UseCreateFileSystemOptions {
@@ -60,15 +62,19 @@ export const useCreateFileSystem = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPool, setSelectedPool] = useState('');
   const [filesystemName, setFileSystemName] = useState('');
+  const [quotaAmount, setQuotaAmount] = useState('');
   const [poolError, setPoolError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [quotaError, setQuotaError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const resetForm = useCallback(() => {
     setSelectedPool('');
     setFileSystemName('');
+    setQuotaAmount('');
     setPoolError(null);
     setNameError(null);
+    setQuotaError(null);
     setApiError(null);
   }, []);
 
@@ -107,10 +113,12 @@ export const useCreateFileSystem = ({
       event.preventDefault();
       setPoolError(null);
       setNameError(null);
+      setQuotaError(null);
       setApiError(null);
 
       const trimmedPool = selectedPool.trim();
       const trimmedName = filesystemName.trim();
+      const trimmedQuota = quotaAmount.trim();
 
       let hasError = false;
 
@@ -124,17 +132,31 @@ export const useCreateFileSystem = ({
         hasError = true;
       }
 
+      if (!trimmedQuota) {
+        setQuotaError('حجم فضای فایلی را به گیگابایت وارد کنید.');
+        hasError = true;
+      } else {
+        const quotaValue = Number(trimmedQuota);
+
+        if (!Number.isFinite(quotaValue) || quotaValue <= 0) {
+          setQuotaError('حجم واردشده باید یک عدد معتبر بزرگ‌تر از صفر باشد.');
+          hasError = true;
+        }
+      }
+
       if (hasError) {
         return;
       }
 
       const payload: CreateFileSystemPayload = {
         filesystem_name: `${trimmedPool}/${trimmedName}`.replace(/\s+/g, ''),
+        quota: `${trimmedQuota}G`,
+        reservation: `${trimmedQuota}G`,
       };
 
       createFileSystemMutation.mutate(payload);
     },
-    [createFileSystemMutation, filesystemName, selectedPool]
+    [createFileSystemMutation, filesystemName, quotaAmount, selectedPool]
   );
 
   return {
@@ -143,8 +165,11 @@ export const useCreateFileSystem = ({
     setSelectedPool,
     filesystemName,
     setFileSystemName,
+    quotaAmount,
+    setQuotaAmount,
     poolError,
     nameError,
+    quotaError,
     apiError,
     isCreating: createFileSystemMutation.isPending,
     openCreateModal: handleOpen,
