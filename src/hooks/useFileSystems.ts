@@ -107,6 +107,30 @@ const enrichAttributes = (raw: FileSystemRawEntry, fullName: string) => {
   return { entries, attributeMap };
 };
 
+const extractMountpoint = (
+  raw: FileSystemRawEntry,
+  attributeMap: Record<string, string>
+) => {
+  const rawMountpoint = raw.mountpoint;
+
+  if (typeof rawMountpoint === 'string') {
+    const trimmed = rawMountpoint.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+  }
+
+  const attributeValue = attributeMap.mountpoint;
+  if (typeof attributeValue === 'string') {
+    const trimmed = attributeValue.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+  }
+
+  return '—';
+};
+
 const normalizeFileSystemEntry = (
   fullNameHint: string | undefined,
   raw: unknown,
@@ -119,12 +143,14 @@ const normalizeFileSystemEntry = (
     index
   );
   const { entries, attributeMap } = enrichAttributes(normalizedRaw, fullName);
+  const mountpoint = extractMountpoint(normalizedRaw, attributeMap);
 
   return {
     id: fullName,
     fullName,
     poolName,
     filesystemName,
+    mountpoint,
     attributes: entries,
     attributeMap,
     raw: normalizedRaw,

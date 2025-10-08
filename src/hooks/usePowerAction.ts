@@ -4,7 +4,7 @@ import axiosInstance from '../lib/axiosInstance';
 
 export type PowerAction = 'restart' | 'shutdown';
 
-interface PowerActionResponse {
+export interface PowerActionResponse {
   detail?: string;
   message?: string;
   status?: string;

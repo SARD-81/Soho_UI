@@ -1,9 +1,7 @@
 import { Box, Button, Typography } from '@mui/material';
-import type { UseQueryResult } from '@tanstack/react-query';
-import { useQueries } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
+import type { ZpoolCapacityEntry } from '../@types/zpool';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
@@ -12,17 +10,13 @@ import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { useDiskWwnMap } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
-import {
-  fetchZpoolDetails,
-  zpoolDetailQueryKey,
-} from '../hooks/useZpoolDetails';
 
 const IntegratedStorage = () => {
   const createPool = useCreatePool({
     onSuccess: (poolName) => {
       toast.success(`فضای یکپارچه ${poolName} با موفقیت ایجاد شد.`);
     },
-    onError: (errorMessage) => {
+    onError: (errorMessage: string) => {
       toast.error(`ایجاد فضای یکپارچه با خطا مواجه شد: ${errorMessage}`);
     },
   });
@@ -63,7 +57,7 @@ const IntegratedStorage = () => {
     }
 
     return Object.entries(data)
-      .map(([devicePath, wwnPath]) => {
+      .reduce<DeviceOption[]>((acc, [devicePath, wwnPath]) => {
         const deviceLabel = devicePath.split('/').pop() ?? devicePath;
         const normalizedWwnPath =
           typeof wwnPath === 'string' ? wwnPath : String(wwnPath ?? '');
@@ -71,17 +65,18 @@ const IntegratedStorage = () => {
           normalizedWwnPath.split('/').pop() ?? normalizedWwnPath;
 
         if (!wwnValue) {
-          return null;
+          return acc;
         }
 
-        return {
+        acc.push({
           label: deviceLabel,
           value: wwnValue,
           tooltip: normalizedWwnPath,
           wwn: normalizedWwnPath,
-        } satisfies DeviceOption;
-      })
-      .filter((option): option is DeviceOption => option !== null)
+        });
+
+        return acc;
+      }, [])
       .sort((a, b) => a.label.localeCompare(b.label, 'en'));
   }, [diskWwnMap?.data]);
 
@@ -135,37 +130,6 @@ const IntegratedStorage = () => {
       });
     },
     []
-  );
-
-  const handleRemoveSelected = useCallback((poolName: string) => {
-    setSelectedPools((prev) => prev.filter((name) => name !== poolName));
-  }, []);
-
-  const selectedPoolQueries = useQueries({
-    queries: selectedPools.map((poolName) => ({
-      queryKey: zpoolDetailQueryKey(poolName),
-      queryFn: () => fetchZpoolDetails(poolName),
-      staleTime: 15000,
-      refetchInterval: 15000,
-      enabled: selectedPools.length > 0,
-    })),
-  }) as UseQueryResult<ZpoolDetailEntry | null, Error>[];
-
-  const selectedPoolDetailItems = useMemo(
-    () =>
-      selectedPools.map((poolName, index) => {
-        const query = selectedPoolQueries[index];
-        const isLoading =
-          query?.isPending ?? query?.isLoading ?? query?.isFetching ?? false;
-
-        return {
-          poolName,
-          detail: (query?.data as ZpoolDetailEntry | null) ?? null,
-          isLoading,
-          error: (query?.error as Error) ?? null,
-        };
-      }),
-    [selectedPools, selectedPoolQueries]
   );
 
   return (

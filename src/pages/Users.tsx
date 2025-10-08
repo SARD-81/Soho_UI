@@ -1,6 +1,5 @@
 import { Box, Button, Tab, Tabs, Typography } from '@mui/material';
 import {
-  type ChangeEvent,
   type SyntheticEvent,
   useCallback,
   useMemo,
@@ -26,7 +25,7 @@ import { normalizeSambaUsers } from '../utils/sambaUsers';
 
 const Users = () => {
   const [activeTab, setActiveTab] = useState<UsersTabValue>(USERS_TABS.os);
-  const [includeSystem, setIncludeSystem] = useState(false);
+  const [includeSystem] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [isSambaCreateModalOpen, setIsSambaCreateModalOpen] = useState(false);
@@ -98,13 +97,6 @@ const Users = () => {
   const handleTabChange = useCallback(
     (_: SyntheticEvent, value: UsersTabValue) => {
       setActiveTab(value);
-    },
-    []
-  );
-
-  const handleToggleIncludeSystem = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setIncludeSystem(event.target.checked);
     },
     []
   );

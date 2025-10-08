@@ -57,6 +57,11 @@ const legendPosition = {
   horizontal: 'center' as const,
 };
 
+type LegendPosition = {
+  vertical?: 'top' | 'middle' | 'bottom';
+  horizontal?: 'left' | 'center' | 'right' | 'start' | 'end';
+};
+
 export const defaultTooltipSlotProps = {
   sx: tooltipSx as SxProps<Theme>,
 };
@@ -66,34 +71,33 @@ export const defaultLegendSlotProps = {
   position: legendPosition,
 };
 
-export type GenericChartSlotProps = {
-  tooltip?: { sx?: SxProps<Theme> } & Record<string, unknown>;
-  legend?:
-    | ({
-        sx?: SxProps<Theme>;
-        position?: { vertical?: 'top' | 'bottom'; horizontal?: 'left' | 'center' | 'right' };
-      } & Record<string, unknown>)
-    | null;
-  [key: string]: unknown;
-};
+type TooltipSlotProps = { sx?: SxProps<Theme> } & Record<string, unknown>;
+
+type LegendSlotProps =
+  | ({ sx?: SxProps<Theme>; position?: LegendPosition } & Record<string, unknown>)
+  | null
+  | undefined;
+
+export type GenericChartSlotProps = Record<string, unknown>;
 
 export type MergeSlotPropsOptions = {
   includeLegend?: boolean;
-  legendPosition?: { vertical?: 'top' | 'bottom'; horizontal?: 'left' | 'center' | 'right' };
+  legendPosition?: LegendPosition;
 };
 
-export const mergeChartSlotProps = <TS extends GenericChartSlotProps | undefined>(
+export const mergeChartSlotProps = <TS extends object | undefined>(
   slotProps: TS,
   { includeLegend = true, legendPosition: legendPositionOverride }: MergeSlotPropsOptions = {}
 ) => {
-  const tooltipProps = slotProps?.tooltip ?? {};
+  const baseSlotProps = (slotProps ?? {}) as GenericChartSlotProps;
+  const tooltipProps = (baseSlotProps.tooltip as TooltipSlotProps | undefined) ?? {};
   const mergedTooltipSx = mergeRecords(
     tooltipSx,
     (tooltipProps.sx as Record<string, unknown> | undefined) ?? undefined
   );
 
   const result: GenericChartSlotProps = {
-    ...(slotProps ?? {}),
+    ...baseSlotProps,
     tooltip: {
       ...tooltipProps,
       sx: mergedTooltipSx as SxProps<Theme>,
@@ -101,7 +105,8 @@ export const mergeChartSlotProps = <TS extends GenericChartSlotProps | undefined
   };
 
   if (includeLegend) {
-    if (slotProps && 'legend' in slotProps && slotProps.legend === null) {
+    const legendProps = baseSlotProps.legend as LegendSlotProps;
+    if (legendProps === null) {
       result.legend = null;
     } else {
       const baseLegend = {
@@ -109,18 +114,17 @@ export const mergeChartSlotProps = <TS extends GenericChartSlotProps | undefined
         position: mergeRecords(
           legendPosition,
           legendPositionOverride as Record<string, unknown> | undefined
-        ) as typeof legendPosition,
+        ) as LegendPosition,
       };
 
-      const legendProps = slotProps?.legend;
       if (legendProps) {
         result.legend = {
           ...baseLegend,
           ...legendProps,
           position: mergeRecords(
-            baseLegend.position,
+            baseLegend.position ?? {},
             (legendProps.position as Record<string, unknown> | undefined) ?? undefined
-          ) as typeof legendPosition,
+          ) as LegendPosition,
           sx: mergeRecords(
             baseLegend.sx as Record<string, unknown>,
             (legendProps.sx as Record<string, unknown> | undefined) ?? undefined
@@ -132,5 +136,7 @@ export const mergeChartSlotProps = <TS extends GenericChartSlotProps | undefined
     }
   }
 
-  return result as TS extends undefined ? GenericChartSlotProps : GenericChartSlotProps & NonNullable<TS>;
+  return result as TS extends undefined
+    ? GenericChartSlotProps
+    : GenericChartSlotProps & NonNullable<TS>;
 };

@@ -20,19 +20,6 @@ interface FileSystemsTableProps {
   isDeleteDisabled: boolean;
 }
 
-const valueTypographySx = {
-  fontWeight: 600,
-  color: 'var(--color-text)',
-} as const;
-
-const numericValueTypographySx = {
-  ...valueTypographySx,
-  display: 'block',
-  textAlign: 'right' as const,
-  direction: 'ltr' as const,
-  fontVariantNumeric: 'tabular-nums',
-};
-
 const FileSystemsTable = ({
   filesystems,
   attributeKeys,
@@ -72,7 +59,7 @@ const FileSystemsTable = ({
         renderCell: (filesystem) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {filesystem.attributeMap['mountpoint']}
+              {filesystem.mountpoint}
             </Typography>
           </Box>
         ),

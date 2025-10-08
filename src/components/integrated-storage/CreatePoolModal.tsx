@@ -32,10 +32,14 @@ export interface DeviceOption {
   label: string;
   value: string;
   tooltip: string;
+  wwn?: string;
 }
 
 interface CreatePoolModalProps {
   controller: UseCreatePoolReturn;
+  deviceOptions?: DeviceOption[];
+  isDiskLoading?: boolean;
+  diskError?: Error | null;
 }
 
 const inputBaseStyles = {
@@ -54,7 +58,12 @@ const inputBaseStyles = {
   },
 };
 
-const CreatePoolModal = ({ controller }: CreatePoolModalProps) => {
+const CreatePoolModal = ({
+  controller,
+  deviceOptions: externalDeviceOptions,
+  isDiskLoading: externalIsDiskLoading,
+  diskError: externalDiskError,
+}: CreatePoolModalProps) => {
   const {
     isOpen,
     closeCreateModal,
@@ -71,11 +80,13 @@ const CreatePoolModal = ({ controller }: CreatePoolModalProps) => {
     isCreating,
   } = controller;
 
+  const shouldFetchDeviceOptions = !externalDeviceOptions;
+
   const {
     data: freeDiskResponse,
-    isLoading: isDiskLoading,
-    isFetching: isDiskFetching,
-    error: diskError,
+    isLoading: queryIsDiskLoading,
+    isFetching: queryIsDiskFetching,
+    error: queryDiskError,
   } = useQuery<FreeDiskResponse, Error>({
     queryKey: ['disk', 'free'],
     queryFn: async () => {
@@ -83,11 +94,15 @@ const CreatePoolModal = ({ controller }: CreatePoolModalProps) => {
         await axiosInstance.get<FreeDiskResponse>('/api/disk/free');
       return data;
     },
-    enabled: isOpen,
+    enabled: isOpen && shouldFetchDeviceOptions,
     refetchOnWindowFocus: false,
   });
 
   const deviceOptions = useMemo<DeviceOption[]>(() => {
+    if (externalDeviceOptions) {
+      return externalDeviceOptions;
+    }
+
     if (!freeDiskResponse?.data) {
       return [];
     }
@@ -97,10 +112,16 @@ const CreatePoolModal = ({ controller }: CreatePoolModalProps) => {
       value: disk,
       tooltip: disk,
     }));
-  }, [freeDiskResponse?.data]);
+  }, [externalDeviceOptions, freeDiskResponse?.data]);
 
-  const isDiskListLoading =
-    isDiskLoading || (isOpen && isDiskFetching && !freeDiskResponse);
+  const effectiveDiskError = externalDeviceOptions
+    ? externalDiskError ?? null
+    : queryDiskError ?? null;
+
+  const isDiskListLoading = externalDeviceOptions
+    ? externalIsDiskLoading ?? false
+    : queryIsDiskLoading ||
+      (isOpen && queryIsDiskFetching && !freeDiskResponse);
 
   const handlePoolNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPoolName(event.target.value);
@@ -188,19 +209,19 @@ const CreatePoolModal = ({ controller }: CreatePoolModalProps) => {
               <LinearProgress sx={{ borderRadius: '5px', height: 6 }} />
             )}
 
-            {diskError && !isDiskListLoading && (
+            {effectiveDiskError && !isDiskListLoading && (
               <Typography sx={{ color: 'var(--color-error)' }}>
-                خطا در دریافت اطلاعات دیسک‌ها: {diskError.message}
+                خطا در دریافت اطلاعات دیسک‌ها: {effectiveDiskError.message}
               </Typography>
             )}
 
-            {!isDiskListLoading && !diskError && deviceOptions.length === 0 && (
+            {!isDiskListLoading && !effectiveDiskError && deviceOptions.length === 0 && (
               <Typography sx={{ color: 'var(--color-secondary)' }}>
                 دیسکی برای انتخاب موجود نیست.
               </Typography>
             )}
 
-            {!isDiskListLoading && !diskError && deviceOptions.length > 0 && (
+            {!isDiskListLoading && !effectiveDiskError && deviceOptions.length > 0 && (
               <Box
                 sx={{
                   maxHeight: 260,

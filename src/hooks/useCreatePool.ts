@@ -19,6 +19,7 @@ interface CreatePoolPayload {
 
 interface UseCreatePoolOptions {
   onSuccess?: (poolName: string) => void;
+  onError?: (message: string) => void;
 }
 
 const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
@@ -53,7 +54,10 @@ const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
   return error.message;
 };
 
-export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
+export const useCreatePool = ({
+  onSuccess,
+  onError,
+}: UseCreatePoolOptions = {}) => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [poolName, setPoolName] = useState('');
@@ -96,7 +100,9 @@ export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
       onSuccess?.(variables.pool_name);
     },
     onError: (error) => {
-      setApiError(extractApiMessage(error));
+      const message = extractApiMessage(error);
+      setApiError(message);
+      onError?.(message);
     },
   });
 
