@@ -96,6 +96,7 @@ export const useCreatePool = ({
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['zpool'] });
+      queryClient.invalidateQueries({ queryKey: ['disk', 'free'] });
       handleClose();
       onSuccess?.(variables.pool_name);
     },
