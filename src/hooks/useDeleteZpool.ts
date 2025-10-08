@@ -101,7 +101,9 @@ const attemptRequestSequence = async <Payload, Response = unknown>(
 ) => {
   let lastError: unknown;
 
-  for (const { endpoint, method, payload } of attempts) {
+  for (let index = 0; index < attempts.length; index += 1) {
+    const { endpoint, method, payload } = attempts[index];
+
     try {
       if (method === 'post') {
         const { data } = await axiosInstance.post<Response>(endpoint, payload);
@@ -115,15 +117,11 @@ const attemptRequestSequence = async <Payload, Response = unknown>(
         return data;
       }
     } catch (error) {
-      if (isAxiosError(error)) {
-        const status = error.response?.status;
-        if (status === 404 || status === 405) {
-          lastError = error;
-          continue;
-        }
-      }
+      lastError = error;
 
-      throw error;
+      if (index === attempts.length - 1) {
+        throw error;
+      }
     }
   }
 
@@ -136,7 +134,7 @@ const deleteDiskByPath = async (diskPath: string) => {
     return;
   }
 
-  const endpoints = ['/api/disk/delete', '/api/disk/delete/'] as const;
+  const endpoints = ['/api/disk/delete/', '/api/disk/delete'] as const;
 
   try {
     await attemptRequestSequence<{ disk_path: string }>(
@@ -164,7 +162,7 @@ const deleteDiskByPath = async (diskPath: string) => {
 
 const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
   const deviceNames = await fetchAttachedDeviceNames(name);
-  const endpoints = ['/api/zpool/delete', '/api/zpool/delete/'] as const;
+  const endpoints = ['/api/zpool/delete/', '/api/zpool/delete'] as const;
 
   let deleteResponse: DeleteZpoolResponse | undefined;
 
