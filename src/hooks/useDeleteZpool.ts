@@ -88,6 +88,48 @@ const fetchAttachedDeviceNames = async (name: string) => {
   return [];
 };
 
+type RequestMethod = 'post' | 'delete';
+
+interface RequestAttemptConfig<Payload> {
+  endpoint: string;
+  method: RequestMethod;
+  payload: Payload;
+}
+
+const attemptRequestSequence = async <Payload, Response = unknown>(
+  attempts: RequestAttemptConfig<Payload>[]
+) => {
+  let lastError: unknown;
+
+  for (const { endpoint, method, payload } of attempts) {
+    try {
+      if (method === 'post') {
+        const { data } = await axiosInstance.post<Response>(endpoint, payload);
+        return data;
+      }
+
+      if (method === 'delete') {
+        const { data } = await axiosInstance.delete<Response>(endpoint, {
+          data: payload,
+        });
+        return data;
+      }
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const status = error.response?.status;
+        if (status === 404 || status === 405) {
+          lastError = error;
+          continue;
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  throw lastError ?? new Error('درخواست با خطا مواجه شد.');
+};
+
 const deleteDiskByPath = async (diskPath: string) => {
   const normalizedPath = diskPath.trim();
   if (!normalizedPath) {
@@ -95,58 +137,59 @@ const deleteDiskByPath = async (diskPath: string) => {
   }
 
   const endpoints = ['/api/disk/delete', '/api/disk/delete/'] as const;
-  let lastError: unknown;
 
-  for (const endpoint of endpoints) {
-    try {
-      await axiosInstance.post(endpoint, {
-        disk_path: normalizedPath,
-      });
+  try {
+    await attemptRequestSequence<{ disk_path: string }>(
+      endpoints.flatMap((endpoint) => [
+        {
+          endpoint,
+          method: 'post' as const,
+          payload: { disk_path: normalizedPath },
+        },
+        {
+          endpoint,
+          method: 'delete' as const,
+          payload: { disk_path: normalizedPath },
+        },
+      ])
+    );
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 404) {
       return;
-    } catch (error) {
-      if (isAxiosError(error)) {
-        if (error.response?.status === 404) {
-          return;
-        }
-
-        lastError = error;
-        continue;
-      }
-
-      throw error;
     }
-  }
 
-  if (lastError) {
-    throw lastError;
+    throw error;
   }
 };
 
 const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
   const deviceNames = await fetchAttachedDeviceNames(name);
   const endpoints = ['/api/zpool/delete', '/api/zpool/delete/'] as const;
+
   let deleteResponse: DeleteZpoolResponse | undefined;
-  let lastError: unknown;
 
-  for (const endpoint of endpoints) {
-    try {
-      const { data } = await axiosInstance.post<DeleteZpoolResponse>(endpoint, {
-        pool_name: name,
-      });
-      deleteResponse = data;
-      break;
-    } catch (error) {
-      if (isAxiosError(error)) {
-        lastError = error;
-        continue;
-      }
-
-      throw error;
-    }
-  }
-
-  if (!deleteResponse) {
-    throw lastError ?? new Error(DEFAULT_DELETE_POOL_ERROR_MESSAGE);
+  try {
+    deleteResponse = await attemptRequestSequence<
+      { pool_name: string },
+      DeleteZpoolResponse
+    >(
+      endpoints.flatMap((endpoint) => [
+        {
+          endpoint,
+          method: 'post' as const,
+          payload: { pool_name: name },
+        },
+        {
+          endpoint,
+          method: 'delete' as const,
+          payload: { pool_name: name },
+        },
+      ])
+    );
+  } catch (error) {
+    throw new Error(
+      extractApiErrorMessage(error, DEFAULT_DELETE_POOL_ERROR_MESSAGE)
+    );
   }
 
   const diskDeletionErrors: string[] = [];
