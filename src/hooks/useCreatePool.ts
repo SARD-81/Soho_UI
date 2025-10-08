@@ -19,6 +19,7 @@ interface CreatePoolPayload {
 
 interface UseCreatePoolOptions {
   onSuccess?: (poolName: string) => void;
+  onError?: (errorMessage: string) => void;
 }
 
 const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
@@ -53,7 +54,10 @@ const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
   return error.message;
 };
 
-export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
+export const useCreatePool = ({
+  onSuccess,
+  onError,
+}: UseCreatePoolOptions = {}) => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [poolName, setPoolName] = useState('');
@@ -96,7 +100,9 @@ export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
       onSuccess?.(variables.pool_name);
     },
     onError: (error) => {
-      setApiError(extractApiMessage(error));
+      const message = extractApiMessage(error);
+      setApiError(message);
+      onError?.(message);
     },
   });
 
@@ -133,7 +139,15 @@ export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
         hasError = true;
       }
 
-      const deviceCount = selectedDevices.length;
+      const sanitizedDevices = Array.from(
+        new Set(
+          selectedDevices
+            .map((device) => device.trim())
+            .filter((device) => device.length > 0)
+        )
+      );
+
+      const deviceCount = sanitizedDevices.length;
 
       if (deviceCount === 0) {
         setDevicesError('حداقل یک دیسک را انتخاب کنید.');
@@ -158,7 +172,7 @@ export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
 
       createPoolMutation.mutate({
         pool_name: trimmedName,
-        devices: selectedDevices,
+        devices: sanitizedDevices,
         vdev_type: vdevType,
       });
     },
