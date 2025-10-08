@@ -96,6 +96,7 @@ const CreatePoolModal = ({
     },
     enabled: shouldFetchDiskList && isOpen,
     refetchOnWindowFocus: false,
+    refetchOnMount: 'always',
   });
 
   const deviceOptions = useMemo<DeviceOption[]>(() => {
