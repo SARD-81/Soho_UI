@@ -41,6 +41,13 @@ export interface DiskWwnMapResponse {
   data: Record<string, string>;
 }
 
+export interface FreeDiskResponse {
+  ok: boolean;
+  error: string | null;
+  data: string[];
+  details?: { count: number };
+}
+
 export type NormalizedMetrics = Record<keyof DiskIOStats, number>;
 
 export type DiskMetricConfig = {

@@ -14,19 +14,10 @@ import {
   Typography,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { useQuery } from '@tanstack/react-query';
 import type { ChangeEvent } from 'react';
-import { useMemo } from 'react';
 import type { UseCreatePoolReturn } from '../../hooks/useCreatePool';
-import axiosInstance from '../../lib/axiosInstance';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
-
-interface FreeDiskResponse {
-  ok: boolean;
-  error: string | null;
-  data: string[];
-}
 
 export interface DeviceOption {
   label: string;
@@ -80,49 +71,11 @@ const CreatePoolModal = ({
     isCreating,
   } = controller;
 
-  const shouldFetchDiskList = externalDeviceOptions === undefined;
+  const deviceOptions = externalDeviceOptions ?? [];
 
-  const {
-    data: freeDiskResponse,
-    isLoading: isDiskQueryLoading,
-    isFetching: isDiskQueryFetching,
-    error: diskQueryError,
-  } = useQuery<FreeDiskResponse, Error>({
-    queryKey: ['disk', 'free'],
-    queryFn: async () => {
-      const { data } =
-        await axiosInstance.get<FreeDiskResponse>('/api/disk/free');
-      return data;
-    },
-    enabled: shouldFetchDiskList && isOpen,
-    refetchOnWindowFocus: false,
-  });
+  const isDiskListLoading = externalIsDiskLoading ?? false;
 
-  const deviceOptions = useMemo<DeviceOption[]>(() => {
-    if (externalDeviceOptions !== undefined) {
-      return externalDeviceOptions;
-    }
-
-    if (!freeDiskResponse?.data) {
-      return [];
-    }
-
-    return freeDiskResponse.data.map((disk) => ({
-      label: disk,
-      value: disk,
-      tooltip: disk,
-      wwn: disk,
-    }));
-  }, [externalDeviceOptions, freeDiskResponse?.data]);
-
-  const isDiskListLoading =
-    shouldFetchDiskList
-      ? isDiskQueryLoading ||
-        (isOpen && isDiskQueryFetching && !freeDiskResponse)
-      : externalIsDiskLoading ?? false;
-
-  const diskError =
-    (shouldFetchDiskList ? diskQueryError : externalDiskError) ?? null;
+  const diskError = externalDiskError ?? null;
 
   const handlePoolNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPoolName(event.target.value);

@@ -30,6 +30,7 @@ const DEFAULT_FETCH_DISK_ERROR_MESSAGE =
   'امکان دریافت دیسک‌های متصل به فضای یکپارچه وجود ندارد.';
 const DEFAULT_DELETE_DISK_ERROR_MESSAGE =
   'امکان حذف دیسک متصل به فضای یکپارچه وجود ندارد.';
+const DEFAULT_DELETE_POOL_ERROR_MESSAGE = 'امکان حذف فضای یکپارچه وجود ندارد.';
 
 const extractApiErrorMessage = (error: unknown, fallback: string) => {
   if (isAxiosError(error)) {
@@ -98,8 +99,8 @@ const deleteDiskByPath = async (diskPath: string) => {
 
   for (const endpoint of endpoints) {
     try {
-      await axiosInstance.delete(endpoint, {
-        data: { disk_path: normalizedPath },
+      await axiosInstance.post(endpoint, {
+        disk_path: normalizedPath,
       });
       return;
     } catch (error) {
@@ -123,12 +124,30 @@ const deleteDiskByPath = async (diskPath: string) => {
 
 const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
   const deviceNames = await fetchAttachedDeviceNames(name);
-  const deleteResponse = await axiosInstance.delete<DeleteZpoolResponse>(
-    '/api/zpool/delete',
-    {
-      data: { pool_name: name },
+  const endpoints = ['/api/zpool/delete', '/api/zpool/delete/'] as const;
+  let deleteResponse: DeleteZpoolResponse | undefined;
+  let lastError: unknown;
+
+  for (const endpoint of endpoints) {
+    try {
+      const { data } = await axiosInstance.post<DeleteZpoolResponse>(endpoint, {
+        pool_name: name,
+      });
+      deleteResponse = data;
+      break;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        lastError = error;
+        continue;
+      }
+
+      throw error;
     }
-  );
+  }
+
+  if (!deleteResponse) {
+    throw lastError ?? new Error(DEFAULT_DELETE_POOL_ERROR_MESSAGE);
+  }
 
   const diskDeletionErrors: string[] = [];
 
@@ -149,7 +168,7 @@ const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
     throw new Error(diskDeletionErrors.join('\n'));
   }
 
-  return deleteResponse.data;
+  return deleteResponse;
 };
 
 interface UseDeleteZpoolOptions {
@@ -190,6 +209,7 @@ export const useDeleteZpool = ({
       );
 
       queryClient.invalidateQueries({ queryKey: ['zpool'] });
+      queryClient.invalidateQueries({ queryKey: ['disk', 'free'] });
     },
   });
 

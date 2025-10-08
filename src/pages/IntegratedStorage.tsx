@@ -8,7 +8,7 @@ import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
-import { useDiskWwnMap } from '../hooks/useDisk';
+import { useDiskWwnMap, useFreeDisks } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
 
 const IntegratedStorage = () => {
@@ -41,8 +41,17 @@ const IntegratedStorage = () => {
   });
 
   const {
+    data: freeDisks,
+    isLoading: isFreeDiskLoading,
+    isFetching: isFreeDiskFetching,
+    error: freeDiskError,
+  } = useFreeDisks({
+    enabled: createPool.isOpen,
+    refetchInterval: createPool.isOpen ? 5000 : undefined,
+  });
+
+  const {
     data: diskWwnMap,
-    isLoading: isDiskMapLoading,
     isFetching: isDiskMapFetching,
     error: diskMapError,
   } = useDiskWwnMap({
@@ -51,37 +60,50 @@ const IntegratedStorage = () => {
   });
 
   const deviceOptions = useMemo<DeviceOption[]>(() => {
-    const data = diskWwnMap?.data;
-    if (!data) {
+    if (!freeDisks || freeDisks.length === 0) {
       return [];
     }
 
-    return Object.entries(data)
-      .reduce<DeviceOption[]>((acc, [devicePath, wwnPath]) => {
-        const deviceLabel = devicePath.split('/').pop() ?? devicePath;
-        const normalizedWwnPath =
-          typeof wwnPath === 'string' ? wwnPath : String(wwnPath ?? '');
-        const wwnValue =
-          normalizedWwnPath.split('/').pop() ?? normalizedWwnPath;
+    const wwnMap = diskWwnMap?.data ?? {};
+    const uniqueValues = new Set<string>();
 
-        if (!wwnValue) {
-          return acc;
+    return freeDisks
+      .map((diskName) => {
+        const trimmedName = diskName.trim();
+        if (!trimmedName) {
+          return null;
         }
 
-        acc.push({
-          label: deviceLabel,
-          value: wwnValue,
-          tooltip: normalizedWwnPath,
-          wwn: normalizedWwnPath,
-        });
+        const normalizedValue = trimmedName.startsWith('/dev/')
+          ? trimmedName
+          : `/dev/${trimmedName}`;
 
-        return acc;
-      }, [])
+        if (uniqueValues.has(normalizedValue)) {
+          return null;
+        }
+
+        uniqueValues.add(normalizedValue);
+
+        const label = normalizedValue.replace(/^\/dev\//, '');
+        const tooltip = wwnMap[normalizedValue] ?? normalizedValue;
+
+        return {
+          label,
+          value: normalizedValue,
+          tooltip,
+          wwn: wwnMap[normalizedValue],
+        } satisfies DeviceOption;
+      })
+      .filter((option): option is DeviceOption => option !== null)
       .sort((a, b) => a.label.localeCompare(b.label, 'en'));
-  }, [diskWwnMap?.data]);
+  }, [diskWwnMap?.data, freeDisks]);
 
   const isDiskLoading =
-    isDiskMapLoading || (createPool.isOpen && isDiskMapFetching && !diskWwnMap);
+    isFreeDiskLoading ||
+    (createPool.isOpen && isFreeDiskFetching && !freeDisks) ||
+    (createPool.isOpen && isDiskMapFetching && !diskWwnMap);
+
+  const diskError = freeDiskError ?? diskMapError ?? null;
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
 
@@ -175,7 +197,7 @@ const IntegratedStorage = () => {
         controller={createPool}
         deviceOptions={deviceOptions}
         isDiskLoading={isDiskLoading}
-        diskError={diskMapError ?? null}
+        diskError={diskError}
       />
 
       <PoolsTable
