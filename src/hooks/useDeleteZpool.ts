@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import type { ZpoolCapacityEntry, ZpoolQueryResult } from '../@types/zpool';
@@ -25,7 +26,103 @@ interface PoolDiskResponse {
   } | null;
 }
 
+const DEFAULT_FETCH_DISK_ERROR_MESSAGE =
+  'امکان دریافت دیسک‌های متصل به فضای یکپارچه وجود ندارد.';
+const DEFAULT_DELETE_DISK_ERROR_MESSAGE =
+  'امکان حذف دیسک متصل به فضای یکپارچه وجود ندارد.';
+
+const extractApiErrorMessage = (error: unknown, fallback: string) => {
+  if (isAxiosError(error)) {
+    const responseData = error.response?.data;
+    if (responseData && typeof responseData === 'object') {
+      const detail = responseData.detail;
+      if (typeof detail === 'string' && detail.trim().length > 0) {
+        return detail;
+      }
+
+      const message = responseData.message;
+      if (typeof message === 'string' && message.trim().length > 0) {
+        return message;
+      }
+    }
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
+const fetchAttachedDeviceNames = async (name: string) => {
+  const poolName = encodeURIComponent(name);
+  const endpoints = [`/api/zpool/disk/${poolName}/`, `/api/zpool/disk/${poolName}`];
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await axiosInstance.get<PoolDiskResponse>(endpoint);
+
+      if (response.data?.ok === false) {
+        const errorDetail = response.data?.error;
+        const errorMessage =
+          typeof errorDetail === 'string' && errorDetail.trim().length > 0
+            ? errorDetail
+            : DEFAULT_FETCH_DISK_ERROR_MESSAGE;
+        throw new Error(errorMessage);
+      }
+
+      const devices = response.data?.data?.devices ?? [];
+      return devices
+        .map((device) => device?.name?.trim())
+        .filter((deviceName): deviceName is string => Boolean(deviceName));
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) {
+        continue;
+      }
+
+      throw new Error(extractApiErrorMessage(error, DEFAULT_FETCH_DISK_ERROR_MESSAGE));
+    }
+  }
+
+  return [];
+};
+
+const deleteDiskByPath = async (diskPath: string) => {
+  const normalizedPath = diskPath.trim();
+  if (!normalizedPath) {
+    return;
+  }
+
+  const endpoints = ['/api/disk/delete', '/api/disk/delete/'] as const;
+  let lastError: unknown;
+
+  for (const endpoint of endpoints) {
+    try {
+      await axiosInstance.delete(endpoint, {
+        data: { disk_path: normalizedPath },
+      });
+      return;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          return;
+        }
+
+        lastError = error;
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+};
+
 const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
+  const deviceNames = await fetchAttachedDeviceNames(name);
   const deleteResponse = await axiosInstance.delete<DeleteZpoolResponse>(
     '/api/zpool/delete',
     {
@@ -33,29 +130,23 @@ const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
     }
   );
 
-  const poolName = encodeURIComponent(name);
-  const poolDiskResponse = await axiosInstance.get<PoolDiskResponse>(
-    `/api/zpool/disk/${poolName}/`
-  );
-
-  if (poolDiskResponse.data?.ok === false) {
-    const errorDetail = poolDiskResponse.data?.error;
-    const errorMessage =
-      typeof errorDetail === 'string' && errorDetail.trim().length > 0
-        ? errorDetail
-        : 'امکان دریافت دیسک‌های متصل به فضای یکپارچه وجود ندارد.';
-    throw new Error(errorMessage);
-  }
-
-  const devices = poolDiskResponse.data?.data?.devices ?? [];
-  const deviceNames = devices
-    .map((device) => device?.name)
-    .filter((deviceName): deviceName is string => Boolean(deviceName));
+  const diskDeletionErrors: string[] = [];
 
   for (const deviceName of deviceNames) {
-    await axiosInstance.delete('/api/disk/delete/', {
-      data: { disk_path: deviceName },
-    });
+    try {
+      await deleteDiskByPath(deviceName);
+    } catch (error) {
+      diskDeletionErrors.push(
+        extractApiErrorMessage(
+          error,
+          `${DEFAULT_DELETE_DISK_ERROR_MESSAGE} (${deviceName})`
+        )
+      );
+    }
+  }
+
+  if (diskDeletionErrors.length > 0) {
+    throw new Error(diskDeletionErrors.join('\n'));
   }
 
   return deleteResponse.data;

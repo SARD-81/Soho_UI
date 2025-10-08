@@ -49,42 +49,40 @@ const BlurModal = ({
         }}
       >
         <Box sx={{ p: 4 }}>
-          {(title || onClose) && (
-            <Box
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: 3,
+              gap: 2,
+            }}
+          >
+            {title ? (
+              typeof title === 'string' ? (
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  {title}
+                </Typography>
+              ) : (
+                title
+              )
+            ) : (
+              <span />
+            )}
+
+            <IconButton
+              size="small"
+              onClick={onClose}
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                mb: 3,
-                gap: 2,
+                color: 'var(--color-secondary)',
+                '&:hover': {
+                  color: 'var(--color-primary)',
+                },
               }}
             >
-              {title ? (
-                typeof title === 'string' ? (
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    {title}
-                  </Typography>
-                ) : (
-                  title
-                )
-              ) : (
-                <span />
-              )}
-
-              <IconButton
-                size="small"
-                onClick={onClose}
-                sx={{
-                  color: 'var(--color-secondary)',
-                  '&:hover': {
-                    color: 'var(--color-primary)',
-                  },
-                }}
-              >
-                <MdClose size={20} />
-              </IconButton>
-            </Box>
-          )}
+              <MdClose size={20} />
+            </IconButton>
+          </Box>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {children}

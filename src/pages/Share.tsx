@@ -537,7 +537,6 @@ const Share = () => {
         onSubmit={handleSubmitPasswordChange}
         errorMessage={passwordModalError}
         isSubmitting={updateSambaPassword.isPending}
-        pendingUsername={pendingPasswordUsername}
       />
     </Box>
   );
