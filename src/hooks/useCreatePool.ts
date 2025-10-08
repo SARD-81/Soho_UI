@@ -156,9 +156,13 @@ export const useCreatePool = ({ onSuccess }: UseCreatePoolOptions = {}) => {
         return;
       }
 
+      const normalizedDevices = selectedDevices.map((device) =>
+        device.startsWith('/') ? device : `/dev/disk/by-id/${device}`
+      );
+
       createPoolMutation.mutate({
         pool_name: trimmedName,
-        devices: selectedDevices,
+        devices: normalizedDevices,
         vdev_type: vdevType,
       });
     },
