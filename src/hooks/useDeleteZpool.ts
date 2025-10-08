@@ -93,14 +93,24 @@ const deleteDiskByPath = async (diskPath: string) => {
     return;
   }
 
-  const endpoints = ['/api/disk/delete', '/api/disk/delete/'] as const;
+  const requestFactories = [
+    () => axiosInstance.post('/api/disk/delete', { disk_path: normalizedPath }),
+    () => axiosInstance.post('/api/disk/delete/', { disk_path: normalizedPath }),
+    () =>
+      axiosInstance.delete('/api/disk/delete', {
+        data: { disk_path: normalizedPath },
+      }),
+    () =>
+      axiosInstance.delete('/api/disk/delete/', {
+        data: { disk_path: normalizedPath },
+      }),
+  ];
+
   let lastError: unknown;
 
-  for (const endpoint of endpoints) {
+  for (const request of requestFactories) {
     try {
-      await axiosInstance.delete(endpoint, {
-        data: { disk_path: normalizedPath },
-      });
+      await request();
       return;
     } catch (error) {
       if (isAxiosError(error)) {
@@ -121,14 +131,47 @@ const deleteDiskByPath = async (diskPath: string) => {
   }
 };
 
+const deletePoolByName = async (name: string) => {
+  const payload = { pool_name: name };
+  const requestFactories = [
+    () => axiosInstance.post<DeleteZpoolResponse>('/api/zpool/delete', payload),
+    () => axiosInstance.post<DeleteZpoolResponse>('/api/zpool/delete/', payload),
+    () =>
+      axiosInstance.delete<DeleteZpoolResponse>('/api/zpool/delete', {
+        data: payload,
+      }),
+    () =>
+      axiosInstance.delete<DeleteZpoolResponse>('/api/zpool/delete/', {
+        data: payload,
+      }),
+  ];
+
+  let lastError: unknown;
+
+  for (const request of requestFactories) {
+    try {
+      const response = await request();
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        lastError = error;
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  throw new Error('Failed to delete pool');
+};
+
 const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
   const deviceNames = await fetchAttachedDeviceNames(name);
-  const deleteResponse = await axiosInstance.delete<DeleteZpoolResponse>(
-    '/api/zpool/delete',
-    {
-      data: { pool_name: name },
-    }
-  );
+  const deleteResponse = await deletePoolByName(name);
 
   const diskDeletionErrors: string[] = [];
 
@@ -149,7 +192,7 @@ const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
     throw new Error(diskDeletionErrors.join('\n'));
   }
 
-  return deleteResponse.data;
+  return deleteResponse;
 };
 
 interface UseDeleteZpoolOptions {
