@@ -1,7 +1,6 @@
 import {
   Button,
   CircularProgress,
-  Divider,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -10,9 +9,7 @@ import {
 } from '@mui/material';
 import React, { useMemo, useState } from 'react';
 import { HiBarsArrowDown } from 'react-icons/hi2';
-import { LuMoon, LuSun } from 'react-icons/lu';
 import { MdPowerSettingsNew, MdRestartAlt } from 'react-icons/md';
-import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import type { PowerAction } from '../hooks/usePowerAction';
 // import { BiSolidDownArrow } from "react-icons/bi";
 interface QuickActionsMenuProps {
@@ -54,7 +51,6 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
   isPowerActionDisabled,
   activePowerAction,
 }) => {
-  const { isDark, toggleTheme } = useThemeContext();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isMenuOpen = Boolean(anchorEl);
 
@@ -70,11 +66,6 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
     handleMenuClose();
     onPowerActionRequest(action);
   };
-
-  const toggleLabel = useMemo(
-    () => (isDark ? 'حالت روشن' : 'حالت تیره'),
-    [isDark]
-  );
 
   const powerIcons = useMemo(
     () => ({
@@ -156,26 +147,6 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
             {renderPowerIcon('shutdown')}
           </ListItemIcon>
           <ListItemText primary="خاموش کردن سیستم" />
-        </MenuItem>
-        <Divider sx={{ my: 1, borderColor: 'rgba(0, 0, 0, 0.08)' }} />
-        <MenuItem
-          onClick={() => {
-            handleMenuClose();
-            toggleTheme();
-          }}
-          sx={menuItemStyles}
-        >
-          <ListItemIcon sx={{ minWidth: 36 }}>
-            {isDark ? (
-              <LuSun size={20} color="var(--color-primary-light)" />
-            ) : (
-              <LuMoon size={20} color="var(--color-bg-primary)" />
-            )}
-          </ListItemIcon>
-          <ListItemText
-            primary={`تغییر به ${toggleLabel}`}
-            primaryTypographyProps={{ fontWeight: 500 }}
-          />
         </MenuItem>
       </Menu>
     </>
