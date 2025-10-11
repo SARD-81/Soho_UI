@@ -11,7 +11,7 @@ import {
 import InputAdornment from '@mui/material/InputAdornment';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateFileSystemReturn } from '../../hooks/useCreateFileSystem';
 import type { FileSystemEntry } from '../../@types/filesystem';
@@ -62,13 +62,24 @@ const CreateFileSystemModal = ({
     isCreating,
     setNameError,
   } = controller;
+  const [hasPersianName, setHasPersianName] = useState(false);
+  const [hasPersianQuota, setHasPersianQuota] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHasPersianName(false);
+      setHasPersianQuota(false);
+    }
+  }, [isOpen]);
 
   const handlePoolChange = (event: SelectChangeEvent<string>) => {
     setSelectedPool(event.target.value);
   };
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const sanitizedValue = removePersianCharacters(event.target.value);
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianName(sanitizedValue !== value);
     setFileSystemName(sanitizedValue);
     if (nameError) {
       setNameError(null);
@@ -76,7 +87,10 @@ const CreateFileSystemModal = ({
   };
 
   const handleQuotaChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setQuotaAmount(removePersianCharacters(event.target.value));
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianQuota(sanitizedValue !== value);
+    setQuotaAmount(sanitizedValue);
   };
 
   const normalizedFilesystemMap = useMemo(() => {
@@ -199,6 +213,8 @@ const CreateFileSystemModal = ({
             autoComplete="off"
             error={Boolean(nameError) || !isNameFormatValid || isDuplicate}
             helperText={
+              (hasPersianName &&
+                'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
               nameError ||
               (!isNameFormatValid &&
                 trimmedName.length > 0 &&
@@ -227,7 +243,10 @@ const CreateFileSystemModal = ({
             autoComplete="off"
             error={Boolean(quotaError)}
             helperText={
-              quotaError ?? 'حجم فضای فایلی را به گیگابایت وارد کنید (مثلاً 50).'
+              (hasPersianQuota &&
+                'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+              quotaError ||
+              'حجم فضای فایلی را به گیگابایت وارد کنید (مثلاً 50).'
             }
             type="number"
             InputLabelProps={{ shrink: true }}

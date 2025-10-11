@@ -44,6 +44,14 @@ const Users = () => {
     [osUsersQuery.data?.data]
   );
 
+  const normalizedOsUsernames = useMemo(() => {
+    return new Set(
+      osUsers
+        .map((user) => user.username.trim().toLowerCase())
+        .filter((username) => username.length > 0)
+    );
+  }, [osUsers]);
+
   const sambaUsersQuery = useSambaUsers({
     enabled: activeTab !== USERS_TABS.other,
   });
@@ -52,6 +60,14 @@ const Users = () => {
     () => normalizeSambaUsers(sambaUsersQuery.data?.data),
     [sambaUsersQuery.data?.data]
   );
+
+  const normalizedSambaUsernames = useMemo(() => {
+    return new Set(
+      sambaUsers
+        .map((user) => (user.username ?? '').trim().toLowerCase())
+        .filter((username) => username.length > 0)
+    );
+  }, [sambaUsers]);
 
   const sambaUsernames = useMemo(
     () => new Set(sambaUsers.map((user) => user.username)),
@@ -115,9 +131,24 @@ const Users = () => {
 
   const handleSubmitCreateUser = useCallback(
     (payload: CreateOsUserPayload) => {
-      createOsUser.mutate(payload);
+      const trimmedUsername = payload.username.trim();
+      const normalizedUsername = trimmedUsername.toLowerCase();
+
+      if (normalizedUsername.length === 0) {
+        return;
+      }
+
+      if (normalizedOsUsernames.has(normalizedUsername)) {
+        const message = 'کاربری با این نام کاربری از قبل وجود دارد.';
+        setCreateError(message);
+        toast.error(message);
+        return;
+      }
+
+      setCreateError(null);
+      createOsUser.mutate({ ...payload, username: trimmedUsername });
     },
-    [createOsUser]
+    [createOsUser, normalizedOsUsernames]
   );
 
   const handleOpenSambaCreateModal = useCallback(
@@ -154,11 +185,32 @@ const Users = () => {
       password: string;
       createOsUserFirst: boolean;
     }) => {
+      const trimmedUsername = username.trim();
+      const normalizedUsername = trimmedUsername.toLowerCase();
+
+      if (normalizedUsername.length === 0) {
+        return;
+      }
+
+      if (normalizedSambaUsernames.has(normalizedUsername)) {
+        const message = 'کاربر Samba با این نام کاربری وجود دارد.';
+        setSambaCreateError(message);
+        toast.error(message);
+        return;
+      }
+
+      if (createOsUserFirst && normalizedOsUsernames.has(normalizedUsername)) {
+        const message = 'کاربر سامانه‌ای با این نام کاربری از قبل وجود دارد.';
+        setSambaCreateError(message);
+        toast.error(message);
+        return;
+      }
+
       const run = async () => {
         if (createOsUserFirst) {
           try {
             await createOsUser.mutateAsync({
-              username,
+              username: trimmedUsername,
               login_shell: DEFAULT_LOGIN_SHELL,
               shell: DEFAULT_LOGIN_SHELL,
             });
@@ -167,12 +219,13 @@ const Users = () => {
           }
         }
 
-        createSambaUser.mutate({ username, password });
+        setSambaCreateError(null);
+        createSambaUser.mutate({ username: trimmedUsername, password });
       };
 
       void run();
     },
-    [createOsUser, createSambaUser]
+    [createOsUser, createSambaUser, normalizedOsUsernames, normalizedSambaUsernames]
   );
 
   return (

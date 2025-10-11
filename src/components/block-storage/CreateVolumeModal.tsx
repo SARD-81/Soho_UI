@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent } from 'react';
+import { useEffect, useState } from 'react';
 import type { UseCreateVolumeReturn } from '../../hooks/useCreateVolume';
 import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
@@ -58,13 +59,22 @@ const CreateVolumeModal = ({
     isCreating,
     setNameError,
   } = controller;
+  const [hasPersianName, setHasPersianName] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHasPersianName(false);
+    }
+  }, [isOpen]);
 
   const handlePoolChange = (event: SelectChangeEvent<string>) => {
     setSelectedPool(event.target.value);
   };
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const sanitizedValue = removePersianCharacters(event.target.value);
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianName(sanitizedValue !== value);
     setVolumeName(sanitizedValue);
     if (nameError) {
       setNameError(null);
@@ -143,7 +153,11 @@ const CreateVolumeModal = ({
             fullWidth
             autoComplete="off"
             error={Boolean(nameError)}
-            helperText={nameError ?? 'نامی یکتا برای Volume وارد کنید.'}
+            helperText={
+              (hasPersianName && 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+              nameError ||
+              'نامی یکتا برای Volume وارد کنید.'
+            }
             InputLabelProps={{ shrink: true }}
             InputProps={{ sx: inputBaseStyles }}
           />
