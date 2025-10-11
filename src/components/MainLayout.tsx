@@ -2,10 +2,8 @@ import {
   AppBar,
   Box,
   Button,
-  CircularProgress,
   IconButton,
   Toolbar,
-  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -13,13 +11,7 @@ import {
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
-import {
-  MdClose,
-  MdLogout,
-  MdMenu,
-  MdPowerSettingsNew,
-  MdRestartAlt,
-} from 'react-icons/md';
+import { MdClose, MdLogout, MdMenu } from 'react-icons/md';
 import { Outlet } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
@@ -27,35 +19,7 @@ import '../index.css';
 import NavigationDrawer from './NavigationDrawer';
 import PowerActionConfirmDialog from './PowerActionConfirmDialog';
 import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';
-import ThemeToggle from './ThemeToggle';
-
-const powerButtonBaseSx = {
-  color: '#fff',
-  borderRadius: '5px',
-  padding: '8px',
-  minWidth: 0,
-  boxShadow: '0 10px 24px rgba(0, 0, 0, 0.18)',
-  transition: 'transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-3px) scale(1.05)',
-    boxShadow: '0 14px 28px rgba(0, 0, 0, 0.25)',
-    filter: 'brightness(1.05)',
-  },
-  '&:active': {
-    transform: 'scale(0.95)',
-  },
-  '&:disabled': {
-    opacity: 0.65,
-    boxShadow: 'none',
-    transform: 'none',
-    filter: 'none',
-  },
-} as const;
-
-const createPowerButtonSx = (gradient: string) => ({
-  ...powerButtonBaseSx,
-  background: gradient,
-});
+import PowerActionsMenu from './PowerActionsMenu';
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
@@ -259,43 +223,12 @@ const MainLayout: React.FC = () => {
                 خروج
               </Button>
             )}
-            <Tooltip title="راه‌اندازی مجدد سیستم" placement="bottom">
-              <span>
-                <IconButton
-                  aria-label="راه‌اندازی مجدد سیستم"
-                  onClick={() => handlePowerActionRequest('restart')}
-                  disabled={isPowerActionPending || Boolean(countdownAction)}
-                  sx={createPowerButtonSx(
-                    'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))'
-                  )}
-                >
-                  {isPowerActionPending && activePowerAction === 'restart' ? (
-                    <CircularProgress size={18} sx={{ color: '#fff' }} />
-                  ) : (
-                    <MdRestartAlt size={22} />
-                  )}
-                </IconButton>
-              </span>
-            </Tooltip>
-            <Tooltip title="خاموش کردن سیستم" placement="bottom">
-              <span>
-                <IconButton
-                  aria-label="خاموش کردن سیستم"
-                  onClick={() => handlePowerActionRequest('shutdown')}
-                  disabled={isPowerActionPending || Boolean(countdownAction)}
-                  sx={createPowerButtonSx(
-                    'linear-gradient(135deg, #f97316, var(--color-secondary))'
-                  )}
-                >
-                  {isPowerActionPending && activePowerAction === 'shutdown' ? (
-                    <CircularProgress size={18} sx={{ color: '#fff' }} />
-                  ) : (
-                    <MdPowerSettingsNew size={22} />
-                  )}
-                </IconButton>
-              </span>
-            </Tooltip>
-            <ThemeToggle fixed={false} />
+            <PowerActionsMenu
+              onPowerActionRequest={handlePowerActionRequest}
+              isPowerActionPending={isPowerActionPending}
+              activePowerAction={activePowerAction}
+              countdownAction={countdownAction}
+            />
           </Box>
         </Toolbar>
       </AppBar>
