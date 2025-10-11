@@ -191,7 +191,7 @@ const SambaUserCreateModal = ({
           helperText={
             (hasPersianUsername &&
               'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
-            (isDuplicate && 'کاربر Samba با این نام کاربری وجود دارد.') ||
+            (isDuplicate && 'کاربر اشتراک فایل با این نام کاربری وجود دارد.') ||
             undefined
           }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
