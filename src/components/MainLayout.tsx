@@ -10,7 +10,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import {
@@ -25,6 +25,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
 import '../index.css';
 import NavigationDrawer from './NavigationDrawer';
+import PowerActionConfirmDialog from './PowerActionConfirmDialog';
+import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';
 import ThemeToggle from './ThemeToggle';
 
 const powerButtonBaseSx = {
@@ -60,6 +62,16 @@ const MainLayout: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [activePowerAction, setActivePowerAction] =
     useState<PowerAction | null>(null);
+  const [confirmationAction, setConfirmationAction] =
+    useState<PowerAction | null>(null);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [countdownAction, setCountdownAction] = useState<PowerAction | null>(
+    null
+  );
+  const [secondsRemaining, setSecondsRemaining] = useState(5);
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -79,6 +91,7 @@ const MainLayout: React.FC = () => {
       },
       onSettled: () => {
         setActivePowerAction(null);
+        setSecondsRemaining(5);
       },
     });
 
@@ -86,10 +99,62 @@ const MainLayout: React.FC = () => {
     await logout();
   };
 
-  const handlePowerAction = (action: PowerAction) => {
-    setActivePowerAction(action);
-    triggerPowerAction(action);
+  const clearCountdownTimer = () => {
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
   };
+
+  const handlePowerActionRequest = (action: PowerAction) => {
+    setConfirmationAction(action);
+    setIsConfirmationOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsConfirmationOpen(false);
+    setConfirmationAction(null);
+  };
+
+  const startCountdown = (action: PowerAction) => {
+    clearCountdownTimer();
+    setCountdownAction(action);
+    setSecondsRemaining(5);
+    countdownTimerRef.current = setInterval(() => {
+      setSecondsRemaining((prev) => {
+        if (prev <= 1) {
+          clearCountdownTimer();
+          setCountdownAction(null);
+          setActivePowerAction(action);
+          triggerPowerAction(action);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleDialogConfirm = () => {
+    if (!confirmationAction) {
+      return;
+    }
+    setIsConfirmationOpen(false);
+    startCountdown(confirmationAction);
+    setConfirmationAction(null);
+  };
+
+  const handleCountdownCancel = () => {
+    clearCountdownTimer();
+    setCountdownAction(null);
+    setSecondsRemaining(5);
+    setActivePowerAction(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      clearCountdownTimer();
+    };
+  }, []);
 
   return (
     <Box
@@ -198,8 +263,8 @@ const MainLayout: React.FC = () => {
               <span>
                 <IconButton
                   aria-label="راه‌اندازی مجدد سیستم"
-                  onClick={() => handlePowerAction('restart')}
-                  disabled={isPowerActionPending}
+                  onClick={() => handlePowerActionRequest('restart')}
+                  disabled={isPowerActionPending || Boolean(countdownAction)}
                   sx={createPowerButtonSx(
                     'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))'
                   )}
@@ -216,8 +281,8 @@ const MainLayout: React.FC = () => {
               <span>
                 <IconButton
                   aria-label="خاموش کردن سیستم"
-                  onClick={() => handlePowerAction('shutdown')}
-                  disabled={isPowerActionPending}
+                  onClick={() => handlePowerActionRequest('shutdown')}
+                  disabled={isPowerActionPending || Boolean(countdownAction)}
                   sx={createPowerButtonSx(
                     'linear-gradient(135deg, #f97316, var(--color-secondary))'
                   )}
@@ -252,6 +317,17 @@ const MainLayout: React.FC = () => {
         <Toolbar />
         <Outlet />
       </Box>
+      <PowerActionConfirmDialog
+        open={isConfirmationOpen}
+        action={confirmationAction}
+        onCancel={handleDialogClose}
+        onConfirm={handleDialogConfirm}
+      />
+      <PowerActionCountdownOverlay
+        action={countdownAction}
+        secondsRemaining={secondsRemaining}
+        onCancel={handleCountdownCancel}
+      />
     </Box>
   );
 };
