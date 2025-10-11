@@ -3,6 +3,10 @@ import {
   Box,
   Button,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Toolbar,
   Typography,
   useMediaQuery,
@@ -12,8 +16,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import { MdClose, MdLogout, MdMenu } from 'react-icons/md';
+import { LuMoon, LuSun } from 'react-icons/lu';
 import { Outlet } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
 import '../index.css';
 import NavigationDrawer from './NavigationDrawer';
@@ -39,6 +45,14 @@ const MainLayout: React.FC = () => {
   );
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<null | HTMLElement>(
+    null
+  );
+  const isUserMenuOpen = Boolean(userMenuAnchorEl);
+
+  const { isDark, toggleTheme } = useThemeContext();
+
+  const displayUsername = username || 'admin';
 
   const { mutate: triggerPowerAction, isPending: isPowerActionPending } =
     usePowerAction({
@@ -121,6 +135,14 @@ const MainLayout: React.FC = () => {
     };
   }, []);
 
+  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchorEl(null);
+  };
+
   return (
     <Box
       sx={{
@@ -186,44 +208,70 @@ const MainLayout: React.FC = () => {
               order: { xs: 3, sm: 'initial' },
             }}
           >
-            {!isMobile && (
-              <Typography
-                sx={{
-                  color: 'var(--color-bg-primary)',
-                  display: 'flex',
-                  gap: 1,
-                }}
-              >
-                خوش آمدید، {username} <IoPersonCircleOutline size={24} />
-              </Typography>
-            )}
             {isMobile ? (
               <IconButton
-                aria-label="خروج"
-                onClick={handleLogout}
+                aria-label="منوی کاربر"
+                onClick={handleUserMenuOpen}
                 size="small"
                 sx={{ color: 'var(--color-bg-primary)' }}
               >
-                <MdLogout />
+                <IoPersonCircleOutline size={24} />
               </IconButton>
             ) : (
               <Button
-                onClick={handleLogout}
+                onClick={handleUserMenuOpen}
+                endIcon={<IoPersonCircleOutline size={24} />}
                 sx={{
                   color: 'var(--color-bg-primary)',
-                  height: 30,
-                  backgroundColor: 'var(--color-primary)',
-                  borderRadius: '5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  fontFamily: 'var(--font-vazir)',
+                  fontWeight: 500,
                   '&:hover': {
-                    backgroundColor: 'unset',
-                    border: '2px solid var(--color-primary)',
-                    borderRadius: '5px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
                   },
                 }}
               >
-                خروج
+                خوش آمدید، {displayUsername}
               </Button>
             )}
+            <Menu
+              anchorEl={userMenuAnchorEl}
+              open={isUserMenuOpen}
+              onClose={handleUserMenuClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <MenuItem
+                onClick={() => {
+                  handleUserMenuClose();
+                  toggleTheme();
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  {isDark ? (
+                    <LuSun size={20} color="var(--color-primary-light)" />
+                  ) : (
+                    <LuMoon size={20} color="var(--color-bg-primary)" />
+                  )}
+                </ListItemIcon>
+                <ListItemText sx={{color : "var(--color-text)"}} primary={`تغییر به ${
+                  isDark ? 'حالت روشن' : 'حالت تیره'
+                }`} />
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleUserMenuClose();
+                  handleLogout();
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <MdLogout />
+                </ListItemIcon>
+                <ListItemText sx={{color : "var(--color-text)"}} primary="خروج" />
+              </MenuItem>
+            </Menu>
             <QuickActionsMenu
               onPowerActionRequest={handlePowerActionRequest}
               isPowerActionDisabled={

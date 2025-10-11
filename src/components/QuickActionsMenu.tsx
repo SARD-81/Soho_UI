@@ -1,7 +1,6 @@
 import {
   Button,
   CircularProgress,
-  Divider,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -9,11 +8,10 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useMemo, useState } from 'react';
-import { HiBarsArrowDown } from 'react-icons/hi2';
-import { LuMoon, LuSun } from 'react-icons/lu';
+// import { HiBarsArrowDown } from 'react-icons/hi2';
 import { MdPowerSettingsNew, MdRestartAlt } from 'react-icons/md';
-import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import type { PowerAction } from '../hooks/usePowerAction';
+import { MdPowerOff } from "react-icons/md";
 // import { BiSolidDownArrow } from "react-icons/bi";
 interface QuickActionsMenuProps {
   onPowerActionRequest: (action: PowerAction) => void;
@@ -54,7 +52,6 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
   isPowerActionDisabled,
   activePowerAction,
 }) => {
-  const { isDark, toggleTheme } = useThemeContext();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isMenuOpen = Boolean(anchorEl);
 
@@ -71,16 +68,11 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
     onPowerActionRequest(action);
   };
 
-  const toggleLabel = useMemo(
-    () => (isDark ? 'حالت روشن' : 'حالت تیره'),
-    [isDark]
-  );
-
   const powerIcons = useMemo(
     () => ({
       restart: <MdRestartAlt size={22} color={getPowerIconColor('restart')} />,
       shutdown: (
-        <MdPowerSettingsNew size={22} color={getPowerIconColor('shutdown')} />
+        <MdPowerOff size={22} color={getPowerIconColor('shutdown')} />
       ),
     }),
     []
@@ -126,7 +118,8 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
         >
           {/* <BiSolidDownArrow /> */}
           {/* <CgArrowDownR size={25}/> */}
-          <HiBarsArrowDown size={30} />
+          {/* <HiBarsArrowDown size={30} /> */}
+          <MdPowerSettingsNew size={28} />
         </Typography>
       </Button>
       <Menu
@@ -156,26 +149,6 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
             {renderPowerIcon('shutdown')}
           </ListItemIcon>
           <ListItemText primary="خاموش کردن سیستم" />
-        </MenuItem>
-        <Divider sx={{ my: 1, borderColor: 'rgba(0, 0, 0, 0.08)' }} />
-        <MenuItem
-          onClick={() => {
-            handleMenuClose();
-            toggleTheme();
-          }}
-          sx={menuItemStyles}
-        >
-          <ListItemIcon sx={{ minWidth: 36 }}>
-            {isDark ? (
-              <LuSun size={20} color="var(--color-primary-light)" />
-            ) : (
-              <LuMoon size={20} color="var(--color-bg-primary)" />
-            )}
-          </ListItemIcon>
-          <ListItemText
-            primary={`تغییر به ${toggleLabel}`}
-            primaryTypographyProps={{ fontWeight: 500 }}
-          />
         </MenuItem>
       </Menu>
     </>

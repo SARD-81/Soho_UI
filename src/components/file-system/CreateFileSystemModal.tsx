@@ -146,15 +146,20 @@ const CreateFileSystemModal = ({
     trimmedPool.length > 0 &&
     trimmedName.length > 0 &&
     normalizedFilesystemMap[normalizedPool]?.has(trimmedName.toLowerCase());
+  const isSameAsPool =
+    trimmedPool.length > 0 &&
+    trimmedName.length > 0 &&
+    trimmedName.toLowerCase() === normalizedPool;
   const isNameFormatValid =
     trimmedName.length === 0 || /^[A-Za-z0-9]+$/.test(trimmedName);
   const shouldShowSuccess =
     trimmedPool.length > 0 &&
     trimmedName.length > 0 &&
     isNameFormatValid &&
-    !isDuplicate;
+    !isDuplicate &&
+    !isSameAsPool;
 
-  const adornmentIcon = isDuplicate ? (
+  const adornmentIcon = isDuplicate || isSameAsPool ? (
     <FiAlertCircle color="var(--color-error)" size={18} />
   ) : shouldShowSuccess ? (
     <FiCheckCircle color="var(--color-success)" size={18} />
@@ -170,6 +175,12 @@ const CreateFileSystemModal = ({
     if (isDuplicate) {
       event.preventDefault();
       setNameError('فضای فایلی با این نام در این فضای یکپارچه وجود دارد.');
+      return;
+    }
+
+    if (isSameAsPool) {
+      event.preventDefault();
+      setNameError('نام فضای فایلی نمی‌تواند با نام فضای یکپارچه یکسان باشد.');
       return;
     }
 
@@ -240,7 +251,11 @@ const CreateFileSystemModal = ({
             fullWidth
             autoComplete="off"
             error={
-              Boolean(nameError) || !isNameFormatValid || isDuplicate || hasPersianName
+              Boolean(nameError) ||
+              !isNameFormatValid ||
+              isDuplicate ||
+              isSameAsPool ||
+              hasPersianName
             }
             helperText={
               (hasPersianName &&
@@ -251,6 +266,8 @@ const CreateFileSystemModal = ({
                 'نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.') ||
               (isDuplicate &&
                 'فضای فایلی با این نام در این فضای یکپارچه وجود دارد.') ||
+              (isSameAsPool &&
+                'نام فضای فایلی نمی‌تواند با نام فضای یکپارچه یکسان باشد.') ||
               'نامی یکتا برای فضای فایلی وارد کنید.'
             }
             InputLabelProps={{ shrink: true }}
