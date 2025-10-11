@@ -209,7 +209,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                 {...params}
                 label="مسیر کامل"
                 autoFocus
-                placeholder="مانند /mnt/data/share"
+                placeholder="مسیر فضای فایلی را انتخاب کنید"
                 error={hasPathError}
                 helperText={pathHelperText}
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
@@ -267,7 +267,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
               <TextField
                 {...params}
                 label="کاربران مجاز"
-                placeholder="نام کاربر مجاز را انتخاب یا جست‌وجو کنید"
+                placeholder="نام کاربر مجاز را انتخاب کنید"
                 error={Boolean(validUsersError)}
                 helperText={validUsersHelperText}
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}

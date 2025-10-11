@@ -164,6 +164,7 @@ const NetworkSettingsTable = () => {
     const interfaceColumn: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'interface-name',
       header: 'رابط شبکه',
+      align: 'center',
       renderCell: (row) => (
         <Typography component="span" sx={{ fontWeight: 600 }}>
           {row.interfaceName}
@@ -174,6 +175,7 @@ const NetworkSettingsTable = () => {
     const ipv4Column: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'ipv4-addresses',
       header: 'آدرس IPv4',
+      align: 'center',
       renderCell: (row) => {
         if (row.ipv4Entries.length === 0) {
           return (
@@ -205,6 +207,7 @@ const NetworkSettingsTable = () => {
     const netmaskColumn: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'detail-netmask',
       header: 'Netmask',
+      align: 'center',
       renderCell: (row) => {
         if (row.ipv4Entries.length === 0) {
           return '—';
@@ -225,7 +228,7 @@ const NetworkSettingsTable = () => {
     const speedColumn: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'link-speed',
       header: 'link-speed',
-      align: 'right',
+      align: 'center',
       renderCell: (row) => (
         <Typography
           component="span"

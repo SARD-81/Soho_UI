@@ -7,7 +7,6 @@ import {
   useState,
 } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
-
 import type { CreateOsUserPayload } from '../../@types/users';
 import { DEFAULT_LOGIN_SHELL } from '../../constants/users';
 import { removePersianCharacters } from '../../utils/text';
@@ -40,7 +39,6 @@ const OsUserCreateModal = ({
         .filter((name) => name.length > 0)
     );
   }, [existingUsernames]);
-
 
   useEffect(() => {
     if (open) {
@@ -148,7 +146,6 @@ const OsUserCreateModal = ({
               'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
             (isDuplicate && 'کاربری با این نام کاربری از قبل وجود دارد.') ||
             undefined
-
           }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{

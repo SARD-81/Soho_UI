@@ -1,7 +1,7 @@
 import { createElement } from 'react';
-import { BiHistory } from 'react-icons/bi';
+// import { BiHistory } from 'react-icons/bi';
 import { BsFillShareFill } from "react-icons/bs";
-import { FiUsers } from 'react-icons/fi';
+// import { FiUsers } from 'react-icons/fi';
 import { GrServices, GrStorage } from 'react-icons/gr';
 import { MdSpaceDashboard, MdStorage } from 'react-icons/md';
 import { RiSettings3Fill } from 'react-icons/ri';
@@ -42,8 +42,8 @@ export const navItems: NavigationItem[] = [
     icon: createElement(RiSettings3Fill),
     path: '/settings',
     children: [
-      { text: 'کاربران', icon: createElement(FiUsers), path: '/users' },
+      // { text: 'کاربران', icon: createElement(FiUsers), path: '/users' },
     ],
   },
-  { text: 'تاریخچه', icon: createElement(BiHistory), path: '/history' },
+  // { text: 'تاریخچه', icon: createElement(BiHistory), path: '/history' },
 ];
