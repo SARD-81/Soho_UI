@@ -119,6 +119,7 @@ const FileSystem = () => {
       <CreateFileSystemModal
         controller={createFileSystem}
         poolOptions={poolOptions}
+        existingFilesystems={filesystems}
       />
 
       <FileSystemsTable

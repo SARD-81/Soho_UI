@@ -1,6 +1,7 @@
 import { Alert, Box, TextField } from '@mui/material';
 import { type FormEvent, useEffect, useState } from 'react';
 import type { CreateSambaUserPayload } from '../../@types/samba';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -98,7 +99,9 @@ const SambaUserCreateModal = ({
         <TextField
           label="نام کاربری"
           value={username}
-          onChange={(event) => setUsername(event.target.value)}
+          onChange={(event) =>
+            setUsername(removePersianCharacters(event.target.value))
+          }
           required
           fullWidth
           autoFocus
@@ -116,7 +119,9 @@ const SambaUserCreateModal = ({
           label="گذرواژه"
           type="password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(event) =>
+            setPassword(removePersianCharacters(event.target.value))
+          }
           required
           fullWidth
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}

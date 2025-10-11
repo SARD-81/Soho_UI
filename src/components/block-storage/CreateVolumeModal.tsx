@@ -11,6 +11,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent } from 'react';
 import type { UseCreateVolumeReturn } from '../../hooks/useCreateVolume';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -55,6 +56,7 @@ const CreateVolumeModal = ({
     sizeError,
     apiError,
     isCreating,
+    setNameError,
   } = controller;
 
   const handlePoolChange = (event: SelectChangeEvent<string>) => {
@@ -62,7 +64,11 @@ const CreateVolumeModal = ({
   };
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setVolumeName(event.target.value);
+    const sanitizedValue = removePersianCharacters(event.target.value);
+    setVolumeName(sanitizedValue);
+    if (nameError) {
+      setNameError(null);
+    }
   };
 
   const handleSizeChange = (event: ChangeEvent<HTMLInputElement>) => {

@@ -2,6 +2,7 @@ import { Alert, Box, Button, TextField } from '@mui/material';
 import { type FormEvent, useEffect, useState } from 'react';
 import type { CreateOsUserPayload } from '../../@types/users';
 import { DEFAULT_LOGIN_SHELL } from '../../constants/users';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 
 interface OsUserCreateModalProps {
@@ -89,7 +90,9 @@ const OsUserCreateModal = ({
         <TextField
           label="نام کاربری"
           value={username}
-          onChange={(event) => setUsername(event.target.value)}
+          onChange={(event) =>
+            setUsername(removePersianCharacters(event.target.value))
+          }
           required
           autoFocus
           fullWidth

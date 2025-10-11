@@ -5,6 +5,7 @@ import {
   FormControlLabel,
   FormGroup,
   FormHelperText,
+  InputAdornment,
   InputLabel,
   LinearProgress,
   MenuItem,
@@ -14,8 +15,11 @@ import {
   Typography,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
+import { useMemo } from 'react';
+import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreatePoolReturn } from '../../hooks/useCreatePool';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -31,6 +35,7 @@ interface CreatePoolModalProps {
   deviceOptions?: DeviceOption[];
   isDiskLoading?: boolean;
   diskError?: Error | null;
+  existingPoolNames?: string[];
 }
 
 const inputBaseStyles = {
@@ -54,6 +59,7 @@ const CreatePoolModal = ({
   deviceOptions: externalDeviceOptions,
   isDiskLoading: externalIsDiskLoading,
   diskError: externalDiskError,
+  existingPoolNames = [],
 }: CreatePoolModalProps) => {
   const {
     isOpen,
@@ -61,6 +67,7 @@ const CreatePoolModal = ({
     handleSubmit,
     poolName,
     setPoolName,
+    setPoolNameError,
     vdevType,
     setVdevType,
     selectedDevices,
@@ -77,12 +84,56 @@ const CreatePoolModal = ({
 
   const diskError = externalDiskError ?? null;
 
+  const normalizedExistingNames = useMemo(() => {
+    return existingPoolNames
+      .map((name) => name.trim().toLowerCase())
+      .filter((name) => name.length > 0);
+  }, [existingPoolNames]);
+
+  const trimmedPoolName = poolName.trim();
+  const normalizedPoolName = trimmedPoolName.toLowerCase();
+  const isDuplicate =
+    trimmedPoolName.length > 0 &&
+    normalizedExistingNames.includes(normalizedPoolName);
+  const isNameFormatValid =
+    trimmedPoolName.length === 0 || /^[A-Za-z0-9]+$/.test(trimmedPoolName);
+  const shouldShowSuccess =
+    trimmedPoolName.length > 0 && isNameFormatValid && !isDuplicate;
+
+  const adornmentIcon = isDuplicate ? (
+    <FiAlertCircle color="var(--color-error)" size={18} />
+  ) : shouldShowSuccess ? (
+    <FiCheckCircle color="var(--color-success)" size={18} />
+  ) : null;
+
   const handlePoolNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setPoolName(event.target.value);
+    const sanitizedValue = removePersianCharacters(event.target.value);
+    setPoolName(sanitizedValue);
+    if (poolNameError) {
+      setPoolNameError(null);
+    }
   };
 
   const handleVdevChange = (event: SelectChangeEvent<string>) => {
     setVdevType(event.target.value);
+  };
+
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (!isNameFormatValid && trimmedPoolName.length > 0) {
+      event.preventDefault();
+      setPoolNameError(
+        'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.'
+      );
+      return;
+    }
+
+    if (isDuplicate) {
+      event.preventDefault();
+      setPoolNameError('فضای یکپارچه‌ای با این نام از قبل وجود دارد.');
+      return;
+    }
+
+    handleSubmit(event);
   };
 
   return (
@@ -108,7 +159,7 @@ const CreatePoolModal = ({
         />
       }
     >
-      <Box component="form" id="create-pool-form" onSubmit={handleSubmit}>
+      <Box component="form" id="create-pool-form" onSubmit={handleFormSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <TextField
             label="نام فضای یکپارچه"
@@ -118,10 +169,27 @@ const CreatePoolModal = ({
             placeholder={'نام یکتا برای فضای یکپارچه وارد کنید.'}
             fullWidth
             size="small"
-            error={Boolean(poolNameError)}
-            helperText={poolNameError}
+            error={
+              Boolean(poolNameError) || !isNameFormatValid || isDuplicate
+            }
+            helperText={
+              poolNameError ||
+              (!isNameFormatValid &&
+                trimmedPoolName.length > 0 &&
+                'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.') ||
+              (isDuplicate && 'فضای یکپارچه‌ای با این نام از قبل وجود دارد.') ||
+              undefined
+            }
             InputLabelProps={{ shrink: true }}
-            InputProps={{ sx: inputBaseStyles }}
+            InputProps={{
+              sx: inputBaseStyles,
+              endAdornment:
+                trimmedPoolName.length > 0 && adornmentIcon ? (
+                  <InputAdornment position="end">
+                    {adornmentIcon}
+                  </InputAdornment>
+                ) : undefined,
+            }}
           />
 
           <FormControl size="small" fullWidth>

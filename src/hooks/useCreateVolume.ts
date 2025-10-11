@@ -180,6 +180,7 @@ export const useCreateVolume = ({
       handleClose();
     },
     handleSubmit,
+    setNameError,
   };
 };
 
