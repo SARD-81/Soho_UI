@@ -83,6 +83,34 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!hasPersianPathInput) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianPathInput(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianPathInput]);
+
+  useEffect(() => {
+    if (!hasPersianValidUsersInput) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianValidUsersInput(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianValidUsersInput]);
+
   const sambaUsersQuery = useSambaUsers({ enabled: isOpen });
   const sambaUsers = useMemo(
     () => normalizeSambaUsers(sambaUsersQuery.data?.data),
@@ -102,7 +130,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   );
 
   const hasPathError =
-    Boolean(fullPathError) || pathValidationStatus === 'invalid';
+    Boolean(fullPathError) || pathValidationStatus === 'invalid' || hasPersianPathInput;
   const pathHelperText =
     (hasPersianPathInput &&
       'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
@@ -268,7 +296,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                 {...params}
                 label="کاربران مجاز"
                 placeholder="نام کاربر مجاز را انتخاب کنید"
-                error={Boolean(validUsersError)}
+                error={Boolean(validUsersError) || hasPersianValidUsersInput}
                 helperText={validUsersHelperText}
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
                 InputProps={{

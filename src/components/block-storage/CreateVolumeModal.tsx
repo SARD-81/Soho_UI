@@ -67,6 +67,20 @@ const CreateVolumeModal = ({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!hasPersianName) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianName(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianName]);
+
   const handlePoolChange = (event: SelectChangeEvent<string>) => {
     setSelectedPool(event.target.value);
   };
@@ -152,12 +166,12 @@ const CreateVolumeModal = ({
             onChange={handleNameChange}
             fullWidth
             autoComplete="off"
-            error={Boolean(nameError)}
-            helperText={
-              (hasPersianName && 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
-              nameError ||
-              'نامی یکتا برای Volume وارد کنید.'
-            }
+          error={Boolean(nameError) || hasPersianName}
+          helperText={
+            (hasPersianName && 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+            nameError ||
+            'نامی یکتا برای Volume وارد کنید.'
+          }
             InputLabelProps={{ shrink: true }}
             InputProps={{ sx: inputBaseStyles }}
           />

@@ -47,6 +47,20 @@ const OsUserCreateModal = ({
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!hasPersianUsername) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianUsername(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianUsername]);
+
   const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
     const sanitizedValue = removePersianCharacters(value);
@@ -140,7 +154,7 @@ const OsUserCreateModal = ({
           required
           autoFocus
           fullWidth
-          error={isDuplicate}
+          error={isDuplicate || hasPersianUsername}
           helperText={
             (hasPersianUsername &&
               'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
