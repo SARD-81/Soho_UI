@@ -3,9 +3,13 @@ import {
   Box,
   Button,
   CircularProgress,
+  Divider,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Toolbar,
-  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -14,48 +18,23 @@ import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import {
+  MdArrowDropDown,
   MdClose,
   MdLogout,
   MdMenu,
+  MdOutlineSettings,
   MdPowerSettingsNew,
   MdRestartAlt,
 } from 'react-icons/md';
+import { LuMoon, LuSun } from 'react-icons/lu';
 import { Outlet } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
 import '../index.css';
 import NavigationDrawer from './NavigationDrawer';
 import PowerActionConfirmDialog from './PowerActionConfirmDialog';
 import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';
-import ThemeToggle from './ThemeToggle';
-
-const powerButtonBaseSx = {
-  color: '#fff',
-  borderRadius: '5px',
-  padding: '8px',
-  minWidth: 0,
-  boxShadow: '0 10px 24px rgba(0, 0, 0, 0.18)',
-  transition: 'transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-3px) scale(1.05)',
-    boxShadow: '0 14px 28px rgba(0, 0, 0, 0.25)',
-    filter: 'brightness(1.05)',
-  },
-  '&:active': {
-    transform: 'scale(0.95)',
-  },
-  '&:disabled': {
-    opacity: 0.65,
-    boxShadow: 'none',
-    transform: 'none',
-    filter: 'none',
-  },
-} as const;
-
-const createPowerButtonSx = (gradient: string) => ({
-  ...powerButtonBaseSx,
-  background: gradient,
-});
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
@@ -72,8 +51,11 @@ const MainLayout: React.FC = () => {
   const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(
     null
   );
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
+  const { isDark, toggleTheme } = useThemeContext();
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const isMenuOpen = Boolean(menuAnchorEl);
 
   const { mutate: triggerPowerAction, isPending: isPowerActionPending } =
     usePowerAction({
@@ -97,6 +79,24 @@ const MainLayout: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
+
+  const handleMenuPowerAction = (action: PowerAction) => {
+    handleMenuClose();
+    handlePowerActionRequest(action);
+  };
+
+  const handleMenuThemeToggle = () => {
+    handleMenuClose();
+    toggleTheme();
   };
 
   const clearCountdownTimer = () => {
@@ -259,43 +259,146 @@ const MainLayout: React.FC = () => {
                 خروج
               </Button>
             )}
-            <Tooltip title="راه‌اندازی مجدد سیستم" placement="bottom">
-              <span>
-                <IconButton
-                  aria-label="راه‌اندازی مجدد سیستم"
-                  onClick={() => handlePowerActionRequest('restart')}
-                  disabled={isPowerActionPending || Boolean(countdownAction)}
-                  sx={createPowerButtonSx(
-                    'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))'
-                  )}
-                >
+            <Button
+              onClick={handleMenuOpen}
+              startIcon={<MdOutlineSettings size={20} />}
+              endIcon={<MdArrowDropDown size={20} />}
+              sx={{
+                background:
+                  'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
+                color: '#fff',
+                borderRadius: '999px',
+                px: 2.5,
+                py: 1,
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                boxShadow: '0 16px 34px rgba(15, 23, 42, 0.35)',
+                textTransform: 'none',
+                letterSpacing: 0.4,
+                '&:hover': {
+                  background:
+                    'linear-gradient(135deg, var(--color-secondary), var(--color-primary-light))',
+                  boxShadow: '0 20px 40px rgba(15, 23, 42, 0.45)',
+                },
+              }}
+            >
+              مدیریت سیستم
+            </Button>
+            <Menu
+              anchorEl={menuAnchorEl}
+              open={isMenuOpen}
+              onClose={handleMenuClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{
+                sx: (theme) => ({
+                  mt: 1.5,
+                  py: 1,
+                  px: 0.5,
+                  minWidth: 250,
+                  borderRadius: 2,
+                  backdropFilter: 'blur(16px)',
+                  boxShadow:
+                    theme.palette.mode === 'dark'
+                      ? '0 25px 55px rgba(15, 23, 42, 0.65)'
+                      : '0 20px 45px rgba(148, 163, 184, 0.45)',
+                  background:
+                    theme.palette.mode === 'dark'
+                      ? 'linear-gradient(145deg, rgba(15,23,42,0.95), rgba(30,64,175,0.92))'
+                      : 'linear-gradient(145deg, rgba(248,250,252,0.96), rgba(191,219,254,0.92))',
+                  border:
+                    theme.palette.mode === 'dark'
+                      ? '1px solid rgba(96, 165, 250, 0.35)'
+                      : '1px solid rgba(59, 130, 246, 0.35)',
+                }),
+              }}
+            >
+              <MenuItem
+                onClick={() => handleMenuPowerAction('restart')}
+                disabled={isPowerActionPending || Boolean(countdownAction)}
+                sx={{
+                  mx: 0.5,
+                  borderRadius: 1.5,
+                  gap: 1,
+                  '&:hover': {
+                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 38, color: 'var(--color-primary)' }}>
                   {isPowerActionPending && activePowerAction === 'restart' ? (
-                    <CircularProgress size={18} sx={{ color: '#fff' }} />
+                    <CircularProgress size={18} sx={{ color: 'var(--color-primary)' }} />
                   ) : (
                     <MdRestartAlt size={22} />
                   )}
-                </IconButton>
-              </span>
-            </Tooltip>
-            <Tooltip title="خاموش کردن سیستم" placement="bottom">
-              <span>
-                <IconButton
-                  aria-label="خاموش کردن سیستم"
-                  onClick={() => handlePowerActionRequest('shutdown')}
-                  disabled={isPowerActionPending || Boolean(countdownAction)}
-                  sx={createPowerButtonSx(
-                    'linear-gradient(135deg, #f97316, var(--color-secondary))'
-                  )}
-                >
+                </ListItemIcon>
+                <ListItemText
+                  primary="راه‌اندازی مجدد سیستم"
+                  secondary="اجرای ایمن مجدد سرویس‌ها"
+                  primaryTypographyProps={{ fontWeight: 600 }}
+                  secondaryTypographyProps={{ fontSize: 12.5 }}
+                />
+              </MenuItem>
+              <MenuItem
+                onClick={() => handleMenuPowerAction('shutdown')}
+                disabled={isPowerActionPending || Boolean(countdownAction)}
+                sx={{
+                  mx: 0.5,
+                  borderRadius: 1.5,
+                  gap: 1,
+                  '&:hover': {
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 38, color: '#f97316' }}>
                   {isPowerActionPending && activePowerAction === 'shutdown' ? (
-                    <CircularProgress size={18} sx={{ color: '#fff' }} />
+                    <CircularProgress size={18} sx={{ color: '#f97316' }} />
                   ) : (
                     <MdPowerSettingsNew size={22} />
                   )}
-                </IconButton>
-              </span>
-            </Tooltip>
-            <ThemeToggle fixed={false} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="خاموش کردن سیستم"
+                  secondary="پایان دادن ایمن به فعالیت‌ها"
+                  primaryTypographyProps={{ fontWeight: 600 }}
+                  secondaryTypographyProps={{ fontSize: 12.5 }}
+                />
+              </MenuItem>
+              <Divider
+                sx={{
+                  my: 1,
+                  borderColor: 'rgba(148, 163, 184, 0.25)',
+                }}
+              />
+              <MenuItem
+                onClick={handleMenuThemeToggle}
+                sx={{
+                  mx: 0.5,
+                  borderRadius: 1.5,
+                  gap: 1,
+                  '&:hover': {
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 38, color: 'var(--color-primary)' }}>
+                  {isDark ? <LuSun size={22} /> : <LuMoon size={22} />}
+                </ListItemIcon>
+                <ListItemText
+                  primary={isDark ? 'فعال‌سازی حالت روشن' : 'فعال‌سازی حالت تاریک'}
+                  secondary={
+                    isDark
+                      ? 'محیطی روشن و پویا برای روز'
+                      : 'فضایی آرام و مناسب برای شب'
+                  }
+                  primaryTypographyProps={{ fontWeight: 600 }}
+                  secondaryTypographyProps={{ fontSize: 12.5 }}
+                />
+              </MenuItem>
+            </Menu>
           </Box>
         </Toolbar>
       </AppBar>
