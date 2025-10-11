@@ -72,6 +72,34 @@ const CreateFileSystemModal = ({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!hasPersianName) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianName(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianName]);
+
+  useEffect(() => {
+    if (!hasPersianQuota) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianQuota(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianQuota]);
+
   const handlePoolChange = (event: SelectChangeEvent<string>) => {
     setSelectedPool(event.target.value);
   };
@@ -211,7 +239,9 @@ const CreateFileSystemModal = ({
             onChange={handleNameChange}
             fullWidth
             autoComplete="off"
-            error={Boolean(nameError) || !isNameFormatValid || isDuplicate}
+            error={
+              Boolean(nameError) || !isNameFormatValid || isDuplicate || hasPersianName
+            }
             helperText={
               (hasPersianName &&
                 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
@@ -241,7 +271,7 @@ const CreateFileSystemModal = ({
             onChange={handleQuotaChange}
             fullWidth
             autoComplete="off"
-            error={Boolean(quotaError)}
+            error={Boolean(quotaError) || hasPersianQuota}
             helperText={
               (hasPersianQuota &&
                 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||

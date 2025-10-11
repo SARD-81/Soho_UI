@@ -39,6 +39,34 @@ const NetworkInterfaceIpEditModal = ({
     }
   }, [initialIp, initialNetmask, open]);
 
+  useEffect(() => {
+    if (!hasPersianIp) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianIp(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianIp]);
+
+  useEffect(() => {
+    if (!hasPersianNetmask) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianNetmask(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianNetmask]);
+
   const handleIpChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
     const sanitizedValue = removePersianCharacters(value);
@@ -132,6 +160,7 @@ const NetworkInterfaceIpEditModal = ({
           onChange={handleIpChange}
           required
           fullWidth
+          error={hasPersianIp}
           helperText={
             hasPersianIp ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
           }
@@ -151,6 +180,7 @@ const NetworkInterfaceIpEditModal = ({
           onChange={handleNetmaskChange}
           required
           fullWidth
+          error={hasPersianNetmask}
           helperText={
             hasPersianNetmask ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
           }

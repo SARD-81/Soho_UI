@@ -32,6 +32,20 @@ const SambaUserPasswordModal = ({
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!hasPersianPassword) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianPassword(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianPassword]);
+
   const handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
     const sanitizedValue = removePersianCharacters(value);
@@ -123,6 +137,7 @@ const SambaUserPasswordModal = ({
           onChange={handlePasswordChange}
           required
           fullWidth
+          error={hasPersianPassword}
           helperText={
             hasPersianPassword ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
           }

@@ -55,6 +55,34 @@ const SambaUserCreateModal = ({
     }
   }, [initialUsername, open]);
 
+  useEffect(() => {
+    if (!hasPersianUsername) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianUsername(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianUsername]);
+
+  useEffect(() => {
+    if (!hasPersianPassword) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianPassword(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianPassword]);
+
   const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
     const sanitizedValue = removePersianCharacters(value);
@@ -159,7 +187,7 @@ const SambaUserCreateModal = ({
           required
           fullWidth
           autoFocus
-          error={isDuplicate}
+          error={isDuplicate || hasPersianUsername}
           helperText={
             (hasPersianUsername &&
               'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
@@ -187,6 +215,7 @@ const SambaUserCreateModal = ({
           onChange={handlePasswordChange}
           required
           fullWidth
+          error={hasPersianPassword}
           helperText={
             hasPersianPassword ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
           }

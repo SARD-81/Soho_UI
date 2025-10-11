@@ -85,6 +85,20 @@ const CreatePoolModal = ({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!hasPersianPoolName) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianPoolName(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianPoolName]);
+
   const deviceOptions = externalDeviceOptions ?? [];
 
   const isDiskListLoading = externalIsDiskLoading ?? false;
@@ -179,7 +193,10 @@ const CreatePoolModal = ({
             fullWidth
             size="small"
             error={
-              Boolean(poolNameError) || !isNameFormatValid || isDuplicate
+              Boolean(poolNameError) ||
+              !isNameFormatValid ||
+              isDuplicate ||
+              hasPersianPoolName
             }
             helperText={
               (hasPersianPoolName &&
