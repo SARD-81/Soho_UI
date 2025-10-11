@@ -15,6 +15,7 @@ import DataTable from '../DataTable';
 
 interface ServiceTableRow {
   name: string;
+  label: string;
   details: Record<string, ServiceValue>;
 }
 
@@ -150,7 +151,7 @@ const ServicesTable = ({
       align: 'center',
       renderCell: (row) => (
         <Typography component="span" sx={{ fontWeight: 600 }}>
-          {row.name}
+          {row.label}
         </Typography>
       ),
     };
