@@ -60,7 +60,7 @@ function LoginPage() {
               />
             </Box>
 
-            <Box textAlign="center">
+            <Box textAlign="center" sx={{display : 'flex' , gap : 1}}>
               <Typography
                 variant="h4"
                 fontWeight={900}
@@ -71,7 +71,19 @@ function LoginPage() {
                   fontFamily: 'var(--font-vazir)',
                 }}
               >
-                ذخیره ساز اداری Storex
+                ذخیره ساز اداری
+              </Typography>
+              <Typography
+                variant="h4"
+                fontWeight={900}
+                letterSpacing={0.4}
+                sx={{
+                  marginTop: '-10px',
+                  color: 'var(--color-primary)',
+                  fontFamily: 'var(--font-didot)',
+                }}
+              >
+                StoreX
               </Typography>
             </Box>
 

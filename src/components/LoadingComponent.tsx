@@ -4,7 +4,7 @@ import { TailChase } from 'ldrs/react';
 import 'ldrs/react/TailChase.css';
 import '../index.css';
 
-function LoadingPage() {
+function LoadingComponent() {
   return (
     <Box
       component="main"
@@ -66,16 +66,21 @@ function LoadingPage() {
           variant="h5"
           fontWeight={800}
           letterSpacing={0.2}
-          sx={{ color: 'var(--color-primary)', mb: 1 }}
+          sx={{
+            color: 'var(--color-primary)',
+            mb: 1,
+            fontFamily: 'var(--font-didot)',
+            fontSize: '32px',
+          }}
         >
-          Storex
+          StoreX
         </Typography>
 
         <Typography
           variant="body2"
           sx={{ color: 'text.secondary', mb: 3, mt: 0.5 }}
         >
-          در حال آماده‌سازی محیط کار شما
+          در حال پردازش عملیات...
         </Typography>
 
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
@@ -93,4 +98,4 @@ function LoadingPage() {
   );
 }
 
-export default LoadingPage;
+export default LoadingComponent;

@@ -7,12 +7,13 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
-import { Fragment, useMemo } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useFilesystemMountpoints } from '../../hooks/useFilesystemMountpoints';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
 import normalizeSambaUsers from '../../utils/sambaUsers';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -72,6 +73,43 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     isPathChecking,
     isPathValid,
   } = controller;
+  const [hasPersianPathInput, setHasPersianPathInput] = useState(false);
+  const [hasPersianValidUsersInput, setHasPersianValidUsersInput] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHasPersianPathInput(false);
+      setHasPersianValidUsersInput(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!hasPersianPathInput) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianPathInput(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianPathInput]);
+
+  useEffect(() => {
+    if (!hasPersianValidUsersInput) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianValidUsersInput(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianValidUsersInput]);
 
   const sambaUsersQuery = useSambaUsers({ enabled: isOpen });
   const sambaUsers = useMemo(
@@ -92,10 +130,19 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   );
 
   const hasPathError =
-    Boolean(fullPathError) || pathValidationStatus === 'invalid';
+    Boolean(fullPathError) || pathValidationStatus === 'invalid' || hasPersianPathInput;
   const pathHelperText =
+    (hasPersianPathInput &&
+      'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
     fullPathError ||
     (pathValidationStatus === 'invalid' && pathValidationMessage);
+  const validUsersHelperText =
+    (hasPersianValidUsersInput &&
+      'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+    validUsersError ||
+    (sambaUsersQuery.isError
+      ? 'دریافت فهرست کاربران با خطا مواجه شد.'
+      : null);
   const pathValidationAdornment = (() => {
     if (isPathChecking) {
       return (
@@ -162,14 +209,22 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             // freeSolo
             options={mountpointOptions}
             value={fullPath}
-            onChange={(_event, newValue) => setFullPath(newValue ?? '')}
+            onChange={(_event, newValue) => {
+              const originalValue = newValue ?? '';
+              const sanitizedValue = removePersianCharacters(originalValue);
+              setHasPersianPathInput(sanitizedValue !== originalValue);
+              setFullPath(sanitizedValue);
+            }}
             onInputChange={(_event, newInputValue, reason) => {
               if (
                 reason === 'input' ||
                 reason === 'clear' ||
                 reason === 'reset'
               ) {
-                setFullPath(newInputValue ?? '');
+                const originalValue = newInputValue ?? '';
+                const sanitizedValue = removePersianCharacters(originalValue);
+                setHasPersianPathInput(sanitizedValue !== originalValue);
+                setFullPath(sanitizedValue);
               }
             }}
             fullWidth
@@ -182,7 +237,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                 {...params}
                 label="مسیر کامل"
                 autoFocus
-                placeholder="مانند /mnt/data/share"
+                placeholder="مسیر فضای فایلی را انتخاب کنید"
                 error={hasPathError}
                 helperText={pathHelperText}
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
@@ -210,10 +265,26 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
           <Autocomplete
             options={sambaUsernames}
             value={validUsers || null}
-            onChange={(_event, newValue) => setValidUsers(newValue ?? '')}
-            onInputChange={(_event, _newInput, reason) => {
+            onChange={(_event, newValue) => {
+              const originalValue = newValue ?? '';
+              const sanitizedValue = removePersianCharacters(originalValue);
+              setHasPersianValidUsersInput(sanitizedValue !== originalValue);
+              setValidUsers(sanitizedValue);
+            }}
+            onInputChange={(_event, newInput, reason) => {
+              if (reason === 'input') {
+                const originalValue = newInput ?? '';
+                const sanitizedValue = removePersianCharacters(originalValue);
+                setHasPersianValidUsersInput(sanitizedValue !== originalValue);
+              }
+
               if (reason === 'clear') {
                 setValidUsers('');
+                setHasPersianValidUsersInput(false);
+              }
+
+              if (reason === 'reset') {
+                setHasPersianValidUsersInput(false);
               }
             }}
             loading={sambaUsersQuery.isLoading || sambaUsersQuery.isFetching}
@@ -224,14 +295,9 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
               <TextField
                 {...params}
                 label="کاربران مجاز"
-                placeholder="نام کاربر مجاز را انتخاب یا جست‌وجو کنید"
-                error={Boolean(validUsersError)}
-                helperText={
-                  validUsersError ??
-                  (sambaUsersQuery.isError
-                    ? 'دریافت فهرست کاربران با خطا مواجه شد.'
-                    : null)
-                }
+                placeholder="نام کاربر مجاز را انتخاب کنید"
+                error={Boolean(validUsersError) || hasPersianValidUsersInput}
+                helperText={validUsersHelperText}
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
                 InputProps={{
                   ...params.InputProps,

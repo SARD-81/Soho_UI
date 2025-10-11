@@ -1,5 +1,6 @@
 import { Alert, Box, TextField, Typography } from '@mui/material';
-import { type FormEvent, useEffect, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -26,13 +27,59 @@ const NetworkInterfaceIpEditModal = ({
 }: NetworkInterfaceIpEditModalProps) => {
   const [ip, setIp] = useState(initialIp);
   const [netmask, setNetmask] = useState(initialNetmask);
+  const [hasPersianIp, setHasPersianIp] = useState(false);
+  const [hasPersianNetmask, setHasPersianNetmask] = useState(false);
 
   useEffect(() => {
     if (open) {
       setIp(initialIp);
       setNetmask(initialNetmask);
+      setHasPersianIp(false);
+      setHasPersianNetmask(false);
     }
   }, [initialIp, initialNetmask, open]);
+
+  useEffect(() => {
+    if (!hasPersianIp) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianIp(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianIp]);
+
+  useEffect(() => {
+    if (!hasPersianNetmask) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianNetmask(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianNetmask]);
+
+  const handleIpChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianIp(sanitizedValue !== value);
+    setIp(sanitizedValue);
+  };
+
+  const handleNetmaskChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianNetmask(sanitizedValue !== value);
+    setNetmask(sanitizedValue);
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -110,9 +157,13 @@ const NetworkInterfaceIpEditModal = ({
         <TextField
           label="آدرس IP"
           value={ip}
-          onChange={(event) => setIp(event.target.value)}
+          onChange={handleIpChange}
           required
           fullWidth
+          error={hasPersianIp}
+          helperText={
+            hasPersianIp ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
+          }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{
             sx: {
@@ -126,9 +177,13 @@ const NetworkInterfaceIpEditModal = ({
         <TextField
           label="نت‌ماسک"
           value={netmask}
-          onChange={(event) => setNetmask(event.target.value)}
+          onChange={handleNetmaskChange}
           required
           fullWidth
+          error={hasPersianNetmask}
+          helperText={
+            hasPersianNetmask ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
+          }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{
             sx: {

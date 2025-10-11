@@ -3,6 +3,7 @@ import { useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import type { ServiceActionType, ServiceValue } from '../@types/service';
 import ServicesTable from '../components/services/ServicesTable';
+import { getServiceLabel } from '../constants/serviceLabels';
 import { useServiceAction } from '../hooks/useServiceAction';
 import { useServices } from '../hooks/useServices';
 
@@ -18,7 +19,7 @@ const Services = () => {
   const serviceAction = useServiceAction({
     onSuccess: ({ action, service }) => {
       toast.success(
-        `عملیات ${actionLabels[action]} برای ${service} با موفقیت انجام شد.`
+        `عملیات ${actionLabels[action]} برای ${getServiceLabel(service)} با موفقیت انجام شد.`
       );
     },
     onError: (message, { action, service }) => {
@@ -35,8 +36,14 @@ const Services = () => {
           ...(details ?? {}),
         };
 
+        const description =
+          typeof details?.description === 'string'
+            ? details?.description
+            : undefined;
+
         return {
           name,
+          label: getServiceLabel(name, description),
           details: normalizedDetails,
         };
       }),

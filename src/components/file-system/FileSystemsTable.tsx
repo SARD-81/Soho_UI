@@ -29,6 +29,9 @@ const FileSystemsTable = ({
   isDeleteDisabled,
 }: FileSystemsTableProps) => {
   const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
+    const getAttributeValue = (filesystem: FileSystemEntry, key: string) =>
+      filesystem.attributeMap?.[key] ?? '—';
+
     const baseColumns: DataTableColumn<FileSystemEntry>[] = [
       // {
       //   id: 'pool',
@@ -60,6 +63,42 @@ const FileSystemsTable = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
               {filesystem.mountpoint}
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        id: 'used',
+        header: 'فضای استفاده‌شده',
+        align: 'left',
+        renderCell: (filesystem) => (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+            <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+              {getAttributeValue(filesystem, 'Used')}
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        id: 'available',
+        header: 'فضای در دسترس',
+        align: 'left',
+        renderCell: (filesystem) => (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+            <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+              {getAttributeValue(filesystem, 'Available')}
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        id: 'referenced',
+        header: 'فضای ارجاع‌شده',
+        align: 'left',
+        renderCell: (filesystem) => (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+            <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+              {getAttributeValue(filesystem, 'Referenced')}
             </Typography>
           </Box>
         ),

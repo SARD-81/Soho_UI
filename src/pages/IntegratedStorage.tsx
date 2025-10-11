@@ -104,6 +104,10 @@ const IntegratedStorage = () => {
   const diskError = freeDiskError ?? diskMapError ?? null;
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
+  const poolNames = useMemo(
+    () => pools.map((pool) => pool.name).filter((name) => name.trim().length > 0),
+    [pools]
+  );
 
   const [selectedPools, setSelectedPools] = useState<string[]>([]);
 
@@ -196,6 +200,7 @@ const IntegratedStorage = () => {
         deviceOptions={deviceOptions}
         isDiskLoading={isDiskLoading}
         diskError={diskError}
+        existingPoolNames={poolNames}
       />
 
       <PoolsTable

@@ -10,7 +10,9 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent } from 'react';
+import { useEffect, useState } from 'react';
 import type { UseCreateVolumeReturn } from '../../hooks/useCreateVolume';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -55,14 +57,42 @@ const CreateVolumeModal = ({
     sizeError,
     apiError,
     isCreating,
+    setNameError,
   } = controller;
+  const [hasPersianName, setHasPersianName] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHasPersianName(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!hasPersianName) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianName(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianName]);
 
   const handlePoolChange = (event: SelectChangeEvent<string>) => {
     setSelectedPool(event.target.value);
   };
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setVolumeName(event.target.value);
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianName(sanitizedValue !== value);
+    setVolumeName(sanitizedValue);
+    if (nameError) {
+      setNameError(null);
+    }
   };
 
   const handleSizeChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -136,8 +166,12 @@ const CreateVolumeModal = ({
             onChange={handleNameChange}
             fullWidth
             autoComplete="off"
-            error={Boolean(nameError)}
-            helperText={nameError ?? 'نامی یکتا برای Volume وارد کنید.'}
+          error={Boolean(nameError) || hasPersianName}
+          helperText={
+            (hasPersianName && 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+            nameError ||
+            'نامی یکتا برای Volume وارد کنید.'
+          }
             InputLabelProps={{ shrink: true }}
             InputProps={{ sx: inputBaseStyles }}
           />

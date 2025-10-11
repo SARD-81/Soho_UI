@@ -2,66 +2,57 @@ import {
   AppBar,
   Box,
   Button,
-  CircularProgress,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Toolbar,
-  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
-import {
-  MdClose,
-  MdLogout,
-  MdMenu,
-  MdPowerSettingsNew,
-  MdRestartAlt,
-} from 'react-icons/md';
+import { MdClose, MdLogout, MdMenu } from 'react-icons/md';
+import { LuMoon, LuSun } from 'react-icons/lu';
 import { Outlet } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
 import '../index.css';
 import NavigationDrawer from './NavigationDrawer';
-import ThemeToggle from './ThemeToggle';
+import PowerActionConfirmDialog from './PowerActionConfirmDialog';
+import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';
+import QuickActionsMenu from './QuickActionsMenu';
 
-const powerButtonBaseSx = {
-  color: '#fff',
-  borderRadius: '5px',
-  padding: '8px',
-  minWidth: 0,
-  boxShadow: '0 10px 24px rgba(0, 0, 0, 0.18)',
-  transition: 'transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-3px) scale(1.05)',
-    boxShadow: '0 14px 28px rgba(0, 0, 0, 0.25)',
-    filter: 'brightness(1.05)',
-  },
-  '&:active': {
-    transform: 'scale(0.95)',
-  },
-  '&:disabled': {
-    opacity: 0.65,
-    boxShadow: 'none',
-    transform: 'none',
-    filter: 'none',
-  },
-} as const;
-
-const createPowerButtonSx = (gradient: string) => ({
-  ...powerButtonBaseSx,
-  background: gradient,
-});
 
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [activePowerAction, setActivePowerAction] =
     useState<PowerAction | null>(null);
+  const [confirmationAction, setConfirmationAction] =
+    useState<PowerAction | null>(null);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [countdownAction, setCountdownAction] = useState<PowerAction | null>(
+    null
+  );
+  const [secondsRemaining, setSecondsRemaining] = useState(5);
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<null | HTMLElement>(
+    null
+  );
+  const isUserMenuOpen = Boolean(userMenuAnchorEl);
+
+  const { isDark, toggleTheme } = useThemeContext();
+
+  const displayUsername = username || 'admin';
 
   const { mutate: triggerPowerAction, isPending: isPowerActionPending } =
     usePowerAction({
@@ -79,6 +70,7 @@ const MainLayout: React.FC = () => {
       },
       onSettled: () => {
         setActivePowerAction(null);
+        setSecondsRemaining(5);
       },
     });
 
@@ -86,9 +78,69 @@ const MainLayout: React.FC = () => {
     await logout();
   };
 
-  const handlePowerAction = (action: PowerAction) => {
-    setActivePowerAction(action);
-    triggerPowerAction(action);
+  const clearCountdownTimer = () => {
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+  };
+
+  const handlePowerActionRequest = (action: PowerAction) => {
+    setConfirmationAction(action);
+    setIsConfirmationOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsConfirmationOpen(false);
+    setConfirmationAction(null);
+  };
+
+  const startCountdown = (action: PowerAction) => {
+    clearCountdownTimer();
+    setCountdownAction(action);
+    setSecondsRemaining(5);
+    countdownTimerRef.current = setInterval(() => {
+      setSecondsRemaining((prev) => {
+        if (prev <= 1) {
+          clearCountdownTimer();
+          setCountdownAction(null);
+          setActivePowerAction(action);
+          triggerPowerAction(action);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleDialogConfirm = () => {
+    if (!confirmationAction) {
+      return;
+    }
+    setIsConfirmationOpen(false);
+    startCountdown(confirmationAction);
+    setConfirmationAction(null);
+  };
+
+  const handleCountdownCancel = () => {
+    clearCountdownTimer();
+    setCountdownAction(null);
+    setSecondsRemaining(5);
+    setActivePowerAction(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      clearCountdownTimer();
+    };
+  }, []);
+
+  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchorEl(null);
   };
 
   return (
@@ -145,7 +197,7 @@ const MainLayout: React.FC = () => {
               fontFamily: 'var(--font-didot)',
             }}
           >
-            Storex
+            StoreX
           </Typography>
           <Box
             sx={{
@@ -156,81 +208,77 @@ const MainLayout: React.FC = () => {
               order: { xs: 3, sm: 'initial' },
             }}
           >
-            {!isMobile && (
-              <Typography
-                sx={{
-                  color: 'var(--color-bg-primary)',
-                  display: 'flex',
-                  gap: 1,
-                }}
-              >
-                خوش آمدید، {username} <IoPersonCircleOutline size={24} />
-              </Typography>
-            )}
             {isMobile ? (
               <IconButton
-                aria-label="خروج"
-                onClick={handleLogout}
+                aria-label="منوی کاربر"
+                onClick={handleUserMenuOpen}
                 size="small"
                 sx={{ color: 'var(--color-bg-primary)' }}
               >
-                <MdLogout />
+                <IoPersonCircleOutline size={24} />
               </IconButton>
             ) : (
               <Button
-                onClick={handleLogout}
+                onClick={handleUserMenuOpen}
+                endIcon={<IoPersonCircleOutline size={24} />}
                 sx={{
                   color: 'var(--color-bg-primary)',
-                  height: 30,
-                  backgroundColor: 'var(--color-primary)',
-                  borderRadius: '5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  fontFamily: 'var(--font-vazir)',
+                  fontWeight: 500,
                   '&:hover': {
-                    backgroundColor: 'unset',
-                    border: '2px solid var(--color-primary)',
-                    borderRadius: '5px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
                   },
                 }}
               >
-                خروج
+                خوش آمدید، {displayUsername}
               </Button>
             )}
-            <Tooltip title="راه‌اندازی مجدد سیستم" placement="bottom">
-              <span>
-                <IconButton
-                  aria-label="راه‌اندازی مجدد سیستم"
-                  onClick={() => handlePowerAction('restart')}
-                  disabled={isPowerActionPending}
-                  sx={createPowerButtonSx(
-                    'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))'
-                  )}
-                >
-                  {isPowerActionPending && activePowerAction === 'restart' ? (
-                    <CircularProgress size={18} sx={{ color: '#fff' }} />
+            <Menu
+              anchorEl={userMenuAnchorEl}
+              open={isUserMenuOpen}
+              onClose={handleUserMenuClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <MenuItem
+                onClick={() => {
+                  handleUserMenuClose();
+                  toggleTheme();
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  {isDark ? (
+                    <LuSun size={20} color="var(--color-primary-light)" />
                   ) : (
-                    <MdRestartAlt size={22} />
+                    <LuMoon size={20} color="var(--color-bg-primary)" />
                   )}
-                </IconButton>
-              </span>
-            </Tooltip>
-            <Tooltip title="خاموش کردن سیستم" placement="bottom">
-              <span>
-                <IconButton
-                  aria-label="خاموش کردن سیستم"
-                  onClick={() => handlePowerAction('shutdown')}
-                  disabled={isPowerActionPending}
-                  sx={createPowerButtonSx(
-                    'linear-gradient(135deg, #f97316, var(--color-secondary))'
-                  )}
-                >
-                  {isPowerActionPending && activePowerAction === 'shutdown' ? (
-                    <CircularProgress size={18} sx={{ color: '#fff' }} />
-                  ) : (
-                    <MdPowerSettingsNew size={22} />
-                  )}
-                </IconButton>
-              </span>
-            </Tooltip>
-            <ThemeToggle fixed={false} />
+                </ListItemIcon>
+                <ListItemText sx={{color : "var(--color-text)"}} primary={`تغییر به ${
+                  isDark ? 'حالت روشن' : 'حالت تیره'
+                }`} />
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleUserMenuClose();
+                  handleLogout();
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <MdLogout />
+                </ListItemIcon>
+                <ListItemText sx={{color : "var(--color-text)"}} primary="خروج" />
+              </MenuItem>
+            </Menu>
+            <QuickActionsMenu
+              onPowerActionRequest={handlePowerActionRequest}
+              isPowerActionDisabled={
+                isPowerActionPending || Boolean(countdownAction)
+              }
+              activePowerAction={activePowerAction}
+            />
           </Box>
         </Toolbar>
       </AppBar>
@@ -252,6 +300,17 @@ const MainLayout: React.FC = () => {
         <Toolbar />
         <Outlet />
       </Box>
+      <PowerActionConfirmDialog
+        open={isConfirmationOpen}
+        action={confirmationAction}
+        onCancel={handleDialogClose}
+        onConfirm={handleDialogConfirm}
+      />
+      <PowerActionCountdownOverlay
+        action={countdownAction}
+        secondsRemaining={secondsRemaining}
+        onCancel={handleCountdownCancel}
+      />
     </Box>
   );
 };

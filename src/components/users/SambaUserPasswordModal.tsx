@@ -1,6 +1,7 @@
 import { Alert, Box, TextField, Typography } from '@mui/material';
-import { type FormEvent, useEffect, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 import type { UpdateSambaUserPasswordPayload } from '../../@types/samba';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -22,12 +23,35 @@ const SambaUserPasswordModal = ({
   errorMessage,
 }: SambaUserPasswordModalProps) => {
   const [password, setPassword] = useState('');
+  const [hasPersianPassword, setHasPersianPassword] = useState(false);
 
   useEffect(() => {
     if (open) {
       setPassword('');
+      setHasPersianPassword(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!hasPersianPassword) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianPassword(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianPassword]);
+
+  const handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianPassword(sanitizedValue !== value);
+    setPassword(sanitizedValue);
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -110,9 +134,13 @@ const SambaUserPasswordModal = ({
           label="گذرواژه جدید"
           type="password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={handlePasswordChange}
           required
           fullWidth
+          error={hasPersianPassword}
+          helperText={
+            hasPersianPassword ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
+          }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{
             sx: {

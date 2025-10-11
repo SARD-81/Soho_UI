@@ -90,8 +90,8 @@ const Share = () => {
   );
 
   const serviceAction = useServiceAction({
-    onSuccess: ({ service }) => {
-      toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
+    onSuccess: () => {
+      // toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
     },
     onError: (message, { service }) => {
       toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
@@ -191,6 +191,14 @@ const Share = () => {
     [sambaUsersQuery.data?.data]
   );
 
+  const normalizedSambaUsernames = useMemo(() => {
+    return new Set(
+      sambaUsers
+        .map((user) => (user.username ?? '').trim().toLowerCase())
+        .filter((username) => username.length > 0)
+    );
+  }, [sambaUsers]);
+
   const createOsUser = useCreateOsUser({
     onSuccess: (username) => {
       toast.success(`کاربر ${username} با موفقیت ایجاد شد.`);
@@ -201,14 +209,14 @@ const Share = () => {
   });
 
   const createSambaUser = useCreateSambaUser({
-    onSuccess: (username) => {
-      toast.success(`کاربر Samba ${username} با موفقیت ایجاد شد.`);
+    onSuccess: () => {
+      // toast.success(`کاربر Samba ${username} با موفقیت ایجاد شد.`);
       setIsSambaCreateModalOpen(false);
       setSambaCreateError(null);
     },
     onError: (message) => {
       setSambaCreateError(message);
-      toast.error(`ایجاد کاربر Samba با خطا مواجه شد: ${message}`);
+      toast.error(`ایجاد کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
     },
   });
 
@@ -261,11 +269,25 @@ const Share = () => {
       password: string;
       createOsUserFirst: boolean;
     }) => {
+      const trimmedUsername = username.trim();
+      const normalizedUsername = trimmedUsername.toLowerCase();
+
+      if (normalizedUsername.length === 0) {
+        return;
+      }
+
+      if (normalizedSambaUsernames.has(normalizedUsername)) {
+        const message = 'کاربر اشتراک فایل با این نام کاربری وجود دارد.';
+        setSambaCreateError(message);
+        toast.error(message);
+        return;
+      }
+
       const run = async () => {
         if (createOsUserFirst) {
           try {
             await createOsUser.mutateAsync({
-              username,
+              username: trimmedUsername,
               login_shell: DEFAULT_LOGIN_SHELL,
               shell: DEFAULT_LOGIN_SHELL,
             });
@@ -274,12 +296,12 @@ const Share = () => {
           }
         }
 
-        createSambaUser.mutate({ username, password });
+        createSambaUser.mutate({ username: trimmedUsername, password });
       };
 
       void run();
     },
-    [createOsUser, createSambaUser]
+    [createOsUser, createSambaUser, normalizedSambaUsernames]
   );
 
   const handleToggleSelectSambaUser = useCallback(
@@ -391,8 +413,8 @@ const Share = () => {
           },
         }}
       >
-        <Tab label="اشتراک‌ها" value={SHARE_TABS.shares} />
         <Tab label="کاربران اشتراک فایل" value={SHARE_TABS.sambaUsers} />
+        <Tab label="اشتراک‌ها" value={SHARE_TABS.shares} />
       </Tabs>
 
       <TabPanel value={SHARE_TABS.shares} currentValue={activeTab}>
@@ -528,6 +550,7 @@ const Share = () => {
         isSubmitting={createSambaUser.isPending}
         errorMessage={sambaCreateError}
         initialUsername={sambaCreateInitialUsername}
+        existingUsernames={Array.from(normalizedSambaUsernames)}
       />
 
       <SambaUserPasswordModal

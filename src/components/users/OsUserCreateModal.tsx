@@ -1,7 +1,15 @@
-import { Alert, Box, Button, TextField } from '@mui/material';
-import { type FormEvent, useEffect, useState } from 'react';
+import { Alert, Box, Button, InputAdornment, TextField } from '@mui/material';
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { CreateOsUserPayload } from '../../@types/users';
 import { DEFAULT_LOGIN_SHELL } from '../../constants/users';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 
 interface OsUserCreateModalProps {
@@ -10,6 +18,7 @@ interface OsUserCreateModalProps {
   onSubmit: (payload: CreateOsUserPayload) => void;
   isSubmitting: boolean;
   errorMessage: string | null;
+  existingUsernames?: string[];
 }
 
 const OsUserCreateModal = ({
@@ -18,28 +27,80 @@ const OsUserCreateModal = ({
   onSubmit,
   isSubmitting,
   errorMessage,
+  existingUsernames = [],
 }: OsUserCreateModalProps) => {
   const [username, setUsername] = useState('');
+  const [hasPersianUsername, setHasPersianUsername] = useState(false);
+
+  const normalizedExistingUsernames = useMemo(() => {
+    return new Set(
+      existingUsernames
+        .map((name) => name.trim().toLowerCase())
+        .filter((name) => name.length > 0)
+    );
+  }, [existingUsernames]);
 
   useEffect(() => {
     if (open) {
       setUsername('');
+      setHasPersianUsername(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!hasPersianUsername) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianUsername(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianUsername]);
+
+  const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianUsername(sanitizedValue !== value);
+    setUsername(sanitizedValue);
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!username.trim()) {
+    const trimmedUsername = username.trim();
+    const normalizedUsername = trimmedUsername.toLowerCase();
+
+    if (!trimmedUsername) {
+      return;
+    }
+
+    if (normalizedExistingUsernames.has(normalizedUsername)) {
       return;
     }
 
     onSubmit({
-      username: username.trim(),
+      username: trimmedUsername,
       login_shell: DEFAULT_LOGIN_SHELL,
       shell: DEFAULT_LOGIN_SHELL,
     });
   };
+
+  const trimmedUsername = username.trim();
+  const normalizedUsername = trimmedUsername.toLowerCase();
+  const isDuplicate =
+    trimmedUsername.length > 0 &&
+    normalizedExistingUsernames.has(normalizedUsername);
+  const shouldShowSuccess = trimmedUsername.length > 0 && !isDuplicate;
+
+  const adornmentIcon = isDuplicate ? (
+    <FiAlertCircle color="var(--color-error)" size={18} />
+  ) : shouldShowSuccess ? (
+    <FiCheckCircle color="var(--color-success)" size={18} />
+  ) : null;
 
   return (
     <BlurModal
@@ -51,7 +112,7 @@ const OsUserCreateModal = ({
           type="submit"
           form="os-user-create-form"
           variant="contained"
-          disabled={isSubmitting || !username.trim()}
+          disabled={isSubmitting || !trimmedUsername || isDuplicate}
           sx={{
             marginX: 'auto',
             px: 3,
@@ -89,10 +150,17 @@ const OsUserCreateModal = ({
         <TextField
           label="نام کاربری"
           value={username}
-          onChange={(event) => setUsername(event.target.value)}
+          onChange={handleUsernameChange}
           required
           autoFocus
           fullWidth
+          error={isDuplicate || hasPersianUsername}
+          helperText={
+            (hasPersianUsername &&
+              'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+            (isDuplicate && 'کاربری با این نام کاربری از قبل وجود دارد.') ||
+            undefined
+          }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{
             sx: {
@@ -100,6 +168,10 @@ const OsUserCreateModal = ({
               borderRadius: '5px',
               '& .MuiInputBase-input': { color: 'var(--color-text)' },
             },
+            endAdornment:
+              trimmedUsername.length > 0 && adornmentIcon ? (
+                <InputAdornment position="end">{adornmentIcon}</InputAdornment>
+              ) : undefined,
           }}
         />
 

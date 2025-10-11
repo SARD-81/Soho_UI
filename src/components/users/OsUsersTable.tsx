@@ -1,5 +1,5 @@
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
-import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { FiEdit3 } from 'react-icons/fi';
 import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable.ts';
@@ -21,32 +21,6 @@ const OsUsersTable = ({
   isSambaStatusLoading,
   onCreateSambaUser,
 }: OsUsersTableProps) => {
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  useEffect(() => {
-    if (page > 0 && page * rowsPerPage >= users.length) {
-      const lastPage = Math.max(Math.ceil(users.length / rowsPerPage) - 1, 0);
-      setPage(lastPage);
-    }
-  }, [page, rowsPerPage, users.length]);
-
-  const paginatedUsers = useMemo(() => {
-    const start = page * rowsPerPage;
-    const end = start + rowsPerPage;
-
-    return users.slice(start, end);
-  }, [page, rowsPerPage, users]);
-
-  const handleChangePage = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(Number(event.target.value));
-    setPage(0);
-  };
-
   const columns: DataTableColumn<OsUserTableItem>[] = useMemo(
     () => [
       {
@@ -56,7 +30,7 @@ const OsUsersTable = ({
         width: 64,
         renderCell: (_row, index) => (
           <Typography component="span" sx={{ fontWeight: 600 }}>
-            {(page * rowsPerPage + index + 1).toLocaleString('en-US')}
+            {(index + 1).toLocaleString('en-US')}
           </Typography>
         ),
       },
@@ -180,37 +154,16 @@ const OsUsersTable = ({
         ),
       },
     ],
-    [isSambaStatusLoading, onCreateSambaUser, page, rowsPerPage]
+    [isSambaStatusLoading, onCreateSambaUser]
   );
 
   return (
     <DataTable<OsUserTableItem>
       columns={columns}
-      data={paginatedUsers}
+      data={users}
       getRowId={(row) => row.id}
       isLoading={isLoading}
       error={error}
-      pagination={{
-        page,
-        rowsPerPage,
-        count: users.length,
-        onPageChange: handleChangePage,
-        onRowsPerPageChange: handleChangeRowsPerPage,
-        rowsPerPageOptions: [5, 10, 25],
-        labelRowsPerPage: 'ردیف در هر صفحه',
-        labelDisplayedRows: ({ from, to, count }) => {
-          const localizedFrom = from.toLocaleString('en-US');
-          const localizedTo = to.toLocaleString('en-US');
-          const localizedCount =
-            count !== -1
-              ? count.toLocaleString('en-US')
-              : `بیش از ${localizedTo}`;
-
-          return `${localizedFrom}–${localizedTo} از ${localizedCount}`;
-        },
-        rowCountFormatter: (count) =>
-          `تعداد کل کاربران: ${count.toLocaleString('en-US')}`,
-      }}
     />
   );
 };

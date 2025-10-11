@@ -10,14 +10,19 @@ import {
 } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateFileSystemReturn } from '../../hooks/useCreateFileSystem';
+import type { FileSystemEntry } from '../../@types/filesystem';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
 interface CreateFileSystemModalProps {
   controller: UseCreateFileSystemReturn;
   poolOptions: string[];
+  existingFilesystems: FileSystemEntry[];
 }
 
 const inputBaseStyles = {
@@ -38,6 +43,7 @@ const inputBaseStyles = {
 const CreateFileSystemModal = ({
   controller,
   poolOptions,
+  existingFilesystems,
 }: CreateFileSystemModalProps) => {
   const {
     isOpen,
@@ -54,18 +60,131 @@ const CreateFileSystemModal = ({
     quotaError,
     apiError,
     isCreating,
+    setNameError,
   } = controller;
+  const [hasPersianName, setHasPersianName] = useState(false);
+  const [hasPersianQuota, setHasPersianQuota] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHasPersianName(false);
+      setHasPersianQuota(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!hasPersianName) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianName(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianName]);
+
+  useEffect(() => {
+    if (!hasPersianQuota) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasPersianQuota(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasPersianQuota]);
 
   const handlePoolChange = (event: SelectChangeEvent<string>) => {
     setSelectedPool(event.target.value);
   };
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setFileSystemName(event.target.value);
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianName(sanitizedValue !== value);
+    setFileSystemName(sanitizedValue);
+    if (nameError) {
+      setNameError(null);
+    }
   };
 
   const handleQuotaChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setQuotaAmount(event.target.value);
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianQuota(sanitizedValue !== value);
+    setQuotaAmount(sanitizedValue);
+  };
+
+  const normalizedFilesystemMap = useMemo(() => {
+    return existingFilesystems.reduce<Record<string, Set<string>>>((acc, fs) => {
+      const poolKey = fs.poolName.trim().toLowerCase();
+      const nameKey = fs.filesystemName.trim().toLowerCase();
+
+      if (!poolKey || !nameKey) {
+        return acc;
+      }
+
+      if (!acc[poolKey]) {
+        acc[poolKey] = new Set();
+      }
+
+      acc[poolKey].add(nameKey);
+      return acc;
+    }, {});
+  }, [existingFilesystems]);
+
+  const trimmedPool = selectedPool.trim();
+  const trimmedName = filesystemName.trim();
+  const normalizedPool = trimmedPool.toLowerCase();
+  const isDuplicate =
+    trimmedPool.length > 0 &&
+    trimmedName.length > 0 &&
+    normalizedFilesystemMap[normalizedPool]?.has(trimmedName.toLowerCase());
+  const isSameAsPool =
+    trimmedPool.length > 0 &&
+    trimmedName.length > 0 &&
+    trimmedName.toLowerCase() === normalizedPool;
+  const isNameFormatValid =
+    trimmedName.length === 0 || /^[A-Za-z0-9]+$/.test(trimmedName);
+  const shouldShowSuccess =
+    trimmedPool.length > 0 &&
+    trimmedName.length > 0 &&
+    isNameFormatValid &&
+    !isDuplicate &&
+    !isSameAsPool;
+
+  const adornmentIcon = isDuplicate || isSameAsPool ? (
+    <FiAlertCircle color="var(--color-error)" size={18} />
+  ) : shouldShowSuccess ? (
+    <FiCheckCircle color="var(--color-success)" size={18} />
+  ) : null;
+
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (!isNameFormatValid && trimmedName.length > 0) {
+      event.preventDefault();
+      setNameError('نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.');
+      return;
+    }
+
+    if (isDuplicate) {
+      event.preventDefault();
+      setNameError('فضای فایلی با این نام در این فضای یکپارچه وجود دارد.');
+      return;
+    }
+
+    if (isSameAsPool) {
+      event.preventDefault();
+      setNameError('نام فضای فایلی نمی‌تواند با نام فضای یکپارچه یکسان باشد.');
+      return;
+    }
+
+    handleSubmit(event);
   };
 
   return (
@@ -87,7 +206,7 @@ const CreateFileSystemModal = ({
         />
       }
     >
-      <Box component="form" id="create-filesystem-form" onSubmit={handleSubmit}>
+      <Box component="form" id="create-filesystem-form" onSubmit={handleFormSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <FormControl fullWidth error={Boolean(poolError)}>
             <InputLabel
@@ -131,10 +250,36 @@ const CreateFileSystemModal = ({
             onChange={handleNameChange}
             fullWidth
             autoComplete="off"
-            error={Boolean(nameError)}
-            helperText={nameError ?? 'نامی یکتا برای فضای فایلی وارد کنید.'}
+            error={
+              Boolean(nameError) ||
+              !isNameFormatValid ||
+              isDuplicate ||
+              isSameAsPool ||
+              hasPersianName
+            }
+            helperText={
+              (hasPersianName &&
+                'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+              nameError ||
+              (!isNameFormatValid &&
+                trimmedName.length > 0 &&
+                'نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.') ||
+              (isDuplicate &&
+                'فضای فایلی با این نام در این فضای یکپارچه وجود دارد.') ||
+              (isSameAsPool &&
+                'نام فضای فایلی نمی‌تواند با نام فضای یکپارچه یکسان باشد.') ||
+              'نامی یکتا برای فضای فایلی وارد کنید.'
+            }
             InputLabelProps={{ shrink: true }}
-            InputProps={{ sx: inputBaseStyles }}
+            InputProps={{
+              sx: inputBaseStyles,
+              endAdornment:
+                trimmedName.length > 0 && adornmentIcon ? (
+                  <InputAdornment position="end">
+                    {adornmentIcon}
+                  </InputAdornment>
+                ) : undefined,
+            }}
           />
 
           <TextField
@@ -143,9 +288,12 @@ const CreateFileSystemModal = ({
             onChange={handleQuotaChange}
             fullWidth
             autoComplete="off"
-            error={Boolean(quotaError)}
+            error={Boolean(quotaError) || hasPersianQuota}
             helperText={
-              quotaError ?? 'حجم فضای فایلی را به گیگابایت وارد کنید (مثلاً 50).'
+              (hasPersianQuota &&
+                'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+              quotaError ||
+              'حجم فضای فایلی را به گیگابایت وارد کنید (مثلاً 50).'
             }
             type="number"
             InputLabelProps={{ shrink: true }}

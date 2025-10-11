@@ -1,5 +1,5 @@
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
-import LoadingPage from './LoadingPage.tsx';
+import LoadingComponent from './LoadingComponent.tsx';
 
 export default function GlobalLoader() {
   const isFetching = useIsFetching({
@@ -13,5 +13,5 @@ export default function GlobalLoader() {
     predicate: (mutation) => !mutation.meta?.skipGlobalLoader,
   });
 
-  return isFetching + isMutating > 0 ? <LoadingPage /> : null;
+  return isFetching + isMutating > 0 ? <LoadingComponent /> : null;
 }

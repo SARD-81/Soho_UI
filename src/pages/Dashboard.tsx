@@ -64,12 +64,12 @@ const dashboardWidgets: DashboardWidget[] = [
   {
     id: 'cpu',
     component: Cpu,
-    columns: { xs: 12, md: 6, xl: 3 },
+    columns: { xs: 12, md: 6, xl: 5 },
   },
   {
     id: 'memory',
     component: Memory,
-    columns: { xs: 12, md: 6, xl: 3 },
+    columns: { xs: 12, md: 6, xl: 5 },
   },
   {
     id: 'zpool-overview',
