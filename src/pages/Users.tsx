@@ -347,6 +347,7 @@ const Users = () => {
         onSubmit={handleSubmitCreateUser}
         isSubmitting={createOsUser.isPending}
         errorMessage={createError}
+        existingUsernames={Array.from(normalizedOsUsernames)}
       />
 
       <SambaUserCreateModal
@@ -356,6 +357,9 @@ const Users = () => {
         isSubmitting={createSambaUser.isPending}
         errorMessage={sambaCreateError}
         initialUsername={sambaCreateInitialUsername}
+        existingUsernames={sambaUsers
+          .map((user) => user.username ?? '')
+          .filter((username) => username)}
       />
     </Box>
   );
