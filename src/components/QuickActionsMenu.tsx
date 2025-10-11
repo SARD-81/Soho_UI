@@ -104,8 +104,8 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
           background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))',
           color: 'var(--color-bg-primary)',
           borderRadius: '10px',
-          px: 2.5,
-          py: 1,
+          px: 1.5,
+          py: 0.5,
           boxShadow: '0 12px 30px rgba(0, 0, 0, 0.18)',
           '&:hover': {
             background: 'linear-gradient(135deg, var(--color-primary-light), var(--color-primary))',
@@ -122,7 +122,7 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
             letterSpacing: 0.2,
           }}
         >
-          عملیات سریع
+          عملیات سیستم
         </Typography>
       </Button>
       <Menu

@@ -61,6 +61,45 @@ const numberTypographySx = {
   fontVariantNumeric: 'tabular-nums',
 };
 
+const serviceDetailLabels: Record<string, string> = {
+  description: 'توضیحات',
+  active: 'وضعیت کلی',
+  sub: 'زیر وضعیت',
+  load: 'وضعیت بارگذاری',
+  enabled: 'فعال',
+  status: 'وضعیت سرویس',
+  last_action: 'آخرین اقدام',
+  last_restart: 'آخرین راه‌اندازی مجدد',
+};
+
+const normalizedValueTranslations: Record<string, string> = {
+  active: 'فعال',
+  exited : 'خارج شده',
+  inactive: 'غیرفعال',
+  loaded: 'بارگذاری شده',
+  activating: 'در حال فعال‌سازی',
+  deactivating: 'در حال غیرفعال‌سازی',
+  running: 'در حال اجرا',
+  stopping: 'در حال توقف',
+  stopped: 'متوقف',
+  dead: 'متوقف',
+  failed: 'ناموفق',
+  enabling: 'در حال فعال‌سازی',
+  disabling: 'در حال غیرفعال‌سازی',
+  enabled: 'فعال',
+  disabled: 'غیرفعال',
+  pending: 'در انتظار',
+};
+
+const directValueTranslations: Record<string, string> = {
+  'Samba SMB Daemon': 'سرویس SMB سامبا',
+  'Samba NMB Daemon': 'سرویس NMB سامبا',
+  'OpenSSH server daemon': 'سرویس سرور OpenSSH',
+  'stopped via mock service': 'توسط سرویس شبیه‌ساز متوقف شد',
+  'started via mock service': 'توسط سرویس شبیه‌ساز راه‌اندازی شد',
+  'restarted via mock service': 'توسط سرویس شبیه‌ساز راه‌اندازی مجدد شد',
+};
+
 const formatServiceValue = (value: ServiceValue) => {
   if (value === null || value === undefined) {
     return '—';
@@ -76,6 +115,19 @@ const formatServiceValue = (value: ServiceValue) => {
 
   if (typeof value === 'number' && Number.isFinite(value)) {
     return new Intl.NumberFormat('en-US').format(value);
+  }
+
+  if (typeof value === 'string') {
+    const directTranslation = directValueTranslations[value];
+    if (directTranslation) {
+      return directTranslation;
+    }
+
+    const normalizedValue = value.trim().toLowerCase();
+    const normalizedTranslation = normalizedValueTranslations[normalizedValue];
+    if (normalizedTranslation) {
+      return normalizedTranslation;
+    }
   }
 
   return String(value);
@@ -135,7 +187,7 @@ const ServicesTable = ({
   const columns = useMemo<DataTableColumn<ServiceTableRow>[]>(() => {
     const indexColumn: DataTableColumn<ServiceTableRow> = {
       id: 'service-index',
-      header: '#',
+      header: 'ردیف',
       align: 'center',
       width: 64,
       renderCell: (_, index) => (
@@ -147,7 +199,7 @@ const ServicesTable = ({
 
     const baseColumn: DataTableColumn<ServiceTableRow> = {
       id: 'service-name',
-      header: 'سرویس',
+      header: 'نام سرویس',
       align: 'center',
       renderCell: (row) => (
         <Typography component="span" sx={{ fontWeight: 600 }}>
@@ -159,7 +211,7 @@ const ServicesTable = ({
     const dynamicColumns = detailKeys.map<DataTableColumn<ServiceTableRow>>(
       (key) => ({
         id: key,
-        header: key,
+        header: serviceDetailLabels[key] ?? key,
         align: 'center',
         renderCell: (row) => {
           const rawValue = row.details[key];
