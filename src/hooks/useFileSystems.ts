@@ -179,7 +179,14 @@ const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
     }
 
     return [] as FileSystemEntry[];
-  })().sort((a, b) => {
+  })()
+    .filter((filesystem) => {
+      const poolName = filesystem.poolName.trim().toLowerCase();
+      const fullName = filesystem.fullName.trim().toLowerCase();
+
+      return poolName.length === 0 || fullName !== poolName;
+    })
+    .sort((a, b) => {
     const poolCompare = a.poolName.localeCompare(b.poolName, 'fa');
     if (poolCompare !== 0) {
       return poolCompare;
