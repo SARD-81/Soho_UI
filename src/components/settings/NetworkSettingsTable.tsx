@@ -1,11 +1,5 @@
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ChangeEvent,
-} from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { FiEdit3 } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
@@ -54,8 +48,6 @@ const createRows = (
 
 const NetworkSettingsTable = () => {
   const { data, isLoading, error } = useNetwork();
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editModalError, setEditModalError] = useState<string | null>(null);
   const [editModalData, setEditModalData] = useState<{
@@ -83,29 +75,6 @@ const NetworkSettingsTable = () => {
       toast.error(`بروزرسانی آدرس IP با خطا مواجه شد: ${message}`);
     },
   });
-
-  useEffect(() => {
-    if (page > 0 && page * rowsPerPage >= rows.length) {
-      const lastPage = Math.max(Math.ceil(rows.length / rowsPerPage) - 1, 0);
-      setPage(lastPage);
-    }
-  }, [page, rowsPerPage, rows.length]);
-
-  const paginatedRows = useMemo(() => {
-    const start = page * rowsPerPage;
-    const end = start + rowsPerPage;
-
-    return rows.slice(start, end);
-  }, [page, rowsPerPage, rows]);
-
-  const handleChangePage = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(Number(event.target.value));
-    setPage(0);
-  };
 
   const handleOpenEditModal = useCallback((row: NetworkSettingsTableRow) => {
     const primaryEntry = row.ipv4Entries[0];
@@ -156,7 +125,7 @@ const NetworkSettingsTable = () => {
       width: 64,
       renderCell: (_, index) => (
         <Typography component="span" sx={{ fontWeight: 500 }}>
-          {(page * rowsPerPage + index + 1).toLocaleString('en-US')}
+          {(index + 1).toLocaleString('en-US')}
         </Typography>
       ),
     };
@@ -280,37 +249,16 @@ const NetworkSettingsTable = () => {
       netmaskColumn,
       actionColumn,
     ];
-  }, [handleOpenEditModal, page, rowsPerPage, updateInterfaceIp.isPending]);
+  }, [handleOpenEditModal, updateInterfaceIp.isPending]);
 
   return (
     <Box sx={{ width: '100%' }}>
       <DataTable<NetworkSettingsTableRow>
         columns={columns}
-        data={paginatedRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading}
         error={error ?? null}
-        pagination={{
-          page,
-          rowsPerPage,
-          count: rows.length,
-          onPageChange: handleChangePage,
-          onRowsPerPageChange: handleChangeRowsPerPage,
-          rowsPerPageOptions: [5, 10, 25],
-          labelRowsPerPage: 'ردیف در هر صفحه',
-          labelDisplayedRows: ({ from, to, count }) => {
-            const localizedFrom = from.toLocaleString('en-US');
-            const localizedTo = to.toLocaleString('en-US');
-            const localizedCount =
-              count !== -1
-                ? count.toLocaleString('en-US')
-                : `بیش از ${localizedTo}`;
-
-            return `${localizedFrom}–${localizedTo} از ${localizedCount}`;
-          },
-          rowCountFormatter: (count) =>
-            `تعداد کل موارد: ${count.toLocaleString('en-US')}`,
-        }}
       />
 
       <NetworkInterfaceIpEditModal
