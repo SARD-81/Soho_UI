@@ -1,5 +1,12 @@
-import { Alert, Box, TextField } from '@mui/material';
-import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import { Alert, Box, InputAdornment, TextField } from '@mui/material';
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { CreateSambaUserPayload } from '../../@types/samba';
 import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
@@ -14,6 +21,7 @@ interface SambaUserCreateModalProps {
   isSubmitting: boolean;
   errorMessage: string | null;
   initialUsername?: string;
+  existingUsernames?: string[];
 }
 
 const SambaUserCreateModal = ({
@@ -23,11 +31,20 @@ const SambaUserCreateModal = ({
   isSubmitting,
   errorMessage,
   initialUsername,
+  existingUsernames = [],
 }: SambaUserCreateModalProps) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [hasPersianUsername, setHasPersianUsername] = useState(false);
   const [hasPersianPassword, setHasPersianPassword] = useState(false);
+
+  const normalizedExistingUsernames = useMemo(() => {
+    return new Set(
+      existingUsernames
+        .map((name) => name.trim().toLowerCase())
+        .filter((name) => name.length > 0)
+    );
+  }, [existingUsernames]);
 
   useEffect(() => {
     if (open) {
@@ -55,18 +72,39 @@ const SambaUserCreateModal = ({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!username.trim() || !password) {
+    const trimmedUsername = username.trim();
+    const normalizedUsername = trimmedUsername.toLowerCase();
+
+    if (!trimmedUsername || !password) {
+      return;
+    }
+
+    if (normalizedExistingUsernames.has(normalizedUsername)) {
       return;
     }
 
     onSubmit({
-      username: username.trim(),
+      username: trimmedUsername,
       password,
       createOsUserFirst: true,
     });
   };
 
-  const isConfirmDisabled = isSubmitting || !username.trim() || !password;
+  const trimmedUsername = username.trim();
+  const normalizedUsername = trimmedUsername.toLowerCase();
+  const isDuplicate =
+    trimmedUsername.length > 0 &&
+    normalizedExistingUsernames.has(normalizedUsername);
+  const shouldShowSuccess = trimmedUsername.length > 0 && !isDuplicate;
+
+  const adornmentIcon = isDuplicate ? (
+    <FiAlertCircle color="var(--color-error)" size={18} />
+  ) : shouldShowSuccess ? (
+    <FiCheckCircle color="var(--color-success)" size={18} />
+  ) : null;
+
+  const isConfirmDisabled =
+    isSubmitting || !trimmedUsername || !password || isDuplicate;
 
   return (
     <BlurModal
@@ -121,8 +159,12 @@ const SambaUserCreateModal = ({
           required
           fullWidth
           autoFocus
+          error={isDuplicate}
           helperText={
-            hasPersianUsername ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
+            (hasPersianUsername &&
+              'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+            (isDuplicate && 'کاربر Samba با این نام کاربری وجود دارد.') ||
+            undefined
           }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{
@@ -131,6 +173,10 @@ const SambaUserCreateModal = ({
               borderRadius: '5px',
               '& .MuiInputBase-input': { color: 'var(--color-text)' },
             },
+            endAdornment:
+              trimmedUsername.length > 0 && adornmentIcon ? (
+                <InputAdornment position="end">{adornmentIcon}</InputAdornment>
+              ) : undefined,
           }}
         />
 
