@@ -30,6 +30,7 @@ const DEFAULT_FETCH_DISK_ERROR_MESSAGE =
   'امکان دریافت دیسک‌های متصل به فضای یکپارچه وجود ندارد.';
 const DEFAULT_DELETE_DISK_ERROR_MESSAGE =
   'امکان حذف دیسک متصل به فضای یکپارچه وجود ندارد.';
+const DEFAULT_DELETE_POOL_ERROR_MESSAGE = 'امکان حذف فضای یکپارچه وجود ندارد.';
 
 const extractApiErrorMessage = (error: unknown, fallback: string) => {
   if (isAxiosError(error)) {
@@ -87,48 +88,107 @@ const fetchAttachedDeviceNames = async (name: string) => {
   return [];
 };
 
+type RequestMethod = 'post' | 'delete';
+
+interface RequestAttemptConfig<Payload> {
+  endpoint: string;
+  method: RequestMethod;
+  payload: Payload;
+}
+
+const attemptRequestSequence = async <Payload, Response = unknown>(
+  attempts: RequestAttemptConfig<Payload>[]
+) => {
+  let lastError: unknown;
+
+  for (let index = 0; index < attempts.length; index += 1) {
+    const { endpoint, method, payload } = attempts[index];
+
+    try {
+      if (method === 'post') {
+        const { data } = await axiosInstance.post<Response>(endpoint, payload);
+        return data;
+      }
+
+      if (method === 'delete') {
+        const { data } = await axiosInstance.delete<Response>(endpoint, {
+          data: payload,
+        });
+        return data;
+      }
+    } catch (error) {
+      lastError = error;
+
+      if (index === attempts.length - 1) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError ?? new Error('درخواست با خطا مواجه شد.');
+};
+
 const deleteDiskByPath = async (diskPath: string) => {
   const normalizedPath = diskPath.trim();
   if (!normalizedPath) {
     return;
   }
 
-  const endpoints = ['/api/disk/delete', '/api/disk/delete/'] as const;
-  let lastError: unknown;
+  const endpoints = ['/api/disk/delete/', '/api/disk/delete'] as const;
 
-  for (const endpoint of endpoints) {
-    try {
-      await axiosInstance.delete(endpoint, {
-        data: { disk_path: normalizedPath },
-      });
+  try {
+    await attemptRequestSequence<{ disk_path: string }>(
+      endpoints.flatMap((endpoint) => [
+        {
+          endpoint,
+          method: 'post' as const,
+          payload: { disk_path: normalizedPath },
+        },
+        {
+          endpoint,
+          method: 'delete' as const,
+          payload: { disk_path: normalizedPath },
+        },
+      ])
+    );
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 404) {
       return;
-    } catch (error) {
-      if (isAxiosError(error)) {
-        if (error.response?.status === 404) {
-          return;
-        }
-
-        lastError = error;
-        continue;
-      }
-
-      throw error;
     }
-  }
 
-  if (lastError) {
-    throw lastError;
+    throw error;
   }
 };
 
 const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
   const deviceNames = await fetchAttachedDeviceNames(name);
-  const deleteResponse = await axiosInstance.delete<DeleteZpoolResponse>(
-    '/api/zpool/delete',
-    {
-      data: { pool_name: name },
-    }
-  );
+  const endpoints = ['/api/zpool/delete/', '/api/zpool/delete'] as const;
+
+  let deleteResponse: DeleteZpoolResponse | undefined;
+
+  try {
+    deleteResponse = await attemptRequestSequence<
+      { pool_name: string },
+      DeleteZpoolResponse
+    >(
+      endpoints.flatMap((endpoint) => [
+        {
+          endpoint,
+          method: 'post' as const,
+          payload: { pool_name: name },
+        },
+        {
+          endpoint,
+          method: 'delete' as const,
+          payload: { pool_name: name },
+        },
+      ])
+    );
+  } catch (error) {
+    throw new Error(
+      extractApiErrorMessage(error, DEFAULT_DELETE_POOL_ERROR_MESSAGE)
+    );
+  }
 
   const diskDeletionErrors: string[] = [];
 
@@ -149,7 +209,7 @@ const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
     throw new Error(diskDeletionErrors.join('\n'));
   }
 
-  return deleteResponse.data;
+  return deleteResponse;
 };
 
 interface UseDeleteZpoolOptions {
@@ -190,6 +250,7 @@ export const useDeleteZpool = ({
       );
 
       queryClient.invalidateQueries({ queryKey: ['zpool'] });
+      queryClient.invalidateQueries({ queryKey: ['disk', 'free'] });
     },
   });
 

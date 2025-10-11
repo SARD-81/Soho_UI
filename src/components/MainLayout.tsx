@@ -145,7 +145,7 @@ const MainLayout: React.FC = () => {
               fontFamily: 'var(--font-didot)',
             }}
           >
-            Storex
+            StoreX
           </Typography>
           <Box
             sx={{
