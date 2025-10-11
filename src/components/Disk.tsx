@@ -689,9 +689,9 @@ const Disk = () => {
       <Divider sx={{ my: 1 }} />
 
       <Stack spacing={2}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+        {/* <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
           مقایسه شاخص‌های ورودی/خروجی
-        </Typography>
+        </Typography> */}
         {ioChartDataset.length > 0 ? (
           <Stack spacing={4}>
             {/*<Box>*/}
@@ -785,7 +785,7 @@ const Disk = () => {
         )}
       </Stack>
 
-      <Divider sx={{ my: 1 }} />
+      {/* <Divider sx={{ my: 1 }} /> */}
 
       <Stack spacing={2}>
         <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>

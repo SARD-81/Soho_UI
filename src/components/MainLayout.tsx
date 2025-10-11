@@ -21,6 +21,7 @@ import PowerActionConfirmDialog from './PowerActionConfirmDialog';
 import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';
 import QuickActionsMenu from './QuickActionsMenu';
 
+
 const MainLayout: React.FC = () => {
   const { logout, username } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(true);

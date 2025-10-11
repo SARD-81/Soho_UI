@@ -66,6 +66,7 @@ const serviceDetailLabels: Record<string, string> = {
   active: 'وضعیت کلی',
   sub: 'زیر وضعیت',
   load: 'وضعیت بارگذاری',
+  pid: 'شناسه پردازش',
   enabled: 'فعال',
   status: 'وضعیت سرویس',
   last_action: 'آخرین اقدام',

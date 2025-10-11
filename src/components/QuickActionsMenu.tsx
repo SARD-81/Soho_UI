@@ -9,11 +9,12 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useMemo, useState } from 'react';
+import { HiBarsArrowDown } from 'react-icons/hi2';
 import { LuMoon, LuSun } from 'react-icons/lu';
-import { MdExpandMore, MdPowerSettingsNew, MdRestartAlt } from 'react-icons/md';
+import { MdPowerSettingsNew, MdRestartAlt } from 'react-icons/md';
 import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import type { PowerAction } from '../hooks/usePowerAction';
-
+// import { BiSolidDownArrow } from "react-icons/bi";
 interface QuickActionsMenuProps {
   onPowerActionRequest: (action: PowerAction) => void;
   isPowerActionDisabled: boolean;
@@ -77,9 +78,7 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
 
   const powerIcons = useMemo(
     () => ({
-      restart: (
-        <MdRestartAlt size={22} color={getPowerIconColor('restart')} />
-      ),
+      restart: <MdRestartAlt size={22} color={getPowerIconColor('restart')} />,
       shutdown: (
         <MdPowerSettingsNew size={22} color={getPowerIconColor('shutdown')} />
       ),
@@ -99,16 +98,19 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
       <Button
         variant="contained"
         onClick={handleMenuToggle}
-        endIcon={<MdExpandMore size={20} />}
+        // endIcon={<MdExpandMore size={20} />}
         sx={{
-          background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))',
-          color: 'var(--color-bg-primary)',
-          borderRadius: '10px',
+          // background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))',
+          color: 'var(--color-primary)',
+          borderRadius: '2px',
           px: 1.5,
+          minWidth: 0,
+          backgroundColor: 'unset',
           py: 0.5,
           boxShadow: '0 12px 30px rgba(0, 0, 0, 0.18)',
           '&:hover': {
-            background: 'linear-gradient(135deg, var(--color-primary-light), var(--color-primary))',
+            background:
+              'linear-gradient(135deg, var(--color-primary-light), var(--color-primary))',
             boxShadow: '0 16px 34px rgba(0, 0, 0, 0.24)',
           },
         }}
@@ -122,7 +124,9 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
             letterSpacing: 0.2,
           }}
         >
-          عملیات سیستم
+          {/* <BiSolidDownArrow /> */}
+          {/* <CgArrowDownR size={25}/> */}
+          <HiBarsArrowDown size={30} />
         </Typography>
       </Button>
       <Menu
