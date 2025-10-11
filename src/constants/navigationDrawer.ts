@@ -1,6 +1,6 @@
 import { createElement } from 'react';
 import { BiHistory } from 'react-icons/bi';
-import { FaShare } from 'react-icons/fa';
+import { BsFillShareFill } from "react-icons/bs";
 import { FiUsers } from 'react-icons/fi';
 import { GrServices, GrStorage } from 'react-icons/gr';
 import { MdSpaceDashboard, MdStorage } from 'react-icons/md';
@@ -30,7 +30,7 @@ export const navItems: NavigationItem[] = [
     icon: createElement(MdStorage),
     path: '/file-system',
   },
-  { text: 'اشتراک گذاری', icon: createElement(FaShare), path: '/share' },
+  { text: 'اشتراک گذاری', icon: createElement(BsFillShareFill), path: '/share' },
   {
     text: 'سرویس ها',
     icon: createElement(GrServices),

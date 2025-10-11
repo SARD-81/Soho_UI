@@ -1,12 +1,5 @@
-import { Alert, Box, InputAdornment, TextField } from '@mui/material';
-import {
-  type ChangeEvent,
-  type FormEvent,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import { Alert, Box, TextField } from '@mui/material';
+import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 import type { CreateSambaUserPayload } from '../../@types/samba';
 import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
@@ -165,6 +158,7 @@ const SambaUserCreateModal = ({
               'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
             (isDuplicate && 'کاربر Samba با این نام کاربری وجود دارد.') ||
             undefined
+
           }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{
