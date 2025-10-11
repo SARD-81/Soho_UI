@@ -12,6 +12,20 @@ import { useDiskWwnMap } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
 
 const IntegratedStorage = () => {
+  const {
+    data,
+    isLoading: isPoolsLoading,
+    error: zpoolError,
+  } = useZpool({
+    refetchInterval: 1000,
+  });
+
+  const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
+  const existingPoolNames = useMemo(
+    () => pools.map((pool) => pool.name),
+    [pools]
+  );
+
   const createPool = useCreatePool({
     onSuccess: (poolName) => {
       toast.success(`فضای یکپارچه ${poolName} با موفقیت ایجاد شد.`);
@@ -19,6 +33,7 @@ const IntegratedStorage = () => {
     onError: (errorMessage: string) => {
       toast.error(`ایجاد فضای یکپارچه با خطا مواجه شد: ${errorMessage}`);
     },
+    existingPoolNames,
   });
 
   const poolDeletion = useDeleteZpool({
@@ -30,14 +45,6 @@ const IntegratedStorage = () => {
         `حذف فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`
       );
     },
-  });
-
-  const {
-    data,
-    isLoading: isPoolsLoading,
-    error: zpoolError,
-  } = useZpool({
-    refetchInterval: 1000,
   });
 
   const {
@@ -82,8 +89,6 @@ const IntegratedStorage = () => {
 
   const isDiskLoading =
     isDiskMapLoading || (createPool.isOpen && isDiskMapFetching && !diskWwnMap);
-
-  const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
 
   const [selectedPools, setSelectedPools] = useState<string[]>([]);
 

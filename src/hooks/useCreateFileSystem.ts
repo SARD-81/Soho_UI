@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { FormEvent } from 'react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import axiosInstance from '../lib/axiosInstance';
 
 interface ApiErrorResponse {
@@ -20,7 +20,10 @@ interface CreateFileSystemPayload {
 interface UseCreateFileSystemOptions {
   onSuccess?: (filesystemName: string) => void;
   onError?: (errorMessage: string) => void;
+  isFilesystemNameTaken?: (pool: string, filesystemName: string) => boolean;
 }
+
+type FilesystemNameStatus = 'idle' | 'available' | 'duplicate' | 'invalid';
 
 const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
   const payload = error.response?.data;
@@ -57,25 +60,37 @@ const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
 export const useCreateFileSystem = ({
   onSuccess,
   onError,
+  isFilesystemNameTaken,
 }: UseCreateFileSystemOptions = {}) => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPool, setSelectedPool] = useState('');
-  const [filesystemName, setFileSystemName] = useState('');
+  const [filesystemName, setFileSystemNameState] = useState('');
   const [quotaAmount, setQuotaAmount] = useState('');
   const [poolError, setPoolError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [filesystemNameStatus, setFilesystemNameStatus] =
+    useState<FilesystemNameStatus>('idle');
+
+  const isFilesystemNameTakenRef = useRef<
+    ((pool: string, filesystemName: string) => boolean) | undefined
+  >(isFilesystemNameTaken);
+
+  useEffect(() => {
+    isFilesystemNameTakenRef.current = isFilesystemNameTaken;
+  }, [isFilesystemNameTaken]);
 
   const resetForm = useCallback(() => {
     setSelectedPool('');
-    setFileSystemName('');
+    setFileSystemNameState('');
     setQuotaAmount('');
     setPoolError(null);
     setNameError(null);
     setQuotaError(null);
     setApiError(null);
+    setFilesystemNameStatus('idle');
   }, []);
 
   const handleOpen = useCallback(() => {
@@ -87,6 +102,73 @@ export const useCreateFileSystem = ({
     resetForm();
     setIsOpen(false);
   }, [resetForm]);
+
+  const handleFilesystemNameInput = useCallback(
+    (value: string) => {
+      setApiError(null);
+
+      const noWhitespace = value.replace(/\s+/g, '');
+      const englishOnlyValue = noWhitespace.replace(/[^A-Za-z0-9]/g, '');
+      const hadInvalidCharacters = englishOnlyValue !== noWhitespace;
+
+      setFileSystemNameState(englishOnlyValue);
+
+      if (englishOnlyValue.length === 0) {
+        setFilesystemNameStatus(hadInvalidCharacters ? 'invalid' : 'idle');
+        setNameError(
+          hadInvalidCharacters
+            ? 'نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.'
+            : null
+        );
+        return;
+      }
+
+      if (hadInvalidCharacters) {
+        setFilesystemNameStatus('invalid');
+        setNameError(
+          'نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.'
+        );
+        return;
+      }
+
+      if (!selectedPool) {
+        setFilesystemNameStatus('idle');
+        setNameError(null);
+        return;
+      }
+
+      const isDuplicate =
+        isFilesystemNameTakenRef.current?.(selectedPool, englishOnlyValue) ??
+        false;
+
+      if (isDuplicate) {
+        setFilesystemNameStatus('duplicate');
+        setNameError(
+          'نام فضای فایلی در این فضای یکپارچه قبلاً استفاده شده است.'
+        );
+        return;
+      }
+
+      setFilesystemNameStatus('available');
+      setNameError(null);
+    },
+    [selectedPool]
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    if (!filesystemName) {
+      setFilesystemNameStatus('idle');
+      setNameError(null);
+      return;
+    }
+
+    handleFilesystemNameInput(filesystemName);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filesystemName, isFilesystemNameTaken, isOpen, selectedPool]);
 
   const createFileSystemMutation = useMutation<
     unknown,
@@ -129,12 +211,30 @@ export const useCreateFileSystem = ({
 
       if (!trimmedName) {
         setNameError('نام فضای فایلی را وارد کنید.');
+        setFilesystemNameStatus('idle');
         hasError = true;
-      } else if (!/^[A-Za-z0-9]+$/.test(trimmedName)) {
+      }
+
+      if (!hasError && !/^[A-Za-z0-9]+$/.test(trimmedName)) {
         setNameError(
           'نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.'
         );
+        setFilesystemNameStatus('invalid');
         hasError = true;
+      }
+
+      if (!hasError) {
+        const isDuplicate =
+          isFilesystemNameTakenRef.current?.(trimmedPool, trimmedName) ??
+          false;
+
+        if (isDuplicate) {
+          setNameError(
+            'نام فضای فایلی در این فضای یکپارچه قبلاً استفاده شده است.'
+          );
+          setFilesystemNameStatus('duplicate');
+          hasError = true;
+        }
       }
 
       if (!trimmedQuota) {
@@ -169,7 +269,7 @@ export const useCreateFileSystem = ({
     selectedPool,
     setSelectedPool,
     filesystemName,
-    setFileSystemName,
+    setFileSystemName: handleFilesystemNameInput,
     quotaAmount,
     setQuotaAmount,
     poolError,
@@ -183,6 +283,7 @@ export const useCreateFileSystem = ({
       handleClose();
     },
     handleSubmit,
+    filesystemNameStatus,
   };
 };
 

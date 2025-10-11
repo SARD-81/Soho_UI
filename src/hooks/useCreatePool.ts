@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { FormEvent } from 'react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import axiosInstance from '../lib/axiosInstance';
 
 interface ApiErrorResponse {
@@ -20,7 +20,10 @@ interface CreatePoolPayload {
 interface UseCreatePoolOptions {
   onSuccess?: (poolName: string) => void;
   onError?: (errorMessage: string) => void;
+  existingPoolNames?: string[];
 }
+
+type PoolNameStatus = 'idle' | 'available' | 'duplicate' | 'invalid';
 
 const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
   const payload = error.response?.data;
@@ -57,23 +60,33 @@ const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
 export const useCreatePool = ({
   onSuccess,
   onError,
+  existingPoolNames = [],
 }: UseCreatePoolOptions = {}) => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
-  const [poolName, setPoolName] = useState('');
+  const [poolName, setPoolNameState] = useState('');
   const [vdevType, setVdevType] = useState('disk');
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   const [poolNameError, setPoolNameError] = useState<string | null>(null);
   const [devicesError, setDevicesError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [poolNameStatus, setPoolNameStatus] = useState<PoolNameStatus>('idle');
+
+  const existingPoolNamesRef = useRef<string[]>(existingPoolNames);
+
+  useEffect(() => {
+    existingPoolNamesRef.current = existingPoolNames;
+  }, [existingPoolNames]);
+
 
   const resetForm = useCallback(() => {
-    setPoolName('');
+    setPoolNameState('');
     setVdevType('disk');
     setSelectedDevices([]);
     setPoolNameError(null);
     setDevicesError(null);
     setApiError(null);
+    setPoolNameStatus('idle');
   }, []);
 
   const handleOpen = useCallback(() => {
@@ -119,6 +132,64 @@ export const useCreatePool = ({
     });
   }, []);
 
+  const handlePoolNameInput = useCallback(
+    (value: string) => {
+      setApiError(null);
+
+      const noWhitespace = value.replace(/\s+/g, '');
+      const englishOnlyValue = noWhitespace.replace(/[^A-Za-z0-9]/g, '');
+      const hadInvalidCharacters = englishOnlyValue !== noWhitespace;
+
+      setPoolNameState(englishOnlyValue);
+
+      if (englishOnlyValue.length === 0) {
+        setPoolNameStatus(hadInvalidCharacters ? 'invalid' : 'idle');
+        setPoolNameError(
+          hadInvalidCharacters
+            ? 'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.'
+            : null
+        );
+        return;
+      }
+
+      if (hadInvalidCharacters) {
+        setPoolNameStatus('invalid');
+        setPoolNameError(
+          'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.'
+        );
+        return;
+      }
+
+      const normalizedValue = englishOnlyValue.toLowerCase();
+      const isDuplicate = existingPoolNamesRef.current.some(
+        (name) => name.toLowerCase() === normalizedValue
+      );
+
+      if (isDuplicate) {
+        setPoolNameStatus('duplicate');
+        setPoolNameError(
+          'نام فضای یکپارچه تکراری است. لطفاً نام دیگری انتخاب کنید.'
+        );
+        return;
+      }
+
+      setPoolNameStatus('available');
+      setPoolNameError(null);
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!isOpen || poolName.length === 0) {
+      return;
+    }
+
+    handlePoolNameInput(poolName);
+    // We intentionally ignore exhaustive-deps here because handlePoolNameInput
+    // already captures the latest dependencies we care about.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingPoolNames, isOpen, poolName]);
+
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -131,12 +202,31 @@ export const useCreatePool = ({
 
       if (!trimmedName) {
         setPoolNameError('لطفاً نام فضای یکپارچه را وارد کنید.');
+        setPoolNameStatus('idle');
         hasError = true;
-      } else if (!/^[A-Za-z0-9]+$/.test(trimmedName)) {
+      }
+
+      if (!hasError && !/^[A-Za-z0-9]+$/.test(trimmedName)) {
         setPoolNameError(
           'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.'
         );
+        setPoolNameStatus('invalid');
         hasError = true;
+      }
+
+      if (!hasError) {
+        const normalizedValue = trimmedName.toLowerCase();
+        const isDuplicate = existingPoolNamesRef.current.some(
+          (name) => name.toLowerCase() === normalizedValue
+        );
+
+        if (isDuplicate) {
+          setPoolNameError(
+            'نام فضای یکپارچه تکراری است. لطفاً نام دیگری انتخاب کنید.'
+          );
+          setPoolNameStatus('duplicate');
+          hasError = true;
+        }
       }
 
       const deviceCount = selectedDevices.length;
@@ -185,10 +275,11 @@ export const useCreatePool = ({
       createPoolMutation.reset();
       handleClose();
     },
-    setPoolName,
+    setPoolName: handlePoolNameInput,
     setVdevType,
     toggleDevice: handleDeviceToggle,
     handleSubmit,
+    poolNameStatus,
   };
 };
 

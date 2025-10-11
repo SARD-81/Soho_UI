@@ -9,6 +9,8 @@ import {
   Typography,
 } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent } from 'react';
 import type { UseCreateFileSystemReturn } from '../../hooks/useCreateFileSystem';
@@ -47,13 +49,14 @@ const CreateFileSystemModal = ({
     setSelectedPool,
     poolError,
     filesystemName,
-    setFileSystemName,
+    setFileSystemName: updateFilesystemName,
     nameError,
     quotaAmount,
     setQuotaAmount,
     quotaError,
     apiError,
     isCreating,
+    filesystemNameStatus,
   } = controller;
 
   const handlePoolChange = (event: SelectChangeEvent<string>) => {
@@ -61,7 +64,7 @@ const CreateFileSystemModal = ({
   };
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setFileSystemName(event.target.value);
+    updateFilesystemName(event.target.value);
   };
 
   const handleQuotaChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -132,9 +135,30 @@ const CreateFileSystemModal = ({
             fullWidth
             autoComplete="off"
             error={Boolean(nameError)}
-            helperText={nameError ?? 'نامی یکتا برای فضای فایلی وارد کنید.'}
+            helperText={
+              nameError ?? 'نامی یکتا برای فضای فایلی وارد کنید.'
+            }
             InputLabelProps={{ shrink: true }}
-            InputProps={{ sx: inputBaseStyles }}
+            InputProps={{
+              sx: inputBaseStyles,
+              endAdornment:
+                filesystemNameStatus === 'available' ? (
+                  <InputAdornment position="end">
+                    <CheckCircleOutlineIcon
+                      sx={{ color: 'var(--color-success)' }}
+                      fontSize="small"
+                    />
+                  </InputAdornment>
+                ) : filesystemNameStatus === 'duplicate' ||
+                  filesystemNameStatus === 'invalid' ? (
+                  <InputAdornment position="end">
+                    <ErrorOutlineIcon
+                      sx={{ color: 'var(--color-error)' }}
+                      fontSize="small"
+                    />
+                  </InputAdornment>
+                ) : undefined,
+            }}
           />
 
           <TextField

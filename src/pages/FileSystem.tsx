@@ -11,6 +11,36 @@ import { useFileSystems } from '../hooks/useFileSystems';
 import { useZpool } from '../hooks/useZpool';
 
 const FileSystem = () => {
+  const { data, isLoading, error } = useFileSystems();
+
+  const filesystems = useMemo(
+    () => data?.filesystems ?? [],
+    [data?.filesystems]
+  );
+
+  const isFilesystemNameTaken = useCallback(
+    (pool: string, filesystemName: string) => {
+      const normalizedPool = pool.trim().toLowerCase();
+      const normalizedName = filesystemName.trim().toLowerCase();
+
+      return filesystems.some((entry) =>
+        entry.poolName.trim().toLowerCase() === normalizedPool &&
+        entry.filesystemName.trim().toLowerCase() === normalizedName
+      );
+    },
+    [filesystems]
+  );
+
+  const { data: poolData } = useZpool();
+
+  const poolOptions = useMemo(
+    () =>
+      (poolData?.pools ?? [])
+        .map((pool) => pool.name)
+        .sort((a, b) => a.localeCompare(b, 'fa')),
+    [poolData?.pools]
+  );
+
   const createFileSystem = useCreateFileSystem({
     onSuccess: (filesystemName) => {
       toast.success(`فضای فایلی ${filesystemName} با موفقیت ایجاد شد.`);
@@ -18,6 +48,7 @@ const FileSystem = () => {
     onError: (errorMessage) => {
       toast.error(`ایجاد فضای فایلی با خطا مواجه شد: ${errorMessage}`);
     },
+    isFilesystemNameTaken,
   });
 
   const deleteFileSystem = useDeleteFileSystem({
@@ -30,22 +61,6 @@ const FileSystem = () => {
       );
     },
   });
-
-  const { data, isLoading, error } = useFileSystems();
-  const { data: poolData } = useZpool();
-
-  const poolOptions = useMemo(
-    () =>
-      (poolData?.pools ?? [])
-        .map((pool) => pool.name)
-        .sort((a, b) => a.localeCompare(b, 'fa')),
-    [poolData?.pools]
-  );
-
-  const filesystems = useMemo(
-    () => data?.filesystems ?? [],
-    [data?.filesystems]
-  );
 
   const attributeKeys = useMemo(() => {
     const keys = new Set<string>();

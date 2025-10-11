@@ -13,6 +13,9 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import InputAdornment from '@mui/material/InputAdornment';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { useQuery } from '@tanstack/react-query';
 import type { ChangeEvent } from 'react';
@@ -69,7 +72,7 @@ const CreatePoolModal = ({
     closeCreateModal,
     handleSubmit,
     poolName,
-    setPoolName,
+    setPoolName: updatePoolName,
     vdevType,
     setVdevType,
     selectedDevices,
@@ -78,6 +81,7 @@ const CreatePoolModal = ({
     devicesError,
     apiError,
     isCreating,
+    poolNameStatus,
   } = controller;
 
   const shouldFetchDiskList = externalDeviceOptions === undefined;
@@ -125,7 +129,7 @@ const CreatePoolModal = ({
     (shouldFetchDiskList ? diskQueryError : externalDiskError) ?? null;
 
   const handlePoolNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setPoolName(event.target.value);
+    updatePoolName(event.target.value);
   };
 
   const handleVdevChange = (event: SelectChangeEvent<string>) => {
@@ -166,9 +170,30 @@ const CreatePoolModal = ({
             fullWidth
             size="small"
             error={Boolean(poolNameError)}
-            helperText={poolNameError}
+            helperText={
+              poolNameError ?? 'نام یکتا برای فضای یکپارچه وارد کنید.'
+            }
             InputLabelProps={{ shrink: true }}
-            InputProps={{ sx: inputBaseStyles }}
+            InputProps={{
+              sx: inputBaseStyles,
+              endAdornment:
+                poolNameStatus === 'available' ? (
+                  <InputAdornment position="end">
+                    <CheckCircleOutlineIcon
+                      sx={{ color: 'var(--color-success)' }}
+                      fontSize="small"
+                    />
+                  </InputAdornment>
+                ) : poolNameStatus === 'duplicate' ||
+                  poolNameStatus === 'invalid' ? (
+                  <InputAdornment position="end">
+                    <ErrorOutlineIcon
+                      sx={{ color: 'var(--color-error)' }}
+                      fontSize="small"
+                    />
+                  </InputAdornment>
+                ) : undefined,
+            }}
           />
 
           <FormControl size="small" fullWidth>
