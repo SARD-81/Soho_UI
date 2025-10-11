@@ -1,5 +1,5 @@
 import { Alert, Box, Button, TextField } from '@mui/material';
-import { type FormEvent, useEffect, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 import type { CreateOsUserPayload } from '../../@types/users';
 import { DEFAULT_LOGIN_SHELL } from '../../constants/users';
 import { removePersianCharacters } from '../../utils/text';
@@ -21,12 +21,21 @@ const OsUserCreateModal = ({
   errorMessage,
 }: OsUserCreateModalProps) => {
   const [username, setUsername] = useState('');
+  const [hasPersianUsername, setHasPersianUsername] = useState(false);
 
   useEffect(() => {
     if (open) {
       setUsername('');
+      setHasPersianUsername(false);
     }
   }, [open]);
+
+  const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianUsername(sanitizedValue !== value);
+    setUsername(sanitizedValue);
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -90,12 +99,13 @@ const OsUserCreateModal = ({
         <TextField
           label="نام کاربری"
           value={username}
-          onChange={(event) =>
-            setUsername(removePersianCharacters(event.target.value))
-          }
+          onChange={handleUsernameChange}
           required
           autoFocus
           fullWidth
+          helperText={
+            hasPersianUsername ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
+          }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{
             sx: {

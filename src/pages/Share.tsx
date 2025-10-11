@@ -391,8 +391,8 @@ const Share = () => {
           },
         }}
       >
-        <Tab label="اشتراک‌ها" value={SHARE_TABS.shares} />
         <Tab label="کاربران اشتراک فایل" value={SHARE_TABS.sambaUsers} />
+        <Tab label="اشتراک‌ها" value={SHARE_TABS.shares} />
       </Tabs>
 
       <TabPanel value={SHARE_TABS.shares} currentValue={activeTab}>

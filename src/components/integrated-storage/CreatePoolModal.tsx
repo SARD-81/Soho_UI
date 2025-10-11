@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreatePoolReturn } from '../../hooks/useCreatePool';
 import { removePersianCharacters } from '../../utils/text';
@@ -77,6 +77,13 @@ const CreatePoolModal = ({
     apiError,
     isCreating,
   } = controller;
+  const [hasPersianPoolName, setHasPersianPoolName] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHasPersianPoolName(false);
+    }
+  }, [isOpen]);
 
   const deviceOptions = externalDeviceOptions ?? [];
 
@@ -107,7 +114,9 @@ const CreatePoolModal = ({
   ) : null;
 
   const handlePoolNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const sanitizedValue = removePersianCharacters(event.target.value);
+    const { value } = event.target;
+    const sanitizedValue = removePersianCharacters(value);
+    setHasPersianPoolName(sanitizedValue !== value);
     setPoolName(sanitizedValue);
     if (poolNameError) {
       setPoolNameError(null);
@@ -173,6 +182,8 @@ const CreatePoolModal = ({
               Boolean(poolNameError) || !isNameFormatValid || isDuplicate
             }
             helperText={
+              (hasPersianPoolName &&
+                'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
               poolNameError ||
               (!isNameFormatValid &&
                 trimmedPoolName.length > 0 &&
