@@ -13,6 +13,7 @@ import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useFilesystemMountpoints } from '../../hooks/useFilesystemMountpoints';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
 import normalizeSambaUsers from '../../utils/sambaUsers';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -162,14 +163,16 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             // freeSolo
             options={mountpointOptions}
             value={fullPath}
-            onChange={(_event, newValue) => setFullPath(newValue ?? '')}
+            onChange={(_event, newValue) =>
+              setFullPath(removePersianCharacters(newValue ?? ''))
+            }
             onInputChange={(_event, newInputValue, reason) => {
               if (
                 reason === 'input' ||
                 reason === 'clear' ||
                 reason === 'reset'
               ) {
-                setFullPath(newInputValue ?? '');
+                setFullPath(removePersianCharacters(newInputValue ?? ''));
               }
             }}
             fullWidth
@@ -210,7 +213,9 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
           <Autocomplete
             options={sambaUsernames}
             value={validUsers || null}
-            onChange={(_event, newValue) => setValidUsers(newValue ?? '')}
+            onChange={(_event, newValue) =>
+              setValidUsers(removePersianCharacters(newValue ?? ''))
+            }
             onInputChange={(_event, _newInput, reason) => {
               if (reason === 'clear') {
                 setValidUsers('');

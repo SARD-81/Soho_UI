@@ -190,6 +190,7 @@ export const useCreatePool = ({
     setVdevType,
     toggleDevice: handleDeviceToggle,
     handleSubmit,
+    setPoolNameError,
   };
 };
 

@@ -183,6 +183,7 @@ export const useCreateFileSystem = ({
       handleClose();
     },
     handleSubmit,
+    setNameError,
   };
 };
 

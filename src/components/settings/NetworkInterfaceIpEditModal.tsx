@@ -1,5 +1,6 @@
 import { Alert, Box, TextField, Typography } from '@mui/material';
 import { type FormEvent, useEffect, useState } from 'react';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -110,7 +111,7 @@ const NetworkInterfaceIpEditModal = ({
         <TextField
           label="آدرس IP"
           value={ip}
-          onChange={(event) => setIp(event.target.value)}
+          onChange={(event) => setIp(removePersianCharacters(event.target.value))}
           required
           fullWidth
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
@@ -126,7 +127,9 @@ const NetworkInterfaceIpEditModal = ({
         <TextField
           label="نت‌ماسک"
           value={netmask}
-          onChange={(event) => setNetmask(event.target.value)}
+          onChange={(event) =>
+            setNetmask(removePersianCharacters(event.target.value))
+          }
           required
           fullWidth
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}

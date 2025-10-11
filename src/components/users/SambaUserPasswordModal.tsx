@@ -1,6 +1,7 @@
 import { Alert, Box, TextField, Typography } from '@mui/material';
 import { type FormEvent, useEffect, useState } from 'react';
 import type { UpdateSambaUserPasswordPayload } from '../../@types/samba';
+import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -110,7 +111,9 @@ const SambaUserPasswordModal = ({
           label="گذرواژه جدید"
           type="password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(event) =>
+            setPassword(removePersianCharacters(event.target.value))
+          }
           required
           fullWidth
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
