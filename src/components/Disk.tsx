@@ -10,7 +10,6 @@ import {
 import { useMemo } from 'react';
 import type { DeviceMetricDatum, NormalizedMetrics } from '../@types/disk';
 import {
-  BYTES_IN_GB,
   IO_METRICS,
   clampPercent,
   diskPercentFormatter,
@@ -22,7 +21,6 @@ import { useDisk } from '../hooks/useDisk';
 import '../index.css';
 import { formatBytes, formatDuration } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
-import AppBarChart from './charts/AppBarChart';
 import AppLineChart from './charts/AppLineChart';
 import AppPieChart from './charts/AppPieChart';
 
@@ -585,16 +583,6 @@ const Disk = () => {
     [ioChartDataset, readColor, writeColor]
   );
 
-  const barChartDataset = useMemo(
-    () =>
-      topDevices.map((item) => ({
-        device: item.name,
-        readGB: item.metrics.read_bytes / BYTES_IN_GB,
-        writeGB: item.metrics.write_bytes / BYTES_IN_GB,
-      })),
-    [topDevices]
-  );
-
   if (isLoading) {
     return (
       <Box sx={{ ...cardSx, width: '100%' }}>
@@ -747,6 +735,7 @@ const Disk = () => {
             {/*  </Box>*/}
             {/*</Box>*/}
             {/*<Divider sx={{ my: 1 }} />*/}
+            {/*
             <Box>
               <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
                 حجم داده خواندن/نوشتن
@@ -787,6 +776,7 @@ const Disk = () => {
                 />
               </Box>
             </Box>
+            */}
           </Stack>
         ) : (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -801,38 +791,37 @@ const Disk = () => {
         <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
           مقایسه حجم خواندن و نوشتن (GB)
         </Typography>
-        {barChartDataset.length > 0 ? (
+        {ioChartDataset.length > 0 ? (
           <Box sx={{ width: '100%', direction: 'ltr' }}>
-            <AppBarChart
-              dataset={barChartDataset}
-              xAxis={[{ scaleType: 'band', dataKey: 'device' }]}
+            <AppLineChart
+              dataset={ioChartDataset}
+              series={ioBytesSeries}
+              xAxis={[
+                {
+                  dataKey: 'device',
+                  scaleType: 'band',
+                  tickLabelStyle: { fill: 'var(--color-text)' },
+                  labelStyle: { fill: 'var(--color-text)' },
+                },
+              ]}
               yAxis={[
                 {
-                  label: 'GB',
-                  position: 'left',
-                  tickSize: 38,
-                  width: 86,
+                  min: 0,
+                  max: ioBytesMax > 0 ? ioBytesMax : undefined,
+                  label: 'حجم داده (بایت)',
+                  valueFormatter: (value: number) =>
+                    formatBytes(Math.max(value, 0)),
                   tickLabelStyle: { fill: 'var(--color-text)' },
+                  labelStyle: { fill: 'var(--color-text)' },
+                  position: 'left',
+                  tickSize: 58,
+                  width: 136,
                 },
               ]}
-              series={[
-                {
-                  dataKey: 'readGB',
-                  label: 'خواندن (GB)',
-                  stack: 'total',
-                  color: theme.palette.primary.main,
-                  valueFormatter: (value) => `${(value ?? 0).toFixed(2)} GB`,
-                },
-                {
-                  dataKey: 'writeGB',
-                  label: 'نوشتن (GB)',
-                  stack: 'total',
-                  color: theme.palette.warning.main,
-                  valueFormatter: (value) => `${(value ?? 0).toFixed(2)} GB`,
-                },
-              ]}
-              height={280}
-              margin={{ top: 60, right: 40, left: 40 }}
+              axisHighlight={{ x: 'line' }}
+              grid={{ horizontal: true, vertical: false }}
+              height={300}
+              margin={{ top: 40, right: 32, left: 56, bottom: 64 }}
               slotProps={{
                 tooltip: { sx: tooltipMultilineSx },
               }}
