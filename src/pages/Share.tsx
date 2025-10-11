@@ -90,8 +90,8 @@ const Share = () => {
   );
 
   const serviceAction = useServiceAction({
-    onSuccess: ({ service }) => {
-      toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
+    onSuccess: () => {
+      // toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
     },
     onError: (message, { service }) => {
       toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
@@ -209,14 +209,14 @@ const Share = () => {
   });
 
   const createSambaUser = useCreateSambaUser({
-    onSuccess: (username) => {
-      toast.success(`کاربر Samba ${username} با موفقیت ایجاد شد.`);
+    onSuccess: () => {
+      // toast.success(`کاربر Samba ${username} با موفقیت ایجاد شد.`);
       setIsSambaCreateModalOpen(false);
       setSambaCreateError(null);
     },
     onError: (message) => {
       setSambaCreateError(message);
-      toast.error(`ایجاد کاربر Samba با خطا مواجه شد: ${message}`);
+      toast.error(`ایجاد کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
     },
   });
 
@@ -301,11 +301,7 @@ const Share = () => {
 
       void run();
     },
-    [
-      createOsUser,
-      createSambaUser,
-      normalizedSambaUsernames,
-    ]
+    [createOsUser, createSambaUser, normalizedSambaUsernames]
   );
 
   const handleToggleSelectSambaUser = useCallback(

@@ -19,7 +19,7 @@ const Services = () => {
   const serviceAction = useServiceAction({
     onSuccess: ({ action, service }) => {
       toast.success(
-        `عملیات ${actionLabels[action]} برای ${service} با موفقیت انجام شد.`
+        `عملیات ${actionLabels[action]} برای ${getServiceLabel(service)} با موفقیت انجام شد.`
       );
     },
     onError: (message, { action, service }) => {
