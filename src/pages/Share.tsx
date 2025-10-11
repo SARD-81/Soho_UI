@@ -191,6 +191,14 @@ const Share = () => {
     [sambaUsersQuery.data?.data]
   );
 
+  const normalizedSambaUsernames = useMemo(() => {
+    return new Set(
+      sambaUsers
+        .map((user) => (user.username ?? '').trim().toLowerCase())
+        .filter((username) => username.length > 0)
+    );
+  }, [sambaUsers]);
+
   const createOsUser = useCreateOsUser({
     onSuccess: (username) => {
       toast.success(`کاربر ${username} با موفقیت ایجاد شد.`);
@@ -261,11 +269,25 @@ const Share = () => {
       password: string;
       createOsUserFirst: boolean;
     }) => {
+      const trimmedUsername = username.trim();
+      const normalizedUsername = trimmedUsername.toLowerCase();
+
+      if (normalizedUsername.length === 0) {
+        return;
+      }
+
+      if (normalizedSambaUsernames.has(normalizedUsername)) {
+        const message = 'کاربر Samba با این نام کاربری وجود دارد.';
+        setSambaCreateError(message);
+        toast.error(message);
+        return;
+      }
+
       const run = async () => {
         if (createOsUserFirst) {
           try {
             await createOsUser.mutateAsync({
-              username,
+              username: trimmedUsername,
               login_shell: DEFAULT_LOGIN_SHELL,
               shell: DEFAULT_LOGIN_SHELL,
             });
@@ -274,12 +296,16 @@ const Share = () => {
           }
         }
 
-        createSambaUser.mutate({ username, password });
+        createSambaUser.mutate({ username: trimmedUsername, password });
       };
 
       void run();
     },
-    [createOsUser, createSambaUser]
+    [
+      createOsUser,
+      createSambaUser,
+      normalizedSambaUsernames,
+    ]
   );
 
   const handleToggleSelectSambaUser = useCallback(
@@ -528,6 +554,7 @@ const Share = () => {
         isSubmitting={createSambaUser.isPending}
         errorMessage={sambaCreateError}
         initialUsername={sambaCreateInitialUsername}
+        existingUsernames={Array.from(normalizedSambaUsernames)}
       />
 
       <SambaUserPasswordModal
