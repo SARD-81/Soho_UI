@@ -277,7 +277,7 @@ const Share = () => {
       }
 
       if (normalizedSambaUsernames.has(normalizedUsername)) {
-        const message = 'کاربر Samba با این نام کاربری وجود دارد.';
+        const message = 'کاربر اشتراک فایل با این نام کاربری وجود دارد.';
         setSambaCreateError(message);
         toast.error(message);
         return;

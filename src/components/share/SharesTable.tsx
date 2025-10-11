@@ -87,7 +87,7 @@ const SharesTable = ({
       {
         id: 'name',
         header: 'نام اشتراک',
-        align: 'left',
+        align: 'center',
         renderCell: (share) => (
           <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
             {share.name}
@@ -114,7 +114,7 @@ const SharesTable = ({
       {
         id: 'valid-users',
         header: 'کاربران مجاز',
-        align: 'left',
+        align: 'center',
         renderCell: (share) => (
           <Typography sx={{ color: 'var(--color-text)' }}>
             {resolveValidUsers(share)}

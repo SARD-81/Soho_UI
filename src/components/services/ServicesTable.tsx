@@ -55,7 +55,7 @@ const actionConfigs: Array<{
 
 const numberTypographySx = {
   display: 'block',
-  textAlign: 'right' as const,
+  textAlign: 'center' as const,
   direction: 'ltr' as const,
   fontVariantNumeric: 'tabular-nums',
 };
@@ -147,6 +147,7 @@ const ServicesTable = ({
     const baseColumn: DataTableColumn<ServiceTableRow> = {
       id: 'service-name',
       header: 'سرویس',
+      align: 'center',
       renderCell: (row) => (
         <Typography component="span" sx={{ fontWeight: 600 }}>
           {row.name}
@@ -158,6 +159,7 @@ const ServicesTable = ({
       (key) => ({
         id: key,
         header: key,
+        align: 'center',
         renderCell: (row) => {
           const rawValue = row.details[key];
           const formatted = formatServiceValue(rawValue);

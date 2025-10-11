@@ -234,7 +234,7 @@ const NetworkSettingsTable = () => {
           component="span"
           sx={{
             display: 'block',
-            textAlign: 'right',
+            textAlign: 'center',
             direction: 'ltr',
             fontVariantNumeric: 'tabular-nums',
             color: 'var(--color-text)',
