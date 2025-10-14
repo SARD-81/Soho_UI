@@ -162,33 +162,70 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                 to={item.path}
                 onClick={handleItemClick}
                 selected={isActive}
-                sx={{
-                  color: 'var(--color-bg-primary)',
-                  minHeight: 48,
-                  justifyContent: open ? 'initial' : 'center',
-                  px: 2.5,
-                  ...(depth > 0 && open
-                    ? {
-                        pl: 2.5 + depth * 2,
+                sx={(theme) => {
+                  const baseHorizontalPadding = 2.5;
+                  const nestedLeftPadding = baseHorizontalPadding + depth * 2;
+                  const baseLeftPadding =
+                    open && depth > 0 ? nestedLeftPadding : baseHorizontalPadding;
+                  const hoverPaddingIncrement = 0.5;
+                  const hoverHorizontalPadding =
+                    baseHorizontalPadding + hoverPaddingIncrement;
+                  const hoverLeftPadding =
+                    baseLeftPadding + (open ? hoverPaddingIncrement : 0);
+
+                  return {
+                    color: 'var(--color-bg-primary)',
+                    minHeight: 48,
+                    justifyContent: open ? 'initial' : 'center',
+                    px: baseHorizontalPadding,
+                    ...(depth > 0 && open
+                      ? {
+                          pl: baseLeftPadding,
+                        }
+                      : {}),
+                    transition: theme.transitions.create(
+                      ['padding', 'background-color', 'color'],
+                      {
+                        duration: theme.transitions.duration.shorter,
+                        easing: theme.transitions.easing.easeInOut,
                       }
-                    : {}),
-                  '&.Mui-selected': {
-                    backgroundColor: 'var(--color-primary)',
-                    color: 'var(--color-card-bg)',
-                    '& .MuiListItemIcon-root': {
+                    ),
+                    '&.Mui-selected': {
+                      backgroundColor: 'var(--color-primary)',
                       color: 'var(--color-card-bg)',
+                      px: hoverHorizontalPadding,
+                      ...(depth > 0 && open
+                        ? {
+                            pl: hoverLeftPadding,
+                          }
+                        : {}),
+                      '& .MuiListItemIcon-root': {
+                        color: 'var(--color-card-bg)',
+                      },
                     },
-                  },
-                  '&.Mui-selected:hover': {
-                    backgroundColor: 'var(--color-primary)',
-                  },
-                  '&:hover': {
-                    backgroundColor: 'var(--color-primary)',
-                    color: 'var(--color-card-bg)',
-                    '& .MuiListItemIcon-root': {
+                    '&.Mui-selected:hover': {
+                      backgroundColor: 'var(--color-primary)',
+                      px: hoverHorizontalPadding,
+                      ...(depth > 0 && open
+                        ? {
+                            pl: hoverLeftPadding,
+                          }
+                        : {}),
+                    },
+                    '&:hover': {
+                      backgroundColor: 'var(--color-primary)',
                       color: 'var(--color-card-bg)',
+                      px: hoverHorizontalPadding,
+                      ...(depth > 0 && open
+                        ? {
+                            pl: hoverLeftPadding,
+                          }
+                        : {}),
+                      '& .MuiListItemIcon-root': {
+                        color: 'var(--color-card-bg)',
+                      },
                     },
-                  },
+                  };
                 }}
               >
                 <ListItemIcon
