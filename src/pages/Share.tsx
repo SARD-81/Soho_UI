@@ -393,7 +393,7 @@ const Share = () => {
         p: 3,
         fontFamily: 'var(--font-vazir)',
         backgroundColor: 'var(--color-background)',
-        minHeight: '100%',
+        // minHeight: '100%',
       }}
     >
       <Tabs

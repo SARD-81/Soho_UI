@@ -11,6 +11,7 @@ import { FiTrash2 } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { CreateWebUserPayload } from '../../@types/users';
 import DataTable from '../DataTable';
+import ConfirmDeleteWebUserModal from './ConfirmDeleteWebUserModal';
 import WebUserCreateModal from './WebUserCreateModal';
 import { useWebUsers } from '../../hooks/useWebUsers';
 import { useCreateWebUser } from '../../hooks/useCreateWebUser';
@@ -42,6 +43,10 @@ const UserSettingsTable = () => {
   const usersQuery = useWebUsers();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserSettingsTableRow | null>(
+    null
+  );
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const createUser = useCreateWebUser({
     onSuccess: (username) => {
@@ -58,8 +63,11 @@ const UserSettingsTable = () => {
   const deleteUser = useDeleteWebUser({
     onSuccess: (username) => {
       toast.success(`کاربر ${username} با موفقیت حذف شد.`);
+      setDeleteTarget(null);
+      setDeleteError(null);
     },
     onError: (message, username) => {
+      setDeleteError(message);
       toast.error(`حذف کاربر ${username} با خطا مواجه شد: ${message}`);
     },
   });
@@ -98,19 +106,31 @@ const UserSettingsTable = () => {
     [createUser]
   );
 
-  const handleDeleteUser = useCallback(
-    (row: UserSettingsTableRow) => {
-      const normalizedUsername = row.username.trim().toLowerCase();
+  const handleRequestDeleteUser = useCallback((row: UserSettingsTableRow) => {
+    const normalizedUsername = row.username.trim().toLowerCase();
 
-      if (normalizedUsername === ADMIN_USERNAME) {
-        toast.error('امکان حذف کاربر مدیر وجود ندارد.');
-        return;
-      }
+    if (normalizedUsername === ADMIN_USERNAME) {
+      toast.error('امکان حذف کاربر مدیر وجود ندارد.');
+      return;
+    }
 
-      deleteUser.mutate(row.username);
-    },
-    [deleteUser]
-  );
+    setDeleteError(null);
+    setDeleteTarget(row);
+  }, []);
+
+  const handleCloseDeleteModal = useCallback(() => {
+    setDeleteTarget(null);
+    setDeleteError(null);
+  }, []);
+
+  const handleConfirmDeleteUser = useCallback(() => {
+    if (!deleteTarget || deleteUser.isPending) {
+      return;
+    }
+
+    setDeleteError(null);
+    deleteUser.mutate(deleteTarget.username);
+  }, [deleteTarget, deleteUser]);
 
   const deletingUsername = deleteUser.isPending
     ? deleteUser.variables?.toLowerCase() ?? null
@@ -181,7 +201,7 @@ const UserSettingsTable = () => {
               <span>
                 <IconButton
                   size="small"
-                  onClick={() => handleDeleteUser(row)}
+                  onClick={() => handleRequestDeleteUser(row)}
                   disabled={isDisabled}
                   sx={{
                     color: 'var(--color-error)',
@@ -204,7 +224,7 @@ const UserSettingsTable = () => {
         },
       },
     ],
-    [deleteUser.isPending, deletingUsername, handleDeleteUser]
+    [deleteUser.isPending, deletingUsername, handleRequestDeleteUser]
   );
 
   return (
@@ -247,6 +267,15 @@ const UserSettingsTable = () => {
         isSubmitting={createUser.isPending}
         errorMessage={createError}
         existingUsernames={existingUsernames}
+      />
+
+      <ConfirmDeleteWebUserModal
+        open={Boolean(deleteTarget)}
+        username={deleteTarget?.username ?? null}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDeleteUser}
+        isDeleting={deleteUser.isPending}
+        errorMessage={deleteError}
       />
     </Box>
   );

@@ -162,48 +162,95 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                 to={item.path}
                 onClick={handleItemClick}
                 selected={isActive}
-                sx={{
+                sx={(theme) => ({
+                  position: 'relative',
+                  overflow: 'hidden',
                   color: 'var(--color-bg-primary)',
                   minHeight: 48,
                   justifyContent: open ? 'initial' : 'center',
                   px: 2.5,
+                  mx: 1,
+                  my: 0.25,
+                  transform: 'translateX(0)',
+                  borderRadius: 2,
+                  transition: theme.transitions.create(['color', 'transform'], {
+                    duration: theme.transitions.duration.shorter,
+                    easing: theme.transitions.easing.easeInOut,
+                  }),
                   ...(depth > 0 && open
                     ? {
                         pl: 2.5 + depth * 2,
                       }
                     : {}),
-                  '&.Mui-selected': {
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    inset: theme.spacing(0.5),
+                    borderRadius: 2,
                     backgroundColor: 'var(--color-primary)',
+                    transform: 'scaleX(0)',
+                    transformOrigin: 'left center',
+                    transition: theme.transitions.create(['transform', 'opacity'], {
+                      duration: theme.transitions.duration.standard,
+                      easing: theme.transitions.easing.easeInOut,
+                    }),
+                    opacity: 0,
+                    zIndex: -1,
+                  },
+                  '&:hover::before': {
+                    transform: 'scaleX(1)',
+                    opacity: 1,
+                  },
+                  '&.Mui-selected::before': {
+                    transform: 'scaleX(1)',
+                    opacity: 1,
+                  },
+                  '&:hover': {
+                    color: 'var(--color-card-bg)',
+                    transform: 'translateX(2px)',
+                    '& .MuiListItemIcon-root': {
+                      color: 'var(--color-card-bg)',
+                    },
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: 'transparent',
                     color: 'var(--color-card-bg)',
                     '& .MuiListItemIcon-root': {
                       color: 'var(--color-card-bg)',
                     },
                   },
                   '&.Mui-selected:hover': {
-                    backgroundColor: 'var(--color-primary)',
+                    backgroundColor: 'transparent',
+                    transform: 'translateX(2px)',
                   },
-                  '&:hover': {
-                    backgroundColor: 'var(--color-primary)',
-                    color: 'var(--color-card-bg)',
-                    '& .MuiListItemIcon-root': {
-                      color: 'var(--color-card-bg)',
-                    },
-                  },
-                }}
+                })}
               >
                 <ListItemIcon
-                  sx={{
+                  sx={(theme) => ({
                     minWidth: 0,
                     mr: open ? 2 : 'auto',
                     justifyContent: 'center',
                     color: 'var(--color-bg-primary)',
-                  }}
+                    transition: theme.transitions.create('color', {
+                      duration: theme.transitions.duration.shorter,
+                      easing: theme.transitions.easing.easeInOut,
+                    }),
+                    zIndex: 1,
+                  })}
                 >
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
                   primary={item.text}
-                  sx={{ opacity: open ? 1 : 0 }}
+                  sx={{
+                    opacity: open ? 1 : 0,
+                    zIndex: 1,
+                    transition: (theme) =>
+                      theme.transitions.create('opacity', {
+                        duration: theme.transitions.duration.shorter,
+                        easing: theme.transitions.easing.easeInOut,
+                      }),
+                  }}
                   primaryTypographyProps={{
                     sx: { fontFamily: 'var(--font-vazir)' },
                   }}
