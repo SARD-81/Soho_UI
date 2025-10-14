@@ -62,7 +62,7 @@ const Settings = () => {
         <NetworkSettingsTable />
       </TabPanel>
 
-      {/* <TabPanel value={SETTINGS_TABS.users} currentValue={activeTab}>
+      <TabPanel value={SETTINGS_TABS.users} currentValue={activeTab}>
         <Box
           sx={{
             display: 'flex',
@@ -78,7 +78,7 @@ const Settings = () => {
             تنظیمات کاربران به زودی در دسترس قرار می‌گیرد.
           </Typography>
         </Box>
-      </TabPanel> */}
+      </TabPanel>
     </Box>
   );
 };

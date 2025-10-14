@@ -1,26 +1,17 @@
-# Node.js dependencies
-node_modules/
-
-# Build output directories
-dist/
-dist-ssr/
-
-# Vite-specific cache
-vite/
-
-# Logs and temporary files
-*.log
-*.local
-temp/
-playground-temp/
-
-# IDE and editor settings
-vscode/
-idea/
-DS_Store
-
-# Environment files
-env.local
-env.*.local
-.gitignore
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+/node_modules/
+/.env
+/.env.local
+/.env.*.local
+/.next/
 /Draft/
+/dist/
+.gitignore
+
