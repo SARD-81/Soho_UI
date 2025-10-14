@@ -72,7 +72,7 @@ const PowerActionCountdownOverlay: React.FC<PowerActionCountdownOverlayProps> = 
           position: 'relative',
           width: { xs: 240, sm: 280 },
           height: { xs: 320, sm: 340 },
-          borderRadius: 6,
+          borderRadius: "5px",
           background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.92))',
           boxShadow: '0 35px 60px rgba(15, 23, 42, 0.65)',
           border: '1px solid rgba(148, 163, 184, 0.25)',
@@ -149,7 +149,7 @@ const PowerActionCountdownOverlay: React.FC<PowerActionCountdownOverlayProps> = 
               mt: 1,
               color: '#f8fafc',
               borderColor: 'rgba(148, 163, 184, 0.45)',
-              borderRadius: 999,
+              borderRadius: "5px",
               px: 4,
               py: 1,
               '&:hover': {
