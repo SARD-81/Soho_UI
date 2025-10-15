@@ -224,18 +224,46 @@ const MainLayout: React.FC = () => {
                 onClick={handleUserMenuOpen}
                 endIcon={<IoPersonCircleOutline size={24} />}
                 sx={{
-                  color: 'var(--color-bg-primary)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 1,
+                  gap: 1.25,
+                  px: 2.5,
+                  py: 1,
+                  borderRadius: '999px',
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04))',
+                  boxShadow: '0 12px 30px rgba(0, 0, 0, 0.18)',
+                  color: 'var(--color-bg-primary)',
                   fontFamily: 'var(--font-vazir)',
                   fontWeight: 500,
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                   '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 18px 36px rgba(0, 0, 0, 0.25)',
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08))',
                   },
                 }}
               >
-                خوش آمدید، {displayUsername}
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: { xs: '0.85rem', md: '0.95rem' },
+                    opacity: 0.9,
+                  }}
+                >
+                  خوش آمدید،
+                </Typography>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: 'var(--font-didot)',
+                    fontWeight: 700,
+                    fontSize: { xs: '0.95rem', md: '1.05rem' },
+                    color: 'var(--color-primary)',
+                    letterSpacing: '0.6px',
+                  }}
+                >
+                  {displayUsername}
+                </Typography>
               </Button>
             )}
             <Menu
