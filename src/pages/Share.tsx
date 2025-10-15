@@ -137,22 +137,15 @@ const Share = () => {
     );
   }, [shares]);
 
-  const handleToggleSelect = useCallback(
-    (share: SambaShareEntry, checked: boolean) => {
-      setSelectedShares((prev) => {
-        if (checked) {
-          if (prev.includes(share.name)) {
-            return prev;
-          }
-
-          return [...prev, share.name];
-        }
-
+  const handleToggleSelect = useCallback((share: SambaShareEntry) => {
+    setSelectedShares((prev) => {
+      if (prev.includes(share.name)) {
         return prev.filter((name) => name !== share.name);
-      });
-    },
-    []
-  );
+      }
+
+      return [...prev, share.name];
+    });
+  }, []);
 
   const handleRemoveSelected = useCallback((shareName: string) => {
     setSelectedShares((prev) => prev.filter((name) => name !== shareName));
@@ -332,17 +325,13 @@ const Share = () => {
   );
 
   const handleToggleSelectSambaUser = useCallback(
-    (user: { username: string }, checked: boolean) => {
+    (user: { username: string }) => {
       setSelectedSambaUsers((prev) => {
-        if (checked) {
-          if (prev.includes(user.username)) {
-            return prev;
-          }
-
-          return [...prev, user.username];
+        if (prev.includes(user.username)) {
+          return prev.filter((username) => username !== user.username);
         }
 
-        return prev.filter((username) => username !== user.username);
+        return [...prev, user.username];
       });
     },
     []

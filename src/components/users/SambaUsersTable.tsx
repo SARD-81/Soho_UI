@@ -1,4 +1,4 @@
-import { Box, Checkbox, IconButton, Tooltip, Typography } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { MdDeleteOutline, MdLockOpen, MdLockReset } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
@@ -10,7 +10,7 @@ interface SambaUsersTableProps {
   isLoading: boolean;
   error: Error | null;
   selectedUsers: string[];
-  onToggleSelect: (user: SambaUserTableItem, checked: boolean) => void;
+  onToggleSelect: (user: SambaUserTableItem) => void;
   onEnable: (user: SambaUserTableItem) => void;
   onEditPassword: (user: SambaUserTableItem) => void;
   onDelete: (user: SambaUserTableItem) => void;
@@ -42,24 +42,6 @@ const SambaUsersTable = ({
 }: SambaUsersTableProps) => {
   const columns = useMemo<DataTableColumn<SambaUserTableItem>[]>(() => {
     return [
-      {
-        id: 'select',
-        header: '',
-        align: 'center',
-        padding: 'checkbox',
-        width: 52,
-        headerSx: { width: 52 },
-        cellSx: { width: 52 },
-        getCellProps: () => ({ padding: 'checkbox' }),
-        renderCell: (user) => (
-          <Checkbox
-            checked={selectedUsers.includes(user.username)}
-            onChange={(event) => onToggleSelect(user, event.target.checked)}
-            color="primary"
-            inputProps={{ 'aria-label': `انتخاب ${user.username}` }}
-          />
-        ),
-      },
       {
         id: 'index',
         header: '#',
@@ -147,7 +129,10 @@ const SambaUsersTable = ({
                 <span>
                   <IconButton
                     size="small"
-                    onClick={() => onDelete(user)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(user);
+                    }}
                     disabled={isDeleting}
                     sx={{
                       color: 'var(--color-error)',
@@ -166,7 +151,10 @@ const SambaUsersTable = ({
                 <span>
                   <IconButton
                     size="small"
-                    onClick={() => onEnable(user)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onEnable(user);
+                    }}
                     disabled={isEnablePending}
                     sx={{
                       color: 'var(--color-success)',
@@ -185,7 +173,10 @@ const SambaUsersTable = ({
                 <span>
                   <IconButton
                     size="small"
-                    onClick={() => onEditPassword(user)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onEditPassword(user);
+                    }}
                     disabled={isPasswordPending}
                     sx={{
                       color: 'var(--color-primary)',
@@ -211,11 +202,9 @@ const SambaUsersTable = ({
       onEditPassword,
       onEnable,
       onDelete,
-      onToggleSelect,
       pendingEnableUsername,
       pendingDeleteUsername,
       pendingPasswordUsername,
-      selectedUsers,
     ]);
 
   return (
@@ -223,6 +212,8 @@ const SambaUsersTable = ({
       columns={columns}
       data={users}
       getRowId={(user) => user.id}
+      onRowClick={onToggleSelect}
+      isRowActive={(user) => selectedUsers.includes(user.username)}
       isLoading={isLoading}
       error={error}
       renderLoadingState={() => (

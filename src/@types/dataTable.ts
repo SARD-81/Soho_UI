@@ -24,6 +24,8 @@ export interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   data: T[];
   getRowId: (row: T, index: number) => string;
+  onRowClick?: (row: T, index: number) => void;
+  isRowActive?: (row: T, index: number) => boolean;
   isLoading?: boolean;
   error?: Error | null;
   renderLoadingState?: () => ReactNode;

@@ -27,7 +27,7 @@ interface PoolsTableProps {
   onDelete: (pool: ZpoolCapacityEntry) => void;
   isDeleteDisabled: boolean;
   selectedPools: string[];
-  onToggleSelect: (pool: ZpoolCapacityEntry, checked: boolean) => void;
+  onToggleSelect: (pool: ZpoolCapacityEntry) => void;
 }
 
 const numberValueSx = {
@@ -192,7 +192,10 @@ const PoolsTable = ({
               <IconButton
                 size="small"
                 color="error"
-                onClick={() => onDelete(pool)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete(pool);
+                }}
                 disabled={isDeleteDisabled}
               >
                 <MdDeleteOutline size={18} />
@@ -202,7 +205,7 @@ const PoolsTable = ({
         ),
       },
     ],
-    [isDeleteDisabled, onDelete, onEdit, onToggleSelect, selectedPools]
+    [isDeleteDisabled, onDelete, onEdit]
   );
 
   return (
@@ -210,6 +213,8 @@ const PoolsTable = ({
       columns={columns}
       data={pools}
       getRowId={(pool) => pool.name}
+      onRowClick={onToggleSelect}
+      isRowActive={(pool) => selectedPools.includes(pool.name)}
       isLoading={isLoading}
       error={error}
       renderLoadingState={() => (

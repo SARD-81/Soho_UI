@@ -20,6 +20,7 @@ export const defaultHeadRowSx: SxProps<Theme> = {
 };
 
 export const defaultBodyRowSx: SxProps<Theme> = {
+  transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
   '&:last-of-type .MuiTableCell-root': {
     borderBottom: 'none',
   },

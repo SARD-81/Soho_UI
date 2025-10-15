@@ -141,27 +141,20 @@ const IntegratedStorage = () => {
     [poolDeletion]
   );
 
-  const handleToggleSelect = useCallback(
-    (pool: ZpoolCapacityEntry, checked: boolean) => {
-      setSelectedPools((prev) => {
-        if (checked) {
-          if (prev.includes(pool.name)) {
-            return prev;
-          }
-
-          if (prev.length >= 3) {
-            toast.error('امکان مقایسه بیش از سه فضای یکپارچه وجود ندارد.');
-            return prev;
-          }
-
-          return [...prev, pool.name];
-        }
-
+  const handleToggleSelect = useCallback((pool: ZpoolCapacityEntry) => {
+    setSelectedPools((prev) => {
+      if (prev.includes(pool.name)) {
         return prev.filter((poolName) => poolName !== pool.name);
-      });
-    },
-    []
-  );
+      }
+
+      if (prev.length >= 3) {
+        toast.error('امکان مقایسه بیش از سه فضای یکپارچه وجود ندارد.');
+        return prev;
+      }
+
+      return [...prev, pool.name];
+    });
+  }, []);
 
   return (
     <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>

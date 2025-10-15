@@ -1,11 +1,4 @@
-import {
-  Box,
-  Checkbox,
-  CircularProgress,
-  IconButton,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
@@ -17,7 +10,7 @@ interface SharesTableProps {
   isLoading: boolean;
   error: Error | null;
   selectedShares: string[];
-  onToggleSelect: (share: SambaShareEntry, checked: boolean) => void;
+  onToggleSelect: (share: SambaShareEntry) => void;
   onDelete: (share: SambaShareEntry) => void;
   pendingShareName: string | null;
   isDeleting: boolean;
@@ -55,24 +48,6 @@ const SharesTable = ({
     };
 
     return [
-      {
-        id: 'select',
-        header: '',
-        align: 'center',
-        padding: 'checkbox',
-        width: 52,
-        headerSx: { width: 52 },
-        cellSx: { width: 52 },
-        getCellProps: () => ({ padding: 'checkbox' }),
-        renderCell: (share) => (
-          <Checkbox
-            checked={selectedShares.includes(share.name)}
-            onChange={(event) => onToggleSelect(share, event.target.checked)}
-            color="primary"
-            inputProps={{ 'aria-label': `انتخاب ${share.name}` }}
-          />
-        ),
-      },
       {
         id: 'index',
         header: '#',
@@ -134,7 +109,10 @@ const SharesTable = ({
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={() => onDelete(share)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDelete(share);
+                  }}
                   disabled={isShareDeleting}
                 >
                   <MdDeleteOutline size={18} />
@@ -145,13 +123,15 @@ const SharesTable = ({
         },
       },
     ];
-  }, [isDeleting, onDelete, onToggleSelect, pendingShareName, selectedShares]);
+  }, [isDeleting, onDelete, pendingShareName]);
 
   return (
     <DataTable<SambaShareEntry>
       columns={columns}
       data={shares}
       getRowId={(share) => share.name}
+      onRowClick={onToggleSelect}
+      isRowActive={(share) => selectedShares.includes(share.name)}
       isLoading={isLoading}
       error={error}
       renderLoadingState={() => (
