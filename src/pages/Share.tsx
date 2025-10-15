@@ -22,6 +22,7 @@ import { useCreateOsUser } from '../hooks/useCreateOsUser';
 import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
 import { useCreateShare } from '../hooks/useCreateShare';
 import { useDeleteShare } from '../hooks/useDeleteShare';
+import { useDeleteSambaUser } from '../hooks/useDeleteSambaUser';
 import { useEnableSambaUser } from '../hooks/useEnableSambaUser';
 import { useSambaShares } from '../hooks/useSambaShares';
 import { useSambaUsers } from '../hooks/useSambaUsers';
@@ -56,6 +57,9 @@ const Share = () => {
     string | null
   >(null);
   const [pendingPasswordUsername, setPendingPasswordUsername] = useState<
+    string | null
+  >(null);
+  const [pendingDeleteUsername, setPendingDeleteUsername] = useState<
     string | null
   >(null);
 
@@ -222,23 +226,39 @@ const Share = () => {
 
   const enableSambaUser = useEnableSambaUser({
     onSuccess: (username) => {
-      toast.success(`کاربر ${username} فعال شد.`);
+      toast.success(`کاربر اشتراک فایل ${username} فعال شد.`);
     },
     onError: (message) => {
-      toast.error(`فعال‌سازی کاربر با خطا مواجه شد: ${message}`);
+      toast.error(`فعال‌سازی کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const deleteSambaUser = useDeleteSambaUser({
+    onSuccess: (username) => {
+      toast.success(`کاربر اشتراک فایل ${username} با موفقیت حذف شد.`);
+    },
+    onError: (message, error, username) => {
+      if (error.response?.status === 400 && error.response.data?.code === 'samba_error') {
+        toast.error(
+          `کاربر اشتراک فایل ${username} در اشتراک‌های فعال استفاده شده است. لطفاً ابتدا اشتراک‌های مرتبط را حذف کنید.`
+        );
+        return;
+      }
+
+      toast.error(`حذف کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
     },
   });
 
   const updateSambaPassword = useUpdateSambaUserPassword({
     onSuccess: (username) => {
-      toast.success(`گذرواژه کاربر ${username} بروزرسانی شد.`);
+      toast.success(`گذرواژه کاربر اشتراک فایل ${username} بروزرسانی شد.`);
       setIsPasswordModalOpen(false);
       setPasswordModalUsername(null);
       setPasswordModalError(null);
     },
     onError: (message) => {
       setPasswordModalError(message);
-      toast.error(`تغییر گذرواژه با خطا مواجه شد: ${message}`);
+      toast.error(`تغییر گذرواژه کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
     },
   });
 
@@ -367,6 +387,18 @@ const Share = () => {
       });
     },
     [updateSambaPassword]
+  );
+
+  const handleDeleteSambaUser = useCallback(
+    (user: { username: string }) => {
+      setPendingDeleteUsername(user.username);
+      deleteSambaUser.mutate(user.username, {
+        onSettled: () => {
+          setPendingDeleteUsername(null);
+        },
+      });
+    },
+    [deleteSambaUser]
   );
 
   useEffect(() => {
@@ -526,10 +558,13 @@ const Share = () => {
             onToggleSelect={handleToggleSelectSambaUser}
             onEnable={handleEnableSambaUser}
             onEditPassword={handleOpenPasswordModal}
+            onDelete={handleDeleteSambaUser}
             pendingEnableUsername={pendingEnableUsername}
             isEnabling={enableSambaUser.isPending}
             pendingPasswordUsername={pendingPasswordUsername}
             isUpdatingPassword={updateSambaPassword.isPending}
+            pendingDeleteUsername={pendingDeleteUsername}
+            isDeleting={deleteSambaUser.isPending}
           />
 
           <SelectedSambaUsersDetailsPanel

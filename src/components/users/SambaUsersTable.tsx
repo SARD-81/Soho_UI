@@ -13,10 +13,13 @@ interface SambaUsersTableProps {
   onToggleSelect: (user: SambaUserTableItem, checked: boolean) => void;
   onEnable: (user: SambaUserTableItem) => void;
   onEditPassword: (user: SambaUserTableItem) => void;
+  onDelete: (user: SambaUserTableItem) => void;
   pendingEnableUsername: string | null;
   isEnabling: boolean;
   pendingPasswordUsername: string | null;
   isUpdatingPassword: boolean;
+  pendingDeleteUsername: string | null;
+  isDeleting: boolean;
 }
 
 const valueOrDash = (value?: string) => (value && value.trim() ? value : '-');
@@ -29,10 +32,13 @@ const SambaUsersTable = ({
   onToggleSelect,
   onEnable,
   onEditPassword,
+  onDelete,
   pendingEnableUsername,
   isEnabling,
   pendingPasswordUsername,
   isUpdatingPassword,
+  pendingDeleteUsername,
+  isDeleting,
 }: SambaUsersTableProps) => {
   const columns = useMemo<DataTableColumn<SambaUserTableItem>[]>(() => {
     return [
@@ -132,6 +138,8 @@ const SambaUsersTable = ({
             isEnabling && pendingEnableUsername === user.username;
           const isPasswordPending =
             isUpdatingPassword && pendingPasswordUsername === user.username;
+          const isDeletePending =
+            isDeleting && pendingDeleteUsername === user.username;
 
           return (
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
@@ -139,12 +147,13 @@ const SambaUsersTable = ({
                 <span>
                   <IconButton
                     size="small"
-                    disabled
+                    onClick={() => onDelete(user)}
+                    disabled={isDeleting}
                     sx={{
                       color: 'var(--color-error)',
                       '&.Mui-disabled': {
                         color: 'var(--color-secondary)',
-                        opacity: 0.6,
+                        opacity: isDeletePending ? 0.6 : 0.4,
                       },
                     }}
                   >
@@ -195,16 +204,19 @@ const SambaUsersTable = ({
         },
       },
     ];
-  }, [
-    isEnabling,
-    isUpdatingPassword,
-    onEditPassword,
-    onEnable,
-    onToggleSelect,
-    pendingEnableUsername,
-    pendingPasswordUsername,
-    selectedUsers,
-  ]);
+    }, [
+      isDeleting,
+      isEnabling,
+      isUpdatingPassword,
+      onEditPassword,
+      onEnable,
+      onDelete,
+      onToggleSelect,
+      pendingEnableUsername,
+      pendingDeleteUsername,
+      pendingPasswordUsername,
+      selectedUsers,
+    ]);
 
   return (
     <DataTable<SambaUserTableItem>
@@ -215,12 +227,12 @@ const SambaUsersTable = ({
       error={error}
       renderLoadingState={() => (
         <Typography sx={{ color: 'var(--color-secondary)', py: 3 }}>
-          در حال دریافت اطلاعات کاربران Samba...
+          در حال دریافت اطلاعات کاربران اشتراک فایل...
         </Typography>
       )}
       renderErrorState={(tableError) => (
         <Typography sx={{ color: 'var(--color-error)', py: 3 }}>
-          خطا در دریافت کاربران Samba: {tableError.message}
+          خطا در دریافت کاربران اشتراک فایل: {tableError.message}
         </Typography>
       )}
       renderEmptyState={() => (

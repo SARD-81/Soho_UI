@@ -48,7 +48,7 @@ const SelectedSambaUsersDetailsPanel = ({
           gap: 1,
         }}
       >
-        مقایسه جزئیات کاربران Samba
+        مقایسه جزئیات کاربران اشتراک فایل
       </Typography>
 
       <Box
