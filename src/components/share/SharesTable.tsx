@@ -1,12 +1,6 @@
-import {
-  Box,
-  Checkbox,
-  CircularProgress,
-  IconButton,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { useMemo } from 'react';
+import { Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import { useCallback, useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { SambaShareEntry } from '../../@types/samba';
@@ -33,6 +27,8 @@ const SharesTable = ({
   pendingShareName,
   isDeleting,
 }: SharesTableProps) => {
+  const theme = useTheme();
+
   const columns = useMemo<DataTableColumn<SambaShareEntry>[]>(() => {
     // const resolvePath = (share: SambaShareEntry) => {
     //   const { details } = share;
@@ -55,24 +51,6 @@ const SharesTable = ({
     };
 
     return [
-      {
-        id: 'select',
-        header: '',
-        align: 'center',
-        padding: 'checkbox',
-        width: 52,
-        headerSx: { width: 52 },
-        cellSx: { width: 52 },
-        getCellProps: () => ({ padding: 'checkbox' }),
-        renderCell: (share) => (
-          <Checkbox
-            checked={selectedShares.includes(share.name)}
-            onChange={(event) => onToggleSelect(share, event.target.checked)}
-            color="primary"
-            inputProps={{ 'aria-label': `انتخاب ${share.name}` }}
-          />
-        ),
-      },
       {
         id: 'index',
         header: '#',
@@ -134,7 +112,10 @@ const SharesTable = ({
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={() => onDelete(share)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDelete(share);
+                  }}
                   disabled={isShareDeleting}
                 >
                   <MdDeleteOutline size={18} />
@@ -145,7 +126,33 @@ const SharesTable = ({
         },
       },
     ];
-  }, [isDeleting, onDelete, onToggleSelect, pendingShareName, selectedShares]);
+  }, [isDeleting, onDelete, pendingShareName]);
+
+  const handleRowClick = useCallback(
+    (share: SambaShareEntry) => {
+      const isSelected = selectedShares.includes(share.name);
+      onToggleSelect(share, !isSelected);
+    },
+    [onToggleSelect, selectedShares]
+  );
+
+  const resolveRowSx = useCallback(
+    (share: SambaShareEntry) => {
+      const isSelected = selectedShares.includes(share.name);
+
+      if (!isSelected) {
+        return {};
+      }
+
+      return {
+        backgroundColor: alpha(theme.palette.primary.main, 0.12),
+        '&:hover': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.18),
+        },
+      };
+    },
+    [selectedShares, theme]
+  );
 
   return (
     <DataTable<SambaShareEntry>
@@ -154,6 +161,11 @@ const SharesTable = ({
       getRowId={(share) => share.name}
       isLoading={isLoading}
       error={error}
+      onRowClick={handleRowClick}
+      bodyRowSx={(share) => ({
+        ...resolveRowSx(share),
+        transition: 'background-color 0.2s ease',
+      })}
       renderLoadingState={() => (
         <Box
           sx={{

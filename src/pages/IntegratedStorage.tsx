@@ -149,8 +149,8 @@ const IntegratedStorage = () => {
             return prev;
           }
 
-          if (prev.length >= 3) {
-            toast.error('امکان مقایسه بیش از سه فضای یکپارچه وجود ندارد.');
+          if (prev.length >= 4) {
+            toast.error('امکان مقایسه بیش از چهار فضای یکپارچه وجود ندارد.');
             return prev;
           }
 

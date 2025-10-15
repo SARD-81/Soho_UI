@@ -33,6 +33,7 @@ export interface DataTableProps<T> {
   tableSx?: SxProps<Theme>;
   headRowSx?: SxProps<Theme>;
   bodyRowSx?: SxProps<Theme> | ((row: T, index: number) => SxProps<Theme>);
+  onRowClick?: (row: T, index: number) => void;
   containerProps?: TableContainerProps;
   tableProps?: TableProps;
   pagination?: {
