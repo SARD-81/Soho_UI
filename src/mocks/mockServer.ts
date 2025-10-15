@@ -6,7 +6,12 @@ import {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import type { RawSambaUserDetails } from '../@types/samba';
-import type { DirPermissionsEntry, MockOsUser, MockState } from './mockState';
+import type {
+  DirPermissionsEntry,
+  MockOsUser,
+  MockState,
+  MockWebUser,
+} from './mockState';
 import { mockState } from './mockState';
 
 interface MockRouteContext {
@@ -158,6 +163,13 @@ const upsertOsUser = (state: MockState, payload: MockOsUser) => {
 
   state.osUsers.push(payload);
 };
+
+const normalizeWebUsername = (value: string) => value.trim().toLowerCase();
+
+const getNextWebUserId = (state: MockState) =>
+  state.webUsers.reduce((max, user) => Math.max(max, user.id), 0) + 1;
+
+const ADMIN_WEB_USERNAME = 'admin';
 
 const mockRoutes: MockRoute[] = [
   {
@@ -398,6 +410,116 @@ const mockRoutes: MockRoute[] = [
       status: 200,
       data: state.network,
     }),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/web\/users\/?$/,
+    handler: ({ state }) => ({
+      status: 200,
+      data: state.webUsers,
+    }),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/web\/user\/create\/?$/,
+    handler: ({ config, state }) => {
+      const body = parseRequestBody(config) ?? {};
+      const username = String(body.username ?? '').trim();
+      const email = String(body.email ?? '').trim();
+      const password = String(body.password ?? '');
+      const isSuperuser = toBoolean(body.is_superuser);
+      const firstName = String(body.first_name ?? '').trim();
+      const lastName = String(body.last_name ?? '').trim();
+
+      if (!username) {
+        throw createAxiosError('نام کاربری ارسال نشده است.', config, 400, {
+          detail: 'نام کاربری الزامی است.',
+        });
+      }
+
+      if (!password) {
+        throw createAxiosError('گذرواژه ارسال نشده است.', config, 400, {
+          detail: 'گذرواژه الزامی است.',
+        });
+      }
+
+      const normalizedUsername = normalizeWebUsername(username);
+
+      if (normalizedUsername === ADMIN_WEB_USERNAME) {
+        throw createAxiosError('امکان ایجاد کاربر مدیر وجود ندارد.', config, 400, {
+          detail: 'کاربر مدیر قابل ایجاد نیست.',
+        });
+      }
+
+      if (
+        state.webUsers.some(
+          (user) => normalizeWebUsername(user.username) === normalizedUsername
+        )
+      ) {
+        throw createAxiosError('نام کاربری تکراری است.', config, 409, {
+          detail: 'کاربری با این نام از قبل وجود دارد.',
+        });
+      }
+
+      const newUser: MockWebUser = {
+        id: getNextWebUserId(state),
+        username,
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        is_active: true,
+        is_staff: isSuperuser,
+        is_superuser: isSuperuser,
+        last_login: null,
+        date_joined: new Date().toISOString(),
+      };
+
+      state.webUsers.push(newUser);
+
+      return {
+        status: 201,
+        data: newUser,
+      };
+    },
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/web\/user\/delete\/([^/]+)\/?$/,
+    handler: ({ config, state, match }) => {
+      const rawUsername = decodeURIComponent(match[1] ?? '');
+      const username = rawUsername.trim();
+
+      if (!username) {
+        throw createAxiosError('نام کاربر مشخص نشده است.', config, 400, {
+          detail: 'نام کاربری الزامی است.',
+        });
+      }
+
+      const normalizedUsername = normalizeWebUsername(username);
+
+      if (normalizedUsername === ADMIN_WEB_USERNAME) {
+        throw createAxiosError('امکان حذف کاربر مدیر وجود ندارد.', config, 400, {
+          detail: 'کاربر مدیر حذف نمی‌شود.',
+        });
+      }
+
+      const targetIndex = state.webUsers.findIndex(
+        (user) => normalizeWebUsername(user.username) === normalizedUsername
+      );
+
+      if (targetIndex < 0) {
+        throw createAxiosError('کاربر یافت نشد.', config, 404, {
+          detail: 'کاربر مورد نظر یافت نشد.',
+        });
+      }
+
+      state.webUsers.splice(targetIndex, 1);
+
+      return {
+        status: 204,
+        data: null,
+      };
+    },
   },
   {
     method: 'POST',

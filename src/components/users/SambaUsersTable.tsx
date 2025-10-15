@@ -1,5 +1,6 @@
-import { Box, Checkbox, IconButton, Tooltip, Typography } from '@mui/material';
-import { useMemo } from 'react';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import { useCallback, useMemo } from 'react';
 import { MdDeleteOutline, MdLockOpen, MdLockReset } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { SambaUserTableItem } from '../../@types/samba';
@@ -13,13 +14,14 @@ interface SambaUsersTableProps {
   onToggleSelect: (user: SambaUserTableItem, checked: boolean) => void;
   onEnable: (user: SambaUserTableItem) => void;
   onEditPassword: (user: SambaUserTableItem) => void;
+  onDelete: (user: SambaUserTableItem) => void;
   pendingEnableUsername: string | null;
   isEnabling: boolean;
   pendingPasswordUsername: string | null;
   isUpdatingPassword: boolean;
+  pendingDeleteUsername: string | null;
+  isDeleting: boolean;
 }
-
-const valueOrDash = (value?: string) => (value && value.trim() ? value : '-');
 
 const SambaUsersTable = ({
   users,
@@ -29,31 +31,18 @@ const SambaUsersTable = ({
   onToggleSelect,
   onEnable,
   onEditPassword,
+  onDelete,
   pendingEnableUsername,
   isEnabling,
   pendingPasswordUsername,
   isUpdatingPassword,
+  pendingDeleteUsername,
+  isDeleting,
 }: SambaUsersTableProps) => {
+  const theme = useTheme();
+
   const columns = useMemo<DataTableColumn<SambaUserTableItem>[]>(() => {
     return [
-      {
-        id: 'select',
-        header: '',
-        align: 'center',
-        padding: 'checkbox',
-        width: 52,
-        headerSx: { width: 52 },
-        cellSx: { width: 52 },
-        getCellProps: () => ({ padding: 'checkbox' }),
-        renderCell: (user) => (
-          <Checkbox
-            checked={selectedUsers.includes(user.username)}
-            onChange={(event) => onToggleSelect(user, event.target.checked)}
-            color="primary"
-            inputProps={{ 'aria-label': `انتخاب ${user.username}` }}
-          />
-        ),
-      },
       {
         id: 'index',
         header: '#',
@@ -75,53 +64,6 @@ const SambaUsersTable = ({
           </Typography>
         ),
       },
-      // {
-      //   id: 'domain',
-      //   header: 'دامنه',
-      //   align: 'left',
-      //   renderCell: (user) => (
-      //     <Typography sx={{ color: 'var(--color-text)' }}>
-      //       {valueOrDash(user.domain)}
-      //     </Typography>
-      //   ),
-      // },
-      // {
-      //   id: 'profile-path',
-      //   header: 'مسیر پروفایل',
-      //   align: 'left',
-      //   renderCell: (user) => (
-      //     <Typography
-      //       sx={{
-      //         color: 'var(--color-text)',
-      //         direction: 'ltr',
-      //         wordBreak: 'break-all',
-      //         fontFamily: 'var(--font-vazir)',
-      //       }}
-      //     >
-      //       {valueOrDash(user.profilePath)}
-      //     </Typography>
-      //   ),
-      // },
-      {
-        id: 'password-must-change',
-        header: 'تغییر اجباری گذرواژه',
-        align: 'left',
-        renderCell: (user) => (
-          <Typography sx={{ color: 'var(--color-text)' }}>
-            {valueOrDash(user.passwordMustChange)}
-          </Typography>
-        ),
-      },
-      {
-        id: 'logon-time',
-        header: 'Logon time',
-        align: 'left',
-        renderCell: (user) => (
-          <Typography sx={{ color: 'var(--color-text)' }}>
-            {valueOrDash(user.logonTime)}
-          </Typography>
-        ),
-      },
       {
         id: 'actions',
         header: 'عملیات',
@@ -132,6 +74,8 @@ const SambaUsersTable = ({
             isEnabling && pendingEnableUsername === user.username;
           const isPasswordPending =
             isUpdatingPassword && pendingPasswordUsername === user.username;
+          const isDeletePending =
+            isDeleting && pendingDeleteUsername === user.username;
 
           return (
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
@@ -139,12 +83,16 @@ const SambaUsersTable = ({
                 <span>
                   <IconButton
                     size="small"
-                    disabled
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(user);
+                    }}
+                    disabled={isDeleting}
                     sx={{
                       color: 'var(--color-error)',
                       '&.Mui-disabled': {
                         color: 'var(--color-secondary)',
-                        opacity: 0.6,
+                        opacity: isDeletePending ? 0.6 : 0.4,
                       },
                     }}
                   >
@@ -157,7 +105,10 @@ const SambaUsersTable = ({
                 <span>
                   <IconButton
                     size="small"
-                    onClick={() => onEnable(user)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onEnable(user);
+                    }}
                     disabled={isEnablePending}
                     sx={{
                       color: 'var(--color-success)',
@@ -176,7 +127,10 @@ const SambaUsersTable = ({
                 <span>
                   <IconButton
                     size="small"
-                    onClick={() => onEditPassword(user)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onEditPassword(user);
+                    }}
                     disabled={isPasswordPending}
                     sx={{
                       color: 'var(--color-primary)',
@@ -196,38 +150,55 @@ const SambaUsersTable = ({
       },
     ];
   }, [
+    isDeleting,
     isEnabling,
     isUpdatingPassword,
+    onDelete,
     onEditPassword,
     onEnable,
-    onToggleSelect,
+    pendingDeleteUsername,
     pendingEnableUsername,
     pendingPasswordUsername,
-    selectedUsers,
   ]);
+
+  const handleRowClick = useCallback(
+    (user: SambaUserTableItem) => {
+      const isSelected = selectedUsers.includes(user.username);
+      onToggleSelect(user, !isSelected);
+    },
+    [onToggleSelect, selectedUsers]
+  );
+
+  const resolveRowSx = useCallback(
+    (user: SambaUserTableItem) => {
+      const isSelected = selectedUsers.includes(user.username);
+
+      if (!isSelected) {
+        return {};
+      }
+
+      return {
+        backgroundColor: alpha(theme.palette.primary.main, 0.12),
+        '&:hover': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.18),
+        },
+      };
+    },
+    [selectedUsers, theme]
+  );
 
   return (
     <DataTable<SambaUserTableItem>
       columns={columns}
       data={users}
-      getRowId={(user) => user.id}
+      getRowId={(user) => user.username}
       isLoading={isLoading}
       error={error}
-      renderLoadingState={() => (
-        <Typography sx={{ color: 'var(--color-secondary)', py: 3 }}>
-          در حال دریافت اطلاعات کاربران Samba...
-        </Typography>
-      )}
-      renderErrorState={(tableError) => (
-        <Typography sx={{ color: 'var(--color-error)', py: 3 }}>
-          خطا در دریافت کاربران Samba: {tableError.message}
-        </Typography>
-      )}
-      renderEmptyState={() => (
-        <Typography sx={{ color: 'var(--color-secondary)', py: 3 }}>
-          کاربری برای نمایش وجود ندارد.
-        </Typography>
-      )}
+      onRowClick={handleRowClick}
+      bodyRowSx={(user) => ({
+        ...resolveRowSx(user),
+        transition: 'background-color 0.2s ease',
+      })}
     />
   );
 };

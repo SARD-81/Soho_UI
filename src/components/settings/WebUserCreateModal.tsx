@@ -1,0 +1,452 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Alert,
+  Box,
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FiCheckCircle } from 'react-icons/fi';
+import type { CreateWebUserPayload } from '../../@types/users';
+import {
+  createWebUserSchema,
+  type CreateWebUserFormValues,
+} from '../../schemas/webUserSchema';
+import {
+  containsPersianCharacters,
+  removePersianCharacters,
+} from '../../utils/text';
+import BlurModal from '../BlurModal';
+import ModalActionButtons from '../common/ModalActionButtons';
+
+interface WebUserCreateModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (payload: CreateWebUserPayload) => void;
+  isSubmitting: boolean;
+  errorMessage: string | null;
+  existingUsernames: string[];
+}
+
+type PersianWarningField = 'username' | 'email' | 'password';
+
+const defaultValues: CreateWebUserFormValues = {
+  username: '',
+  email: '',
+  password: '',
+  is_superuser: false,
+  first_name: '',
+  last_name: '',
+};
+
+const inputBaseSx = {
+  backgroundColor: 'var(--color-input-bg)',
+  borderRadius: '5px',
+  '& .MuiInputBase-input': {
+    color: 'var(--color-text)',
+  },
+};
+
+const labelSx = { color: 'var(--color-secondary)' };
+
+const persianWarningMessage = 'استفاده از حروف فارسی در این فیلد مجاز نیست.';
+
+const WebUserCreateModal = ({
+  open,
+  onClose,
+  onSubmit,
+  isSubmitting,
+  errorMessage,
+  existingUsernames,
+}: WebUserCreateModalProps) => {
+  const [persianWarnings, setPersianWarnings] = useState<
+    Record<PersianWarningField, boolean>
+  >({
+    username: false,
+    email: false,
+    password: false,
+  });
+  const [showPassword, setShowPassword] = useState(false);
+
+  const validationSchema = useMemo(
+    () => createWebUserSchema({ existingUsernames }),
+    [existingUsernames]
+  );
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors},
+    reset,
+    watch,
+  } = useForm<CreateWebUserFormValues>({
+    resolver: zodResolver(validationSchema),
+    defaultValues,
+    mode: 'onChange',
+  });
+
+  const passwordValue = watch('password') ?? '';
+  const showPasswordValidation = passwordValue.length > 0;
+  const passwordValidationChecks = useMemo(
+    () => [
+      {
+        id: 'min-length',
+        label: 'حداقل ۸ کاراکتر',
+        isValid: passwordValue.length >= 8,
+      },
+      // {
+      //   id: 'max-length',
+      //   label: 'حداکثر ۱۲۸ کاراکتر',
+      //   isValid: passwordValue.length <= 128,
+      // },
+      {
+        id: 'special-character',
+        label: 'شامل حداقل یک کاراکتر خاص',
+        isValid: /[^A-Za-z0-9]/.test(passwordValue),
+      },
+      {
+        id: 'no-persian',
+        label: 'فاقد حروف فارسی',
+        isValid: !containsPersianCharacters(passwordValue),
+      },
+    ],
+    [passwordValue]
+  );
+
+  useEffect(() => {
+    if (open) {
+      reset(defaultValues);
+      setPersianWarnings({ username: false, email: false, password: false });
+    }
+  }, [open, reset]);
+
+  useEffect(() => {
+    if (!persianWarnings.username) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPersianWarnings((prev) => ({ ...prev, username: false }));
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [persianWarnings.username]);
+
+  useEffect(() => {
+    if (!persianWarnings.email) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPersianWarnings((prev) => ({ ...prev, email: false }));
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [persianWarnings.email]);
+
+  useEffect(() => {
+    if (!persianWarnings.password) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPersianWarnings((prev) => ({ ...prev, password: false }));
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [persianWarnings.password]);
+
+  const handleSanitizedChange =
+    (field: PersianWarningField, onChange: (value: string) => void) =>
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const rawValue = event.target.value;
+      const sanitizedValue = removePersianCharacters(rawValue);
+
+      if (sanitizedValue !== rawValue) {
+        setPersianWarnings((prev) => ({ ...prev, [field]: true }));
+      }
+
+      onChange(sanitizedValue);
+    };
+
+  const handleFormSubmit = handleSubmit((values) => {
+    const payload: CreateWebUserPayload = {
+      username: values.username.trim(),
+      email: values.email.trim(),
+      password: values.password,
+      is_superuser: values.is_superuser,
+      first_name: values.first_name?.trim() ?? '',
+      last_name: values.last_name?.trim() ?? '',
+    };
+
+    onSubmit(payload);
+  });
+
+  const usernameHelperText = persianWarnings.username
+    ? persianWarningMessage
+    : errors.username?.message;
+  const emailHelperText = persianWarnings.email
+    ? persianWarningMessage
+    : errors.email?.message;
+  const passwordHelperText = persianWarnings.password
+    ? persianWarningMessage
+    : errors.password?.message;
+
+  return (
+    <BlurModal
+      open={open}
+      onClose={onClose}
+      title="ایجاد کاربر جدید"
+      actions={
+        <ModalActionButtons
+          onCancel={onClose}
+          confirmLabel="ایجاد کاربر"
+          loadingLabel="در حال ایجاد..."
+          isLoading={isSubmitting}
+          disabled={isSubmitting}
+          confirmProps={{
+            type: 'submit',
+            form: 'web-user-create-form',
+            sx: { px: 3 },
+          }}
+          cancelProps={{
+            sx: { borderRadius: '3px', px: 3 },
+          }}
+        />
+      }
+    >
+      <Box
+        component="form"
+        id="web-user-create-form"
+        onSubmit={handleFormSubmit}
+        sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+      >
+        <Typography sx={{ color: 'var(--color-secondary)' }}>
+          برای ایجاد کاربر وب جدید، اطلاعات زیر را تکمیل کنید.
+        </Typography>
+
+        {errorMessage ? (
+          <Alert severity="error" sx={{ borderRadius: '4px' }}>
+            {errorMessage}
+          </Alert>
+        ) : null}
+
+        <Controller
+          name="username"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="نام کاربری"
+              autoFocus
+              fullWidth
+              error={Boolean(errors.username) || persianWarnings.username}
+              helperText={usernameHelperText}
+              onChange={handleSanitizedChange('username', field.onChange)}
+              InputLabelProps={{ sx: labelSx }}
+              InputProps={{ sx: inputBaseSx }}
+            />
+          )}
+        />
+
+        <Controller
+          name="email"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="ایمیل"
+              fullWidth
+              error={Boolean(errors.email) || persianWarnings.email}
+              helperText={emailHelperText}
+              onChange={handleSanitizedChange('email', field.onChange)}
+              InputLabelProps={{ sx: labelSx }}
+              InputProps={{ sx: inputBaseSx }}
+            />
+          )}
+        />
+
+        <Controller
+          name="password"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="گذرواژه"
+              type={showPassword ? 'text' : 'password'}
+              fullWidth
+              error={Boolean(errors.password) || persianWarnings.password}
+              helperText={passwordHelperText}
+              onChange={handleSanitizedChange('password', field.onChange)}
+              InputLabelProps={{ sx: labelSx }}
+              slotProps={{
+                input: {
+                  sx: inputBaseSx,
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={
+                          showPassword ? 'مخفی کردن رمز' : 'نمایش رمز'
+                        }
+                        onClick={() => setShowPassword((s) => !s)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? (
+                          <FaEyeSlash
+                            size={16}
+                            color="var(--color-secondary)"
+                          />
+                        ) : (
+                          <FaEye size={16} color="var(--color-secondary)" />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          )}
+        />
+
+        {showPasswordValidation ? (
+          <Box
+            sx={{
+              borderRadius: '5px',
+              border:
+                '1px solid color-mix(in srgb, var(--color-primary) 45%, transparent)',
+              backgroundColor:
+                'color-mix(in srgb, var(--color-primary-light) 12%, transparent)',
+              px: 2.5,
+              py: 2,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: "''",
+                position: 'absolute',
+                inset: 0,
+                borderRadius: 'inherit',
+                borderLeft: '4px solid var(--color-primary)',
+                pointerEvents: 'none',
+              },
+            }}
+          >
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                color: 'var(--color-primary)',
+                mb: 1.25,
+              }}
+            >
+              الزامات رمز عبور
+            </Typography>
+
+            <Stack spacing={1}>
+              {passwordValidationChecks.map(({ id, label, isValid }) => (
+                <Stack
+                  key={id}
+                  direction="row"
+                  spacing={1.5}
+                  alignItems="center"
+                >
+                  {isValid ? (
+                    <FiCheckCircle color="var(--color-success)" size={18} />
+                  ) : (
+                    <CircularProgress color="primary" size={18} />
+                  )}
+                  <Typography
+                    sx={{
+                      color: isValid
+                        ? 'var(--color-success)'
+                        : 'var(--color-secondary)',
+                      fontWeight: isValid ? 600 : 500,
+                    }}
+                  >
+                    {label}
+                  </Typography>
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+        ) : null}
+
+        <Controller
+          name="is_superuser"
+          control={control}
+          render={({ field }) => (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  {...field}
+                  checked={field.value}
+                  sx={{
+                    color: 'var(--color-secondary)',
+                    '&.Mui-checked': { color: 'var(--color-primary)' },
+                  }}
+                />
+              }
+              label={
+                <Typography
+                  sx={{ color: 'var(--color-secondary)', fontWeight: 500 }}
+                >
+                  دسترسی مدیر سیستم (Superuser)
+                </Typography>
+              }
+            />
+          )}
+        />
+
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <Controller
+            name="first_name"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="نام"
+                fullWidth
+                InputLabelProps={{ sx: labelSx }}
+                InputProps={{ sx: inputBaseSx }}
+                error={Boolean(errors.first_name)}
+                helperText={errors.first_name?.message}
+              />
+            )}
+          />
+
+          <Controller
+            name="last_name"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="نام خانوادگی"
+                fullWidth
+                InputLabelProps={{ sx: labelSx }}
+                InputProps={{ sx: inputBaseSx }}
+                error={Boolean(errors.last_name)}
+                helperText={errors.last_name?.message}
+              />
+            )}
+          />
+        </Stack>
+      </Box>
+    </BlurModal>
+  );
+};
+
+export default WebUserCreateModal;

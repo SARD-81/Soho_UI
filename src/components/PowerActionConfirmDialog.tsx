@@ -47,7 +47,7 @@ const PowerActionConfirmDialog: React.FC<PowerActionConfirmDialogProps> = ({
         sx: {
           background: 'linear-gradient(135deg, #1f2937, #111827)',
           color: '#f9fafb',
-          borderRadius: 3,
+          borderRadius: "5px",
           boxShadow: '0 20px 45px rgba(0, 0, 0, 0.45)',
           border: '1px solid rgba(248, 113, 113, 0.4)',
         },
@@ -73,7 +73,7 @@ const PowerActionConfirmDialog: React.FC<PowerActionConfirmDialogProps> = ({
           sx={{
             color: '#f3f4f6',
             borderColor: 'rgba(209, 213, 219, 0.4)',
-            borderRadius: 2,
+            borderRadius: "5px",
             px: 3,
             '&:hover': {
               borderColor: '#f97316',
@@ -87,7 +87,7 @@ const PowerActionConfirmDialog: React.FC<PowerActionConfirmDialogProps> = ({
           onClick={onConfirm}
           variant="contained"
           sx={{
-            borderRadius: 2,
+            borderRadius: "5px",
             px: 3,
             background: 'linear-gradient(135deg, #f97316, #ef4444)',
             boxShadow: '0 12px 25px rgba(249, 115, 22, 0.35)',

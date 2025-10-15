@@ -37,7 +37,7 @@ const paperStyles = {
   minWidth: 220,
   px: 1,
   py: 1,
-  borderRadius: '14px',
+  borderRadius: '5px',
   backgroundColor: 'var(--color-card-bg)',
   backdropFilter: 'blur(16px)',
   boxShadow: '0 18px 40px rgba(0, 0, 0, 0.18)',

@@ -19,6 +19,10 @@ const ConfirmDeletePoolModal = ({
     errorMessage,
   } = controller;
 
+  if (errorMessage) {
+    console.log(errorMessage);
+  }
+
   return (
     <BlurModal
       open={isOpen}
@@ -46,11 +50,11 @@ const ConfirmDeletePoolModal = ({
           مطمئن هستید؟ با انجام این عملیات تمام اطلاعات شما حذف خواهد شد.
         </Typography>
 
-        {errorMessage && (
+        {/* {errorMessage && (
           <Typography sx={{ color: 'var(--color-error)', fontWeight: 600 }}>
             {errorMessage}
           </Typography>
-        )}
+        )} */}
       </Box>
     </BlurModal>
   );

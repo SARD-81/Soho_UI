@@ -2,6 +2,7 @@ import { Box, Tab, Tabs, Typography } from '@mui/material';
 import { type SyntheticEvent, useCallback, useState } from 'react';
 import TabPanel from '../components/TabPanel';
 import NetworkSettingsTable from '../components/settings/NetworkSettingsTable';
+import UserSettingsTable from '../components/settings/UserSettingsTable';
 import {
   SETTINGS_TAB_ITEMS,
   SETTINGS_TABS,
@@ -26,7 +27,6 @@ const Settings = () => {
         p: 3,
         fontFamily: 'var(--font-vazir)',
         backgroundColor: 'var(--color-background)',
-        minHeight: '100%',
       }}
     >
       <Typography
@@ -62,23 +62,9 @@ const Settings = () => {
         <NetworkSettingsTable />
       </TabPanel>
 
-      {/* <TabPanel value={SETTINGS_TABS.users} currentValue={activeTab}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 160,
-            backgroundColor: 'var(--color-card-bg)',
-            borderRadius: '5px',
-            border: '1px dashed var(--color-secondary)',
-          }}
-        >
-          <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
-            تنظیمات کاربران به زودی در دسترس قرار می‌گیرد.
-          </Typography>
-        </Box>
-      </TabPanel> */}
+      <TabPanel value={SETTINGS_TABS.users} currentValue={activeTab}>
+        <UserSettingsTable />
+      </TabPanel>
     </Box>
   );
 };

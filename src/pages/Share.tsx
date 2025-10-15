@@ -13,6 +13,7 @@ import ConfirmDeleteShareModal from '../components/share/ConfirmDeleteShareModal
 import CreateShareModal from '../components/share/CreateShareModal';
 import SelectedSharesDetailsPanel from '../components/share/SelectedSharesDetailsPanel';
 import SharesTable from '../components/share/SharesTable';
+import ConfirmDeleteSambaUserModal from '../components/users/ConfirmDeleteSambaUserModal';
 import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
 import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
 import SambaUsersTable from '../components/users/SambaUsersTable';
@@ -22,6 +23,7 @@ import { useCreateOsUser } from '../hooks/useCreateOsUser';
 import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
 import { useCreateShare } from '../hooks/useCreateShare';
 import { useDeleteShare } from '../hooks/useDeleteShare';
+import { useDeleteSambaUser } from '../hooks/useDeleteSambaUser';
 import { useEnableSambaUser } from '../hooks/useEnableSambaUser';
 import { useSambaShares } from '../hooks/useSambaShares';
 import { useSambaUsers } from '../hooks/useSambaUsers';
@@ -35,6 +37,8 @@ const SHARE_TABS = {
 } as const;
 
 type ShareTabValue = (typeof SHARE_TABS)[keyof typeof SHARE_TABS];
+
+const MAX_COMPARISON_ITEMS = 4;
 
 const Share = () => {
   const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.shares);
@@ -58,6 +62,13 @@ const Share = () => {
   const [pendingPasswordUsername, setPendingPasswordUsername] = useState<
     string | null
   >(null);
+  const [pendingDeleteUsername, setPendingDeleteUsername] = useState<
+    string | null
+  >(null);
+  const [deleteModalUsername, setDeleteModalUsername] = useState<string | null>(
+    null
+  );
+  const [deleteSambaError, setDeleteSambaError] = useState<string | null>(null);
 
   const { data: shares = [], isLoading, error } = useSambaShares();
 
@@ -133,6 +144,11 @@ const Share = () => {
       setSelectedShares((prev) => {
         if (checked) {
           if (prev.includes(share.name)) {
+            return prev;
+          }
+
+          if (prev.length >= MAX_COMPARISON_ITEMS) {
+            toast.error('امکان مقایسه بیش از چهار اشتراک وجود ندارد.');
             return prev;
           }
 
@@ -222,23 +238,41 @@ const Share = () => {
 
   const enableSambaUser = useEnableSambaUser({
     onSuccess: (username) => {
-      toast.success(`کاربر ${username} فعال شد.`);
+      toast.success(`کاربر اشتراک فایل ${username} فعال شد.`);
     },
     onError: (message) => {
-      toast.error(`فعال‌سازی کاربر با خطا مواجه شد: ${message}`);
+      toast.error(`فعال‌سازی کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const deleteSambaUser = useDeleteSambaUser({
+    onSuccess: (username) => {
+      toast.success(`کاربر اشتراک فایل ${username} با موفقیت حذف شد.`);
+      setDeleteSambaError(null);
+    },
+    onError: (message, error, username) => {
+      setDeleteSambaError(message);
+      if (error.response?.status === 400 && error.response.data?.code === 'samba_error') {
+        toast.error(
+          `کاربر اشتراک فایل ${username} در اشتراک‌های فعال استفاده شده است. لطفاً ابتدا اشتراک‌های مرتبط را حذف کنید.`
+        );
+        return;
+      }
+
+      toast.error(`حذف کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
     },
   });
 
   const updateSambaPassword = useUpdateSambaUserPassword({
     onSuccess: (username) => {
-      toast.success(`گذرواژه کاربر ${username} بروزرسانی شد.`);
+      toast.success(`گذرواژه کاربر اشتراک فایل ${username} بروزرسانی شد.`);
       setIsPasswordModalOpen(false);
       setPasswordModalUsername(null);
       setPasswordModalError(null);
     },
     onError: (message) => {
       setPasswordModalError(message);
-      toast.error(`تغییر گذرواژه با خطا مواجه شد: ${message}`);
+      toast.error(`تغییر گذرواژه کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
     },
   });
 
@@ -312,6 +346,11 @@ const Share = () => {
             return prev;
           }
 
+          if (prev.length >= MAX_COMPARISON_ITEMS) {
+            toast.error('امکان مقایسه بیش از چهار کاربر وجود ندارد.');
+            return prev;
+          }
+
           return [...prev, user.username];
         }
 
@@ -369,6 +408,44 @@ const Share = () => {
     [updateSambaPassword]
   );
 
+  const isDeletingSambaUser = deleteSambaUser.isPending;
+
+  const handleDeleteSambaUser = useCallback(
+    (user: { username: string }) => {
+      setDeleteSambaError(null);
+      deleteSambaUser.reset();
+      setDeleteModalUsername(user.username);
+    },
+    [deleteSambaUser]
+  );
+
+  const handleCloseDeleteSambaUserModal = useCallback(() => {
+    if (isDeletingSambaUser) {
+      return;
+    }
+
+    setDeleteModalUsername(null);
+    setPendingDeleteUsername(null);
+    setDeleteSambaError(null);
+    deleteSambaUser.reset();
+  }, [deleteSambaUser, isDeletingSambaUser]);
+
+  const handleConfirmDeleteSambaUser = useCallback(() => {
+    if (!deleteModalUsername) {
+      return;
+    }
+
+    const targetUsername = deleteModalUsername;
+    setDeleteSambaError(null);
+    setPendingDeleteUsername(targetUsername);
+    deleteSambaUser.mutate(targetUsername, {
+      onSettled: () => {
+        setPendingDeleteUsername(null);
+        setDeleteModalUsername(null);
+      },
+    });
+  }, [deleteModalUsername, deleteSambaUser]);
+
   useEffect(() => {
     setSelectedSambaUsers((prev) =>
       prev.filter((username) =>
@@ -393,7 +470,7 @@ const Share = () => {
         p: 3,
         fontFamily: 'var(--font-vazir)',
         backgroundColor: 'var(--color-background)',
-        minHeight: '100%',
+        // minHeight: '100%',
       }}
     >
       <Tabs
@@ -526,10 +603,13 @@ const Share = () => {
             onToggleSelect={handleToggleSelectSambaUser}
             onEnable={handleEnableSambaUser}
             onEditPassword={handleOpenPasswordModal}
+            onDelete={handleDeleteSambaUser}
             pendingEnableUsername={pendingEnableUsername}
             isEnabling={enableSambaUser.isPending}
             pendingPasswordUsername={pendingPasswordUsername}
             isUpdatingPassword={updateSambaPassword.isPending}
+            pendingDeleteUsername={pendingDeleteUsername}
+            isDeleting={deleteSambaUser.isPending}
           />
 
           <SelectedSambaUsersDetailsPanel
@@ -542,6 +622,15 @@ const Share = () => {
       <CreateShareModal controller={createShare} />
 
       <ConfirmDeleteShareModal controller={shareDeletion} />
+
+      <ConfirmDeleteSambaUserModal
+        open={Boolean(deleteModalUsername)}
+        username={deleteModalUsername}
+        onClose={handleCloseDeleteSambaUserModal}
+        onConfirm={handleConfirmDeleteSambaUser}
+        isDeleting={isDeletingSambaUser}
+        errorMessage={deleteSambaError}
+      />
 
       <SambaUserCreateModal
         open={isSambaCreateModalOpen}

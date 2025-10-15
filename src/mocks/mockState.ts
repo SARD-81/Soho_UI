@@ -30,6 +30,19 @@ export interface MockSambaUserEntry {
   details: RawSambaUserDetails;
 }
 
+export interface MockWebUser {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_active: boolean;
+  is_staff: boolean;
+  is_superuser: boolean;
+  last_login: string | null;
+  date_joined: string;
+}
+
 export interface DirPermissionsEntry {
   ok: boolean;
   error?: { message?: string } | null;
@@ -48,6 +61,7 @@ export interface MockState {
   sambaShares: Record<string, SambaShareDetails>;
   sambaUsers: Record<string, MockSambaUserEntry>;
   osUsers: MockOsUser[];
+  webUsers: MockWebUser[];
   services: Record<string, ServiceDetails>;
   network: NetworkData;
   memory: MemoryResponse;
@@ -228,6 +242,44 @@ const baseState: MockState = {
       },
     },
   },
+  webUsers: [
+    {
+      id: 1,
+      username: 'admin',
+      email: 'admin@soho.local',
+      first_name: 'مدیر',
+      last_name: 'سیستم',
+      is_active: true,
+      is_staff: true,
+      is_superuser: true,
+      last_login: '2025-01-10T08:30:00Z',
+      date_joined: '2024-12-01T09:00:00Z',
+    },
+    {
+      id: 2,
+      username: 'operator',
+      email: 'operator@soho.local',
+      first_name: 'اپراتور',
+      last_name: 'سیستم',
+      is_active: true,
+      is_staff: true,
+      is_superuser: false,
+      last_login: '2025-01-18T07:45:00Z',
+      date_joined: '2025-01-02T11:20:00Z',
+    },
+    {
+      id: 3,
+      username: 'backup',
+      email: 'backup@soho.local',
+      first_name: 'پشتیبان',
+      last_name: 'شبکه',
+      is_active: true,
+      is_staff: false,
+      is_superuser: false,
+      last_login: null,
+      date_joined: '2025-01-15T14:05:00Z',
+    },
+  ],
   osUsers: [
     {
       username: 'admin',
