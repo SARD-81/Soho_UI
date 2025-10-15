@@ -32,7 +32,7 @@ const baseCreateWebUserSchema = z.object({
   password: z
     .string()
     .min(8, { message: 'رمز عبور باید حداقل ۸ کاراکتر باشد.' })
-    .max(128, { message: 'رمز عبور نمی‌تواند بیشتر از ۱۲۸ کاراکتر باشد.' })
+    // .max(128, { message: 'رمز عبور نمی‌تواند بیشتر از ۱۲۸ کاراکتر باشد.' })
     .refine((value) => !containsPersianCharacters(value), {
       message: 'استفاده از حروف فارسی در این فیلد مجاز نیست.',
     })
