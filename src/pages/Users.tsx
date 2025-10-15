@@ -100,13 +100,13 @@ const Users = () => {
 
   const createSambaUser = useCreateSambaUser({
     onSuccess: (username) => {
-      toast.success(`کاربر Samba ${username} با موفقیت ایجاد شد.`);
+      toast.success(`کاربر اشتراک فایل ${username} با موفقیت ایجاد شد.`);
       setIsSambaCreateModalOpen(false);
       setSambaCreateError(null);
     },
     onError: (message) => {
       setSambaCreateError(message);
-      toast.error(`ایجاد کاربر Samba با خطا مواجه شد: ${message}`);
+      toast.error(`ایجاد کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
     },
   });
 
@@ -193,7 +193,7 @@ const Users = () => {
       }
 
       if (normalizedSambaUsernames.has(normalizedUsername)) {
-        const message = 'کاربر Samba با این نام کاربری وجود دارد.';
+        const message = 'کاربر اشتراک فایل با این نام کاربری وجود دارد.';
         setSambaCreateError(message);
         toast.error(message);
         return;
