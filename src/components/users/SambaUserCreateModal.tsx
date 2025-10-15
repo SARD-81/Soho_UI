@@ -138,7 +138,7 @@ const SambaUserCreateModal = ({
     <BlurModal
       open={open}
       onClose={onClose}
-      title="ایجاد کاربر اشتراک فایل"
+      title="ایجاد کاربر "
       actions={
         <ModalActionButtons
           confirmLabel="ایجاد کاربر"

@@ -72,7 +72,7 @@ const SambaUserPasswordModal = ({
     <BlurModal
       open={open}
       onClose={onClose}
-      title="تغییر گذرواژه کاربر اشتراک فایل"
+      title="تغییر گذرواژه کاربر"
       actions={
         <ModalActionButtons
           confirmLabel="ثبت گذرواژه جدید"
@@ -111,8 +111,8 @@ const SambaUserPasswordModal = ({
         sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
       >
         <Typography sx={{ color: 'var(--color-secondary)' }}>
-          گذرواژه جدید برای کاربر اشتراک فایل انتخاب‌شده را وارد کنید. نام کاربری
-          قابل تغییر نیست.
+          گذرواژه جدید برای کاربر انتخاب‌شده را وارد کنید. نام کاربری قابل تغییر
+          نیست.
         </Typography>
 
         <TextField
