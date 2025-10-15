@@ -12,6 +12,7 @@ import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useFilesystemMountpoints } from '../../hooks/useFilesystemMountpoints';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
+import { useZpool } from '../../hooks/useZpool';
 import normalizeSambaUsers from '../../utils/sambaUsers';
 import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
@@ -128,6 +129,26 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     () => filesystemMountpointsQuery.data ?? [],
     [filesystemMountpointsQuery.data]
   );
+  const { data: zpoolData } = useZpool();
+  const normalizedPoolNames = useMemo(() => {
+    const pools = zpoolData?.pools ?? [];
+
+    return new Set(
+      pools
+        .map((pool) => pool.name?.trim())
+        .filter((name): name is string => Boolean(name && name.length > 0))
+        .map((name) => name.toLowerCase())
+    );
+  }, [zpoolData?.pools]);
+  const filteredMountpointOptions = useMemo(
+    () =>
+      mountpointOptions.filter((option) => {
+        const normalizedOption = option.trim().toLowerCase();
+
+        return !normalizedPoolNames.has(normalizedOption);
+      }),
+    [mountpointOptions, normalizedPoolNames]
+  );
 
   const hasPathError =
     Boolean(fullPathError) || pathValidationStatus === 'invalid' || hasPersianPathInput;
@@ -207,7 +228,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <Autocomplete
             // freeSolo
-            options={mountpointOptions}
+            options={filteredMountpointOptions}
             value={fullPath}
             onChange={(_event, newValue) => {
               const originalValue = newValue ?? '';
