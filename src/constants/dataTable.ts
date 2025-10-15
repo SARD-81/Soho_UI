@@ -27,10 +27,25 @@ export const defaultBodyRowSx: SxProps<Theme> = {
     borderBottom: '1px solid var(--color-input-border)',
     fontSize: '0.92rem',
   },
+  transition: 'background-color 0.2s ease, box-shadow 0.2s ease, outline 0.2s ease',
   '&:hover': {
     backgroundColor:
       'color-mix(in srgb, var(--color-primary) 12%, transparent)',
     transition: 'background-color 0.2s ease',
+  },
+  '&.Mui-selected': {
+    background:
+      'linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 14%, transparent) 0%, color-mix(in srgb, var(--color-primary) 28%, transparent) 100%)',
+    boxShadow:
+      'inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent)',
+  },
+  '&.Mui-selected:hover': {
+    background:
+      'linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 18%, transparent) 0%, color-mix(in srgb, var(--color-primary) 32%, transparent) 100%)',
+  },
+  '&:focus-visible': {
+    outline: '2px solid color-mix(in srgb, var(--color-primary) 40%, transparent)',
+    outlineOffset: -2,
   },
 };
 

@@ -192,7 +192,10 @@ const PoolsTable = ({
               <IconButton
                 size="small"
                 color="error"
-                onClick={() => onDelete(pool)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete(pool);
+                }}
                 disabled={isDeleteDisabled}
               >
                 <MdDeleteOutline size={18} />
@@ -202,7 +205,7 @@ const PoolsTable = ({
         ),
       },
     ],
-    [isDeleteDisabled, onDelete, onEdit, onToggleSelect, selectedPools]
+    [isDeleteDisabled, onDelete, onEdit]
   );
 
   return (
@@ -212,6 +215,11 @@ const PoolsTable = ({
       getRowId={(pool) => pool.name}
       isLoading={isLoading}
       error={error}
+      onRowClick={(pool) => {
+        const isSelected = selectedPools.includes(pool.name);
+        onToggleSelect(pool, !isSelected);
+      }}
+      isRowSelected={(pool) => selectedPools.includes(pool.name)}
       renderLoadingState={() => (
         <Box
           sx={{

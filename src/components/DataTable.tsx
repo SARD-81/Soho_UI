@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
-import type { ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import type { DataTableProps } from '../@types/dataTable.ts';
 import {
   baseTableSx,
@@ -84,6 +84,8 @@ const DataTable = <T,>({
   containerProps,
   tableProps,
   pagination,
+  onRowClick,
+  isRowSelected,
 }: DataTableProps<T>) => {
   const renderStateRow = (content: ReactNode) => (
     <TableRow>
@@ -175,11 +177,46 @@ const DataTable = <T,>({
                   )
                 : bodyRowSx;
             const rowId = getRowId(row, index);
+            const selected = isRowSelected?.(row, index) ?? false;
+            const interactiveRowSx = onRowClick
+              ? ({
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                } as SxProps<Theme>)
+              : undefined;
+
+            const handleRowKeyDown = onRowClick
+              ? (event: KeyboardEvent<HTMLTableRowElement>) => {
+                  if (event.defaultPrevented) {
+                    return;
+                  }
+
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onRowClick(row, index);
+                  }
+                }
+              : undefined;
 
             return (
               <TableRow
                 key={rowId}
-                sx={mergeSx(defaultBodyRowSx, resolvedRowSx)}
+                hover={Boolean(onRowClick)}
+                selected={selected}
+                tabIndex={onRowClick ? 0 : undefined}
+                onKeyDown={handleRowKeyDown}
+                onClick={
+                  onRowClick
+                    ? (event) => {
+                        if (event.defaultPrevented) {
+                          return;
+                        }
+
+                        onRowClick(row, index);
+                      }
+                    : undefined
+                }
+                sx={mergeSx(defaultBodyRowSx, resolvedRowSx, interactiveRowSx)}
               >
                 {columns.map((column) => {
                   const cellProps = column.getCellProps?.(row, index) ?? {};
