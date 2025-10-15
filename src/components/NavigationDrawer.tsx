@@ -9,6 +9,7 @@ import {
   ListItemText,
   Drawer as MuiDrawer,
   Toolbar,
+  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -172,7 +173,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                   mx: 1,
                   my: 0.25,
                   transform: 'translateX(0)',
-                  borderRadius: 2,
+                  borderRadius: 1.5,
                   transition: theme.transitions.create(['color', 'transform'], {
                     duration: theme.transitions.duration.shorter,
                     easing: theme.transitions.easing.easeInOut,
@@ -186,14 +187,17 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                     content: '""',
                     position: 'absolute',
                     inset: theme.spacing(0.5),
-                    borderRadius: 2,
+                    borderRadius: 1.5,
                     backgroundColor: 'var(--color-primary)',
                     transform: 'scaleX(0)',
                     transformOrigin: 'left center',
-                    transition: theme.transitions.create(['transform', 'opacity'], {
-                      duration: theme.transitions.duration.standard,
-                      easing: theme.transitions.easing.easeInOut,
-                    }),
+                    transition: theme.transitions.create(
+                      ['transform', 'opacity'],
+                      {
+                        duration: theme.transitions.duration.standard,
+                        easing: theme.transitions.easing.easeInOut,
+                      }
+                    ),
                     opacity: 0,
                     zIndex: -1,
                   },
@@ -338,6 +342,13 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         {/*)}*/}
       </Toolbar>
       {renderNavItems(navItems)}
+      <Typography
+        // variant="h6"
+        color="var(--color-secondary)"
+        sx={{ fontSize: 15, pb: 1, textAlign: 'center' , visibility : open ? 'visible' : 'hidden'}}
+      >
+        نسخه BETA
+      </Typography>
     </StyledDrawer>
   );
 };

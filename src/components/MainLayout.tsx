@@ -17,7 +17,7 @@ import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import { MdClose, MdLogout, MdMenu } from 'react-icons/md';
 import { LuMoon, LuSun } from 'react-icons/lu';
-import { Outlet } from 'react-router';
+import { Outlet, useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
@@ -29,6 +29,7 @@ import QuickActionsMenu from './QuickActionsMenu';
 
 
 const MainLayout: React.FC = () => {
+  const Navigate = useNavigate();
   const { logout, username } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [activePowerAction, setActivePowerAction] =
@@ -62,6 +63,7 @@ const MainLayout: React.FC = () => {
             ? 'سیستم در حال راه‌اندازی مجدد است.'
             : 'سیستم در حال خاموش شدن است.';
         toast.success(successMessage);
+        Navigate('/login');
       },
       onError: (message, action) => {
         const actionLabel =

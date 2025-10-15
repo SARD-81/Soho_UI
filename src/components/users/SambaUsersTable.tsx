@@ -22,7 +22,7 @@ interface SambaUsersTableProps {
   isDeleting: boolean;
 }
 
-const valueOrDash = (value?: string) => (value && value.trim() ? value : '-');
+// const valueOrDash = (value?: string) => (value && value.trim() ? value : '-');
 
 const SambaUsersTable = ({
   users,
@@ -108,26 +108,26 @@ const SambaUsersTable = ({
       //     </Typography>
       //   ),
       // },
-      {
-        id: 'password-must-change',
-        header: 'تغییر اجباری گذرواژه',
-        align: 'left',
-        renderCell: (user) => (
-          <Typography sx={{ color: 'var(--color-text)' }}>
-            {valueOrDash(user.passwordMustChange)}
-          </Typography>
-        ),
-      },
-      {
-        id: 'logon-time',
-        header: 'Logon time',
-        align: 'left',
-        renderCell: (user) => (
-          <Typography sx={{ color: 'var(--color-text)' }}>
-            {valueOrDash(user.logonTime)}
-          </Typography>
-        ),
-      },
+      // {
+      //   id: 'password-must-change',
+      //   header: 'تغییر اجباری گذرواژه',
+      //   align: 'left',
+      //   renderCell: (user) => (
+      //     <Typography sx={{ color: 'var(--color-text)' }}>
+      //       {valueOrDash(user.passwordMustChange)}
+      //     </Typography>
+      //   ),
+      // },
+      // {
+      //   id: 'logon-time',
+      //   header: 'Logon time',
+      //   align: 'left',
+      //   renderCell: (user) => (
+      //     <Typography sx={{ color: 'var(--color-text)' }}>
+      //       {valueOrDash(user.logonTime)}
+      //     </Typography>
+      //   ),
+      // },
       {
         id: 'actions',
         header: 'عملیات',
