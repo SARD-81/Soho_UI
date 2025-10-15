@@ -4,6 +4,8 @@ import { containsPersianCharacters } from '../utils/text';
 const USERNAME_PATTERN = /^[A-Za-z0-9._@+-]+$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const PASSWORD_SPECIAL_CHAR_PATTERN = /[^A-Za-z0-9]/;
+
 const baseCreateWebUserSchema = z.object({
   username: z
     .string()
@@ -30,9 +32,12 @@ const baseCreateWebUserSchema = z.object({
   password: z
     .string()
     .min(8, { message: 'رمز عبور باید حداقل ۸ کاراکتر باشد.' })
-    .max(128, { message: 'رمز عبور نمی‌تواند بیشتر از ۱۲۸ کاراکتر باشد.' })
+    // .max(128, { message: 'رمز عبور نمی‌تواند بیشتر از ۱۲۸ کاراکتر باشد.' })
     .refine((value) => !containsPersianCharacters(value), {
       message: 'استفاده از حروف فارسی در این فیلد مجاز نیست.',
+    })
+    .refine((value) => PASSWORD_SPECIAL_CHAR_PATTERN.test(value), {
+      message: 'رمز عبور باید حداقل شامل یک کاراکتر خاص باشد.',
     }),
   is_superuser: z.boolean(),
   first_name: z

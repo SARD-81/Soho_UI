@@ -27,7 +27,6 @@ const Settings = () => {
         p: 3,
         fontFamily: 'var(--font-vazir)',
         backgroundColor: 'var(--color-background)',
-        minHeight: '100%',
       }}
     >
       <Typography

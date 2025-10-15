@@ -12,12 +12,13 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import { MdClose, MdLogout, MdMenu } from 'react-icons/md';
 import { LuMoon, LuSun } from 'react-icons/lu';
-import { Outlet } from 'react-router';
+import { Outlet, useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
@@ -29,6 +30,7 @@ import QuickActionsMenu from './QuickActionsMenu';
 
 
 const MainLayout: React.FC = () => {
+  const Navigate = useNavigate();
   const { logout, username } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [activePowerAction, setActivePowerAction] =
@@ -62,6 +64,7 @@ const MainLayout: React.FC = () => {
             ? 'سیستم در حال راه‌اندازی مجدد است.'
             : 'سیستم در حال خاموش شدن است.';
         toast.success(successMessage);
+        Navigate('/login');
       },
       onError: (message, action) => {
         const actionLabel =
@@ -226,14 +229,45 @@ const MainLayout: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1,
+                  px: 1.5,
+                  py: 0.75,
+                  borderRadius: 2,
                   fontFamily: 'var(--font-vazir)',
                   fontWeight: 500,
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  transition: 'background-color 0.2s ease, border-color 0.2s ease',
                   '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
                   },
                 }}
               >
-                خوش آمدید، {displayUsername}
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: '0.9rem',
+                    fontWeight: 400,
+                    color: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.7)'
+                        : 'rgba(0, 0, 0, 0.7)',
+                  }}
+                >
+                  خوش آمدید،
+                </Typography>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: '1rem',
+                    fontFamily: 'var(--font-didot)',
+                    fontWeight: 600,
+                    letterSpacing: '0.03em',
+                    color: 'var(--color-primary-light)',
+                  }}
+                >
+                  {displayUsername}
+                </Typography>
               </Button>
             )}
             <Menu
@@ -242,11 +276,60 @@ const MainLayout: React.FC = () => {
               onClose={handleUserMenuClose}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{
+                elevation: 0,
+                sx: (theme) => ({
+                  mt: 1.5,
+                  minWidth: 220,
+                  px: 1,
+                  py: 1.5,
+                  borderRadius: 2,
+                  border: `1px solid ${
+                    theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : 'rgba(20, 20, 20, 0.08)'
+                  }`,
+                  backgroundColor:
+                    theme.palette.mode === 'dark'
+                      ? alpha('#121212', 0.92)
+                      : alpha('#ffffff', 0.95),
+                  backdropFilter: 'blur(12px)',
+                  boxShadow:
+                    '0px 12px 30px rgba(15, 23, 42, 0.18), 0px 2px 8px rgba(15, 23, 42, 0.12)',
+                }),
+              }}
+              MenuListProps={{
+                sx: {
+                  py: 0,
+                  '& .MuiMenuItem-root': {
+                    borderRadius: 1,
+                    px: 2,
+                    py: 1.25,
+                    typography: 'body2',
+                    color: 'var(--color-text)',
+                    transition:
+                      'background-color 0.2s ease, transform 0.2s ease',
+                    '&:not(:last-of-type)': {
+                      mb: 0.5,
+                    },
+                    '&:hover': {
+                      backgroundColor: (theme) =>
+                        alpha(theme.palette.primary.main, 0.08),
+                      transform: 'translateX(-3px)',
+                    },
+                  },
+                },
+              }}
             >
               <MenuItem
                 onClick={() => {
                   handleUserMenuClose();
                   toggleTheme();
+                }}
+                sx={{
+                  '& .MuiListItemIcon-root': {
+                    color: 'var(--color-primary-light)',
+                  },
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 36 }}>
@@ -264,6 +347,14 @@ const MainLayout: React.FC = () => {
                 onClick={() => {
                   handleUserMenuClose();
                   handleLogout();
+                }}
+                sx={{
+                  '& .MuiListItemIcon-root': {
+                    color: 'var(--color-text)',
+                  },
+                  '&:hover .MuiListItemIcon-root': {
+                    color: 'var(--color-primary-light)',
+                  },
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 36 }}>

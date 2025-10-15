@@ -3,21 +3,29 @@ import {
   Alert,
   Box,
   Checkbox,
+  CircularProgress,
   FormControlLabel,
+  IconButton,
+  InputAdornment,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FiCheckCircle } from 'react-icons/fi';
 import type { CreateWebUserPayload } from '../../@types/users';
-import ModalActionButtons from '../common/ModalActionButtons';
-import BlurModal from '../BlurModal';
 import {
   createWebUserSchema,
   type CreateWebUserFormValues,
 } from '../../schemas/webUserSchema';
-import { removePersianCharacters } from '../../utils/text';
+import {
+  containsPersianCharacters,
+  removePersianCharacters,
+} from '../../utils/text';
+import BlurModal from '../BlurModal';
+import ModalActionButtons from '../common/ModalActionButtons';
 
 interface WebUserCreateModalProps {
   open: boolean;
@@ -59,11 +67,14 @@ const WebUserCreateModal = ({
   errorMessage,
   existingUsernames,
 }: WebUserCreateModalProps) => {
-  const [persianWarnings, setPersianWarnings] = useState<Record<PersianWarningField, boolean>>({
+  const [persianWarnings, setPersianWarnings] = useState<
+    Record<PersianWarningField, boolean>
+  >({
     username: false,
     email: false,
     password: false,
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const validationSchema = useMemo(
     () => createWebUserSchema({ existingUsernames }),
@@ -73,14 +84,42 @@ const WebUserCreateModal = ({
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors},
     reset,
-    trigger,
+    watch,
   } = useForm<CreateWebUserFormValues>({
     resolver: zodResolver(validationSchema),
     defaultValues,
     mode: 'onChange',
   });
+
+  const passwordValue = watch('password') ?? '';
+  const showPasswordValidation = passwordValue.length > 0;
+  const passwordValidationChecks = useMemo(
+    () => [
+      {
+        id: 'min-length',
+        label: 'حداقل ۸ کاراکتر',
+        isValid: passwordValue.length >= 8,
+      },
+      // {
+      //   id: 'max-length',
+      //   label: 'حداکثر ۱۲۸ کاراکتر',
+      //   isValid: passwordValue.length <= 128,
+      // },
+      {
+        id: 'special-character',
+        label: 'شامل حداقل یک کاراکتر خاص',
+        isValid: /[^A-Za-z0-9]/.test(passwordValue),
+      },
+      {
+        id: 'no-persian',
+        label: 'فاقد حروف فارسی',
+        isValid: !containsPersianCharacters(passwordValue),
+      },
+    ],
+    [passwordValue]
+  );
 
   useEffect(() => {
     if (open) {
@@ -88,12 +127,6 @@ const WebUserCreateModal = ({
       setPersianWarnings({ username: false, email: false, password: false });
     }
   }, [open, reset]);
-
-  useEffect(() => {
-    if (open) {
-      trigger('username');
-    }
-  }, [open, trigger, validationSchema]);
 
   useEffect(() => {
     if (!persianWarnings.username) {
@@ -137,10 +170,8 @@ const WebUserCreateModal = ({
     };
   }, [persianWarnings.password]);
 
-  const handleSanitizedChange = (
-    field: PersianWarningField,
-    onChange: (value: string) => void
-  ) =>
+  const handleSanitizedChange =
+    (field: PersianWarningField, onChange: (value: string) => void) =>
     (event: ChangeEvent<HTMLInputElement>) => {
       const rawValue = event.target.value;
       const sanitizedValue = removePersianCharacters(rawValue);
@@ -165,12 +196,15 @@ const WebUserCreateModal = ({
     onSubmit(payload);
   });
 
-  const usernameHelperText =
-    persianWarnings.username ? persianWarningMessage : errors.username?.message;
-  const emailHelperText =
-    persianWarnings.email ? persianWarningMessage : errors.email?.message;
-  const passwordHelperText =
-    persianWarnings.password ? persianWarningMessage : errors.password?.message;
+  const usernameHelperText = persianWarnings.username
+    ? persianWarningMessage
+    : errors.username?.message;
+  const emailHelperText = persianWarnings.email
+    ? persianWarningMessage
+    : errors.email?.message;
+  const passwordHelperText = persianWarnings.password
+    ? persianWarningMessage
+    : errors.password?.message;
 
   return (
     <BlurModal
@@ -183,7 +217,7 @@ const WebUserCreateModal = ({
           confirmLabel="ایجاد کاربر"
           loadingLabel="در حال ایجاد..."
           isLoading={isSubmitting}
-          disabled={!isValid || isSubmitting}
+          disabled={isSubmitting}
           confirmProps={{
             type: 'submit',
             form: 'web-user-create-form',
@@ -253,16 +287,103 @@ const WebUserCreateModal = ({
             <TextField
               {...field}
               label="گذرواژه"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               fullWidth
               error={Boolean(errors.password) || persianWarnings.password}
               helperText={passwordHelperText}
               onChange={handleSanitizedChange('password', field.onChange)}
               InputLabelProps={{ sx: labelSx }}
-              InputProps={{ sx: inputBaseSx }}
+              slotProps={{
+                input: {
+                  sx: inputBaseSx,
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={
+                          showPassword ? 'مخفی کردن رمز' : 'نمایش رمز'
+                        }
+                        onClick={() => setShowPassword((s) => !s)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? (
+                          <FaEyeSlash
+                            size={16}
+                            color="var(--color-secondary)"
+                          />
+                        ) : (
+                          <FaEye size={16} color="var(--color-secondary)" />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
           )}
         />
+
+        {showPasswordValidation ? (
+          <Box
+            sx={{
+              borderRadius: '5px',
+              border:
+                '1px solid color-mix(in srgb, var(--color-primary) 45%, transparent)',
+              backgroundColor:
+                'color-mix(in srgb, var(--color-primary-light) 12%, transparent)',
+              px: 2.5,
+              py: 2,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: "''",
+                position: 'absolute',
+                inset: 0,
+                borderRadius: 'inherit',
+                borderLeft: '4px solid var(--color-primary)',
+                pointerEvents: 'none',
+              },
+            }}
+          >
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                color: 'var(--color-primary)',
+                mb: 1.25,
+              }}
+            >
+              الزامات رمز عبور
+            </Typography>
+
+            <Stack spacing={1}>
+              {passwordValidationChecks.map(({ id, label, isValid }) => (
+                <Stack
+                  key={id}
+                  direction="row"
+                  spacing={1.5}
+                  alignItems="center"
+                >
+                  {isValid ? (
+                    <FiCheckCircle color="var(--color-success)" size={18} />
+                  ) : (
+                    <CircularProgress color="primary" size={18} />
+                  )}
+                  <Typography
+                    sx={{
+                      color: isValid
+                        ? 'var(--color-success)'
+                        : 'var(--color-secondary)',
+                      fontWeight: isValid ? 600 : 500,
+                    }}
+                  >
+                    {label}
+                  </Typography>
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+        ) : null}
 
         <Controller
           name="is_superuser"
@@ -280,7 +401,9 @@ const WebUserCreateModal = ({
                 />
               }
               label={
-                <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 500 }}>
+                <Typography
+                  sx={{ color: 'var(--color-secondary)', fontWeight: 500 }}
+                >
                   دسترسی مدیر سیستم (Superuser)
                 </Typography>
               }

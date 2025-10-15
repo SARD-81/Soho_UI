@@ -483,12 +483,14 @@ const Disk = () => {
 
   const ioChartDataset = useMemo(
     () =>
-      topDevices.map((item) => ({
-        device: item.name,
-        read_count: Math.max(safeNumber(item.metrics.read_count), 0),
-        write_count: Math.max(safeNumber(item.metrics.write_count), 0),
-        read_bytes: Math.max(safeNumber(item.metrics.read_bytes), 0),
-        write_bytes: Math.max(safeNumber(item.metrics.write_bytes), 0),
+      topDevices
+        .filter((item) => item.name.length === 3 && item.name.startsWith('sd'))
+        .map((item) => ({
+          device: item.name,
+          read_count: Math.max(safeNumber(item.metrics.read_count), 0),
+          write_count: Math.max(safeNumber(item.metrics.write_count), 0),
+          read_bytes: Math.max(safeNumber(item.metrics.read_bytes), 0),
+          write_bytes: Math.max(safeNumber(item.metrics.write_bytes), 0),
         busy_time: Math.max(safeNumber(item.metrics.busy_time), 0),
       })),
     [topDevices]

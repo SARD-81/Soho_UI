@@ -26,6 +26,13 @@ const FileSystem = () => {
       toast.success(`فضای فایلی ${filesystemName} با موفقیت حذف شد.`);
     },
     onError: (error, filesystemName) => {
+      if (error.message.includes('shareConfiguration')) {
+        toast.error(
+          `حذف فضای فایلی ${filesystemName} امکان‌پذیر نیست؛ ابتدا تمام اشتراک‌های مرتبط با این فضا را حذف کنید.`
+        );
+        return;
+      }
+
       toast.error(
         `حذف فضای فایلی ${filesystemName} با خطا مواجه شد: ${error.message}`
       );
