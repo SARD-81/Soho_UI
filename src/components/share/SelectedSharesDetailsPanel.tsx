@@ -1,6 +1,11 @@
-import { Box, IconButton, Typography, useTheme } from '@mui/material';
-import { MdClose } from 'react-icons/md';
+import { Box, Typography, useTheme } from '@mui/material';
+import { useMemo } from 'react';
 import type { SambaShareDetails } from '../../@types/samba';
+import DetailCard from '../common/DetailCard';
+import {
+  createDetailPanelContainerSx,
+  detailCardsWrapperSx,
+} from '../common/detailPanelStyles';
 import formatDetailValue from '../../utils/formatDetailValue';
 
 interface ShareDetailItem {
@@ -18,164 +23,42 @@ const SelectedSharesDetailsPanel = ({
   onRemove,
 }: SelectedSharesDetailsPanelProps) => {
   const theme = useTheme();
-  const dividerColor =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.08)'
-      : 'rgba(0, 0, 0, 0.08)';
-  const listBackground =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.04)'
-      : 'rgba(0, 0, 0, 0.03)';
+  const containerSx = useMemo(() => createDetailPanelContainerSx(theme), [theme]);
 
   if (!items.length) {
     return null;
   }
 
   return (
-    <Box
-      sx={{
-        mt: 3,
-        borderRadius: '5px',
-        border: '1px solid var(--color-input-border)',
-        backgroundColor: 'var(--color-card-bg)',
-        boxShadow: '0 20px 45px -25px rgba(0, 0, 0, 0.35)',
-        p: 3,
-      }}
-    >
+    <Box sx={containerSx}>
       <Typography
         variant="h6"
         sx={{
-          mb: 3,
-          fontWeight: 700,
+          fontWeight: 800,
           color: 'var(--color-primary)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
+          textAlign: 'center',
+          textShadow: '0 10px 28px rgba(0, 0, 0, 0.18)',
         }}
       >
         مقایسه جزئیات اشتراک‌ها
       </Typography>
 
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 2.5,
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        }}
-      >
+      <Box sx={detailCardsWrapperSx}>
         {items.map(({ shareName, detail }) => {
-          const entries = Object.entries(detail ?? {}).sort(([a], [b]) =>
-            a.localeCompare(b, 'fa-IR')
-          );
+          const normalizedEntries = Object.entries(detail ?? {})
+            .sort(([a], [b]) => a.localeCompare(b, 'fa-IR'))
+            .map(([key, value]) => ({
+              label: key,
+              value: formatDetailValue(value),
+            }));
 
           return (
-            <Box
+            <DetailCard
               key={shareName}
-              sx={{
-                borderRadius: '5px',
-                border: `1px solid ${dividerColor}`,
-                backgroundColor:
-                  theme.palette.mode === 'dark'
-                    ? 'rgba(0, 0, 0, 0.35)'
-                    : 'rgba(255, 255, 255, 0.9)',
-                p: 2.5,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 1.5,
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    color: 'var(--color-text)',
-                    fontSize: '1rem',
-                  }}
-                >
-                  {shareName}
-                </Typography>
-
-                <IconButton
-                  aria-label={`حذف ${shareName} از مقایسه`}
-                  size="small"
-                  onClick={() => onRemove(shareName)}
-                  sx={{ color: 'var(--color-secondary)' }}
-                >
-                  <MdClose size={18} />
-                </IconButton>
-              </Box>
-
-              {entries.length === 0 && (
-                <Typography sx={{ color: 'var(--color-secondary)' }}>
-                  اطلاعاتی برای نمایش وجود ندارد.
-                </Typography>
-              )}
-
-              {entries.length > 0 && (
-                <Box
-                  sx={{
-                    width: '100%',
-                    bgcolor: listBackground,
-                    borderRadius: '5px',
-                    px: 2,
-                    py: 2,
-                    border: `1px solid ${dividerColor}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                  }}
-                >
-                  {entries.map(([key, value], index) => (
-                    <Box
-                      key={key}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'space-between',
-                        gap: 2,
-                        py: 0.75,
-                        borderBottom:
-                          index === entries.length - 1
-                            ? 'none'
-                            : `1px dashed ${dividerColor}`,
-                      }}
-                    >
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 600,
-                          color: 'var(--color-secondary)',
-                          minWidth: 120,
-                        }}
-                      >
-                        {key}
-                      </Typography>
-
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: 'var(--color-text)',
-                          textAlign: 'left',
-                          direction: 'ltr',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
-                          flex: 1,
-                        }}
-                      >
-                        {formatDetailValue(value)}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              )}
-            </Box>
+              title={shareName}
+              entries={normalizedEntries}
+              onRemove={() => onRemove(shareName)}
+            />
           );
         })}
       </Box>

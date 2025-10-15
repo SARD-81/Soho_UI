@@ -38,6 +38,8 @@ const SHARE_TABS = {
 
 type ShareTabValue = (typeof SHARE_TABS)[keyof typeof SHARE_TABS];
 
+const MAX_COMPARISON_ITEMS = 4;
+
 const Share = () => {
   const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.shares);
   const [selectedShares, setSelectedShares] = useState<string[]>([]);
@@ -137,22 +139,24 @@ const Share = () => {
     );
   }, [shares]);
 
-  const handleToggleSelect = useCallback(
-    (share: SambaShareEntry, checked: boolean) => {
-      setSelectedShares((prev) => {
-        if (checked) {
-          if (prev.includes(share.name)) {
-            return prev;
-          }
-
-          return [...prev, share.name];
+  const handleToggleSelect = useCallback((share: SambaShareEntry, checked: boolean) => {
+    setSelectedShares((prev) => {
+      if (checked) {
+        if (prev.includes(share.name)) {
+          return prev;
         }
 
-        return prev.filter((name) => name !== share.name);
-      });
-    },
-    []
-  );
+        if (prev.length >= MAX_COMPARISON_ITEMS) {
+          toast.error(`حداکثر ${MAX_COMPARISON_ITEMS.toLocaleString('fa-IR')} مورد برای مقایسه مجاز است.`);
+          return prev;
+        }
+
+        return [...prev, share.name];
+      }
+
+      return prev.filter((name) => name !== share.name);
+    });
+  }, []);
 
   const handleRemoveSelected = useCallback((shareName: string) => {
     setSelectedShares((prev) => prev.filter((name) => name !== shareName));
@@ -336,6 +340,11 @@ const Share = () => {
       setSelectedSambaUsers((prev) => {
         if (checked) {
           if (prev.includes(user.username)) {
+            return prev;
+          }
+
+          if (prev.length >= MAX_COMPARISON_ITEMS) {
+            toast.error(`حداکثر ${MAX_COMPARISON_ITEMS.toLocaleString('fa-IR')} مورد برای مقایسه مجاز است.`);
             return prev;
           }
 

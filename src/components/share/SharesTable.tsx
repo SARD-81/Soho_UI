@@ -1,12 +1,5 @@
-import {
-  Box,
-  Checkbox,
-  CircularProgress,
-  IconButton,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { useMemo } from 'react';
+import { Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
+import { useCallback, useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { SambaShareEntry } from '../../@types/samba';
@@ -55,24 +48,6 @@ const SharesTable = ({
     };
 
     return [
-      {
-        id: 'select',
-        header: '',
-        align: 'center',
-        padding: 'checkbox',
-        width: 52,
-        headerSx: { width: 52 },
-        cellSx: { width: 52 },
-        getCellProps: () => ({ padding: 'checkbox' }),
-        renderCell: (share) => (
-          <Checkbox
-            checked={selectedShares.includes(share.name)}
-            onChange={(event) => onToggleSelect(share, event.target.checked)}
-            color="primary"
-            inputProps={{ 'aria-label': `انتخاب ${share.name}` }}
-          />
-        ),
-      },
       {
         id: 'index',
         header: '#',
@@ -134,7 +109,10 @@ const SharesTable = ({
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={() => onDelete(share)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDelete(share);
+                  }}
                   disabled={isShareDeleting}
                 >
                   <MdDeleteOutline size={18} />
@@ -145,7 +123,20 @@ const SharesTable = ({
         },
       },
     ];
-  }, [isDeleting, onDelete, onToggleSelect, pendingShareName, selectedShares]);
+  }, [isDeleting, onDelete, pendingShareName]);
+
+  const handleRowClick = useCallback(
+    (share: SambaShareEntry) => {
+      const isSelected = selectedShares.includes(share.name);
+      onToggleSelect(share, !isSelected);
+    },
+    [onToggleSelect, selectedShares]
+  );
+
+  const isRowSelected = useCallback(
+    (share: SambaShareEntry) => selectedShares.includes(share.name),
+    [selectedShares]
+  );
 
   return (
     <DataTable<SambaShareEntry>
@@ -154,6 +145,8 @@ const SharesTable = ({
       getRowId={(share) => share.name}
       isLoading={isLoading}
       error={error}
+      onRowClick={handleRowClick}
+      isRowSelected={isRowSelected}
       renderLoadingState={() => (
         <Box
           sx={{

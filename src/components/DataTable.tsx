@@ -11,7 +11,9 @@ import {
   TablePagination,
   TableRow,
   Typography,
+  useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import type { DataTableProps } from '../@types/dataTable.ts';
@@ -83,8 +85,21 @@ const DataTable = <T,>({
   bodyRowSx,
   containerProps,
   tableProps,
+  onRowClick,
+  isRowSelected,
   pagination,
 }: DataTableProps<T>) => {
+  const theme = useTheme();
+  const hoverHighlight = alpha(
+    theme.palette.primary.main,
+    theme.palette.mode === 'dark' ? 0.18 : 0.08
+  );
+  const selectedHighlight = alpha(
+    theme.palette.primary.main,
+    theme.palette.mode === 'dark' ? 0.26 : 0.14
+  );
+  const selectedShadow = alpha(theme.palette.primary.main, 0.55);
+
   const renderStateRow = (content: ReactNode) => (
     <TableRow>
       <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
@@ -176,10 +191,48 @@ const DataTable = <T,>({
                 : bodyRowSx;
             const rowId = getRowId(row, index);
 
+            const selected = isRowSelected?.(row, index) ?? false;
+            const clickable = Boolean(onRowClick);
+            const rowClickHandler = clickable
+              ? () => onRowClick?.(row, index)
+              : undefined;
+
+            const clickableStyles = clickable
+              ? {
+                  cursor: 'pointer',
+                  transition: 'background-color 0.25s ease, box-shadow 0.25s ease',
+                  '&:hover': {
+                    backgroundColor: hoverHighlight,
+                  },
+                }
+              : undefined;
+
+            const selectedStyles = selected
+              ? {
+                  backgroundColor: selectedHighlight,
+                  boxShadow: `0 18px 42px -24px ${selectedShadow}`,
+                  '&:hover': clickable
+                    ? {
+                        backgroundColor: alpha(
+                          theme.palette.primary.main,
+                          theme.palette.mode === 'dark' ? 0.32 : 0.18
+                        ),
+                      }
+                    : undefined,
+                }
+              : undefined;
+
             return (
               <TableRow
                 key={rowId}
-                sx={mergeSx(defaultBodyRowSx, resolvedRowSx)}
+                hover={clickable}
+                onClick={rowClickHandler}
+                sx={mergeSx(
+                  defaultBodyRowSx,
+                  resolvedRowSx,
+                  clickableStyles,
+                  selectedStyles
+                )}
               >
                 {columns.map((column) => {
                   const cellProps = column.getCellProps?.(row, index) ?? {};
