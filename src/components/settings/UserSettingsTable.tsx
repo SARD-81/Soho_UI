@@ -16,6 +16,8 @@ import WebUserCreateModal from './WebUserCreateModal';
 import { useWebUsers } from '../../hooks/useWebUsers';
 import { useCreateWebUser } from '../../hooks/useCreateWebUser';
 import { useDeleteWebUser } from '../../hooks/useDeleteWebUser';
+import { useCreateOsUser } from '../../hooks/useCreateOsUser';
+import { DEFAULT_LOGIN_SHELL } from '../../constants/users';
 import { formatUtcDateTimeToIran } from '../../utils/dateTime';
 
 interface UserSettingsTableRow {
@@ -48,11 +50,18 @@ const UserSettingsTable = () => {
   );
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const createOsUser = useCreateOsUser();
+
   const createUser = useCreateWebUser({
     onSuccess: (username) => {
       toast.success(`کاربر ${username} با موفقیت ایجاد شد.`);
       setIsCreateModalOpen(false);
       setCreateError(null);
+      createOsUser.mutate({
+        username,
+        login_shell: DEFAULT_LOGIN_SHELL,
+        shell: DEFAULT_LOGIN_SHELL,
+      });
     },
     onError: (message) => {
       setCreateError(message);

@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { FiCheckCircle, FiCircle } from 'react-icons/fi';
 import { Controller, useForm } from 'react-hook-form';
 import type { CreateWebUserPayload } from '../../@types/users';
 import ModalActionButtons from '../common/ModalActionButtons';
@@ -17,7 +18,10 @@ import {
   createWebUserSchema,
   type CreateWebUserFormValues,
 } from '../../schemas/webUserSchema';
-import { removePersianCharacters } from '../../utils/text';
+import {
+  containsPersianCharacters,
+  removePersianCharacters,
+} from '../../utils/text';
 
 interface WebUserCreateModalProps {
   open: boolean;
@@ -75,12 +79,40 @@ const WebUserCreateModal = ({
     handleSubmit,
     formState: { errors, isValid },
     reset,
-    trigger,
+    watch,
   } = useForm<CreateWebUserFormValues>({
     resolver: zodResolver(validationSchema),
     defaultValues,
     mode: 'onChange',
   });
+
+  const passwordValue = watch('password') ?? '';
+  const showPasswordValidation = passwordValue.length > 0;
+  const passwordValidationChecks = useMemo(
+    () => [
+      {
+        id: 'min-length',
+        label: 'حداقل ۸ کاراکتر',
+        isValid: passwordValue.length >= 8,
+      },
+      {
+        id: 'max-length',
+        label: 'حداکثر ۱۲۸ کاراکتر',
+        isValid: passwordValue.length <= 128,
+      },
+      {
+        id: 'special-character',
+        label: 'شامل حداقل یک کاراکتر خاص',
+        isValid: /[^A-Za-z0-9]/.test(passwordValue),
+      },
+      {
+        id: 'no-persian',
+        label: 'فاقد حروف فارسی',
+        isValid: !containsPersianCharacters(passwordValue),
+      },
+    ],
+    [passwordValue]
+  );
 
   useEffect(() => {
     if (open) {
@@ -88,12 +120,6 @@ const WebUserCreateModal = ({
       setPersianWarnings({ username: false, email: false, password: false });
     }
   }, [open, reset]);
-
-  useEffect(() => {
-    if (open) {
-      trigger('username');
-    }
-  }, [open, trigger, validationSchema]);
 
   useEffect(() => {
     if (!persianWarnings.username) {
@@ -263,6 +289,67 @@ const WebUserCreateModal = ({
             />
           )}
         />
+
+        {showPasswordValidation ? (
+          <Box
+            sx={{
+              borderRadius: '8px',
+              border: '1px solid color-mix(in srgb, var(--color-primary) 45%, transparent)',
+              backgroundColor:
+                'color-mix(in srgb, var(--color-primary-light) 12%, transparent)',
+              px: 2.5,
+              py: 2,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: "''",
+                position: 'absolute',
+                inset: 0,
+                borderRadius: 'inherit',
+                borderLeft: '4px solid var(--color-primary)',
+                pointerEvents: 'none',
+              },
+            }}
+          >
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                color: 'var(--color-primary)',
+                mb: 1.25,
+              }}
+            >
+              الزامات رمز عبور
+            </Typography>
+
+            <Stack spacing={1}>
+              {passwordValidationChecks.map(({ id, label, isValid }) => (
+                <Stack
+                  key={id}
+                  direction="row"
+                  spacing={1.5}
+                  alignItems="center"
+                >
+                  {isValid ? (
+                    <FiCheckCircle color="var(--color-success)" size={18} />
+                  ) : (
+                    <FiCircle color="var(--color-secondary)" size={18} />
+                  )}
+                  <Typography
+                    sx={{
+                      color: isValid
+                        ? 'var(--color-success)'
+                        : 'var(--color-secondary)',
+                      fontWeight: isValid ? 600 : 500,
+                    }}
+                  >
+                    {label}
+                  </Typography>
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+        ) : null}
 
         <Controller
           name="is_superuser"
