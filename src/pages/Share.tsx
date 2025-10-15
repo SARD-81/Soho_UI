@@ -13,6 +13,7 @@ import ConfirmDeleteShareModal from '../components/share/ConfirmDeleteShareModal
 import CreateShareModal from '../components/share/CreateShareModal';
 import SelectedSharesDetailsPanel from '../components/share/SelectedSharesDetailsPanel';
 import SharesTable from '../components/share/SharesTable';
+import ConfirmDeleteSambaUserModal from '../components/users/ConfirmDeleteSambaUserModal';
 import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
 import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
 import SambaUsersTable from '../components/users/SambaUsersTable';
@@ -62,6 +63,10 @@ const Share = () => {
   const [pendingDeleteUsername, setPendingDeleteUsername] = useState<
     string | null
   >(null);
+  const [deleteModalUsername, setDeleteModalUsername] = useState<string | null>(
+    null
+  );
+  const [deleteSambaError, setDeleteSambaError] = useState<string | null>(null);
 
   const { data: shares = [], isLoading, error } = useSambaShares();
 
@@ -236,8 +241,10 @@ const Share = () => {
   const deleteSambaUser = useDeleteSambaUser({
     onSuccess: (username) => {
       toast.success(`کاربر اشتراک فایل ${username} با موفقیت حذف شد.`);
+      setDeleteSambaError(null);
     },
     onError: (message, error, username) => {
+      setDeleteSambaError(message);
       if (error.response?.status === 400 && error.response.data?.code === 'samba_error') {
         toast.error(
           `کاربر اشتراک فایل ${username} در اشتراک‌های فعال استفاده شده است. لطفاً ابتدا اشتراک‌های مرتبط را حذف کنید.`
@@ -389,17 +396,43 @@ const Share = () => {
     [updateSambaPassword]
   );
 
+  const isDeletingSambaUser = deleteSambaUser.isPending;
+
   const handleDeleteSambaUser = useCallback(
     (user: { username: string }) => {
-      setPendingDeleteUsername(user.username);
-      deleteSambaUser.mutate(user.username, {
-        onSettled: () => {
-          setPendingDeleteUsername(null);
-        },
-      });
+      setDeleteSambaError(null);
+      deleteSambaUser.reset();
+      setDeleteModalUsername(user.username);
     },
     [deleteSambaUser]
   );
+
+  const handleCloseDeleteSambaUserModal = useCallback(() => {
+    if (isDeletingSambaUser) {
+      return;
+    }
+
+    setDeleteModalUsername(null);
+    setPendingDeleteUsername(null);
+    setDeleteSambaError(null);
+    deleteSambaUser.reset();
+  }, [deleteSambaUser, isDeletingSambaUser]);
+
+  const handleConfirmDeleteSambaUser = useCallback(() => {
+    if (!deleteModalUsername) {
+      return;
+    }
+
+    const targetUsername = deleteModalUsername;
+    setDeleteSambaError(null);
+    setPendingDeleteUsername(targetUsername);
+    deleteSambaUser.mutate(targetUsername, {
+      onSettled: () => {
+        setPendingDeleteUsername(null);
+        setDeleteModalUsername(null);
+      },
+    });
+  }, [deleteModalUsername, deleteSambaUser]);
 
   useEffect(() => {
     setSelectedSambaUsers((prev) =>
@@ -577,6 +610,15 @@ const Share = () => {
       <CreateShareModal controller={createShare} />
 
       <ConfirmDeleteShareModal controller={shareDeletion} />
+
+      <ConfirmDeleteSambaUserModal
+        open={Boolean(deleteModalUsername)}
+        username={deleteModalUsername}
+        onClose={handleCloseDeleteSambaUserModal}
+        onConfirm={handleConfirmDeleteSambaUser}
+        isDeleting={isDeletingSambaUser}
+        errorMessage={deleteSambaError}
+      />
 
       <SambaUserCreateModal
         open={isSambaCreateModalOpen}
