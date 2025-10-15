@@ -2,6 +2,7 @@ import type {
   TableCellProps,
   TableContainerProps,
   TableProps,
+  TableRowProps,
 } from '@mui/material';
 import type { TablePaginationProps } from '@mui/material/TablePagination';
 import type { SxProps, Theme } from '@mui/material/styles';
@@ -35,6 +36,7 @@ export interface DataTableProps<T> {
   bodyRowSx?: SxProps<Theme> | ((row: T, index: number) => SxProps<Theme>);
   containerProps?: TableContainerProps;
   tableProps?: TableProps;
+  getRowProps?: (row: T, index: number) => Partial<TableRowProps>;
   pagination?: {
     page: number;
     rowsPerPage: number;

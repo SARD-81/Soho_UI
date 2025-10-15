@@ -2,6 +2,16 @@ import { Box, IconButton, Typography, useTheme } from '@mui/material';
 import { MdClose } from 'react-icons/md';
 import type { SambaUserTableItem } from '../../@types/samba';
 import formatDetailValue from '../../utils/formatDetailValue';
+import {
+  createDetailPanelCardSx,
+  createDetailPanelContainerSx,
+  createDetailPanelListSx,
+  detailPanelHeaderSx,
+  detailPanelItemRowSx,
+  detailPanelItemsWrapperSx,
+  detailPanelKeySx,
+  detailPanelValueSx,
+} from '../../constants/detailPanelStyles';
 
 interface SelectedSambaUsersDetailsPanelProps {
   items: SambaUserTableItem[];
@@ -17,47 +27,22 @@ const SelectedSambaUsersDetailsPanel = ({
     theme.palette.mode === 'dark'
       ? 'rgba(255, 255, 255, 0.08)'
       : 'rgba(0, 0, 0, 0.08)';
-  const listBackground =
-    theme.palette.mode === 'dark'
-      ? 'rgba(255, 255, 255, 0.04)'
-      : 'rgba(0, 0, 0, 0.03)';
-
   if (!items.length) {
     return null;
   }
 
   return (
     <Box
-      sx={{
-        mt: 3,
-        borderRadius: '5px',
-        border: '1px solid var(--color-input-border)',
-        backgroundColor: 'var(--color-card-bg)',
-        boxShadow: '0 20px 45px -25px rgba(0, 0, 0, 0.35)',
-        p: 3,
-      }}
+      sx={createDetailPanelContainerSx(theme)}
     >
       <Typography
         variant="h6"
-        sx={{
-          mb: 3,
-          fontWeight: 700,
-          color: 'var(--color-primary)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-        }}
+        sx={detailPanelHeaderSx}
       >
         مقایسه جزئیات کاربران اشتراک فایل
       </Typography>
 
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 2.5,
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        }}
-      >
+      <Box sx={detailPanelItemsWrapperSx}>
         {items.map((item) => {
           const entries = Object.entries(item.details ?? {}).sort(([a], [b]) =>
             a.localeCompare(b, 'fa-IR')
@@ -66,18 +51,7 @@ const SelectedSambaUsersDetailsPanel = ({
           return (
             <Box
               key={item.username}
-              sx={{
-                borderRadius: '5px',
-                border: `1px solid ${dividerColor}`,
-                backgroundColor:
-                  theme.palette.mode === 'dark'
-                    ? 'rgba(0, 0, 0, 0.35)'
-                    : 'rgba(255, 255, 255, 0.9)',
-                p: 2.5,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-              }}
+              sx={createDetailPanelCardSx(theme)}
             >
               <Box
                 sx={{
@@ -115,27 +89,14 @@ const SelectedSambaUsersDetailsPanel = ({
 
               {entries.length > 0 && (
                 <Box
-                  sx={{
-                    width: '100%',
-                    bgcolor: listBackground,
-                    borderRadius: '5px',
-                    px: 2,
-                    py: 2,
-                    border: `1px solid ${dividerColor}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                  }}
+                  sx={createDetailPanelListSx(theme)}
                 >
                   {entries.map(([key, value], index) => (
                     <Box
                       key={key}
                       sx={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'space-between',
-                        gap: 2,
-                        py: 0.75,
+                        ...detailPanelItemRowSx,
+                        pb: 1,
                         borderBottom:
                           index === entries.length - 1
                             ? 'none'
@@ -144,25 +105,14 @@ const SelectedSambaUsersDetailsPanel = ({
                     >
                       <Typography
                         variant="body2"
-                        sx={{
-                          fontWeight: 600,
-                          color: 'var(--color-secondary)',
-                          minWidth: 120,
-                        }}
+                        sx={detailPanelKeySx}
                       >
                         {key}
                       </Typography>
 
                       <Typography
                         variant="body2"
-                        sx={{
-                          color: 'var(--color-text)',
-                          textAlign: 'left',
-                          direction: 'ltr',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
-                          flex: 1,
-                        }}
+                        sx={detailPanelValueSx}
                       >
                         {typeof value === 'string'
                           ? value

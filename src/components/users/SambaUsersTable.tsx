@@ -1,5 +1,5 @@
-import { Box, Checkbox, IconButton, Tooltip, Typography } from '@mui/material';
-import { useMemo } from 'react';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { useCallback, useMemo } from 'react';
 import { MdDeleteOutline, MdLockOpen, MdLockReset } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { SambaUserTableItem } from '../../@types/samba';
@@ -42,24 +42,6 @@ const SambaUsersTable = ({
 }: SambaUsersTableProps) => {
   const columns = useMemo<DataTableColumn<SambaUserTableItem>[]>(() => {
     return [
-      {
-        id: 'select',
-        header: '',
-        align: 'center',
-        padding: 'checkbox',
-        width: 52,
-        headerSx: { width: 52 },
-        cellSx: { width: 52 },
-        getCellProps: () => ({ padding: 'checkbox' }),
-        renderCell: (user) => (
-          <Checkbox
-            checked={selectedUsers.includes(user.username)}
-            onChange={(event) => onToggleSelect(user, event.target.checked)}
-            color="primary"
-            inputProps={{ 'aria-label': `انتخاب ${user.username}` }}
-          />
-        ),
-      },
       {
         id: 'index',
         header: '#',
@@ -147,7 +129,10 @@ const SambaUsersTable = ({
                 <span>
                   <IconButton
                     size="small"
-                    onClick={() => onDelete(user)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(user);
+                    }}
                     disabled={isDeleting}
                     sx={{
                       color: 'var(--color-error)',
@@ -166,7 +151,10 @@ const SambaUsersTable = ({
                 <span>
                   <IconButton
                     size="small"
-                    onClick={() => onEnable(user)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onEnable(user);
+                    }}
                     disabled={isEnablePending}
                     sx={{
                       color: 'var(--color-success)',
@@ -185,7 +173,10 @@ const SambaUsersTable = ({
                 <span>
                   <IconButton
                     size="small"
-                    onClick={() => onEditPassword(user)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onEditPassword(user);
+                    }}
                     disabled={isPasswordPending}
                     sx={{
                       color: 'var(--color-primary)',
@@ -204,19 +195,48 @@ const SambaUsersTable = ({
         },
       },
     ];
-    }, [
-      isDeleting,
-      isEnabling,
-      isUpdatingPassword,
-      onEditPassword,
-      onEnable,
-      onDelete,
-      onToggleSelect,
-      pendingEnableUsername,
-      pendingDeleteUsername,
-      pendingPasswordUsername,
-      selectedUsers,
-    ]);
+  }, [
+    isDeleting,
+    isEnabling,
+    isUpdatingPassword,
+    onEditPassword,
+    onEnable,
+    onDelete,
+    pendingEnableUsername,
+    pendingDeleteUsername,
+    pendingPasswordUsername,
+  ]);
+
+  const resolveRowProps = useCallback(
+    (user: SambaUserTableItem) => {
+      const isSelected = selectedUsers.includes(user.username);
+
+      return {
+        onClick: () => onToggleSelect(user, !isSelected),
+        sx: {
+          cursor: 'pointer',
+          transition: 'all 0.25s ease',
+          backgroundColor: isSelected
+            ? 'rgba(79, 70, 229, 0.08)'
+            : 'transparent',
+          boxShadow: isSelected
+            ? '0 18px 30px -24px rgba(79, 70, 229, 0.65)'
+            : 'none',
+          border: isSelected
+            ? '1px solid rgba(79, 70, 229, 0.35)'
+            : '1px solid transparent',
+          '&:hover': {
+            backgroundColor: isSelected
+              ? 'rgba(79, 70, 229, 0.12)'
+              : 'rgba(148, 163, 184, 0.08)',
+            transform: 'translateY(-2px)',
+            boxShadow: '0 18px 36px -30px rgba(15, 23, 42, 0.45)',
+          },
+        },
+      };
+    },
+    [onToggleSelect, selectedUsers]
+  );
 
   return (
     <DataTable<SambaUserTableItem>
@@ -225,6 +245,7 @@ const SambaUsersTable = ({
       getRowId={(user) => user.id}
       isLoading={isLoading}
       error={error}
+      getRowProps={resolveRowProps}
       renderLoadingState={() => (
         <Typography sx={{ color: 'var(--color-secondary)', py: 3 }}>
           در حال دریافت اطلاعات کاربران اشتراک فایل...

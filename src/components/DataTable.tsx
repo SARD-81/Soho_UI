@@ -84,6 +84,7 @@ const DataTable = <T,>({
   containerProps,
   tableProps,
   pagination,
+  getRowProps,
 }: DataTableProps<T>) => {
   const renderStateRow = (content: ReactNode) => (
     <TableRow>
@@ -175,11 +176,14 @@ const DataTable = <T,>({
                   )
                 : bodyRowSx;
             const rowId = getRowId(row, index);
+            const rowProps = getRowProps?.(row, index) ?? {};
+            const { sx: rowPropsSx, ...restRowProps } = rowProps;
 
             return (
               <TableRow
                 key={rowId}
-                sx={mergeSx(defaultBodyRowSx, resolvedRowSx)}
+                sx={mergeSx(defaultBodyRowSx, resolvedRowSx, rowPropsSx)}
+                {...restRowProps}
               >
                 {columns.map((column) => {
                   const cellProps = column.getCellProps?.(row, index) ?? {};
