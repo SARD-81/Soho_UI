@@ -228,14 +228,67 @@ const MainLayout: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1,
+                  px: 2.5,
+                  py: 1,
+                  borderRadius: '999px',
                   fontFamily: 'var(--font-vazir)',
                   fontWeight: 500,
+                  textTransform: 'none',
+                  background: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06))'
+                      : 'linear-gradient(135deg, rgba(0, 198, 169, 0.18), rgba(35, 167, 213, 0.12))',
+                  border: (theme) =>
+                    `1px solid ${
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.25)'
+                        : 'rgba(0, 0, 0, 0.08)'
+                    }`,
+                  boxShadow: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? '0 8px 18px rgba(0, 0, 0, 0.45)'
+                      : '0 10px 24px rgba(0, 198, 169, 0.25)',
                   '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    background: 'linear-gradient(135deg, rgba(0, 198, 169, 0.22), rgba(35, 167, 213, 0.18))',
+                    boxShadow: '0 12px 28px rgba(0, 198, 169, 0.32)',
                   },
                 }}
               >
-                خوش آمدید، {displayUsername}
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                  }}
+                >
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontWeight: 500,
+                      color: 'inherit',
+                      opacity: 0.85,
+                    }}
+                  >
+                    خوش آمدید،
+                  </Typography>
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontWeight: 700,
+                      color: 'var(--color-primary)',
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 1,
+                      backgroundColor: (theme) =>
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(35, 167, 213, 0.22)'
+                          : 'rgba(0, 198, 169, 0.22)',
+                    }}
+                  >
+                    {displayUsername}
+                  </Typography>
+                </Box>
               </Button>
             )}
             <Menu
