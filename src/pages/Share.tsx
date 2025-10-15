@@ -38,6 +38,8 @@ const SHARE_TABS = {
 
 type ShareTabValue = (typeof SHARE_TABS)[keyof typeof SHARE_TABS];
 
+const MAX_COMPARISON_ITEMS = 4;
+
 const Share = () => {
   const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.shares);
   const [selectedShares, setSelectedShares] = useState<string[]>([]);
@@ -142,6 +144,11 @@ const Share = () => {
       setSelectedShares((prev) => {
         if (checked) {
           if (prev.includes(share.name)) {
+            return prev;
+          }
+
+          if (prev.length >= MAX_COMPARISON_ITEMS) {
+            toast.error('امکان مقایسه بیش از چهار اشتراک وجود ندارد.');
             return prev;
           }
 
@@ -336,6 +343,11 @@ const Share = () => {
       setSelectedSambaUsers((prev) => {
         if (checked) {
           if (prev.includes(user.username)) {
+            return prev;
+          }
+
+          if (prev.length >= MAX_COMPARISON_ITEMS) {
+            toast.error('امکان مقایسه بیش از چهار کاربر وجود ندارد.');
             return prev;
           }
 

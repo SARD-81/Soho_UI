@@ -81,6 +81,7 @@ const DataTable = <T,>({
   tableSx,
   headRowSx,
   bodyRowSx,
+  onRowClick,
   containerProps,
   tableProps,
   pagination,
@@ -175,11 +176,22 @@ const DataTable = <T,>({
                   )
                 : bodyRowSx;
             const rowId = getRowId(row, index);
+            const clickableRowSx = onRowClick
+              ? ({ cursor: 'pointer' } as SxProps<Theme>)
+              : undefined;
 
             return (
               <TableRow
                 key={rowId}
-                sx={mergeSx(defaultBodyRowSx, resolvedRowSx)}
+                hover={Boolean(onRowClick)}
+                onClick={
+                  onRowClick
+                    ? () => {
+                        onRowClick(row, index);
+                      }
+                    : undefined
+                }
+                sx={mergeSx(defaultBodyRowSx, resolvedRowSx, clickableRowSx)}
               >
                 {columns.map((column) => {
                   const cellProps = column.getCellProps?.(row, index) ?? {};
