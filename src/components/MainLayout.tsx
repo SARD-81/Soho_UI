@@ -228,14 +228,45 @@ const MainLayout: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1,
+                  px: 1.5,
+                  py: 0.75,
+                  borderRadius: 2,
                   fontFamily: 'var(--font-vazir)',
                   fontWeight: 500,
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  transition: 'background-color 0.2s ease, border-color 0.2s ease',
                   '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
                   },
                 }}
               >
-                خوش آمدید، {displayUsername}
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: '0.9rem',
+                    fontWeight: 400,
+                    color: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.7)'
+                        : 'rgba(0, 0, 0, 0.7)',
+                  }}
+                >
+                  خوش آمدید،
+                </Typography>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: '1rem',
+                    fontFamily: 'var(--font-didot)',
+                    fontWeight: 600,
+                    letterSpacing: '0.03em',
+                    color: 'var(--color-primary-light)',
+                  }}
+                >
+                  {displayUsername}
+                </Typography>
               </Button>
             )}
             <Menu
