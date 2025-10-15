@@ -293,27 +293,36 @@ const WebUserCreateModal = ({
         {showPasswordValidation ? (
           <Box
             sx={{
-              borderRadius: '10px',
-              border: '1px solid color-mix(in srgb, var(--color-primary) 65%, transparent)',
-              background:
-                'linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 15%, transparent) 0%, color-mix(in srgb, var(--color-primary-light) 15%, transparent) 100%)',
+              borderRadius: '8px',
+              border: '1px solid color-mix(in srgb, var(--color-primary) 45%, transparent)',
+              backgroundColor:
+                'color-mix(in srgb, var(--color-primary-light) 12%, transparent)',
               px: 2.5,
               py: 2,
-              boxShadow: '0 18px 28px -22px rgba(31, 182, 255, 0.65)',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: "''",
+                position: 'absolute',
+                inset: 0,
+                borderRadius: 'inherit',
+                borderLeft: '4px solid var(--color-primary)',
+                pointerEvents: 'none',
+              },
             }}
           >
             <Typography
               sx={{
                 fontWeight: 700,
-                fontSize: '0.95rem',
+                fontSize: '0.9rem',
                 color: 'var(--color-primary)',
-                mb: 1.5,
+                mb: 1.25,
               }}
             >
               الزامات رمز عبور
             </Typography>
 
-            <Stack spacing={1.25}>
+            <Stack spacing={1}>
               {passwordValidationChecks.map(({ id, label, isValid }) => (
                 <Stack
                   key={id}
