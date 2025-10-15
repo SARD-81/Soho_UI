@@ -144,8 +144,12 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     () =>
       mountpointOptions.filter((option) => {
         const normalizedOption = option.trim().toLowerCase();
+        const normalizedOptionWithoutBoundarySlashes = normalizedOption.replace(
+          /^\/+|\/+$/g,
+          ''
+        );
 
-        return !normalizedPoolNames.has(normalizedOption);
+        return !normalizedPoolNames.has(normalizedOptionWithoutBoundarySlashes);
       }),
     [mountpointOptions, normalizedPoolNames]
   );
