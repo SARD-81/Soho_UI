@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import type {
@@ -16,17 +17,64 @@ interface DeleteFileSystemResponse {
   [key: string]: unknown;
 }
 
+const DEFAULT_DELETE_FILESYSTEM_ERROR_MESSAGE = 'امکان حذف فضای فایلی وجود ندارد.';
+
+const extractDeleteFileSystemErrorMessage = (error: unknown, fallback: string) => {
+  if (isAxiosError(error)) {
+    const responseData = error.response?.data;
+    if (responseData && typeof responseData === 'object') {
+      const detail = responseData.detail;
+      if (typeof detail === 'string' && detail.trim().length > 0) {
+        return detail;
+      }
+
+      const message = responseData.message;
+      if (typeof message === 'string' && message.trim().length > 0) {
+        return message;
+      }
+
+      const nestedError = (responseData as { error?: unknown }).error;
+      if (nestedError && typeof nestedError === 'object') {
+        const nestedMessage = (nestedError as { message?: unknown }).message;
+        if (typeof nestedMessage === 'string' && nestedMessage.trim().length > 0) {
+          return nestedMessage;
+        }
+
+        const nestedDetail = (nestedError as { detail?: unknown }).detail;
+        if (typeof nestedDetail === 'string' && nestedDetail.trim().length > 0) {
+          return nestedDetail;
+        }
+      }
+    }
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
 const deleteFileSystemRequest = async ({
   filesystem_name,
 }: DeleteFileSystemPayload): Promise<DeleteFileSystemResponse> => {
-  const response = await axiosInstance.delete<DeleteFileSystemResponse>(
-    '/api/filesystem/delete/',
-    {
-      data: { filesystem_name },
-    }
-  );
+  try {
+    const response = await axiosInstance.delete<DeleteFileSystemResponse>(
+      '/api/filesystem/delete/',
+      {
+        data: { filesystem_name },
+      }
+    );
 
-  return response.data;
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      extractDeleteFileSystemErrorMessage(
+        error,
+        DEFAULT_DELETE_FILESYSTEM_ERROR_MESSAGE
+      )
+    );
+  }
 };
 
 interface UseDeleteFileSystemOptions {

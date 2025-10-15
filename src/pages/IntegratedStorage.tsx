@@ -26,6 +26,13 @@ const IntegratedStorage = () => {
       toast.success(`فضای یکپارچه ${poolName} با موفقیت حذف شد.`);
     },
     onError: (error, poolName) => {
+      if (error.message.includes('shareConfiguration')) {
+        toast.error(
+          `حذف فضای یکپارچه ${poolName} امکان‌پذیر نیست؛ ابتدا تمام فایل‌سیستم‌های وابسته به این فضا را حذف کنید.`
+        );
+        return;
+      }
+
       toast.error(
         `حذف فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`
       );
