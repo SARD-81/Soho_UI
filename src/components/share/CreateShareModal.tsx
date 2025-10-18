@@ -7,12 +7,15 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import type { SambaSharesResponse } from '../../@types/samba';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useFilesystemMountpoints } from '../../hooks/useFilesystemMountpoints';
 import { useSambaUsers } from '../../hooks/useSambaUsers';
 import { useZpool } from '../../hooks/useZpool';
+import axiosInstance from '../../lib/axiosInstance';
 import normalizeSambaUsers from '../../utils/sambaUsers';
 import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
@@ -122,6 +125,60 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     [sambaUsers]
   );
 
+  const existingSharesQuery = useQuery<SambaSharesResponse>({
+    queryKey: ['samba', 'shares', 'create-modal'],
+    queryFn: async () => {
+      const { data } = await axiosInstance.get<SambaSharesResponse>('/api/samba/');
+      return data;
+    },
+    enabled: isOpen,
+    staleTime: 0,
+    gcTime: 0,
+  });
+
+  const { refetch: refetchExistingShares } = existingSharesQuery;
+
+  useEffect(() => {
+    if (isOpen) {
+      void refetchExistingShares();
+    }
+  }, [isOpen, refetchExistingShares]);
+
+  const existingSharePaths = useMemo(() => {
+    const shareDetails = existingSharesQuery.data?.data;
+
+    if (!shareDetails) {
+      return new Set<string>();
+    }
+
+    const paths = new Set<string>();
+
+    Object.values(shareDetails).forEach((details) => {
+      const rawPath =
+        typeof details?.path === 'string' ? details.path : undefined;
+
+      if (!rawPath) {
+        return;
+      }
+
+      const trimmedPath = rawPath.trim();
+
+      if (!trimmedPath) {
+        return;
+      }
+
+      paths.add(trimmedPath);
+
+      const withoutTrailingSlashes = trimmedPath.replace(/\/+$/, '');
+
+      if (withoutTrailingSlashes) {
+        paths.add(withoutTrailingSlashes);
+      }
+    });
+
+    return paths;
+  }, [existingSharesQuery.data?.data]);
+
   const filesystemMountpointsQuery = useFilesystemMountpoints({
     enabled: isOpen,
   });
@@ -143,7 +200,23 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   const filteredMountpointOptions = useMemo(
     () =>
       mountpointOptions.filter((option) => {
-        const normalizedOption = option.trim().toLowerCase();
+        const trimmedOption = option.trim();
+
+        if (!trimmedOption) {
+          return false;
+        }
+
+        if (existingSharePaths.has(trimmedOption)) {
+          return false;
+        }
+
+        const withoutTrailingSlashes = trimmedOption.replace(/\/+$/, '');
+
+        if (withoutTrailingSlashes && existingSharePaths.has(withoutTrailingSlashes)) {
+          return false;
+        }
+
+        const normalizedOption = trimmedOption.toLowerCase();
         const normalizedOptionWithoutBoundarySlashes = normalizedOption.replace(
           /^\/+|\/+$/g,
           ''
@@ -151,7 +224,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
 
         return !normalizedPoolNames.has(normalizedOptionWithoutBoundarySlashes);
       }),
-    [mountpointOptions, normalizedPoolNames]
+    [existingSharePaths, mountpointOptions, normalizedPoolNames]
   );
 
   const hasPathError =

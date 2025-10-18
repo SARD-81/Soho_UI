@@ -11,7 +11,6 @@ import { useFileSystems } from '../hooks/useFileSystems';
 import { useZpool } from '../hooks/useZpool';
 
 const FileSystem = () => {
-  // const [num , setnum] = useState(0)
   const createFileSystem = useCreateFileSystem({
     onSuccess: (filesystemName) => {
       toast.success(`فضای فایلی ${filesystemName} با موفقیت ایجاد شد.`);
@@ -105,18 +104,13 @@ const FileSystem = () => {
             sx={{
               px: 3,
               py: 1.25,
-              borderRadius: '5px',
+              borderRadius: '3px',
               fontWeight: 700,
               fontSize: '0.95rem',
               background:
                 'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
               color: 'var(--color-bg)',
               boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-              '&:hover': {
-                background:
-                  'linear-gradient(135deg, rgba(0, 198, 169, 0.95) 0%, rgba(18, 140, 200, 0.95) 100%)',
-                boxShadow: '0 18px 36px -18px rgba(0, 198, 169, 0.75)',
-              },
             }}
           >
             ایجاد فضای فایلی

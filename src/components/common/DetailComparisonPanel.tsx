@@ -145,7 +145,7 @@ const DetailComparisonPanel = ({
               py: 1.5,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'flex-start',
+              justifyContent: 'center',
               fontWeight: 700,
               color: 'var(--color-primary)',
               fontSize: '0.95rem',
@@ -174,7 +174,7 @@ const DetailComparisonPanel = ({
               }}
             >
               <Typography
-                component="span"
+                component="p"
                 sx={{
                   fontWeight: 700,
                   color: 'var(--color-text)',
@@ -256,7 +256,7 @@ const DetailComparisonPanel = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'flex-start',
-                      backgroundColor: alpha(theme.palette.background.default, 0.45),
+                      backgroundColor: alpha(theme.palette.background.default, 0.1),
                       color: 'var(--color-secondary)',
                       fontWeight: 700,
                       borderBottom: isLastRow ? 'none' : `1px solid ${borderColor}`,

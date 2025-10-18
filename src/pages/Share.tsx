@@ -526,10 +526,6 @@ const Share = () => {
                   'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
                 color: 'var(--color-bg)',
                 boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-                '&:hover': {
-                  background:
-                    'linear-gradient(135deg, rgba(0, 198, 169, 0.95) 0%, rgba(18, 140, 200, 0.95) 100%)',
-                },
               }}
             >
               ایجاد اشتراک جدید
@@ -582,14 +578,9 @@ const Share = () => {
                 fontWeight: 700,
                 fontSize: '0.95rem',
                 background:
-                  'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
                 color: 'var(--color-bg)',
-                boxShadow:
-                  '0 16px 32px -18px color-mix(in srgb, var(--color-primary) 55%, transparent)',
-                '&:hover': {
-                  background:
-                    'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
-                },
+                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
               }}
             >
               افزودن کاربر
