@@ -11,6 +11,8 @@ import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { useDiskWwnMap, useFreeDisks } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
 
+const MAX_COMPARISON_ITEMS = 4;
+
 const IntegratedStorage = () => {
   const createPool = useCreatePool({
     onSuccess: (poolName) => {
@@ -149,9 +151,11 @@ const IntegratedStorage = () => {
             return prev;
           }
 
-          if (prev.length >= 4) {
-            toast.error('امکان مقایسه بیش از چهار فضای یکپارچه وجود ندارد.');
-            return prev;
+          if (prev.length >= MAX_COMPARISON_ITEMS) {
+            return [
+              ...prev.slice(0, MAX_COMPARISON_ITEMS - 1),
+              pool.name,
+            ];
           }
 
           return [...prev, pool.name];
