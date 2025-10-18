@@ -148,8 +148,7 @@ const Share = () => {
           }
 
           if (prev.length >= MAX_COMPARISON_ITEMS) {
-            toast.error('امکان مقایسه بیش از چهار اشتراک وجود ندارد.');
-            return prev;
+            return [...prev.slice(0, MAX_COMPARISON_ITEMS - 1), share.name];
           }
 
           return [...prev, share.name];
@@ -347,8 +346,10 @@ const Share = () => {
           }
 
           if (prev.length >= MAX_COMPARISON_ITEMS) {
-            toast.error('امکان مقایسه بیش از چهار کاربر وجود ندارد.');
-            return prev;
+            return [
+              ...prev.slice(0, MAX_COMPARISON_ITEMS - 1),
+              user.username,
+            ];
           }
 
           return [...prev, user.username];

@@ -261,8 +261,8 @@ const MainLayout: React.FC = () => {
                   sx={{
                     fontSize: '1rem',
                     fontFamily: 'var(--font-didot)',
-                    fontWeight: 600,
-                    letterSpacing: '0.03em',
+                    fontWeight: 900,
+                    letterSpacing: '0.05em',
                     color: 'var(--color-primary-light)',
                   }}
                 >

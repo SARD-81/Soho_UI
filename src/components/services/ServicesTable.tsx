@@ -5,8 +5,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { ChangeEvent } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { IconType } from 'react-icons';
 import { FiPlay, FiRefreshCw, FiStopCircle } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
@@ -142,9 +141,6 @@ const ServicesTable = ({
   isActionLoading = false,
   activeServiceName = null,
 }: ServicesTableProps) => {
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-
   const detailKeys = useMemo(() => {
     const keys = new Set<string>();
 
@@ -159,32 +155,6 @@ const ServicesTable = ({
     return Array.from(keys).sort((a, b) => a.localeCompare(b, 'fa'));
   }, [services]);
 
-  useEffect(() => {
-    if (page > 0 && page * rowsPerPage >= services.length) {
-      const lastPage = Math.max(
-        Math.ceil(services.length / rowsPerPage) - 1,
-        0
-      );
-      setPage(lastPage);
-    }
-  }, [page, rowsPerPage, services.length]);
-
-  const paginatedServices = useMemo(() => {
-    const start = page * rowsPerPage;
-    const end = start + rowsPerPage;
-
-    return services.slice(start, end);
-  }, [page, rowsPerPage, services]);
-
-  const handleChangePage = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(Number(event.target.value));
-    setPage(0);
-  };
-
   const columns = useMemo<DataTableColumn<ServiceTableRow>[]>(() => {
     const indexColumn: DataTableColumn<ServiceTableRow> = {
       id: 'service-index',
@@ -193,7 +163,7 @@ const ServicesTable = ({
       width: 64,
       renderCell: (_, index) => (
         <Typography component="span" sx={{ fontWeight: 500 }}>
-          {(page * rowsPerPage + index + 1).toLocaleString('en-US')}
+          {(index + 1).toLocaleString('en-US')}
         </Typography>
       ),
     };
@@ -284,43 +254,15 @@ const ServicesTable = ({
     };
 
     return [indexColumn, baseColumn, ...dynamicColumns, actionColumn];
-  }, [
-    activeServiceName,
-    detailKeys,
-    isActionLoading,
-    onAction,
-    page,
-    rowsPerPage,
-  ]);
+  }, [activeServiceName, detailKeys, isActionLoading, onAction]);
 
   return (
     <DataTable<ServiceTableRow>
       columns={columns}
-      data={paginatedServices}
+      data={services}
       getRowId={(row) => row.name}
       isLoading={isLoading}
       error={error}
-      pagination={{
-        page,
-        rowsPerPage,
-        count: services.length,
-        onPageChange: handleChangePage,
-        onRowsPerPageChange: handleChangeRowsPerPage,
-        rowsPerPageOptions: [5, 10, 25],
-        labelRowsPerPage: 'ردیف در هر صفحه',
-        labelDisplayedRows: ({ from, to, count }) => {
-          const localizedFrom = from.toLocaleString('en-US');
-          const localizedTo = to.toLocaleString('en-US');
-          const localizedCount =
-            count !== -1
-              ? count.toLocaleString('en-US')
-              : `بیش از ${localizedTo}`;
-
-          return `${localizedFrom}–${localizedTo} از ${localizedCount}`;
-        },
-        rowCountFormatter: (count) =>
-          `تعداد کل سرویس‌ها: ${count.toLocaleString('en-US')}`,
-      }}
     />
   );
 };
