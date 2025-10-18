@@ -41,9 +41,7 @@ const DetailComparisonPanel = ({
   }
 
   const visibleColumns =
-    columns.length > 4
-      ? [...columns.slice(0, 3), columns[columns.length - 1]]
-      : columns;
+    columns.length > 4 ? columns.slice(-4) : columns;
 
   const attributeKeys = Array.from(
     visibleColumns.reduce((acc, column) => {
@@ -73,7 +71,7 @@ const DetailComparisonPanel = ({
     });
   }
 
-  const gridColumns = `minmax(160px, auto) repeat(${visibleColumns.length}, minmax(200px, 1fr))`;
+  const gridColumns = `repeat(${visibleColumns.length + 1}, minmax(200px, 1fr))`;
   const headerGradient =
     theme.palette.mode === 'dark'
       ? `linear-gradient(135deg, ${alpha('#00c6a9', 0.3)} 0%, ${alpha('#1fb6ff', 0.2)} 100%)`
