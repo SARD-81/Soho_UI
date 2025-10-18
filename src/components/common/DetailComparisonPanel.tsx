@@ -40,8 +40,11 @@ const DetailComparisonPanel = ({
     return null;
   }
 
+  const displayedColumns =
+    columns.length > 4 ? [...columns.slice(0, 3), columns[columns.length - 1]] : columns;
+
   const attributeKeys = Array.from(
-    columns.reduce((acc, column) => {
+    displayedColumns.reduce((acc, column) => {
       Object.keys(column.values ?? {}).forEach((key) => acc.add(key));
       return acc;
     }, new Set<string>())
@@ -53,7 +56,7 @@ const DetailComparisonPanel = ({
     return a.localeCompare(b, 'fa-IR');
   });
 
-  const hasStatuses = columns.some((column) => column.status);
+  const hasStatuses = displayedColumns.some((column) => column.status);
   const hasAttributes = attributeKeys.length > 0;
 
   const rows: Array<{ type: 'status' | 'attribute'; key: string; label: string }> = [];
@@ -68,7 +71,7 @@ const DetailComparisonPanel = ({
     });
   }
 
-  const gridColumns = `minmax(160px, auto) repeat(${columns.length}, minmax(200px, 1fr))`;
+  const gridColumns = `minmax(160px, auto) repeat(${displayedColumns.length}, minmax(200px, 1fr))`;
   const headerGradient =
     theme.palette.mode === 'dark'
       ? `linear-gradient(135deg, ${alpha('#00c6a9', 0.3)} 0%, ${alpha('#1fb6ff', 0.2)} 100%)`
@@ -76,6 +79,7 @@ const DetailComparisonPanel = ({
   const borderColor = alpha(theme.palette.divider, theme.palette.mode === 'dark' ? 0.4 : 0.25);
   const backgroundColor = alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.9 : 1);
   const selectedRowHover = alpha(theme.palette.primary.main, 0.08);
+  const columnBackgroundColor = 'rgba(0, 198, 169, 0.18)';
 
   return (
     <Box
@@ -121,8 +125,12 @@ const DetailComparisonPanel = ({
             background: headerGradient,
             '& > .comparison-cell': {
               borderLeft: `1px solid ${borderColor}`,
+              borderRight: `1px solid ${borderColor}`,
               '&:first-of-type': {
                 borderLeft: 'none',
+              },
+              '&:last-of-type': {
+                borderRight: 'none',
               },
             },
           }}
@@ -138,12 +146,13 @@ const DetailComparisonPanel = ({
               fontWeight: 700,
               color: 'var(--color-primary)',
               fontSize: '0.95rem',
+              minHeight: 64,
             }}
           >
             {attributeLabel}
           </Box>
 
-          {columns.map((column) => (
+          {displayedColumns.map((column) => (
             <Box
               key={column.id}
               className="comparison-cell"
@@ -154,6 +163,8 @@ const DetailComparisonPanel = ({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 1,
+                backgroundColor: columnBackgroundColor,
+                minHeight: 64,
               }}
             >
               <Typography
@@ -212,8 +223,12 @@ const DetailComparisonPanel = ({
               gridTemplateColumns: gridColumns,
               '& > .comparison-cell': {
                 borderLeft: `1px solid ${borderColor}`,
+                borderRight: `1px solid ${borderColor}`,
                 '&:first-of-type': {
                   borderLeft: 'none',
+                },
+                '&:last-of-type': {
+                  borderRight: 'none',
                 },
               },
             }}
@@ -236,12 +251,13 @@ const DetailComparisonPanel = ({
                       fontWeight: 700,
                       borderBottom: isLastRow ? 'none' : `1px solid ${borderColor}`,
                       direction: 'rtl',
+                      minHeight: 64,
                     }}
                   >
                     {row.label}
                   </Box>
 
-                  {columns.map((column) => {
+                  {displayedColumns.map((column) => {
                     const cellKey = `${row.key}-${column.id}`;
                     const status = column.status;
                     let content: ReactNode = null;
@@ -316,11 +332,12 @@ const DetailComparisonPanel = ({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          backgroundColor: alpha(theme.palette.background.paper, 0.65),
+                          backgroundColor: columnBackgroundColor,
                           borderBottom: isLastRow ? 'none' : `1px solid ${borderColor}`,
                           '&:hover': {
                             backgroundColor: selectedRowHover,
                           },
+                          minHeight: 64,
                         }}
                       >
                         {content}
