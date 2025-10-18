@@ -309,14 +309,9 @@ const Users = () => {
                 fontWeight: 700,
                 fontSize: '0.95rem',
                 background:
-                  'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
                 color: 'var(--color-bg)',
-                boxShadow:
-                  '0 16px 32px -18px color-mix(in srgb, var(--color-primary) 55%, transparent)',
-                '&:hover': {
-                  background:
-                    'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
-                },
+                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
               }}
             >
               ایجاد کاربر جدید
