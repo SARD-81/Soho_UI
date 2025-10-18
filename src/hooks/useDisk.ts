@@ -6,6 +6,7 @@ import type {
   FreeDiskResponse,
 } from '../@types/disk';
 import axiosInstance from '../lib/axiosInstance';
+import { createVisibilityAwareInterval } from '../utils/refetchInterval';
 
 const FREE_DISK_ENDPOINTS = ['/api/disk/free', '/api/disk/free/'] as const;
 const DEFAULT_FREE_DISK_ERROR_MESSAGE =
@@ -65,12 +66,16 @@ interface UseDiskOptions {
   enabled?: boolean;
 }
 
+const defaultDiskRefetchInterval = createVisibilityAwareInterval(5000);
+
 export const useDisk = (options?: UseDiskOptions) => {
   return useQuery<DiskResponse, Error>({
     queryKey: ['disk'],
     queryFn: fetchDisk,
-    refetchInterval: options?.refetchInterval ?? 1000,
-    refetchIntervalInBackground: true,
+    refetchInterval:
+      typeof options?.refetchInterval === 'number'
+        ? createVisibilityAwareInterval(options.refetchInterval)
+        : defaultDiskRefetchInterval,
     enabled: options?.enabled ?? true,
   });
 };
@@ -79,8 +84,10 @@ export const useDiskWwnMap = (options?: UseDiskOptions) => {
   return useQuery<DiskWwnMapResponse, Error>({
     queryKey: ['disk', 'wwn', 'map'],
     queryFn: fetchDiskWwnMap,
-    refetchInterval: options?.refetchInterval ?? 1000,
-    refetchIntervalInBackground: true,
+    refetchInterval:
+      typeof options?.refetchInterval === 'number'
+        ? createVisibilityAwareInterval(options.refetchInterval)
+        : defaultDiskRefetchInterval,
     enabled: options?.enabled ?? true,
   });
 };
@@ -89,9 +96,10 @@ export const useFreeDisks = (options?: UseDiskOptions) => {
   return useQuery<string[], Error>({
     queryKey: ['disk', 'free'],
     queryFn: fetchFreeDisks,
-    refetchInterval: options?.refetchInterval,
-    refetchIntervalInBackground: Boolean(options?.refetchInterval),
+    refetchInterval:
+      typeof options?.refetchInterval === 'number'
+        ? createVisibilityAwareInterval(options.refetchInterval)
+        : undefined,
     enabled: options?.enabled ?? true,
-    refetchOnWindowFocus: false,
   });
 };

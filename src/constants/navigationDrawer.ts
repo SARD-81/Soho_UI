@@ -1,24 +1,26 @@
 import { createElement } from 'react';
 // import { BiHistory } from 'react-icons/bi';
-import { BsFillShareFill } from "react-icons/bs";
+import { BsFillShareFill } from 'react-icons/bs';
 // import { FiUsers } from 'react-icons/fi';
 import { GrServices, GrStorage } from 'react-icons/gr';
 import { MdSpaceDashboard, MdStorage } from 'react-icons/md';
 import { RiSettings3Fill } from 'react-icons/ri';
 import type { NavigationItem } from '../@types/navigationDrawer';
+import { faMessages } from '../locales/fa';
+import { ROUTE_PATHS } from './routes';
 
 export const drawerWidth = 200;
 
 export const navItems: NavigationItem[] = [
   {
-    text: 'داشبورد',
+    text: faMessages.navigation.dashboard,
     icon: createElement(MdSpaceDashboard),
-    path: '/dashboard',
+    path: ROUTE_PATHS.dashboard,
   },
   {
-    text: 'فضای یکپارچه',
+    text: faMessages.navigation.integratedStorage,
     icon: createElement(GrStorage),
-    path: '/Integrated-space',
+    path: ROUTE_PATHS.integratedStorage,
   },
   // {
   //   text: 'فضای بلاکی',
@@ -26,21 +28,25 @@ export const navItems: NavigationItem[] = [
   //   path: '/block-space',
   // },
   {
-    text: 'فضای فایلی',
+    text: faMessages.navigation.fileStorage,
     icon: createElement(MdStorage),
-    path: '/file-system',
+    path: ROUTE_PATHS.fileSystem,
   },
-  { text: 'اشتراک گذاری', icon: createElement(BsFillShareFill), path: '/share' },
   {
-    text: 'سرویس ها',
+    text: faMessages.navigation.sharing,
+    icon: createElement(BsFillShareFill),
+    path: ROUTE_PATHS.share,
+  },
+  {
+    text: faMessages.navigation.services,
     icon: createElement(GrServices),
-    path: '/services',
+    path: ROUTE_PATHS.services,
   },
 
   {
-    text: 'تنظیمات',
+    text: faMessages.navigation.settings,
     icon: createElement(RiSettings3Fill),
-    path: '/settings',
+    path: ROUTE_PATHS.settings,
     children: [
       // { text: 'کاربران', icon: createElement(FiUsers), path: '/users' },
     ],

@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout.tsx';
+import { ROUTE_PATHS, ROUTE_SEGMENTS } from '../constants/routes.ts';
 import BlockStorage from '../pages/BlockStorage.tsx';
 import Dashboard from '../pages/Dashboard.tsx';
 import FileSystem from '../pages/FileSystem.tsx';
@@ -15,27 +16,27 @@ import ProtectedRoute from '../routes/ProtectedRoute.tsx';
 
 const router = createBrowserRouter([
   {
-    path: '/login',
+    path: ROUTE_PATHS.login,
     element: <LoginPage />,
   },
   {
-    path: '/',
+    path: ROUTE_PATHS.root,
     element: (
       <ProtectedRoute>
         <MainLayout />
       </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <Navigate to="dashboard" replace /> },
-      { path: 'dashboard', element: <Dashboard /> },
-      { path: 'Integrated-space', element: <IntegratedStorage /> },
-      { path: 'block-space', element: <BlockStorage /> },
-      { path: 'file-system', element: <FileSystem /> },
-      { path: 'services', element: <Services /> },
-      { path: 'users', element: <Users /> },
-      { path: 'settings', element: <Settings /> },
-      { path: 'share', element: <Share /> },
-      { path: 'history', element: <History /> },
+      { index: true, element: <Navigate to={ROUTE_SEGMENTS.dashboard} replace /> },
+      { path: ROUTE_SEGMENTS.dashboard, element: <Dashboard /> },
+      { path: ROUTE_SEGMENTS.integratedStorage, element: <IntegratedStorage /> },
+      { path: ROUTE_SEGMENTS.blockStorage, element: <BlockStorage /> },
+      { path: ROUTE_SEGMENTS.fileSystem, element: <FileSystem /> },
+      { path: ROUTE_SEGMENTS.services, element: <Services /> },
+      { path: ROUTE_SEGMENTS.users, element: <Users /> },
+      { path: ROUTE_SEGMENTS.settings, element: <Settings /> },
+      { path: ROUTE_SEGMENTS.share, element: <Share /> },
+      { path: ROUTE_SEGMENTS.history, element: <History /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

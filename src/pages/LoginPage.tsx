@@ -1,7 +1,6 @@
 import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
 import LoginForm from '../components/LoginForm.tsx';
 import ThemeToggle from '../components/ThemeToggle.tsx';
-import '../index.css';
 
 function LoginPage() {
   return (

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ZpoolDetailEntry, ZpoolDetailResponse } from '../@types/zpool.ts';
 import axiosInstance from '../lib/axiosInstance';
+import { createVisibilityAwareInterval } from '../utils/refetchInterval';
 
 export const zpoolDetailQueryKey = (poolName: string) => [
   'zpool',
@@ -52,6 +53,6 @@ export const useZpoolDetails = (
     queryKey: zpoolDetailQueryKey(poolName),
     queryFn: () => fetchZpoolDetails(poolName),
     enabled: options?.enabled ?? true,
-    refetchInterval: options?.enabled ? 1000 : undefined,
+    refetchInterval: options?.enabled ? createVisibilityAwareInterval(5000) : undefined,
   });
 };
