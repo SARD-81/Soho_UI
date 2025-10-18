@@ -40,8 +40,10 @@ const DetailComparisonPanel = ({
     return null;
   }
 
+  const visibleColumns = columns.slice(-4);
+
   const attributeKeys = Array.from(
-    columns.reduce((acc, column) => {
+    visibleColumns.reduce((acc, column) => {
       Object.keys(column.values ?? {}).forEach((key) => acc.add(key));
       return acc;
     }, new Set<string>())
@@ -53,7 +55,7 @@ const DetailComparisonPanel = ({
     return a.localeCompare(b, 'fa-IR');
   });
 
-  const hasStatuses = columns.some((column) => column.status);
+  const hasStatuses = visibleColumns.some((column) => column.status);
   const hasAttributes = attributeKeys.length > 0;
 
   const rows: Array<{ type: 'status' | 'attribute'; key: string; label: string }> = [];
@@ -68,7 +70,7 @@ const DetailComparisonPanel = ({
     });
   }
 
-  const gridColumns = `minmax(160px, auto) repeat(${columns.length}, minmax(200px, 1fr))`;
+  const gridColumns = `minmax(160px, auto) repeat(${visibleColumns.length}, minmax(200px, 1fr))`;
   const headerGradient =
     theme.palette.mode === 'dark'
       ? `linear-gradient(135deg, ${alpha('#00c6a9', 0.3)} 0%, ${alpha('#1fb6ff', 0.2)} 100%)`
@@ -121,8 +123,12 @@ const DetailComparisonPanel = ({
             background: headerGradient,
             '& > .comparison-cell': {
               borderLeft: `1px solid ${borderColor}`,
+              borderRight: `1px solid ${borderColor}`,
               '&:first-of-type': {
                 borderLeft: 'none',
+              },
+              '&:last-of-type': {
+                borderRight: 'none',
               },
             },
           }}
@@ -138,12 +144,13 @@ const DetailComparisonPanel = ({
               fontWeight: 700,
               color: 'var(--color-primary)',
               fontSize: '0.95rem',
+              minHeight: 64,
             }}
           >
             {attributeLabel}
           </Box>
 
-          {columns.map((column) => (
+          {visibleColumns.map((column, columnIndex) => (
             <Box
               key={column.id}
               className="comparison-cell"
@@ -154,6 +161,11 @@ const DetailComparisonPanel = ({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 1,
+                minHeight: 64,
+                backgroundColor:
+                  columnIndex % 2 === 1
+                    ? 'rgba(0, 198, 169, 0.18)'
+                    : alpha(theme.palette.background.paper, 0.65),
               }}
             >
               <Typography
@@ -212,8 +224,12 @@ const DetailComparisonPanel = ({
               gridTemplateColumns: gridColumns,
               '& > .comparison-cell': {
                 borderLeft: `1px solid ${borderColor}`,
+                borderRight: `1px solid ${borderColor}`,
                 '&:first-of-type': {
                   borderLeft: 'none',
+                },
+                '&:last-of-type': {
+                  borderRight: 'none',
                 },
               },
             }}
@@ -236,12 +252,13 @@ const DetailComparisonPanel = ({
                       fontWeight: 700,
                       borderBottom: isLastRow ? 'none' : `1px solid ${borderColor}`,
                       direction: 'rtl',
+                      minHeight: 64,
                     }}
                   >
                     {row.label}
                   </Box>
 
-                  {columns.map((column) => {
+                  {visibleColumns.map((column, columnIndex) => {
                     const cellKey = `${row.key}-${column.id}`;
                     const status = column.status;
                     let content: ReactNode = null;
@@ -316,8 +333,12 @@ const DetailComparisonPanel = ({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          backgroundColor: alpha(theme.palette.background.paper, 0.65),
+                          backgroundColor:
+                            columnIndex % 2 === 1
+                              ? 'rgba(0, 198, 169, 0.18)'
+                              : alpha(theme.palette.background.paper, 0.65),
                           borderBottom: isLastRow ? 'none' : `1px solid ${borderColor}`,
+                          minHeight: 64,
                           '&:hover': {
                             backgroundColor: selectedRowHover,
                           },
