@@ -36,12 +36,26 @@ const DetailComparisonPanel = ({
 }: DetailComparisonPanelProps) => {
   const theme = useTheme();
 
-  if (!columns.length) {
+  const baseColumnColors = [
+    theme.palette.primary.main,
+    theme.palette.secondary.main,
+    theme.palette.success.main,
+    theme.palette.info.main,
+    theme.palette.warning.main,
+  ];
+
+  const displayedColumns =
+    columns.length > 4 ? [...columns.slice(0, 3), columns[columns.length - 1]] : columns;
+
+  const getColumnColor = (index: number) =>
+    baseColumnColors[index % baseColumnColors.length] ?? theme.palette.primary.main;
+
+  if (!displayedColumns.length) {
     return null;
   }
 
   const attributeKeys = Array.from(
-    columns.reduce((acc, column) => {
+    displayedColumns.reduce((acc, column) => {
       Object.keys(column.values ?? {}).forEach((key) => acc.add(key));
       return acc;
     }, new Set<string>())
@@ -53,7 +67,7 @@ const DetailComparisonPanel = ({
     return a.localeCompare(b, 'fa-IR');
   });
 
-  const hasStatuses = columns.some((column) => column.status);
+  const hasStatuses = displayedColumns.some((column) => column.status);
   const hasAttributes = attributeKeys.length > 0;
 
   const rows: Array<{ type: 'status' | 'attribute'; key: string; label: string }> = [];
@@ -68,7 +82,7 @@ const DetailComparisonPanel = ({
     });
   }
 
-  const gridColumns = `minmax(160px, auto) repeat(${columns.length}, minmax(200px, 1fr))`;
+  const gridColumns = `minmax(160px, auto) repeat(${displayedColumns.length}, minmax(200px, 1fr))`;
   const headerGradient =
     theme.palette.mode === 'dark'
       ? `linear-gradient(135deg, ${alpha('#00c6a9', 0.3)} 0%, ${alpha('#1fb6ff', 0.2)} 100%)`
@@ -138,34 +152,43 @@ const DetailComparisonPanel = ({
               fontWeight: 700,
               color: 'var(--color-primary)',
               fontSize: '0.95rem',
+              minHeight: 56,
+              borderRight: `1px solid ${borderColor}`,
             }}
           >
             {attributeLabel}
           </Box>
 
-          {columns.map((column) => (
-            <Box
-              key={column.id}
-              className="comparison-cell"
-              sx={{
-                px: 2,
-                py: 1.25,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 1,
-              }}
-            >
-              <Typography
-                component="span"
+          {displayedColumns.map((column, columnIndex) => {
+            const columnColor = getColumnColor(columnIndex);
+
+            return (
+              <Box
+                key={column.id}
+                className="comparison-cell"
                 sx={{
-                  fontWeight: 700,
-                  color: 'var(--color-text)',
-                  fontSize: '1rem',
-                  whiteSpace: 'nowrap',
+                  px: 2,
+                  py: 1.25,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                  minHeight: 56,
+                  backgroundColor: alpha(columnColor, theme.palette.mode === 'dark' ? 0.2 : 0.12),
+                  borderLeft: `1px solid ${alpha(columnColor, 0.35)}`,
+                  borderRight: `1px solid ${alpha(columnColor, 0.2)}`,
                 }}
               >
-                {column.title}
+                <Typography
+                  component="span"
+                  sx={{
+                    fontWeight: 700,
+                    color: alpha(columnColor, 0.9),
+                    fontSize: '1rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {column.title}
               </Typography>
 
               {column.onRemove && (
@@ -176,9 +199,9 @@ const DetailComparisonPanel = ({
                     column.onRemove?.();
                   }}
                   sx={{
-                    color: 'var(--color-secondary)',
+                    color: alpha(columnColor, 0.9),
                     '&:hover': {
-                      color: 'var(--color-error)',
+                      color: alpha(theme.palette.error.main, 0.9),
                     },
                   }}
                   aria-label={`${column.title} را از مقایسه حذف کنید`}
@@ -187,7 +210,8 @@ const DetailComparisonPanel = ({
                 </IconButton>
               )}
             </Box>
-          ))}
+            );
+          })}
         </Box>
 
         {rows.length === 0 ? (
@@ -215,6 +239,9 @@ const DetailComparisonPanel = ({
                 '&:first-of-type': {
                   borderLeft: 'none',
                 },
+                '&:not(:first-of-type)': {
+                  borderRight: `1px solid ${borderColor}`,
+                },
               },
             }}
           >
@@ -236,20 +263,23 @@ const DetailComparisonPanel = ({
                       fontWeight: 700,
                       borderBottom: isLastRow ? 'none' : `1px solid ${borderColor}`,
                       direction: 'rtl',
+                      minHeight: 64,
+                      borderRight: `1px solid ${borderColor}`,
                     }}
                   >
                     {row.label}
                   </Box>
 
-                  {columns.map((column) => {
+                  {displayedColumns.map((column, columnIndex) => {
                     const cellKey = `${row.key}-${column.id}`;
                     const status = column.status;
                     let content: ReactNode = null;
+                    const columnColor = getColumnColor(columnIndex);
 
                     if (row.type === 'status') {
                       if (!status) {
                         content = (
-                          <Typography sx={{ color: 'var(--color-secondary)' }}>
+                          <Typography sx={{ color: alpha(columnColor, 0.9) }}>
                             -
                           </Typography>
                         );
@@ -265,7 +295,7 @@ const DetailComparisonPanel = ({
                           >
                             <CircularProgress size={18} color="primary" />
                             {status.message && (
-                              <Typography sx={{ color: 'var(--color-secondary)' }}>
+                              <Typography sx={{ color: alpha(columnColor, 0.9) }}>
                                 {status.message}
                               </Typography>
                             )}
@@ -278,7 +308,7 @@ const DetailComparisonPanel = ({
                               color:
                                 status.type === 'error'
                                   ? 'var(--color-error)'
-                                  : 'var(--color-secondary)',
+                                  : alpha(columnColor, 0.9),
                               fontWeight: status.type === 'error' ? 700 : 500,
                               textAlign: 'center',
                             }}
@@ -292,7 +322,7 @@ const DetailComparisonPanel = ({
                       content = (
                         <Typography
                           sx={{
-                            color: 'var(--color-text)',
+                            color: alpha(columnColor, 0.95),
                             fontWeight: 500,
                             textAlign: 'center',
                             whiteSpace: 'pre-wrap',
@@ -316,8 +346,11 @@ const DetailComparisonPanel = ({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          backgroundColor: alpha(theme.palette.background.paper, 0.65),
+                          minHeight: 64,
+                          backgroundColor: alpha(columnColor, theme.palette.mode === 'dark' ? 0.18 : 0.1),
                           borderBottom: isLastRow ? 'none' : `1px solid ${borderColor}`,
+                          borderLeft: `1px solid ${alpha(columnColor, 0.35)}`,
+                          borderRight: `1px solid ${alpha(columnColor, 0.25)}`,
                           '&:hover': {
                             backgroundColor: selectedRowHover,
                           },
