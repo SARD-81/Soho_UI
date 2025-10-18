@@ -195,7 +195,7 @@ const SambaUsersTable = ({
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}
-      bodyRowSx={(user) => ({
+      bodyRowSx={(user: SambaUserTableItem) => ({
         ...resolveRowSx(user),
         transition: 'background-color 0.2s ease',
       })}

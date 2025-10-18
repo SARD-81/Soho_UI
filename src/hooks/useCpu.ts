@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '../lib/axiosInstance';
+import { createVisibilityAwareInterval } from '../utils/refetchInterval';
 
 export interface CpuFrequency {
   current?: number | null;
@@ -27,6 +28,6 @@ export const useCpu = () => {
   return useQuery<CpuResponse, Error>({
     queryKey: ['cpu'],
     queryFn: fetchCpu,
-    refetchInterval: 1000,
+    refetchInterval: createVisibilityAwareInterval(5000),
   });
 };

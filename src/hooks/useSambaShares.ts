@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { SambaShareEntry, SambaSharesResponse } from '../@types/samba';
 import axiosInstance from '../lib/axiosInstance';
+import { createVisibilityAwareInterval } from '../utils/refetchInterval';
 
 export const sambaSharesQueryKey = ['samba', 'shares'] as const;
 
@@ -28,7 +29,7 @@ export const useSambaShares = () =>
   useQuery<SambaSharesResponse, Error, SambaShareEntry[]>({
     queryKey: sambaSharesQueryKey,
     queryFn: fetchSambaShares,
-    refetchInterval: 10000,
+    refetchInterval: createVisibilityAwareInterval(15000),
     select: mapShares,
   });
 

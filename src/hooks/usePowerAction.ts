@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 import axiosInstance from '../lib/axiosInstance';
+import { faMessages } from '../locales/fa';
 
 export type PowerAction = 'restart' | 'shutdown';
 
@@ -23,7 +24,17 @@ interface UsePowerActionOptions {
 
 const getEndpoint = (action: PowerAction) => `/api/os/power/${action}`;
 
+const timeoutCodes = new Set(['ECONNABORTED', AxiosError.ETIMEDOUT].filter(Boolean) as string[]);
+
 const extractErrorMessage = (error: AxiosError<ApiErrorResponse>) => {
+  if (error.code && timeoutCodes.has(error.code)) {
+    return faMessages.errors.timeout;
+  }
+
+  if (error.code === AxiosError.ERR_NETWORK) {
+    return faMessages.errors.network;
+  }
+
   const payload = error.response?.data;
 
   if (!payload) {
@@ -52,7 +63,7 @@ const extractErrorMessage = (error: AxiosError<ApiErrorResponse>) => {
 export const usePowerAction = (options: UsePowerActionOptions = {}) =>
   useMutation<PowerActionResponse, AxiosError<ApiErrorResponse>, PowerAction>({
     mutationFn: async (action) => {
-      const { data } = await axiosInstance.get<PowerActionResponse>(
+      const { data } = await axiosInstance.post<PowerActionResponse>(
         getEndpoint(action)
       );
       return data;

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '../lib/axiosInstance';
+import { createVisibilityAwareInterval } from '../utils/refetchInterval';
 
 interface Bandwidth {
   download: number;
@@ -45,7 +46,7 @@ export const useNetwork = (enabled = true) => {
   return useQuery<NetworkData, Error>({
     queryKey: networkQueryKey,
     queryFn: fetchNetwork,
-    refetchInterval: enabled ? 1000 : false,
+    refetchInterval: enabled ? createVisibilityAwareInterval(5000) : false,
     enabled,
   });
 };

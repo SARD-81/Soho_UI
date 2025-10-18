@@ -8,7 +8,20 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import './index.css';
 import { rtlCache } from './rtl-cache';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      refetchOnWindowFocus: false,
+      retry: 2,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
+      gcTime: 5 * 60 * 1000,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

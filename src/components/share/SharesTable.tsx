@@ -162,7 +162,7 @@ const SharesTable = ({
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}
-      bodyRowSx={(share) => ({
+      bodyRowSx={(share: SambaShareEntry) => ({
         ...resolveRowSx(share),
         transition: 'background-color 0.2s ease',
       })}
