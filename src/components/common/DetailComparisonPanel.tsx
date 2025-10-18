@@ -40,7 +40,10 @@ const DetailComparisonPanel = ({
     return null;
   }
 
-  const visibleColumns = columns.slice(-4);
+  const visibleColumns =
+    columns.length > 4
+      ? [...columns.slice(0, 3), columns[columns.length - 1]]
+      : columns;
 
   const attributeKeys = Array.from(
     visibleColumns.reduce((acc, column) => {
@@ -120,10 +123,14 @@ const DetailComparisonPanel = ({
           sx={{
             display: 'grid',
             gridTemplateColumns: gridColumns,
+            gridAutoRows: 'minmax(64px, auto)',
+            alignItems: 'stretch',
             background: headerGradient,
             '& > .comparison-cell': {
               borderLeft: `1px solid ${borderColor}`,
               borderRight: `1px solid ${borderColor}`,
+              alignSelf: 'stretch',
+              height: '100%',
               '&:first-of-type': {
                 borderLeft: 'none',
               },
@@ -222,9 +229,13 @@ const DetailComparisonPanel = ({
             sx={{
               display: 'grid',
               gridTemplateColumns: gridColumns,
+              gridAutoRows: 'minmax(64px, auto)',
+              alignItems: 'stretch',
               '& > .comparison-cell': {
                 borderLeft: `1px solid ${borderColor}`,
                 borderRight: `1px solid ${borderColor}`,
+                alignSelf: 'stretch',
+                height: '100%',
                 '&:first-of-type': {
                   borderLeft: 'none',
                 },
