@@ -40,8 +40,19 @@ const DetailComparisonPanel = ({
     return null;
   }
 
+  const maxColumns = 4;
+  const displayedColumns = columns.slice(-maxColumns);
+
+  const columnColorPalette = [
+    theme.palette.primary.main,
+    theme.palette.secondary.main,
+    theme.palette.info.main,
+    theme.palette.success.main,
+    theme.palette.warning.main,
+  ];
+
   const attributeKeys = Array.from(
-    columns.reduce((acc, column) => {
+    displayedColumns.reduce((acc, column) => {
       Object.keys(column.values ?? {}).forEach((key) => acc.add(key));
       return acc;
     }, new Set<string>())
@@ -53,7 +64,7 @@ const DetailComparisonPanel = ({
     return a.localeCompare(b, 'fa-IR');
   });
 
-  const hasStatuses = columns.some((column) => column.status);
+  const hasStatuses = displayedColumns.some((column) => column.status);
   const hasAttributes = attributeKeys.length > 0;
 
   const rows: Array<{ type: 'status' | 'attribute'; key: string; label: string }> = [];
@@ -68,7 +79,7 @@ const DetailComparisonPanel = ({
     });
   }
 
-  const gridColumns = `minmax(160px, auto) repeat(${columns.length}, minmax(200px, 1fr))`;
+  const gridColumns = `minmax(160px, auto) repeat(${displayedColumns.length}, minmax(200px, 1fr))`;
   const headerGradient =
     theme.palette.mode === 'dark'
       ? `linear-gradient(135deg, ${alpha('#00c6a9', 0.3)} 0%, ${alpha('#1fb6ff', 0.2)} 100%)`
@@ -121,8 +132,12 @@ const DetailComparisonPanel = ({
             background: headerGradient,
             '& > .comparison-cell': {
               borderLeft: `1px solid ${borderColor}`,
+              borderRight: `1px solid ${borderColor}`,
               '&:first-of-type': {
                 borderLeft: 'none',
+              },
+              '&:last-of-type': {
+                borderRight: 'none',
               },
             },
           }}
@@ -132,6 +147,7 @@ const DetailComparisonPanel = ({
             sx={{
               px: 2,
               py: 1.5,
+              minHeight: 64,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'flex-start',
@@ -143,24 +159,28 @@ const DetailComparisonPanel = ({
             {attributeLabel}
           </Box>
 
-          {columns.map((column) => (
-            <Box
-              key={column.id}
-              className="comparison-cell"
-              sx={{
-                px: 2,
-                py: 1.25,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 1,
-              }}
+          {displayedColumns.map((column, columnIndex) => {
+            const columnColor = columnColorPalette[columnIndex % columnColorPalette.length];
+
+            return (
+              <Box
+                key={column.id}
+                className="comparison-cell"
+                sx={{
+                  px: 2,
+                  py: 1.25,
+                  minHeight: 64,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                }}
             >
               <Typography
                 component="span"
                 sx={{
                   fontWeight: 700,
-                  color: 'var(--color-text)',
+                  color: columnColor,
                   fontSize: '1rem',
                   whiteSpace: 'nowrap',
                 }}
@@ -187,7 +207,8 @@ const DetailComparisonPanel = ({
                 </IconButton>
               )}
             </Box>
-          ))}
+          );
+          })}
         </Box>
 
         {rows.length === 0 ? (
@@ -212,8 +233,12 @@ const DetailComparisonPanel = ({
               gridTemplateColumns: gridColumns,
               '& > .comparison-cell': {
                 borderLeft: `1px solid ${borderColor}`,
+                borderRight: `1px solid ${borderColor}`,
                 '&:first-of-type': {
                   borderLeft: 'none',
+                },
+                '&:last-of-type': {
+                  borderRight: 'none',
                 },
               },
             }}
@@ -228,6 +253,7 @@ const DetailComparisonPanel = ({
                     sx={{
                       px: 2,
                       py: 1.5,
+                      minHeight: 64,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'flex-start',
@@ -241,7 +267,8 @@ const DetailComparisonPanel = ({
                     {row.label}
                   </Box>
 
-                  {columns.map((column) => {
+                  {displayedColumns.map((column, columnIndex) => {
+                    const columnColor = columnColorPalette[columnIndex % columnColorPalette.length];
                     const cellKey = `${row.key}-${column.id}`;
                     const status = column.status;
                     let content: ReactNode = null;
@@ -249,7 +276,7 @@ const DetailComparisonPanel = ({
                     if (row.type === 'status') {
                       if (!status) {
                         content = (
-                          <Typography sx={{ color: 'var(--color-secondary)' }}>
+                          <Typography sx={{ color: columnColor }}>
                             -
                           </Typography>
                         );
@@ -265,7 +292,7 @@ const DetailComparisonPanel = ({
                           >
                             <CircularProgress size={18} color="primary" />
                             {status.message && (
-                              <Typography sx={{ color: 'var(--color-secondary)' }}>
+                              <Typography sx={{ color: columnColor }}>
                                 {status.message}
                               </Typography>
                             )}
@@ -278,7 +305,7 @@ const DetailComparisonPanel = ({
                               color:
                                 status.type === 'error'
                                   ? 'var(--color-error)'
-                                  : 'var(--color-secondary)',
+                                  : columnColor,
                               fontWeight: status.type === 'error' ? 700 : 500,
                               textAlign: 'center',
                             }}
@@ -292,7 +319,7 @@ const DetailComparisonPanel = ({
                       content = (
                         <Typography
                           sx={{
-                            color: 'var(--color-text)',
+                            color: columnColor,
                             fontWeight: 500,
                             textAlign: 'center',
                             whiteSpace: 'pre-wrap',
@@ -313,6 +340,7 @@ const DetailComparisonPanel = ({
                         sx={{
                           px: 2,
                           py: 1.5,
+                          minHeight: 64,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
