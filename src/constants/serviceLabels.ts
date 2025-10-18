@@ -1,9 +1,9 @@
 export const SERVICE_LABELS: Record<string, string> = {
   "networking.service": 'سرویس شبکه',
-  "nginx.service": 'ان‌جین‌ایکس',
+  "nginx.service": 'وب سرور',
   "smbd.service": 'سرویس اشتراک فایلی',
   "soho_core_api.service": 'سرویس هسته سوهو',
-  "ssh.service": 'اس اس اچ',
+  "ssh.service": 'دسترسی ریموت',
 };
 
 export const getServiceLabel = (

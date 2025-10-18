@@ -12,6 +12,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
@@ -260,8 +261,8 @@ const MainLayout: React.FC = () => {
                   sx={{
                     fontSize: '1rem',
                     fontFamily: 'var(--font-didot)',
-                    fontWeight: 600,
-                    letterSpacing: '0.03em',
+                    fontWeight: 900,
+                    letterSpacing: '0.05em',
                     color: 'var(--color-primary-light)',
                   }}
                 >
@@ -275,11 +276,60 @@ const MainLayout: React.FC = () => {
               onClose={handleUserMenuClose}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{
+                elevation: 0,
+                sx: (theme) => ({
+                  mt: 1.5,
+                  minWidth: 220,
+                  px: 1,
+                  py: 1.5,
+                  borderRadius: 2,
+                  border: `1px solid ${
+                    theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : 'rgba(20, 20, 20, 0.08)'
+                  }`,
+                  backgroundColor:
+                    theme.palette.mode === 'dark'
+                      ? alpha('#121212', 0.92)
+                      : alpha('#ffffff', 0.95),
+                  backdropFilter: 'blur(12px)',
+                  boxShadow:
+                    '0px 12px 30px rgba(15, 23, 42, 0.18), 0px 2px 8px rgba(15, 23, 42, 0.12)',
+                }),
+              }}
+              MenuListProps={{
+                sx: {
+                  py: 0,
+                  '& .MuiMenuItem-root': {
+                    borderRadius: 1,
+                    px: 2,
+                    py: 1.25,
+                    typography: 'body2',
+                    color: 'var(--color-text)',
+                    transition:
+                      'background-color 0.2s ease, transform 0.2s ease',
+                    '&:not(:last-of-type)': {
+                      mb: 0.5,
+                    },
+                    '&:hover': {
+                      backgroundColor: (theme) =>
+                        alpha(theme.palette.primary.main, 0.08),
+                      transform: 'translateX(-3px)',
+                    },
+                  },
+                },
+              }}
             >
               <MenuItem
                 onClick={() => {
                   handleUserMenuClose();
                   toggleTheme();
+                }}
+                sx={{
+                  '& .MuiListItemIcon-root': {
+                    color: 'var(--color-primary-light)',
+                  },
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 36 }}>
@@ -297,6 +347,14 @@ const MainLayout: React.FC = () => {
                 onClick={() => {
                   handleUserMenuClose();
                   handleLogout();
+                }}
+                sx={{
+                  '& .MuiListItemIcon-root': {
+                    color: 'var(--color-text)',
+                  },
+                  '&:hover .MuiListItemIcon-root': {
+                    color: 'var(--color-primary-light)',
+                  },
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 36 }}>

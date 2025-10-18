@@ -11,7 +11,6 @@ import { useFileSystems } from '../hooks/useFileSystems';
 import { useZpool } from '../hooks/useZpool';
 
 const FileSystem = () => {
-  // const [num , setnum] = useState(0)
   const createFileSystem = useCreateFileSystem({
     onSuccess: (filesystemName) => {
       toast.success(`فضای فایلی ${filesystemName} با موفقیت ایجاد شد.`);

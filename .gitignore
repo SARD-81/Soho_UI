@@ -8,6 +8,7 @@
 /dataSources.local.xml
 /node_modules/
 /.env
+.env
 /.env.local
 /.env.*.local
 /.next/

@@ -254,6 +254,7 @@ const WebUserCreateModal = ({
               label="نام کاربری"
               autoFocus
               fullWidth
+              size="small"
               error={Boolean(errors.username) || persianWarnings.username}
               helperText={usernameHelperText}
               onChange={handleSanitizedChange('username', field.onChange)}
@@ -271,6 +272,7 @@ const WebUserCreateModal = ({
               {...field}
               label="ایمیل"
               fullWidth
+              size="small"
               error={Boolean(errors.email) || persianWarnings.email}
               helperText={emailHelperText}
               onChange={handleSanitizedChange('email', field.onChange)}
@@ -289,6 +291,7 @@ const WebUserCreateModal = ({
               label="گذرواژه"
               type={showPassword ? 'text' : 'password'}
               fullWidth
+              size="small"
               error={Boolean(errors.password) || persianWarnings.password}
               helperText={passwordHelperText}
               onChange={handleSanitizedChange('password', field.onChange)}
@@ -420,6 +423,7 @@ const WebUserCreateModal = ({
                 {...field}
                 label="نام"
                 fullWidth
+                size="small"
                 InputLabelProps={{ sx: labelSx }}
                 InputProps={{ sx: inputBaseSx }}
                 error={Boolean(errors.first_name)}
@@ -436,6 +440,7 @@ const WebUserCreateModal = ({
                 {...field}
                 label="نام خانوادگی"
                 fullWidth
+                size="small"
                 InputLabelProps={{ sx: labelSx }}
                 InputProps={{ sx: inputBaseSx }}
                 error={Boolean(errors.last_name)}

@@ -187,6 +187,7 @@ const SambaUserCreateModal = ({
           required
           fullWidth
           autoFocus
+          size="small"
           error={isDuplicate || hasPersianUsername}
           helperText={
             (hasPersianUsername &&
@@ -215,6 +216,7 @@ const SambaUserCreateModal = ({
           onChange={handlePasswordChange}
           required
           fullWidth
+          size="small"
           error={hasPersianPassword}
           helperText={
             hasPersianPassword ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined

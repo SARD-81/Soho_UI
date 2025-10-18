@@ -345,7 +345,12 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
       <Typography
         // variant="h6"
         color="var(--color-secondary)"
-        sx={{ fontSize: 15, pb: 1, textAlign: 'center' , visibility : open ? 'visible' : 'hidden'}}
+        sx={{
+          fontSize: 15,
+          pb: 1,
+          textAlign: 'center',
+          visibility: open ? 'visible' : 'hidden',
+        }}
       >
         نسخه BETA
       </Typography>

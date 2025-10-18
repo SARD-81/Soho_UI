@@ -118,7 +118,13 @@ const CreateFileSystemModal = ({
     const { value } = event.target;
     const sanitizedValue = removePersianCharacters(value);
     setHasPersianQuota(sanitizedValue !== value);
-    setQuotaAmount(sanitizedValue);
+
+    const numericOnlyValue = sanitizedValue
+      .replace(/,/g, '.')
+      .replace(/[^\d.]/g, '')
+      .replace(/(\..*)\./g, '$1');
+
+    setQuotaAmount(numericOnlyValue);
   };
 
   const normalizedFilesystemMap = useMemo(() => {
@@ -249,6 +255,7 @@ const CreateFileSystemModal = ({
             value={filesystemName}
             onChange={handleNameChange}
             fullWidth
+            size="small"
             autoComplete="off"
             error={
               Boolean(nameError) ||
@@ -287,6 +294,7 @@ const CreateFileSystemModal = ({
             value={quotaAmount}
             onChange={handleQuotaChange}
             fullWidth
+            size="small"
             autoComplete="off"
             error={Boolean(quotaError) || hasPersianQuota}
             helperText={
@@ -295,12 +303,15 @@ const CreateFileSystemModal = ({
               quotaError ||
               'حجم فضای فایلی را به گیگابایت وارد کنید (مثلاً 50).'
             }
-            type="number"
+            type="text"
             InputLabelProps={{ shrink: true }}
             InputProps={{
               sx: inputBaseStyles,
               endAdornment: <InputAdornment position="end">GB</InputAdornment>,
-              inputProps: { min: 0, step: '0.01' },
+            }}
+            inputProps={{
+              inputMode: 'decimal',
+              pattern: '[0-9]*[.,]?[0-9]*',
             }}
           />
 
@@ -316,3 +327,6 @@ const CreateFileSystemModal = ({
 };
 
 export default CreateFileSystemModal;
+
+
+

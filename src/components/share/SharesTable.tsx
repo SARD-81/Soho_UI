@@ -1,4 +1,10 @@
-import { Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
@@ -162,7 +168,7 @@ const SharesTable = ({
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}
-      bodyRowSx={(share) => ({
+      bodyRowSx={(share: SambaShareEntry) => ({
         ...resolveRowSx(share),
         transition: 'background-color 0.2s ease',
       })}
