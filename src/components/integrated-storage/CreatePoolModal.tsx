@@ -70,6 +70,8 @@ const CreatePoolModal = ({
     setPoolNameError,
     vdevType,
     setVdevType,
+    vdevTypeError,
+    setVdevTypeError,
     selectedDevices,
     toggleDevice,
     poolNameError,
@@ -138,6 +140,9 @@ const CreatePoolModal = ({
   };
 
   const handleVdevChange = (event: SelectChangeEvent<string>) => {
+    if (vdevTypeError) {
+      setVdevTypeError(null);
+    }
     setVdevType(event.target.value);
   };
 
@@ -184,8 +189,14 @@ const CreatePoolModal = ({
     >
       <Box component="form" id="create-pool-form" onSubmit={handleFormSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <InputLabel
+            htmlFor="pool-name-input"
+            sx={{ color: 'var(--color-text)', fontWeight: 600 }}
+          >
+            نام فضای یکپارچه
+          </InputLabel>
           <TextField
-            label="نام فضای یکپارچه"
+            // label="نام فضای یکپارچه"
             value={poolName}
             onChange={handlePoolNameChange}
             autoFocus
@@ -219,19 +230,20 @@ const CreatePoolModal = ({
                 ) : undefined,
             }}
           />
-
-          <FormControl size="small" fullWidth>
-            <InputLabel
-              id="vdev-type-label"
-              sx={{ color: 'var(--color-text)' }}
-            >
-              نوع آرایه
-            </InputLabel>
+          <InputLabel id="vdev-type-label" sx={{ color: 'var(--color-text)' }}>
+            نوع آرایه
+          </InputLabel>
+          <FormControl
+            size="small"
+            fullWidth
+            error={Boolean(vdevTypeError)}
+          >
             <Select
               labelId="vdev-type-label"
-              label="نوع VDEV"
-              value={vdevType}
+              // label="نوع VDEV"
+              value={vdevType || ''}
               onChange={handleVdevChange}
+              displayEmpty
               sx={inputBaseStyles}
               MenuProps={{
                 PaperProps: {
@@ -242,10 +254,19 @@ const CreatePoolModal = ({
                 },
               }}
             >
+              <MenuItem
+                value=""
+                sx={{ color: 'var(--color-secondary)' }}
+              >
+                یکی از گزینه های زیر را انتخاب کنید
+              </MenuItem>
               <MenuItem value="disk">STRIPE</MenuItem>
               <MenuItem value="mirror">MIRROR</MenuItem>
               <MenuItem value="raidz">RAID5</MenuItem>
             </Select>
+            {vdevTypeError && (
+              <FormHelperText>{vdevTypeError}</FormHelperText>
+            )}
           </FormControl>
 
           <FormControl component="fieldset" error={Boolean(devicesError)}>

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Box,
   FormControl,
   FormHelperText,
@@ -13,8 +13,8 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
-import type { UseCreateFileSystemReturn } from '../../hooks/useCreateFileSystem';
 import type { FileSystemEntry } from '../../@types/filesystem';
+import type { UseCreateFileSystemReturn } from '../../hooks/useCreateFileSystem';
 import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
@@ -52,6 +52,7 @@ const CreateFileSystemModal = ({
     selectedPool,
     setSelectedPool,
     poolError,
+    setPoolError,
     filesystemName,
     setFileSystemName,
     nameError,
@@ -101,6 +102,9 @@ const CreateFileSystemModal = ({
   }, [hasPersianQuota]);
 
   const handlePoolChange = (event: SelectChangeEvent<string>) => {
+    if (poolError) {
+      setPoolError(null);
+    }
     setSelectedPool(event.target.value);
   };
 
@@ -128,21 +132,24 @@ const CreateFileSystemModal = ({
   };
 
   const normalizedFilesystemMap = useMemo(() => {
-    return existingFilesystems.reduce<Record<string, Set<string>>>((acc, fs) => {
-      const poolKey = fs.poolName.trim().toLowerCase();
-      const nameKey = fs.filesystemName.trim().toLowerCase();
+    return existingFilesystems.reduce<Record<string, Set<string>>>(
+      (acc, fs) => {
+        const poolKey = fs.poolName.trim().toLowerCase();
+        const nameKey = fs.filesystemName.trim().toLowerCase();
 
-      if (!poolKey || !nameKey) {
+        if (!poolKey || !nameKey) {
+          return acc;
+        }
+
+        if (!acc[poolKey]) {
+          acc[poolKey] = new Set();
+        }
+
+        acc[poolKey].add(nameKey);
         return acc;
-      }
-
-      if (!acc[poolKey]) {
-        acc[poolKey] = new Set();
-      }
-
-      acc[poolKey].add(nameKey);
-      return acc;
-    }, {});
+      },
+      {}
+    );
   }, [existingFilesystems]);
 
   const trimmedPool = selectedPool.trim();
@@ -165,11 +172,12 @@ const CreateFileSystemModal = ({
     !isDuplicate &&
     !isSameAsPool;
 
-  const adornmentIcon = isDuplicate || isSameAsPool ? (
-    <FiAlertCircle color="var(--color-error)" size={18} />
-  ) : shouldShowSuccess ? (
-    <FiCheckCircle color="var(--color-success)" size={18} />
-  ) : null;
+  const adornmentIcon =
+    isDuplicate || isSameAsPool ? (
+      <FiAlertCircle color="var(--color-error)" size={18} />
+    ) : shouldShowSuccess ? (
+      <FiCheckCircle color="var(--color-success)" size={18} />
+    ) : null;
 
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     if (!isNameFormatValid && trimmedName.length > 0) {
@@ -212,21 +220,27 @@ const CreateFileSystemModal = ({
         />
       }
     >
-      <Box component="form" id="create-filesystem-form" onSubmit={handleFormSubmit}>
+      <Box
+        component="form"
+        id="create-filesystem-form"
+        onSubmit={handleFormSubmit}
+      >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <InputLabel
+            id="filesystem-pool-select"
+            sx={{ color: 'var(--color-text)' }}
+          >
+            انتخاب فضای یکپارچه
+          </InputLabel>
           <FormControl fullWidth error={Boolean(poolError)}>
-            <InputLabel
-              id="filesystem-pool-select"
-              sx={{ color: 'var(--color-text)' }}
-            >
-              انتخاب فضای یکپارچه
-            </InputLabel>
             <Select
               labelId="filesystem-pool-select"
-              label="انتخاب Pool"
+              // label="انتخاب Pool"
               value={selectedPool}
               onChange={handlePoolChange}
+              displayEmpty
               sx={inputBaseStyles}
+              size="small"
               MenuProps={{
                 PaperProps: {
                   sx: {
@@ -236,9 +250,18 @@ const CreateFileSystemModal = ({
                 },
               }}
             >
+              {poolOptions.length > 0 && (
+                <MenuItem
+                  value=""
+                  disabled
+                  sx={{ color: 'var(--color-secondary)' }}
+                >
+                  یکی از گزینه های زیر را انتخاب کنید
+                </MenuItem>
+              )}
               {poolOptions.length === 0 && (
                 <MenuItem value="" disabled>
-                  یک فضای یکپارچه برای ایجاد فضای فایلی موجود نیست.
+                  هیچ فضای یکپارچه ای برای ایجاد فضای فایلی موجود نیست.
                 </MenuItem>
               )}
               {poolOptions.map((pool) => (
@@ -249,14 +272,21 @@ const CreateFileSystemModal = ({
             </Select>
             {poolError && <FormHelperText>{poolError}</FormHelperText>}
           </FormControl>
-
+          <InputLabel
+            id="filesystem-name-input"
+            sx={{ color: 'var(--color-text)' }}
+          >
+            نام فضای فایلی
+          </InputLabel>
           <TextField
-            label="نام فضای فایلی"
+            // label="نام فضای فایلی"
             value={filesystemName}
             onChange={handleNameChange}
             fullWidth
+            id="filesystem-name-input"
             size="small"
             autoComplete="off"
+            placeholder="نامی یکتا برای فضای فایلی وارد کنید."
             error={
               Boolean(nameError) ||
               !isNameFormatValid ||
@@ -274,8 +304,7 @@ const CreateFileSystemModal = ({
               (isDuplicate &&
                 'فضای فایلی با این نام در این فضای یکپارچه وجود دارد.') ||
               (isSameAsPool &&
-                'نام فضای فایلی نمی‌تواند با نام فضای یکپارچه یکسان باشد.') ||
-              'نامی یکتا برای فضای فایلی وارد کنید.'
+                'نام فضای فایلی نمی‌تواند با نام فضای یکپارچه یکسان باشد.')
             }
             InputLabelProps={{ shrink: true }}
             InputProps={{
@@ -288,20 +317,26 @@ const CreateFileSystemModal = ({
                 ) : undefined,
             }}
           />
-
+          <InputLabel
+            id="filesystem-quota-input"
+            sx={{ color: 'var(--color-text)' }}
+          >
+            حجم فضای فایلی (GB)
+          </InputLabel>
           <TextField
-            label="حجم فضای فایلی (GB)"
+            // label="حجم فضای فایلی (GB)"
             value={quotaAmount}
             onChange={handleQuotaChange}
             fullWidth
+            placeholder="حجم فضای فایلی را به گیگابایت وارد کنید."
+            id="filesystem-quota-input"
             size="small"
             autoComplete="off"
             error={Boolean(quotaError) || hasPersianQuota}
             helperText={
               (hasPersianQuota &&
                 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
-              quotaError ||
-              'حجم فضای فایلی را به گیگابایت وارد کنید (مثلاً 50).'
+              quotaError
             }
             type="text"
             InputLabelProps={{ shrink: true }}
@@ -327,6 +362,3 @@ const CreateFileSystemModal = ({
 };
 
 export default CreateFileSystemModal;
-
-
-

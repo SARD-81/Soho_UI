@@ -61,17 +61,19 @@ export const useCreatePool = ({
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [poolName, setPoolName] = useState('');
-  const [vdevType, setVdevType] = useState('disk');
+  const [vdevType, setVdevType] = useState('');
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   const [poolNameError, setPoolNameError] = useState<string | null>(null);
+  const [vdevTypeError, setVdevTypeError] = useState<string | null>(null);
   const [devicesError, setDevicesError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const resetForm = useCallback(() => {
     setPoolName('');
-    setVdevType('disk');
+    setVdevType('');
     setSelectedDevices([]);
     setPoolNameError(null);
+    setVdevTypeError(null);
     setDevicesError(null);
     setApiError(null);
   }, []);
@@ -124,6 +126,7 @@ export const useCreatePool = ({
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       setPoolNameError(null);
+      setVdevTypeError(null);
       setDevicesError(null);
       setApiError(null);
 
@@ -137,6 +140,11 @@ export const useCreatePool = ({
         setPoolNameError(
           'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.'
         );
+        hasError = true;
+      }
+
+      if (!vdevType) {
+        setVdevTypeError('لطفاً نوع آرایه را انتخاب کنید.');
         hasError = true;
       }
 
@@ -178,6 +186,7 @@ export const useCreatePool = ({
     vdevType,
     selectedDevices,
     poolNameError,
+    vdevTypeError,
     devicesError,
     apiError,
     isCreating: createPoolMutation.isPending,
@@ -188,6 +197,7 @@ export const useCreatePool = ({
     },
     setPoolName,
     setVdevType,
+    setVdevTypeError,
     toggleDevice: handleDeviceToggle,
     handleSubmit,
     setPoolNameError,

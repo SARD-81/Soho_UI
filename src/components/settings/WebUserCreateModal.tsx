@@ -2,11 +2,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert,
   Box,
-  Checkbox,
   CircularProgress,
-  FormControlLabel,
   IconButton,
   InputAdornment,
+  InputLabel,
   Stack,
   TextField,
   Typography,
@@ -235,9 +234,9 @@ const WebUserCreateModal = ({
         onSubmit={handleFormSubmit}
         sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
       >
-        <Typography sx={{ color: 'var(--color-secondary)' }}>
+        {/* <Typography sx={{ color: 'var(--color-secondary)' }}>
           برای ایجاد کاربر وب جدید، اطلاعات زیر را تکمیل کنید.
-        </Typography>
+        </Typography> */}
 
         {errorMessage ? (
           <Alert severity="error" sx={{ borderRadius: '4px' }}>
@@ -245,15 +244,20 @@ const WebUserCreateModal = ({
           </Alert>
         ) : null}
 
+        <InputLabel sx={{ color: 'var(--color-secondary)' }} id="username-label">
+          نام کاربری
+        </InputLabel>
+
         <Controller
           name="username"
           control={control}
           render={({ field }) => (
             <TextField
               {...field}
-              label="نام کاربری"
+              // label="نام کاربری"
               autoFocus
               fullWidth
+              placeholder='لطفا یک نام کاربری یکتا وارد کنید'
               size="small"
               error={Boolean(errors.username) || persianWarnings.username}
               helperText={usernameHelperText}
@@ -263,15 +267,18 @@ const WebUserCreateModal = ({
             />
           )}
         />
-
+        <InputLabel sx={{ color: 'var(--color-secondary)' }} id="email-label">
+          ایمیل
+        </InputLabel>
         <Controller
           name="email"
           control={control}
           render={({ field }) => (
             <TextField
               {...field}
-              label="ایمیل"
+              // label="ایمیل"
               fullWidth
+              placeholder='لطفا یک ایمیل معتبر وارد کنید'
               size="small"
               error={Boolean(errors.email) || persianWarnings.email}
               helperText={emailHelperText}
@@ -281,16 +288,19 @@ const WebUserCreateModal = ({
             />
           )}
         />
-
+<InputLabel sx={{ color: 'var(--color-secondary)' }} id="password-label">
+          گذرواژه
+        </InputLabel>
         <Controller
           name="password"
           control={control}
           render={({ field }) => (
             <TextField
               {...field}
-              label="گذرواژه"
+              // label="گذرواژه"
               type={showPassword ? 'text' : 'password'}
               fullWidth
+              placeholder='لطفا یک گذرواژه وارد کنید'
               size="small"
               error={Boolean(errors.password) || persianWarnings.password}
               helperText={passwordHelperText}
@@ -388,7 +398,7 @@ const WebUserCreateModal = ({
           </Box>
         ) : null}
 
-        <Controller
+        {/* <Controller
           name="is_superuser"
           control={control}
           render={({ field }) => (
@@ -412,7 +422,7 @@ const WebUserCreateModal = ({
               }
             />
           )}
-        />
+        /> */}
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <Controller

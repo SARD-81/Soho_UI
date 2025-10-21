@@ -11,6 +11,7 @@ import type { RgbColor } from '../@types/cpu.ts';
 import { useCpu } from '../hooks/useCpu';
 import { createCardSx } from './cardStyles.ts';
 import AppGauge from './charts/AppGauge';
+import { MdMemory } from "react-icons/md";
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
@@ -205,7 +206,7 @@ const Cpu = () => {
         }}
       >
         <Box component="span" sx={{ fontSize: 20 }}>
-          📊
+          <MdMemory size={35} />
         </Box>
         استفاده پردازنده (بر حسب درصد)
       </Typography>

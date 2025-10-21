@@ -23,6 +23,7 @@ import { formatBytes, formatDuration } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
 import AppLineChart from './charts/AppLineChart';
 import AppPieChart from './charts/AppPieChart';
+import { PiFloppyDiskBackFill } from "react-icons/pi";
 
 export const DiskOverview = () => {
   const { data, isLoading, error } = useDisk();
@@ -180,7 +181,7 @@ export const DiskOverview = () => {
         }}
       >
         <Box component="span" sx={{ fontSize: 20 }}>
-          💽
+          <PiFloppyDiskBackFill />
         </Box>
         نمای کلی مصرف دیسک
       </Typography>
@@ -683,7 +684,7 @@ const Disk = () => {
         }}
       >
         <Box component="span" sx={{ fontSize: 20 }}>
-          💽
+          <PiFloppyDiskBackFill size={30} />
         </Box>
         وضعیت دیسک
       </Typography>

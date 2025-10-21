@@ -13,6 +13,7 @@ import { useZpool } from '../hooks/useZpool';
 import { formatBytes } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
 import AppPieChart from './charts/AppPieChart';
+import { SiGooglecloudstorage } from "react-icons/si";
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
@@ -173,7 +174,7 @@ const Zpool = () => {
         }}
       >
         <Box component="span" sx={{ fontSize: 20 }}>
-          🗃️
+          <SiGooglecloudstorage size={30} />
         </Box>
         نمای کلی فضا های یکپارچه
       </Typography>

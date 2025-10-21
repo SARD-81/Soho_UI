@@ -14,6 +14,7 @@ import { extractIPv4Info, formatInterfaceSpeed } from '../utils/networkDetails';
 import { createCardSx } from './cardStyles.ts';
 import AppLineChart from './charts/AppLineChart';
 import ResponsiveChartContainer from './charts/ResponsiveChartContainer';
+import { FaNetworkWired } from "react-icons/fa6";
 
 const MAX_HISTORY_MS = 90 * 1000; // 1 minute 30 seconds
 
@@ -147,7 +148,7 @@ const Network = () => {
         }}
       >
         <Box component="span" sx={{ fontSize: 20 }}>
-          📉
+          <FaNetworkWired size={30} />
         </Box>
         وضعیت شبکه
       </Typography>

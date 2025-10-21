@@ -11,6 +11,7 @@ import { useMemory } from '../hooks/useMemory';
 import { formatBytes } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
 import AppPieChart from './charts/AppPieChart';
+import { GrMemory } from "react-icons/gr";
 
 const Memory = () => {
   const { data, isLoading, error } = useMemory();
@@ -275,7 +276,7 @@ const Memory = () => {
         }}
       >
         <Box component="span" sx={{ fontSize: 20 }}>
-          💾
+          <GrMemory size={30} />
         </Box>
         وضعیت حافظه
       </Typography>
