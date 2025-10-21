@@ -1,4 +1,4 @@
-import { Alert, Box, TextField, Typography } from '@mui/material';
+import { Alert, Box, InputLabel, TextField, Typography } from '@mui/material';
 import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
@@ -136,14 +136,21 @@ const NetworkInterfaceIpEditModal = ({
         sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
       >
         <Typography sx={{ color: 'var(--color-secondary)' }}>
-          آدرس IP و نت‌ماسک جدید برای رابط انتخاب‌شده را وارد کنید.
+          آدرس IP و Netmask جدید برای رابط انتخاب‌شده را وارد کنید.
         </Typography>
+        <InputLabel
+          sx={{ color: 'var(--color-secondary)' }}
+          id="interface-name-label"
+        >
+          رابط شبکه
+        </InputLabel>
 
         <TextField
-          label="رابط شبکه"
+          // label="رابط شبکه"
           value={interfaceName ?? ''}
           disabled
           fullWidth
+          size="small"
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{
             sx: {
@@ -153,16 +160,21 @@ const NetworkInterfaceIpEditModal = ({
             },
           }}
         />
-
+        <InputLabel sx={{ color: 'var(--color-secondary)' }} id="ip-label">
+          آدرس IP
+        </InputLabel>
         <TextField
-          label="آدرس IP"
+          // label="آدرس IP"
           value={ip}
           onChange={handleIpChange}
           required
           fullWidth
+          size="small"
           error={hasPersianIp}
           helperText={
-            hasPersianIp ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
+            hasPersianIp
+              ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.'
+              : undefined
           }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{
@@ -173,16 +185,21 @@ const NetworkInterfaceIpEditModal = ({
             },
           }}
         />
-
+        <InputLabel sx={{ color: 'var(--color-secondary)' }} id="netmask-label">
+          Netmask
+        </InputLabel>
         <TextField
-          label="نت‌ماسک"
+          // label="نت‌ماسک"
           value={netmask}
           onChange={handleNetmaskChange}
           required
+          size='small'
           fullWidth
           error={hasPersianNetmask}
           helperText={
-            hasPersianNetmask ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
+            hasPersianNetmask
+              ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.'
+              : undefined
           }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{

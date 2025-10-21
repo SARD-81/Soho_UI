@@ -173,6 +173,7 @@ export const useCreateFileSystem = ({
     quotaAmount,
     setQuotaAmount,
     poolError,
+    setPoolError,
     nameError,
     quotaError,
     apiError,

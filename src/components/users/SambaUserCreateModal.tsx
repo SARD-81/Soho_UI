@@ -1,4 +1,4 @@
-import { Alert, Box, InputAdornment, TextField } from '@mui/material';
+import { Alert, Box, InputAdornment, InputLabel, TextField } from '@mui/material';
 import {
   type ChangeEvent,
   type FormEvent,
@@ -179,14 +179,19 @@ const SambaUserCreateModal = ({
         {/*<Typography sx={{ color: 'var(--color-secondary)' }}>*/}
         {/*  برای ایجاد کاربر Samba جدید، نام کاربری و گذرواژه را وارد کنید.*/}
         {/*</Typography>*/}
+        <InputLabel sx={{ color: 'var(--color-secondary)' }} id="username-label">
+          نام کاربری
+        </InputLabel>
 
         <TextField
-          label="نام کاربری"
+          // label="نام کاربری"
           value={username}
           onChange={handleUsernameChange}
           required
+          placeholder='لطفا یک نام کاربری یکتا وارد کنید'
           fullWidth
           autoFocus
+          id="samba-username-input"
           size="small"
           error={isDuplicate || hasPersianUsername}
           helperText={
@@ -208,13 +213,18 @@ const SambaUserCreateModal = ({
               ) : undefined,
           }}
         />
+        <InputLabel sx={{ color: 'var(--color-secondary)' }} id="password-label">
+          گذرواژه
+        </InputLabel>
 
         <TextField
-          label="گذرواژه"
+          // label="گذرواژه"
           type="password"
           value={password}
           onChange={handlePasswordChange}
           required
+          placeholder='لطفا یک گذرواژه وارد کنید'
+          id="samba-password-input"
           fullWidth
           size="small"
           error={hasPersianPassword}
