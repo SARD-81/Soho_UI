@@ -96,6 +96,12 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
     columns: { xs: 12, md: 6, xl: 5 },
     layoutOptions: [
       {
+        id: 'cpu-short',
+        label: 'چیدمان کوچک',
+        description: 'ابعاد کوچیک برای مانیتورینگ در صفحات کوچک‌تر',
+        columns: { xs: 12, md: 6, xl: 2 },
+      },
+      {
         id: 'cpu-compact',
         label: 'چیدمان فشرده',
         description: 'ابعاد بهینه برای مانیتورینگ در صفحات کوچک‌تر',
@@ -117,6 +123,12 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
     columns: { xs: 12, md: 6, xl: 5 },
     layoutOptions: [
       {
+        id: 'memory-short',
+        label: 'چیدمان کوچک',
+        description: 'هماهنگ با چیدمان‌های کوچک',
+        columns: { xs: 12, md: 6, xl: 2 },
+      },
+      {
         id: 'memory-compact',
         label: 'چیدمان فشرده',
         description: 'هماهنگ با چیدمان‌های ستونی',
@@ -132,11 +144,17 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
   },
   {
     id: 'zpool-overview',
-    title: 'تجمیع استخرهای ذخیره‌سازی',
-    description: 'تصویر کلی از سلامت و ظرفیت استخرهای ZFS',
+    title: 'تجمیع فضاهای یکپارچه',
+    description: 'تصویر کلی از سلامت و ظرفیت فضاهای یکپارچه',
     component: Zpool,
     columns: { xs: 12, md: 10, xl: 10 },
     layoutOptions: [
+      {
+        id: 'zpool-short',
+        label: 'فشرده',
+        description: 'چیدمان مناسب برای داشبوردهای فشرده',
+        columns: { xs: 12, md: 3, xl: 3 },
+      },
       {
         id: 'zpool-compact',
         label: 'نیم عرض',
