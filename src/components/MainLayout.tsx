@@ -22,7 +22,6 @@ import { Outlet, useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
-import '../index.css';
 import NavigationDrawer from './NavigationDrawer';
 import PowerActionConfirmDialog from './PowerActionConfirmDialog';
 import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';

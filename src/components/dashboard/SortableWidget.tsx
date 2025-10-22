@@ -15,9 +15,12 @@ const SortableWidget = ({ id, customizing, children, title }: SortableWidgetProp
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id, disabled: !customizing });
 
+  const composedTransition =
+    transition ??
+    'transform 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease, filter 220ms ease';
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: composedTransition,
   };
 
   return (
@@ -29,6 +32,21 @@ const SortableWidget = ({ id, customizing, children, title }: SortableWidgetProp
         height: '100%',
         transformOrigin: 'center',
         zIndex: isDragging ? 2 : 1,
+        transition: 'box-shadow 220ms ease, filter 280ms ease',
+        '&:hover': {
+          boxShadow: (theme) => theme.shadows[6],
+          filter: 'brightness(1.02)',
+        },
+        '&:active': {
+          boxShadow: (theme) => theme.shadows[8],
+          filter: 'brightness(0.98)',
+        },
+        ...(isDragging
+          ? {
+              boxShadow: (theme) => theme.shadows[12],
+              filter: 'brightness(1.05)',
+            }
+          : {}),
       }}
       style={style}
     >

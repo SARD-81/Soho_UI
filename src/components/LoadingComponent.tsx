@@ -2,7 +2,6 @@
 import { Box, Paper, Typography } from '@mui/material';
 import { TailChase } from 'ldrs/react';
 import 'ldrs/react/TailChase.css';
-import '../index.css';
 
 function LoadingComponent() {
   return (

@@ -7,9 +7,7 @@ import {
 } from '@mui/material';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { History } from '../@types/network';
-
 import { useNetwork } from '../hooks/useNetwork';
-import '../index.css';
 import { extractIPv4Info, formatInterfaceSpeed } from '../utils/networkDetails';
 import { createCardSx } from './cardStyles.ts';
 import AppLineChart from './charts/AppLineChart';
