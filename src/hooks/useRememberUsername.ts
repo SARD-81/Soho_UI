@@ -5,6 +5,7 @@ import type {
   UseFormSetValue,
   UseFormWatch,
 } from 'react-hook-form';
+import { safeStorage } from '../utils/safeStorage';
 
 interface RememberUsernameFields {
   username: string;
@@ -19,7 +20,7 @@ export function useRememberUsername<T extends RememberUsernameFields>(
   const username = watch('username' as Path<T>);
 
   useEffect(() => {
-    const savedUsername = localStorage.getItem('savedUsername');
+    const savedUsername = safeStorage.getItem('savedUsername');
     if (savedUsername) {
       setValue('username' as Path<T>, savedUsername as PathValue<T, Path<T>>);
       setValue('rememberMe' as Path<T>, true as PathValue<T, Path<T>>);
@@ -28,9 +29,9 @@ export function useRememberUsername<T extends RememberUsernameFields>(
 
   useEffect(() => {
     if (rememberMe && username) {
-      localStorage.setItem('savedUsername', username as string);
+      safeStorage.setItem('savedUsername', username as string);
     } else {
-      localStorage.removeItem('savedUsername');
+      safeStorage.removeItem('savedUsername');
     }
   }, [rememberMe, username]);
 }

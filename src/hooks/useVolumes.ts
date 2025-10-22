@@ -6,8 +6,10 @@ import type {
   VolumeRawEntry,
 } from '../@types/volume';
 import axiosInstance from '../lib/axiosInstance';
+import { createVisibilityAwareInterval } from '../utils/refetchInterval';
 
 const VOLUME_LIST_ENDPOINT = '/api/volume/';
+const defaultVolumesRefetchInterval = createVisibilityAwareInterval(20000);
 
 const formatAttributeValue = (value: unknown): string => {
   if (value == null) {
@@ -167,7 +169,7 @@ export const useVolumes = () =>
   useQuery<VolumeQueryResult, Error>({
     queryKey: ['volumes'],
     queryFn: fetchVolumes,
-    refetchInterval: 15000,
+    refetchInterval: defaultVolumesRefetchInterval,
   });
 
 export type UseVolumesReturn = ReturnType<typeof useVolumes>;

@@ -1,4 +1,5 @@
-import React, {
+/* eslint-disable react-refresh/only-export-components */
+import {
   createContext,
   type ReactNode,
   useCallback,
@@ -7,6 +8,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { isBrowser, safeStorage } from '../utils/safeStorage';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -17,30 +19,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
+}
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    () => !!localStorage.getItem('authToken')
-  );
-  // const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    const token = safeStorage.getItem('authToken');
+    return Boolean(token);
+  });
   const [username, setUsername] = useState<string | null>(() =>
-    localStorage.getItem('username')
+    safeStorage.getItem('username')
   );
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const savedUsername = localStorage.getItem('username');
+    if (!isBrowser) {
+      return;
+    }
+
+    const token = safeStorage.getItem('authToken');
+    const savedUsername = safeStorage.getItem('username');
 
     if (token) {
       setIsAuthenticated(true);
@@ -49,15 +55,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const loginAction = useCallback((token: string, username: string) => {
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('username', username);
+    safeStorage.setItem('authToken', token);
+    safeStorage.setItem('username', username);
     setIsAuthenticated(true);
     setUsername(username);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('username');
+    safeStorage.removeItem('authToken');
+    safeStorage.removeItem('username');
     setIsAuthenticated(false);
     setUsername(null);
   }, []);
@@ -68,4 +74,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+}

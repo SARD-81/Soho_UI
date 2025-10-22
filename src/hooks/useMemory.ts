@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '../lib/axiosInstance';
+import { createVisibilityAwareInterval } from '../utils/refetchInterval';
 
 export type MemoryResponse = {
   total?: number | null;
@@ -21,6 +22,6 @@ export const useMemory = () => {
   return useQuery<MemoryResponse, Error>({
     queryKey: ['memory'],
     queryFn: fetchMemory,
-    refetchInterval: 1000,
+    refetchInterval: createVisibilityAwareInterval(5000),
   });
 };

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { setupAxiosMockAdapter } from '../mocks/setupMocks';
+import { safeStorage } from '../utils/safeStorage';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -7,6 +8,7 @@ const axiosInstance = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
+  timeout: 10_000,
 });
 
 const shouldUseMockApi = (() => {
@@ -25,7 +27,7 @@ if (shouldUseMockApi) {
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = safeStorage.getItem('authToken');
     if (token && !config.url?.includes('/auth-token/')) {
       config.headers.Authorization = `Token ${token}`;
     }
