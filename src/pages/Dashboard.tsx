@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Box, Button, Grow, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DndContext, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
@@ -13,8 +13,10 @@ import DashboardLayoutPanel, {
   type DashboardLayoutPanelWidget,
 } from '../components/dashboard/DashboardLayoutPanel';
 import SortableWidget from '../components/dashboard/SortableWidget';
+import { useAuth } from '../contexts/AuthContext';
+import { TransitionGroup } from 'react-transition-group';
 
-const LAYOUT_STORAGE_KEY = 'dashboard-layout.v2';
+const LAYOUT_STORAGE_BASE_KEY = 'dashboard-layout.v2';
 
 type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -201,13 +203,13 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
   },
 ];
 
-const loadStoredLayout = (): Partial<LayoutState> | null => {
+const loadStoredLayout = (storageKey: string): Partial<LayoutState> | null => {
   if (typeof window === 'undefined') {
     return null;
   }
 
   try {
-    const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     return raw ? (JSON.parse(raw) as Partial<LayoutState>) : null;
   } catch {
     return null;
@@ -261,6 +263,13 @@ const cloneLayoutState = (state: LayoutState): LayoutState => ({
 });
 
 const Dashboard = () => {
+  const { username } = useAuth();
+  const layoutStorageKey = useMemo(() => {
+    const normalizedUsername = username?.trim().toLowerCase();
+    return normalizedUsername
+      ? `${LAYOUT_STORAGE_BASE_KEY}:${normalizedUsername}`
+      : `${LAYOUT_STORAGE_BASE_KEY}:guest`;
+  }, [username]);
   const widgetIds = useMemo(() => dashboardWidgets.map((widget) => widget.id), []);
   const widgetMap = useMemo(
     () => new Map<string, DashboardWidgetDefinition>(dashboardWidgets.map((widget) => [widget.id, widget])),
@@ -324,7 +333,7 @@ const Dashboard = () => {
 
   const defaultLayoutState = useMemo(() => createNormalizedState(), [createNormalizedState]);
   const [persistedLayout, setPersistedLayout] = useState<LayoutState>(() => {
-    const stored = loadStoredLayout();
+    const stored = loadStoredLayout(layoutStorageKey);
     return createNormalizedState(stored);
   });
   const [draftLayout, setDraftLayout] = useState<LayoutState | null>(null);
@@ -338,8 +347,17 @@ const Dashboard = () => {
       return;
     }
 
-    localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(persistedLayout));
-  }, [persistedLayout]);
+    localStorage.setItem(layoutStorageKey, JSON.stringify(persistedLayout));
+  }, [layoutStorageKey, persistedLayout]);
+
+  useEffect(() => {
+    setPersistedLayout((prev) => {
+      const stored = loadStoredLayout(layoutStorageKey);
+      const normalized = createNormalizedState(stored);
+      return areLayoutStatesEqual(prev, normalized) ? prev : normalized;
+    });
+    setDraftLayout(null);
+  }, [createNormalizedState, layoutStorageKey]);
 
   useEffect(() => {
     setPersistedLayout((prev) => {
@@ -718,41 +736,48 @@ const Dashboard = () => {
               width: '100%',
             }}
           >
-            {visibleWidgetIds.map((id) => {
-              const widget = widgetMap.get(id);
-              if (!widget) {
-                return null;
-              }
+            <TransitionGroup component={null}>
+              {visibleWidgetIds.map((id) => {
+                const widget = widgetMap.get(id);
+                if (!widget) {
+                  return null;
+                }
 
-              const layout = resolveLayoutConfig(widget);
-              const WidgetComponent = widget.component;
-              const columnStyles = createResponsiveSpan(
-                layout.columns ?? widget.columns,
-                FULL_WIDTH_COLUMNS
-              );
-              const rowStyles = layout.rows
-                ? createResponsiveSpan(layout.rows, DEFAULT_ROW_SPAN, Number.MAX_SAFE_INTEGER)
-                : undefined;
+                const layout = resolveLayoutConfig(widget);
+                const WidgetComponent = widget.component;
+                const columnStyles = createResponsiveSpan(
+                  layout.columns ?? widget.columns,
+                  FULL_WIDTH_COLUMNS
+                );
+                const rowStyles = layout.rows
+                  ? createResponsiveSpan(layout.rows, DEFAULT_ROW_SPAN, Number.MAX_SAFE_INTEGER)
+                  : undefined;
 
-              return (
-                <Box
-                  key={widget.id}
-                  sx={{
-                    gridColumn: columnStyles,
-                    gridRow: rowStyles,
-                    minHeight: layout.minHeight ?? widget.minHeight,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    width: '100%',
-                    minWidth: 0,
-                  }}
-                >
-                  <SortableWidget id={widget.id} customizing={isCustomizing} title={widget.title}>
-                    <WidgetComponent />
-                  </SortableWidget>
-                </Box>
-              );
-            })}
+                return (
+                  <Grow
+                    key={widget.id}
+                    timeout={{ enter: 360, exit: 260 }}
+                    style={{ transformOrigin: 'center' }}
+                  >
+                    <Box
+                      sx={{
+                        gridColumn: columnStyles,
+                        gridRow: rowStyles,
+                        minHeight: layout.minHeight ?? widget.minHeight,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        width: '100%',
+                        minWidth: 0,
+                      }}
+                    >
+                      <SortableWidget id={widget.id} customizing={isCustomizing} title={widget.title}>
+                        <WidgetComponent />
+                      </SortableWidget>
+                    </Box>
+                  </Grow>
+                );
+              })}
+            </TransitionGroup>
           </Box>
         </SortableContext>
       </DndContext>

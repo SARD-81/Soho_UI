@@ -27,6 +27,7 @@ import type {
   NavigationItem,
 } from '../@types/navigationDrawer';
 import { drawerWidth, navItems } from '../constants/navigationDrawer';
+import { keyframes } from '@emotion/react';
 
 const drawerPaperLayout = (theme: Theme): CSSObject => {
   const drawerOffset = theme.spacing(1);
@@ -44,14 +45,39 @@ const drawerPaperLayout = (theme: Theme): CSSObject => {
   };
 };
 
+const drawerEnter = keyframes`
+  0% {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+`;
+
+const drawerExit = keyframes`
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0.75;
+    transform: translateX(-16px);
+  }
+`;
+
 const openedMixin = (theme: Theme): CSSObject => ({
   ...drawerPaperLayout(theme),
   width: drawerWidth,
-  transition: theme.transitions.create('width', {
+  transition: theme.transitions.create(['width', 'transform', 'box-shadow', 'background-color'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.enteringScreen,
   }),
   overflowX: 'hidden',
+  transform: 'translateX(0)',
+  boxShadow: theme.shadows[6],
+  animation: `${drawerEnter} 320ms cubic-bezier(0.4, 0, 0.2, 1)`,
   // backgroundColor: 'var(--color-card-bg)',
   // backdropFilter: 'saturate(140%) blur(8px)',
   // boxSizing: 'border-box' as const,
@@ -59,14 +85,17 @@ const openedMixin = (theme: Theme): CSSObject => ({
 
 const closedMixin = (theme: Theme): CSSObject => ({
   ...drawerPaperLayout(theme),
-  transition: theme.transitions.create('width', {
-    easing: theme.transitions.easing.sharp,
+  transition: theme.transitions.create(['width', 'transform', 'box-shadow', 'background-color'], {
+    easing: theme.transitions.easing.easeInOut,
     duration: theme.transitions.duration.leavingScreen,
   }),
   overflowX: 'hidden',
   // backgroundColor: 'var(--color-card-bg)',
   // backdropFilter: 'saturate(140%) blur(8px)',
   // boxSizing: 'border-box' as const,
+  transform: 'translateX(-16px)',
+  boxShadow: theme.shadows[3],
+  animation: `${drawerExit} 260ms cubic-bezier(0.4, 0, 0.2, 1)`,
   width: `calc(${theme.spacing(7)} + 1px)`,
   [theme.breakpoints.up('sm')]: {
     width: `calc(${theme.spacing(8)} + 1px)`,
@@ -310,6 +339,15 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             ...drawerPaperLayout(theme),
+            ...(open
+              ? {
+                  animation: `${drawerEnter} 320ms cubic-bezier(0.4, 0, 0.2, 1)`,
+                  boxShadow: theme.shadows[6],
+                }
+              : {
+                  animation: `${drawerExit} 260ms cubic-bezier(0.4, 0, 0.2, 1)`,
+                  boxShadow: theme.shadows[3],
+                }),
           },
         }}
       >
