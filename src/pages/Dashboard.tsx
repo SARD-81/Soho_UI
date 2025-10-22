@@ -13,8 +13,12 @@ import DashboardLayoutPanel, {
   type DashboardLayoutPanelWidget,
 } from '../components/dashboard/DashboardLayoutPanel';
 import SortableWidget from '../components/dashboard/SortableWidget';
+import { useAuth } from '../contexts/AuthContext';
 
-const LAYOUT_STORAGE_KEY = 'dashboard-layout.v2';
+const LAYOUT_STORAGE_PREFIX = 'dashboard-layout.v2';
+
+const getLayoutStorageKey = (username: string | null) =>
+  username ? `${LAYOUT_STORAGE_PREFIX}::${username}` : LAYOUT_STORAGE_PREFIX;
 
 type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -183,13 +187,13 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
   },
 ];
 
-const loadStoredLayout = (): Partial<LayoutState> | null => {
+const loadStoredLayout = (storageKey: string): Partial<LayoutState> | null => {
   if (typeof window === 'undefined') {
     return null;
   }
 
   try {
-    const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     return raw ? (JSON.parse(raw) as Partial<LayoutState>) : null;
   } catch {
     return null;
@@ -243,6 +247,8 @@ const cloneLayoutState = (state: LayoutState): LayoutState => ({
 });
 
 const Dashboard = () => {
+  const { username } = useAuth();
+  const layoutStorageKey = useMemo(() => getLayoutStorageKey(username), [username]);
   const widgetIds = useMemo(() => dashboardWidgets.map((widget) => widget.id), []);
   const widgetMap = useMemo(
     () => new Map<string, DashboardWidgetDefinition>(dashboardWidgets.map((widget) => [widget.id, widget])),
@@ -306,7 +312,7 @@ const Dashboard = () => {
 
   const defaultLayoutState = useMemo(() => createNormalizedState(), [createNormalizedState]);
   const [persistedLayout, setPersistedLayout] = useState<LayoutState>(() => {
-    const stored = loadStoredLayout();
+    const stored = loadStoredLayout(layoutStorageKey);
     return createNormalizedState(stored);
   });
   const [draftLayout, setDraftLayout] = useState<LayoutState | null>(null);
@@ -320,8 +326,17 @@ const Dashboard = () => {
       return;
     }
 
-    localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(persistedLayout));
-  }, [persistedLayout]);
+    localStorage.setItem(layoutStorageKey, JSON.stringify(persistedLayout));
+  }, [layoutStorageKey, persistedLayout]);
+
+  useEffect(() => {
+    const stored = loadStoredLayout(layoutStorageKey);
+    const normalized = createNormalizedState(stored);
+
+    setPersistedLayout((prev) => (areLayoutStatesEqual(prev, normalized) ? prev : normalized));
+    setDraftLayout(null);
+    setIsPanelOpen(false);
+  }, [createNormalizedState, layoutStorageKey]);
 
   useEffect(() => {
     setPersistedLayout((prev) => {
