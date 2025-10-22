@@ -70,9 +70,9 @@ const DashboardLayoutPanel = ({
         }}
       >
         <Typography variant="h6" sx={{ fontFamily: 'var(--font-vazir)' }}>
-          مدیریت چیدمان داشبورد
+          Manage dashboard widgets
         </Typography>
-        <Tooltip title="بستن">
+        <Tooltip title="Close">
           <IconButton onClick={onClose} size="small">
             <MdClose />
           </IconButton>
@@ -92,7 +92,7 @@ const DashboardLayoutPanel = ({
         }}
       >
         <Typography variant="body2" color="text.secondary">
-          ویجت‌ها را فعال یا غیرفعال کنید و اندازه نمایش هر بخش را برای نیاز خود تنظیم نمایید. ترتیب نمایش از طریق کشیدن و رها کردن در صفحه داشبورد قابل مدیریت است.
+          Toggle widgets on or off, choose their footprint and drag cards directly on the dashboard to reorder them.
         </Typography>
         {widgets.map((widget) => {
           const hasMultipleOptions = widget.options.length > 1;
@@ -125,7 +125,7 @@ const DashboardLayoutPanel = ({
                 </Box>
                 <Stack direction="row" alignItems="center" gap={1}>
                   <Typography variant="caption" color="text.secondary">
-                    نمایش
+                    Visible
                   </Typography>
                   <Switch
                     edge="end"
@@ -191,7 +191,7 @@ const DashboardLayoutPanel = ({
           startIcon={<MdOutlineLayersClear />}
           onClick={onHideAll}
         >
-          مخفی کردن همه
+          Hide all
         </Button>
         <Button
           variant="outlined"
@@ -199,7 +199,7 @@ const DashboardLayoutPanel = ({
           startIcon={<MdLayers />}
           onClick={onShowAll}
         >
-          نمایش همه
+          Show all
         </Button>
         <Button
           variant="contained"
@@ -208,7 +208,7 @@ const DashboardLayoutPanel = ({
           onClick={onReset}
           disabled={!isDirty}
         >
-          بازگردانی چیدمان پیش‌فرض
+          Reset to defaults
         </Button>
       </Box>
     </Drawer>
