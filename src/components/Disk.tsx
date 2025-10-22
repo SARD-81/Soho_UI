@@ -18,7 +18,6 @@ import {
   tooltipMultilineSx,
 } from '../constants/disk';
 import { useDisk } from '../hooks/useDisk';
-import '../index.css';
 import { formatBytes, formatDuration } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
 import AppLineChart from './charts/AppLineChart';

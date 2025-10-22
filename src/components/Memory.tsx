@@ -265,7 +265,7 @@ const Memory = () => {
   );
 
   return (
-    <Box sx={{ ...cardSx, width: '100%' }}>
+    <Box sx={{ ...cardSx, width: '100%' , justifyContent : 'space-between' }}>
       <Typography
         variant="subtitle2"
         sx={{

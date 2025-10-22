@@ -1,5 +1,4 @@
 import type { SxProps, Theme } from '@mui/material/styles';
-import '../index.css';
 
 export const defaultContainerSx: SxProps<Theme> = {
   mt: 4,
