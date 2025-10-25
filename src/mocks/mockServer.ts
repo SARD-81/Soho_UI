@@ -413,6 +413,14 @@ const mockRoutes: MockRoute[] = [
   },
   {
     method: 'GET',
+    pattern: /^\/api\/system\/info\/?$/,
+    handler: ({ state }) => ({
+      status: 200,
+      data: state.systemInfo,
+    }),
+  },
+  {
+    method: 'GET',
     pattern: /^\/api\/web\/users\/?$/,
     handler: ({ state }) => ({
       status: 200,
