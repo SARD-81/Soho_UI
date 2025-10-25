@@ -8,6 +8,7 @@ import Cpu from '../components/Cpu';
 import Disk from '../components/Disk';
 import Memory from '../components/Memory';
 import Network from '../components/Network';
+// import SystemInfo from '../components/SystemInfo';
 import Zpool from '../components/Zpool';
 import DashboardLayoutPanel, {
   type DashboardLayoutPanelWidget,
@@ -90,6 +91,27 @@ const createResponsiveSpan = (
 };
 
 const dashboardWidgets: DashboardWidgetDefinition[] = [
+  // {
+  //   id: 'system-info',
+  //   title: 'اطلاعات سیستم',
+  //   description: 'نمای کلی از نسخه، پلتفرم، نام میزبان و وضعیت به‌روزرسانی سیستم',
+  //   component: SystemInfo,
+  //   columns: { xs: 12, md: 6, xl: 4 },
+  //   layoutOptions: [
+  //     {
+  //       id: 'system-info-compact',
+  //       label: 'چیدمان فشرده',
+  //       description: 'ابعاد متعادل برای نمایش در کنار سایر ویجت‌ها',
+  //       columns: { xs: 12, md: 5, xl: 3 },
+  //     },
+  //     {
+  //       id: 'system-info-wide',
+  //       label: 'نمای گسترده',
+  //       description: 'فضای بیشتر برای نمایش جزئیات سیستم',
+  //       columns: { xs: 12, md: 12, xl: 6 },
+  //     },
+  //   ],
+  // },
   {
     id: 'cpu',
     title: 'وضعیت پردازنده',
