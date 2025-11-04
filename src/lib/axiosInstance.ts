@@ -1,7 +1,7 @@
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
-import { refreshAccessToken } from './authApi';
-import { emitSessionCleared, emitTokenRefreshed } from './authEvents';
-import tokenStorage from './tokenStorage';
+import { refreshAccessToken } from './authApi.ts';
+import { emitSessionCleared, emitTokenRefreshed } from './authEvents.ts';
+import tokenStorage from './tokenStorage.ts';
 import { setupAxiosMockAdapter } from '../mocks/setupMocks';
 
 const axiosInstance = axios.create({

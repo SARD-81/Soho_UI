@@ -11,10 +11,10 @@ import {
   logout as logoutRequest,
   refreshAccessToken,
   verifyAccessToken,
-} from '../lib/authApi';
-import { AUTH_EVENTS, authEventTarget } from '../lib/authEvents';
-import axiosInstance from '../lib/axiosInstance';
-import tokenStorage from '../lib/tokenStorage';
+} from '../lib/authApi.ts';
+import { AUTH_EVENTS, authEventTarget } from '../lib/authEvents.ts';
+import axiosInstance from '../lib/axiosInstance.ts';
+import tokenStorage from '../lib/tokenStorage.ts';
 
 interface AuthContextType {
   isAuthenticated: boolean;
