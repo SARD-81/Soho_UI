@@ -51,7 +51,7 @@ function LoginForm() {
       { username: data.username, password: data.password },
       {
         onSuccess: (response) => {
-          loginAction(response.token, data.username);
+          loginAction(response.access, response.refresh, data.username);
           navigate('/dashboard');
         },
       }
