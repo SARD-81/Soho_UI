@@ -299,7 +299,8 @@ const CreateFileSystemModal = ({
             placeholder="نامی یکتا برای فضای فایلی وارد کنید."
             error={
               Boolean(nameError) ||
-              !isNameFormatValid ||
+              (!hasOnlyEnglishAlphanumeric && trimmedName.length > 0) ||
+              startsWithNumber ||
               isDuplicate ||
               isSameAsPool ||
               hasPersianName
@@ -308,9 +309,11 @@ const CreateFileSystemModal = ({
               (hasPersianName &&
                 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
               nameError ||
-              (!isNameFormatValid &&
+              (!hasOnlyEnglishAlphanumeric &&
                 trimmedName.length > 0 &&
                 'نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.') ||
+              (startsWithNumber &&
+                'نام فضای فایلی نمی‌تواند با عدد شروع شود.') ||
               (isDuplicate &&
                 'فضای فایلی با این نام در این فضای یکپارچه وجود دارد.') ||
               (isSameAsPool &&
