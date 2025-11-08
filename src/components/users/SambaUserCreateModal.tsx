@@ -8,7 +8,12 @@ import {
 } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { CreateSambaUserPayload } from '../../@types/samba';
-import { removePersianCharacters } from '../../utils/text';
+import {
+  isLowercaseEnglishAlphabet,
+  lowercaseEnglishWarningMessage,
+  removePersianCharacters,
+  sanitizeLowercaseEnglishUsername,
+} from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -37,6 +42,8 @@ const SambaUserCreateModal = ({
   const [password, setPassword] = useState('');
   const [hasPersianUsername, setHasPersianUsername] = useState(false);
   const [hasPersianPassword, setHasPersianPassword] = useState(false);
+  const [hasInvalidUsernameCharacters, setHasInvalidUsernameCharacters] =
+    useState(false);
 
   const normalizedExistingUsernames = useMemo(() => {
     return new Set(
@@ -48,10 +55,13 @@ const SambaUserCreateModal = ({
 
   useEffect(() => {
     if (open) {
-      setUsername(initialUsername ?? '');
+      const sanitized = sanitizeLowercaseEnglishUsername(initialUsername ?? '');
+
+      setUsername(sanitized.sanitizedValue);
       setPassword('');
       setHasPersianUsername(false);
       setHasPersianPassword(false);
+      setHasInvalidUsernameCharacters(false);
     }
   }, [initialUsername, open]);
 
@@ -83,10 +93,33 @@ const SambaUserCreateModal = ({
     };
   }, [hasPersianPassword]);
 
+  useEffect(() => {
+    if (!hasInvalidUsernameCharacters) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasInvalidUsernameCharacters(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hasInvalidUsernameCharacters]);
+
   const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
-    const sanitizedValue = removePersianCharacters(value);
-    setHasPersianUsername(sanitizedValue !== value);
+    const {
+      sanitizedValue,
+      hadPersianCharacters,
+      hadUppercaseCharacters,
+      hadNonAlphabeticCharacters,
+    } = sanitizeLowercaseEnglishUsername(value);
+
+    setHasPersianUsername(hadPersianCharacters);
+    setHasInvalidUsernameCharacters(
+      hadUppercaseCharacters || hadNonAlphabeticCharacters
+    );
     setUsername(sanitizedValue);
   };
 
@@ -107,6 +140,11 @@ const SambaUserCreateModal = ({
       return;
     }
 
+    if (!isLowercaseEnglishAlphabet(trimmedUsername)) {
+      setHasInvalidUsernameCharacters(true);
+      return;
+    }
+
     if (normalizedExistingUsernames.has(normalizedUsername)) {
       return;
     }
@@ -123,7 +161,10 @@ const SambaUserCreateModal = ({
   const isDuplicate =
     trimmedUsername.length > 0 &&
     normalizedExistingUsernames.has(normalizedUsername);
-  const shouldShowSuccess = trimmedUsername.length > 0 && !isDuplicate;
+  const shouldShowSuccess =
+    trimmedUsername.length > 0 &&
+    !isDuplicate &&
+    !hasInvalidUsernameCharacters;
 
   const adornmentIcon = isDuplicate ? (
     <FiAlertCircle color="var(--color-error)" size={18} />
@@ -132,7 +173,11 @@ const SambaUserCreateModal = ({
   ) : null;
 
   const isConfirmDisabled =
-    isSubmitting || !trimmedUsername || !password || isDuplicate;
+    isSubmitting ||
+    !trimmedUsername ||
+    !password ||
+    isDuplicate ||
+    hasInvalidUsernameCharacters;
 
   return (
     <BlurModal
@@ -193,10 +238,13 @@ const SambaUserCreateModal = ({
           autoFocus
           id="samba-username-input"
           size="small"
-          error={isDuplicate || hasPersianUsername}
+          error={
+            isDuplicate || hasPersianUsername || hasInvalidUsernameCharacters
+          }
           helperText={
             (hasPersianUsername &&
               'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+            (hasInvalidUsernameCharacters && lowercaseEnglishWarningMessage) ||
             (isDuplicate && 'کاربر اشتراک فایل با این نام کاربری وجود دارد.') ||
             undefined
           }

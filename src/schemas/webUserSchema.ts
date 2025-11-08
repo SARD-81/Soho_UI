@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { containsPersianCharacters } from '../utils/text';
 
-const USERNAME_PATTERN = /^[A-Za-z0-9._@+-]+$/;
+const USERNAME_PATTERN = /^[a-z]+$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const PASSWORD_SPECIAL_CHAR_PATTERN = /[^A-Za-z0-9]/;
@@ -16,8 +16,7 @@ const baseCreateWebUserSchema = z.object({
       message: 'استفاده از حروف فارسی در این فیلد مجاز نیست.',
     })
     .refine((value) => USERNAME_PATTERN.test(value), {
-      message:
-        'نام کاربری فقط می‌تواند شامل حروف انگلیسی، اعداد و کاراکترهای . _ @ + - باشد.',
+      message: 'نام کاربری فقط می‌تواند شامل حروف انگلیسی کوچک باشد.',
     }),
   email: z
     .string()

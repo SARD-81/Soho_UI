@@ -82,12 +82,16 @@ const UserSettingsTable = () => {
   });
 
   const rows = useMemo<UserSettingsTableRow[]>(() => {
-    return (usersQuery.data ?? []).map((user) => ({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      dateJoined: formatUtcDateTimeToIran(user.date_joined) ?? '—',
-    }));
+    return (usersQuery.data ?? [])
+      .map((user) => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        dateJoined: formatUtcDateTimeToIran(user.date_joined) ?? '—',
+      }))
+      .sort((a, b) =>
+        a.username.localeCompare(b.username, 'en', { sensitivity: 'base' })
+      );
   }, [usersQuery.data]);
 
   const existingUsernames = useMemo(
