@@ -213,7 +213,8 @@ const WebUserCreateModal = ({
           sanitizedValue,
           hadPersianCharacters,
           hadUppercaseCharacters,
-          hadNonAlphabeticCharacters,
+          hadInvalidCharacters,
+          hadLeadingNumber,
         } = sanitizeLowercaseEnglishUsername(event.target.value);
 
         setPersianWarnings((prev) => {
@@ -224,7 +225,8 @@ const WebUserCreateModal = ({
           return { ...prev, username: hadPersianCharacters };
         });
 
-        const hasFormatIssue = hadUppercaseCharacters || hadNonAlphabeticCharacters;
+        const hasFormatIssue =
+          hadUppercaseCharacters || hadInvalidCharacters || hadLeadingNumber;
         setUsernameFormatWarning(hasFormatIssue);
 
         onChange(sanitizedValue);

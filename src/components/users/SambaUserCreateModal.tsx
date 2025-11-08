@@ -113,12 +113,13 @@ const SambaUserCreateModal = ({
       sanitizedValue,
       hadPersianCharacters,
       hadUppercaseCharacters,
-      hadNonAlphabeticCharacters,
+      hadInvalidCharacters,
+      hadLeadingNumber,
     } = sanitizeLowercaseEnglishUsername(value);
 
     setHasPersianUsername(hadPersianCharacters);
     setHasInvalidUsernameCharacters(
-      hadUppercaseCharacters || hadNonAlphabeticCharacters
+      hadUppercaseCharacters || hadInvalidCharacters || hadLeadingNumber
     );
     setUsername(sanitizedValue);
   };
