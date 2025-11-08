@@ -118,8 +118,12 @@ const CreatePoolModal = ({
   const isDuplicate =
     trimmedPoolName.length > 0 &&
     normalizedExistingNames.includes(normalizedPoolName);
-  const isNameFormatValid =
+  const hasOnlyEnglishAlphanumeric =
     trimmedPoolName.length === 0 || /^[A-Za-z0-9]+$/.test(trimmedPoolName);
+  const startsWithNumber =
+    trimmedPoolName.length > 0 && /^[0-9]/.test(trimmedPoolName);
+  const isNameFormatValid =
+    trimmedPoolName.length === 0 || (hasOnlyEnglishAlphanumeric && !startsWithNumber);
   const shouldShowSuccess =
     trimmedPoolName.length > 0 && isNameFormatValid && !isDuplicate;
 
@@ -147,11 +151,17 @@ const CreatePoolModal = ({
   };
 
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
-    if (!isNameFormatValid && trimmedPoolName.length > 0) {
+    if (!hasOnlyEnglishAlphanumeric && trimmedPoolName.length > 0) {
       event.preventDefault();
       setPoolNameError(
         'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.'
       );
+      return;
+    }
+
+    if (startsWithNumber) {
+      event.preventDefault();
+      setPoolNameError('نام فضای یکپارچه نمی‌تواند با عدد شروع شود.');
       return;
     }
 
@@ -205,7 +215,8 @@ const CreatePoolModal = ({
             size="small"
             error={
               Boolean(poolNameError) ||
-              !isNameFormatValid ||
+              (!hasOnlyEnglishAlphanumeric && trimmedPoolName.length > 0) ||
+              startsWithNumber ||
               isDuplicate ||
               hasPersianPoolName
             }
@@ -213,9 +224,11 @@ const CreatePoolModal = ({
               (hasPersianPoolName &&
                 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
               poolNameError ||
-              (!isNameFormatValid &&
+              (!hasOnlyEnglishAlphanumeric &&
                 trimmedPoolName.length > 0 &&
                 'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.') ||
+              (startsWithNumber &&
+                'نام فضای یکپارچه نمی‌تواند با عدد شروع شود.') ||
               (isDuplicate && 'فضای یکپارچه‌ای با این نام از قبل وجود دارد.') ||
               undefined
             }

@@ -10,7 +10,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+} from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { FiCheckCircle } from 'react-icons/fi';
@@ -21,7 +27,9 @@ import {
 } from '../../schemas/webUserSchema';
 import {
   containsPersianCharacters,
+  lowercaseEnglishWarningMessage,
   removePersianCharacters,
+  sanitizeLowercaseEnglishUsername,
 } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
@@ -74,6 +82,7 @@ const WebUserCreateModal = ({
     password: false,
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [usernameFormatWarning, setUsernameFormatWarning] = useState(false);
 
   const validationSchema = useMemo(
     () => createWebUserSchema({ existingUsernames }),
@@ -83,7 +92,7 @@ const WebUserCreateModal = ({
   const {
     control,
     handleSubmit,
-    formState: { errors},
+    formState: { errors },
     reset,
     watch,
   } = useForm<CreateWebUserFormValues>({
@@ -124,6 +133,7 @@ const WebUserCreateModal = ({
     if (open) {
       reset(defaultValues);
       setPersianWarnings({ username: false, email: false, password: false });
+      setUsernameFormatWarning(false);
     }
   }, [open, reset]);
 
@@ -169,6 +179,20 @@ const WebUserCreateModal = ({
     };
   }, [persianWarnings.password]);
 
+  useEffect(() => {
+    if (!usernameFormatWarning) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setUsernameFormatWarning(false);
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [usernameFormatWarning]);
+
   const handleSanitizedChange =
     (field: PersianWarningField, onChange: (value: string) => void) =>
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -181,6 +205,34 @@ const WebUserCreateModal = ({
 
       onChange(sanitizedValue);
     };
+
+  const handleUsernameChange = useCallback(
+    (onChange: (value: string) => void) =>
+      (event: ChangeEvent<HTMLInputElement>) => {
+        const {
+          sanitizedValue,
+          hadPersianCharacters,
+          hadUppercaseCharacters,
+          hadInvalidCharacters,
+          hadLeadingNumber,
+        } = sanitizeLowercaseEnglishUsername(event.target.value);
+
+        setPersianWarnings((prev) => {
+          if (prev.username === hadPersianCharacters) {
+            return prev;
+          }
+
+          return { ...prev, username: hadPersianCharacters };
+        });
+
+        const hasFormatIssue =
+          hadUppercaseCharacters || hadInvalidCharacters || hadLeadingNumber;
+        setUsernameFormatWarning(hasFormatIssue);
+
+        onChange(sanitizedValue);
+      },
+    []
+  );
 
   const handleFormSubmit = handleSubmit((values) => {
     const payload: CreateWebUserPayload = {
@@ -197,7 +249,9 @@ const WebUserCreateModal = ({
 
   const usernameHelperText = persianWarnings.username
     ? persianWarningMessage
-    : errors.username?.message;
+    : usernameFormatWarning
+      ? lowercaseEnglishWarningMessage
+      : errors.username?.message;
   const emailHelperText = persianWarnings.email
     ? persianWarningMessage
     : errors.email?.message;
@@ -259,9 +313,13 @@ const WebUserCreateModal = ({
               fullWidth
               placeholder='لطفا یک نام کاربری یکتا وارد کنید'
               size="small"
-              error={Boolean(errors.username) || persianWarnings.username}
+              error={
+                Boolean(errors.username) ||
+                persianWarnings.username ||
+                usernameFormatWarning
+              }
               helperText={usernameHelperText}
-              onChange={handleSanitizedChange('username', field.onChange)}
+              onChange={handleUsernameChange(field.onChange)}
               InputLabelProps={{ sx: labelSx }}
               InputProps={{ sx: inputBaseSx }}
             />

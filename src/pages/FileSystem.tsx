@@ -45,12 +45,17 @@ const FileSystem = () => {
     () =>
       (poolData?.pools ?? [])
         .map((pool) => pool.name)
-        .sort((a, b) => a.localeCompare(b, 'fa')),
+        .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })),
     [poolData?.pools]
   );
 
   const filesystems = useMemo(
-    () => data?.filesystems ?? [],
+    () =>
+      [...(data?.filesystems ?? [])].sort((a, b) =>
+        a.filesystemName.localeCompare(b.filesystemName, 'en', {
+          sensitivity: 'base',
+        })
+      ),
     [data?.filesystems]
   );
 
@@ -65,7 +70,9 @@ const FileSystem = () => {
       });
     });
 
-    return Array.from(keys).sort((a, b) => a.localeCompare(b, 'fa'));
+    return Array.from(keys).sort((a, b) =>
+      a.localeCompare(b, 'en', { sensitivity: 'base' })
+    );
   }, [filesystems]);
 
   const handleOpenCreate = useCallback(() => {

@@ -135,6 +135,9 @@ export const useCreateFileSystem = ({
           'نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.'
         );
         hasError = true;
+      } else if (/^[0-9]/.test(trimmedName)) {
+        setNameError('نام فضای فایلی نمی‌تواند با عدد شروع شود.');
+        hasError = true;
       }
 
       if (!trimmedQuota) {
