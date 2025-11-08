@@ -163,8 +163,12 @@ const CreateFileSystemModal = ({
     trimmedPool.length > 0 &&
     trimmedName.length > 0 &&
     trimmedName.toLowerCase() === normalizedPool;
-  const isNameFormatValid =
+  const hasOnlyEnglishAlphanumeric =
     trimmedName.length === 0 || /^[A-Za-z0-9]+$/.test(trimmedName);
+  const startsWithNumber =
+    trimmedName.length > 0 && /^[0-9]/.test(trimmedName);
+  const isNameFormatValid =
+    trimmedName.length === 0 || (hasOnlyEnglishAlphanumeric && !startsWithNumber);
   const shouldShowSuccess =
     trimmedPool.length > 0 &&
     trimmedName.length > 0 &&
@@ -180,9 +184,15 @@ const CreateFileSystemModal = ({
     ) : null;
 
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
-    if (!isNameFormatValid && trimmedName.length > 0) {
+    if (!hasOnlyEnglishAlphanumeric && trimmedName.length > 0) {
       event.preventDefault();
       setNameError('نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.');
+      return;
+    }
+
+    if (startsWithNumber) {
+      event.preventDefault();
+      setNameError('نام فضای فایلی نمی‌تواند با عدد شروع شود.');
       return;
     }
 
