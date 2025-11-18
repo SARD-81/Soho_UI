@@ -18,9 +18,14 @@ const SelectedSambaUsersDetailsPanel = ({
     values: item.details ?? {},
   }));
 
+  const title =
+    columns.length > 1
+      ? 'مقایسه جزئیات کاربران اشتراک فایل'
+      : 'جزئیات کاربران اشتراک فایل';
+
   return (
     <DetailComparisonPanel
-      title="مقایسه جزئیات کاربران اشتراک فایل"
+      title={title}
       attributeLabel="ویژگی"
       columns={columns}
       formatValue={formatDetailValue}

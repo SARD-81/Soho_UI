@@ -1,4 +1,4 @@
-import type { DiskResponse } from '../@types/disk';
+import type { DiskInventoryItem, DiskResponse } from '../@types/disk';
 import type { RawSambaUserDetails, SambaShareDetails } from '../@types/samba';
 import type { ServiceDetails } from '../@types/service';
 import type { VolumeRawEntry } from '../@types/volume';
@@ -68,6 +68,7 @@ export interface MockState {
   memory: MemoryResponse;
   cpu: CpuResponse;
   disk: DiskResponse;
+  diskInventory: DiskInventoryItem[];
   diskWwnMap: Record<string, string>;
   dirPermissions: Record<string, DirPermissionsEntry>;
   powerActions: Record<PowerAction, PowerActionResponse>;
@@ -521,6 +522,161 @@ const baseState: MockState = {
       },
     },
   },
+  diskInventory: [
+    {
+      disk: 'nvme0n1',
+      model: 'KLEVV CRAS C710 M.2 NVMe SSD 256GB',
+      vendor: '',
+      state: 'live',
+      device_path:
+        '/sys/devices/pci0000:00/0000:00:1c.0/0000:01:00.0/nvme/nvme0/nvme0n1',
+      physical_block_size: '512',
+      logical_block_size: '512',
+      scheduler: '[none] mq-deadline',
+      wwid: '',
+      total_bytes: 256_060_514_304,
+      temperature_celsius: 44,
+      wwn:
+        'nvme-nvme.10ec-32303232303933303033303030333036-4b4c45565620435241532043373130204d2e32204e564d6520535344203235364742-00000001',
+      uuid: '310e4289-0afb-4904-a9f6-4322de2d8bd4',
+      slot_number: null,
+      type: 'nvme',
+      has_partition: true,
+      used_bytes: 14208667648,
+      free_bytes: 222916657152,
+      usage_percent: 5.69,
+      partitions: [
+        {
+          name: 'nvme0n1p1',
+          path: '/dev/nvme0n1p1',
+          size_bytes: 1_048_576,
+          wwn:
+            'nvme-nvme.10ec-32303232303933303033303030333036-4b4c45565620435241532043373130204d2e32204e564d6520535344203235364742-00000001-part1',
+          mount_point: null,
+          filesystem: null,
+          options: null,
+          dump: null,
+          fsck: null,
+        },
+        {
+          name: 'nvme0n1p3',
+          path: '/dev/nvme0n1p3',
+          size_bytes: 1_023_410_176,
+          wwn:
+            'nvme-nvme.10ec-32303232303933303033303030333036-4b4c45565620435241532043373130204d2e32204e564d6520535344203235364742-00000001-part3',
+          mount_point: null,
+          filesystem: null,
+          options: null,
+          dump: null,
+          fsck: null,
+        },
+        {
+          name: 'nvme0n1p2',
+          path: '/dev/nvme0n1p2',
+          size_bytes: 255_034_654_720,
+          wwn:
+            'nvme-nvme.10ec-32303232303933303033303030333036-4b4c45565620435241532043373130204d2e32204e564d6520535344203235364742-00000001-part2',
+          mount_point: '/',
+          filesystem: 'ext4',
+          options: ['rw', 'relatime', 'errors=remount-ro'],
+          dump: 0,
+          fsck: 0,
+        },
+      ],
+    },
+    {
+      disk: 'sda',
+      model: 'ST20000NM004E-3H',
+      vendor: 'ATA',
+      state: 'running',
+      device_path:
+        '/sys/devices/pci0000:00/0000:00:17.0/ata1/host0/target0:0:0/0:0:0:0/block/sda',
+      physical_block_size: '4096',
+      logical_block_size: '512',
+      scheduler: '[mq-deadline] none',
+      wwid: 'naa.5000c500e874203a',
+      total_bytes: 20_000_588_955_648,
+      temperature_celsius: 39,
+      wwn: 'wwn-0x5000c500e874203a',
+      uuid: null,
+      slot_number: '0',
+      type: 'sata',
+      has_partition: true,
+      used_bytes: null,
+      free_bytes: null,
+      usage_percent: null,
+      partitions: [
+        {
+          name: 'sda1',
+          path: '/dev/sda1',
+          size_bytes: 20_000_578_469_888,
+          wwn: 'wwn-0x5000c500e874203a-part1',
+          mount_point: null,
+          filesystem: null,
+          options: null,
+          dump: null,
+          fsck: null,
+        },
+        {
+          name: 'sda9',
+          path: '/dev/sda9',
+          size_bytes: 8_388_608,
+          wwn: 'wwn-0x5000c500e874203a-part9',
+          mount_point: null,
+          filesystem: null,
+          options: null,
+          dump: null,
+          fsck: null,
+        },
+      ],
+    },
+    {
+      disk: 'sdb',
+      model: 'ST20000NM004E-3H',
+      vendor: 'ATA',
+      state: 'running',
+      device_path:
+        '/sys/devices/pci0000:00/0000:00:17.0/ata2/host1/target1:0:0/1:0:0:0/block/sdb',
+      physical_block_size: '4096',
+      logical_block_size: '512',
+      scheduler: '[mq-deadline] none',
+      wwid: 'naa.5000c500e8272848',
+      total_bytes: 20_000_588_955_648,
+      temperature_celsius: 40,
+      wwn: 'wwn-0x5000c500e8272848',
+      uuid: null,
+      slot_number: '1',
+      type: 'sata',
+      has_partition: true,
+      used_bytes: null,
+      free_bytes: null,
+      usage_percent: null,
+      partitions: [
+        {
+          name: 'sdb1',
+          path: '/dev/sdb1',
+          size_bytes: 20_000_578_469_888,
+          wwn: 'wwn-0x5000c500e8272848-part1',
+          mount_point: null,
+          filesystem: null,
+          options: null,
+          dump: null,
+          fsck: null,
+        },
+        {
+          name: 'sdb9',
+          path: '/dev/sdb9',
+          size_bytes: 8_388_608,
+          wwn: 'wwn-0x5000c500e8272848-part9',
+          mount_point: null,
+          filesystem: null,
+          options: null,
+          dump: null,
+          fsck: null,
+        },
+      ],
+    },
+  ],
   diskWwnMap: {
     '/dev/sda': 'wwn-0x5002538d404b1234',
     '/dev/sdb': 'wwn-0x5000c500a1b2c3d4',

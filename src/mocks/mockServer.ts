@@ -389,6 +389,58 @@ const mockRoutes: MockRoute[] = [
   },
   {
     method: 'GET',
+    pattern: /^\/api\/disk\/$/,
+    handler: ({ state }) => ({
+      status: 200,
+      data: {
+        ok: true,
+        error: null,
+        message: 'لیست دیسک‌ها با موفقیت دریافت شد.',
+        data: state.diskInventory,
+        details: {},
+        meta: {
+          timestamp: new Date().toISOString(),
+          response_status_code: 200,
+          response_status_text: 'OK',
+        },
+        request_data: {},
+      },
+    }),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/disk\/([^/]+)\/$/,
+    handler: ({ config, match, state }) => {
+      const diskName = decodeURIComponent(match[1] ?? '');
+      const disk = state.diskInventory.find((entry) => entry.disk === diskName);
+
+      if (!disk) {
+        throw createAxiosError(`دیسک ${diskName} یافت نشد.`, config, 404, {
+          ok: false,
+          error: `دیسک ${diskName} یافت نشد.`,
+        });
+      }
+
+      return {
+        status: 200,
+        data: {
+          ok: true,
+          error: null,
+          message: `جزئیات دیسک '${diskName}' با موفقیت دریافت شد.`,
+          data: disk,
+          details: {},
+          meta: {
+            timestamp: new Date().toISOString(),
+            response_status_code: 200,
+            response_status_text: 'OK',
+          },
+          request_data: {},
+        },
+      };
+    },
+  },
+  {
+    method: 'GET',
     pattern: /^\/api\/disk\/?$/,
     handler: ({ state }) => ({
       status: 200,

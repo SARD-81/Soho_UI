@@ -33,3 +33,23 @@ export const isLowercaseEnglishAlphabet = (value: string) =>
 
 export const lowercaseEnglishWarningMessage =
   'نام کاربری فقط می‌تواند شامل حروف انگلیسی کوچک و اعداد باشد و نباید با عدد شروع شود.';
+
+export const truncateMiddle = (value: string, maxLength = 24): string => {
+  if (!value) {
+    return '';
+  }
+
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  const ellipsis = '...';
+  const charsToShow = Math.max(maxLength - ellipsis.length, 1);
+  const frontChars = Math.ceil(charsToShow / 2);
+  const backChars = Math.floor(charsToShow / 2);
+
+  const start = value.slice(0, frontChars);
+  const end = value.slice(value.length - backChars);
+
+  return `${start}${ellipsis}${end}`;
+};

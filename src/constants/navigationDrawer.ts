@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { BsFillShareFill } from "react-icons/bs";
 // import { FiUsers } from 'react-icons/fi';
 import { GrServices, GrStorage } from 'react-icons/gr';
-import { MdSpaceDashboard, MdStorage } from 'react-icons/md';
+import { MdOutlineSdStorage, MdSpaceDashboard, MdStorage } from 'react-icons/md';
 import { RiSettings3Fill } from 'react-icons/ri';
 import type { NavigationItem } from '../@types/navigationDrawer';
 
@@ -14,6 +14,11 @@ export const navItems: NavigationItem[] = [
     text: 'داشبورد',
     icon: createElement(MdSpaceDashboard),
     path: '/dashboard',
+  },
+  {
+    text: 'دیسک‌ها',
+    icon: createElement(MdOutlineSdStorage),
+    path: '/disks',
   },
   {
     text: 'فضای یکپارچه',
