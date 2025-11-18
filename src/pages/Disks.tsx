@@ -62,8 +62,8 @@ const Disks = () => {
         </Typography>
       </Box>
 
-      <Stack direction={{ xs: 'column', xl: 'row' }} spacing={3} alignItems="flex-start">
-        <Box sx={{ flex: 1, width: '100%' }}>
+      <Stack spacing={3}>
+        <Box sx={{ width: '100%' }}>
           <DisksTable
             disks={disks}
             isLoading={isLoading}
@@ -74,7 +74,7 @@ const Disks = () => {
           />
         </Box>
 
-        <Box sx={{ width: { xs: '100%', xl: 'auto' } }}>
+        <Box sx={{ width: '100%' }}>
           <SelectedDisksDetailsPanel items={detailItems} onRemove={handleRemoveSelected} />
         </Box>
       </Stack>
