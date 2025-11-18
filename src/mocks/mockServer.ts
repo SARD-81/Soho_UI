@@ -413,6 +413,14 @@ const mockRoutes: MockRoute[] = [
   },
   {
     method: 'GET',
+    pattern: /^\/api\/system\/info\/?$/,
+    handler: ({ state }) => ({
+      status: 200,
+      data: state.systemInfo,
+    }),
+  },
+  {
+    method: 'GET',
     pattern: /^\/api\/web\/users\/?$/,
     handler: ({ state }) => ({
       status: 200,
@@ -446,9 +454,14 @@ const mockRoutes: MockRoute[] = [
       const normalizedUsername = normalizeWebUsername(username);
 
       if (normalizedUsername === ADMIN_WEB_USERNAME) {
-        throw createAxiosError('امکان ایجاد کاربر مدیر وجود ندارد.', config, 400, {
-          detail: 'کاربر مدیر قابل ایجاد نیست.',
-        });
+        throw createAxiosError(
+          'امکان ایجاد کاربر مدیر وجود ندارد.',
+          config,
+          400,
+          {
+            detail: 'کاربر مدیر قابل ایجاد نیست.',
+          }
+        );
       }
 
       if (
@@ -498,9 +511,14 @@ const mockRoutes: MockRoute[] = [
       const normalizedUsername = normalizeWebUsername(username);
 
       if (normalizedUsername === ADMIN_WEB_USERNAME) {
-        throw createAxiosError('امکان حذف کاربر مدیر وجود ندارد.', config, 400, {
-          detail: 'کاربر مدیر حذف نمی‌شود.',
-        });
+        throw createAxiosError(
+          'امکان حذف کاربر مدیر وجود ندارد.',
+          config,
+          400,
+          {
+            detail: 'کاربر مدیر حذف نمی‌شود.',
+          }
+        );
       }
 
       const targetIndex = state.webUsers.findIndex(

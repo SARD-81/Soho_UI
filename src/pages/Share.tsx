@@ -70,7 +70,19 @@ const Share = () => {
   );
   const [deleteSambaError, setDeleteSambaError] = useState<string | null>(null);
 
-  const { data: shares = [], isLoading, error } = useSambaShares();
+  const {
+    data: rawShares = [],
+    isLoading,
+    error,
+  } = useSambaShares();
+
+  const shares = useMemo(
+    () =>
+      [...rawShares].sort((a, b) =>
+        a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })
+      ),
+    [rawShares]
+  );
 
   const createShare = useCreateShare({
     onSuccess: (shareName) => {
@@ -201,10 +213,17 @@ const Share = () => {
     enabled: activeTab === SHARE_TABS.sambaUsers,
   });
 
-  const sambaUsers = useMemo(
-    () => normalizeSambaUsers(sambaUsersQuery.data?.data),
-    [sambaUsersQuery.data?.data]
-  );
+  const sambaUsers = useMemo(() => {
+    const normalizedUsers = normalizeSambaUsers(sambaUsersQuery.data?.data);
+
+    return normalizedUsers
+      .slice()
+      .sort((a, b) =>
+        (a.username ?? '').localeCompare(b.username ?? '', 'en', {
+          sensitivity: 'base',
+        })
+      );
+  }, [sambaUsersQuery.data?.data]);
 
   const normalizedSambaUsernames = useMemo(() => {
     return new Set(
@@ -631,7 +650,9 @@ const Share = () => {
         isSubmitting={createSambaUser.isPending}
         errorMessage={sambaCreateError}
         initialUsername={sambaCreateInitialUsername}
-        existingUsernames={Array.from(normalizedSambaUsernames)}
+        existingUsernames={Array.from(normalizedSambaUsernames).sort((a, b) =>
+          a.localeCompare(b, 'en', { sensitivity: 'base' })
+        )}
       />
 
       <SambaUserPasswordModal

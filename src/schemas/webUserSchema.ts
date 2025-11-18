@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { containsPersianCharacters } from '../utils/text';
 
-const USERNAME_PATTERN = /^[A-Za-z0-9._@+-]+$/;
+const USERNAME_PATTERN = /^[a-z][a-z0-9]*$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const PASSWORD_SPECIAL_CHAR_PATTERN = /[^A-Za-z0-9]/;
@@ -17,7 +17,7 @@ const baseCreateWebUserSchema = z.object({
     })
     .refine((value) => USERNAME_PATTERN.test(value), {
       message:
-        'نام کاربری فقط می‌تواند شامل حروف انگلیسی، اعداد و کاراکترهای . _ @ + - باشد.',
+        'نام کاربری فقط می‌تواند شامل حروف انگلیسی کوچک و اعداد باشد و نباید با عدد شروع شود.',
     }),
   email: z
     .string()

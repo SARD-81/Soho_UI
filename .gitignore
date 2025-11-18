@@ -14,5 +14,6 @@
 /.next/
 /Draft/
 /dist/
+/src/mocks/
 .gitignore
 

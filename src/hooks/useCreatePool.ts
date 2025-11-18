@@ -141,6 +141,9 @@ export const useCreatePool = ({
           'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.'
         );
         hasError = true;
+      } else if (/^[0-9]/.test(trimmedName)) {
+        setPoolNameError('نام فضای یکپارچه نمی‌تواند با عدد شروع شود.');
+        hasError = true;
       }
 
       if (!vdevType) {

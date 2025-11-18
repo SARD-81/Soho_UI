@@ -22,6 +22,7 @@ import { Outlet, useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
+import useLogout from '../hooks/useLogout';
 import NavigationDrawer from './NavigationDrawer';
 import PowerActionConfirmDialog from './PowerActionConfirmDialog';
 import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';
@@ -30,7 +31,8 @@ import QuickActionsMenu from './QuickActionsMenu';
 
 const MainLayout: React.FC = () => {
   const Navigate = useNavigate();
-  const { logout, username } = useAuth();
+  const { username } = useAuth();
+  const { logout: triggerLogout, isLoggingOut } = useLogout();
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [activePowerAction, setActivePowerAction] =
     useState<PowerAction | null>(null);
@@ -75,10 +77,6 @@ const MainLayout: React.FC = () => {
         setSecondsRemaining(5);
       },
     });
-
-  const handleLogout = async () => {
-    await logout();
-  };
 
   const clearCountdownTimer = () => {
     if (countdownTimerRef.current) {
@@ -343,9 +341,10 @@ const MainLayout: React.FC = () => {
                 }`} />
               </MenuItem>
               <MenuItem
+                disabled={isLoggingOut}
                 onClick={() => {
                   handleUserMenuClose();
-                  handleLogout();
+                  triggerLogout();
                 }}
                 sx={{
                   '& .MuiListItemIcon-root': {

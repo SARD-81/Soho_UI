@@ -122,10 +122,13 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     () => normalizeSambaUsers(sambaUsersQuery.data?.data),
     [sambaUsersQuery.data?.data]
   );
-  const sambaUsernames = useMemo(
-    () => sambaUsers.map((user) => user.username).filter(Boolean),
-    [sambaUsers]
-  );
+  const sambaUsernames = useMemo(() => {
+    const usernames = sambaUsers.map((user) => user.username).filter(Boolean);
+
+    return usernames.sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
+  }, [sambaUsers]);
 
   const existingSharesQuery = useQuery<SambaSharesResponse>({
     queryKey: ['samba', 'shares', 'create-modal'],

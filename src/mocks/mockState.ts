@@ -3,6 +3,7 @@ import type { RawSambaUserDetails, SambaShareDetails } from '../@types/samba';
 import type { ServiceDetails } from '../@types/service';
 import type { VolumeRawEntry } from '../@types/volume';
 import type { ZpoolCapacityPayload, ZpoolDetailEntry } from '../@types/zpool';
+import type { SystemInfoResponse } from '../@types/systemInfo';
 import type { CpuResponse } from '../hooks/useCpu';
 import type { MemoryResponse } from '../hooks/useMemory';
 import type { NetworkData } from '../hooks/useNetwork';
@@ -70,6 +71,7 @@ export interface MockState {
   diskWwnMap: Record<string, string>;
   dirPermissions: Record<string, DirPermissionsEntry>;
   powerActions: Record<PowerAction, PowerActionResponse>;
+  systemInfo: SystemInfoResponse;
 }
 
 const baseState: MockState = {
@@ -560,6 +562,21 @@ const baseState: MockState = {
       status: 'scheduled',
       detail: 'سیستم در حال خاموش شدن است.',
       message: 'خاموشی سیستم در حال انجام است.',
+    },
+  },
+  systemInfo: {
+    productName: 'TrueNAS',
+    productLine: 'SCALE',
+    platform: 'Generic',
+    version: 'ElectricEel-24.10.1',
+    hostname: 'truenas',
+    uptime: {
+      humanReadable: '1 ساعت و 49 دقیقه',
+      asOf: '05:33',
+    },
+    updates: {
+      available: true,
+      message: 'به‌روزرسانی جدید در دسترس است',
     },
   },
 };
