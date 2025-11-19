@@ -64,20 +64,45 @@ const IntegratedStorage = () => {
       return [];
     }
 
+    const buildDeviceIdentifier = (devicePath: string | null, wwn: string | null) => {
+      const trimmedPath = devicePath?.trim();
+
+      if (wwn) {
+        const trimmedWwn = wwn.trim();
+
+        if (trimmedWwn.length > 0) {
+          if (trimmedWwn.startsWith('/dev/')) {
+            return trimmedWwn;
+          }
+
+          const sanitizedWwn = trimmedWwn.replace(/^\/dev\/disk\/by-id\//, '');
+          return `/dev/disk/by-id/${sanitizedWwn}`;
+        }
+      }
+
+      if (trimmedPath && trimmedPath.length > 0) {
+        return trimmedPath;
+      }
+
+      return null;
+    };
+
     const uniqueValues = new Set<string>();
     const options: DeviceOption[] = [];
 
     partitionedDisks.forEach(({ name, path, wwn }) => {
-      if (!path || uniqueValues.has(path)) {
+      const identifier = buildDeviceIdentifier(path, wwn);
+
+      if (!identifier || uniqueValues.has(identifier)) {
         return;
       }
 
-      uniqueValues.add(path);
+      uniqueValues.add(identifier);
 
       options.push({
-        label: path.replace(/^\/dev\//, '') || name,
-        value: path,
-        tooltip: wwn ?? path,
+        label: (path ?? name).replace(/^\/dev\//, '') || name,
+        value: identifier,
+        tooltip: identifier,
         wwn: wwn ?? undefined,
       });
     });

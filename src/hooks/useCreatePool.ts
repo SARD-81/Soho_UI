@@ -15,6 +15,7 @@ interface CreatePoolPayload {
   pool_name: string;
   devices: string[];
   vdev_type: string;
+  save_to_db: boolean;
 }
 
 interface UseCreatePoolOptions {
@@ -178,6 +179,7 @@ export const useCreatePool = ({
         pool_name: trimmedName,
         devices: selectedDevices,
         vdev_type: vdevType,
+        save_to_db: true,
       });
     },
     [createPoolMutation, poolName, selectedDevices, vdevType]
