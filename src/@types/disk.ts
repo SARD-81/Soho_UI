@@ -37,15 +37,29 @@ export interface DiskResponse {
   summary: DiskSummary;
 }
 
-export interface DiskWwnMapResponse {
-  data: Record<string, string>;
-}
-
-export interface FreeDiskResponse {
+export interface DiskNamesResponse {
   ok: boolean;
   error: string | null;
-  data: string[];
-  details?: { count: number };
+  message?: string;
+  data?: {
+    disk_names?: string[];
+  };
+  details?: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+  request_data?: Record<string, unknown>;
+}
+
+export interface DiskPartitionStatusResponse {
+  ok: boolean;
+  error: string | null;
+  message?: string;
+  data?: {
+    disk: string;
+    has_partitions: boolean;
+  };
+  details?: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+  request_data?: Record<string, unknown>;
 }
 
 export interface DiskPartitionInfo {
