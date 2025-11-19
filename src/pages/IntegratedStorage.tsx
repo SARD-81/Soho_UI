@@ -8,7 +8,7 @@ import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
-import { useDiskWwnMap, usePartitionedDisks } from '../hooks/useDisk';
+import { usePartitionedDisks } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
 
 const MAX_COMPARISON_ITEMS = 4;
@@ -59,58 +59,37 @@ const IntegratedStorage = () => {
     refetchInterval: createPool.isOpen ? 5000 : undefined,
   });
 
-  const {
-    data: diskWwnMap,
-    isFetching: isDiskMapFetching,
-    error: diskMapError,
-  } = useDiskWwnMap({
-    enabled: createPool.isOpen,
-    refetchInterval: createPool.isOpen ? 5000 : undefined,
-  });
-
   const deviceOptions = useMemo<DeviceOption[]>(() => {
     if (!partitionedDisks || partitionedDisks.length === 0) {
       return [];
     }
 
-    const wwnMap = diskWwnMap?.data ?? {};
     const uniqueValues = new Set<string>();
     const options: DeviceOption[] = [];
 
-    partitionedDisks.forEach((diskName) => {
-      const trimmedName = diskName.trim();
-      if (!trimmedName) {
+    partitionedDisks.forEach(({ name, path, wwn }) => {
+      if (!path || uniqueValues.has(path)) {
         return;
       }
 
-      const normalizedValue = trimmedName.startsWith('/dev/')
-        ? trimmedName
-        : `/dev/${trimmedName}`;
-
-      if (uniqueValues.has(normalizedValue)) {
-        return;
-      }
-
-      uniqueValues.add(normalizedValue);
-      const wwnPath = wwnMap[normalizedValue];
+      uniqueValues.add(path);
 
       options.push({
-        label: normalizedValue.replace(/^\/dev\//, ''),
-        value: normalizedValue,
-        tooltip: wwnPath ?? normalizedValue,
-        wwn: wwnPath,
+        label: path.replace(/^\/dev\//, '') || name,
+        value: path,
+        tooltip: wwn ?? path,
+        wwn: wwn ?? undefined,
       });
     });
 
     return options.sort((a, b) => a.label.localeCompare(b.label, 'en'));
-  }, [diskWwnMap?.data, partitionedDisks]);
+  }, [partitionedDisks]);
 
   const isDiskLoading =
     isPartitionedDiskLoading ||
-    (createPool.isOpen && isPartitionedDiskFetching && !partitionedDisks) ||
-    (createPool.isOpen && isDiskMapFetching && !diskWwnMap);
+    (createPool.isOpen && isPartitionedDiskFetching && !partitionedDisks);
 
-  const diskError = partitionedDiskError ?? diskMapError ?? null;
+  const diskError = partitionedDiskError ?? null;
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
   const poolNames = useMemo(

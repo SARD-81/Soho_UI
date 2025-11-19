@@ -37,10 +37,6 @@ export interface DiskResponse {
   summary: DiskSummary;
 }
 
-export interface DiskWwnMapResponse {
-  data: Record<string, string>;
-}
-
 export interface DiskNamesResponse {
   ok: boolean;
   error: string | null;

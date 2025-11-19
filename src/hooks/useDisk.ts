@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import type {
+  DiskDetailResponse,
   DiskNamesResponse,
   DiskPartitionStatusResponse,
   DiskResponse,
-  DiskWwnMapResponse,
 } from '../@types/disk';
 import axiosInstance from '../lib/axiosInstance';
 
@@ -15,12 +15,6 @@ const DEFAULT_PARTITION_STATUS_ERROR_MESSAGE =
 
 const fetchDisk = async (): Promise<DiskResponse> => {
   const { data } = await axiosInstance.get<DiskResponse>('/api/disk');
-  return data;
-};
-
-const fetchDiskWwnMap = async (): Promise<DiskWwnMapResponse> => {
-  const { data } =
-    await axiosInstance.get<DiskWwnMapResponse>('/api/disk/wwn/map/');
   return data;
 };
 
@@ -96,7 +90,58 @@ const fetchDiskPartitionStatus = async (diskName: string): Promise<boolean> => {
   }
 };
 
-const fetchPartitionedDisks = async (): Promise<string[]> => {
+const DEFAULT_DISK_DETAIL_ERROR_MESSAGE =
+  'امکان دریافت جزئیات دیسک وجود ندارد.';
+
+const fetchDiskWwn = async (diskName: string): Promise<string | null> => {
+  const endpoint = `/api/disk/${encodeURIComponent(diskName)}/`;
+
+  try {
+    const data = await fetchWithTrailingSlashFallback<DiskDetailResponse>(
+      endpoint
+    );
+
+    if (data.ok === false) {
+      const message =
+        typeof data.error === 'string' && data.error.trim().length > 0
+          ? data.error
+          : DEFAULT_DISK_DETAIL_ERROR_MESSAGE;
+      throw new Error(message);
+    }
+
+    const wwn = data.data?.wwn ?? data.data?.wwid ?? null;
+
+    if (typeof wwn !== 'string') {
+      return null;
+    }
+
+    const trimmed = wwn.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return null;
+    }
+
+    throw error;
+  }
+};
+
+export interface PartitionedDiskInfo {
+  name: string;
+  path: string;
+  wwn: string | null;
+}
+
+const normalizeDiskPath = (diskName: string) => {
+  const trimmedName = diskName.trim();
+  if (!trimmedName) {
+    return '';
+  }
+
+  return trimmedName.startsWith('/dev/') ? trimmedName : `/dev/${trimmedName}`;
+};
+
+const fetchPartitionedDisks = async (): Promise<PartitionedDiskInfo[]> => {
   const diskNames = await fetchDiskNames();
 
   if (diskNames.length === 0) {
@@ -118,9 +163,34 @@ const fetchPartitionedDisks = async (): Promise<string[]> => {
     })
   );
 
-  return Array.from(
-    new Set(disksWithPartitions.filter((diskName): diskName is string => !!diskName))
+  const filteredNames = disksWithPartitions.filter(
+    (diskName): diskName is string => !!diskName
   );
+
+  if (filteredNames.length === 0) {
+    return [];
+  }
+
+  const uniquePaths = new Map<string, PartitionedDiskInfo>();
+
+  await Promise.all(
+    filteredNames.map(async (diskName) => {
+      const normalizedPath = normalizeDiskPath(diskName);
+      if (!normalizedPath || uniquePaths.has(normalizedPath)) {
+        return;
+      }
+
+      const wwn = await fetchDiskWwn(diskName);
+
+      uniquePaths.set(normalizedPath, {
+        name: diskName.trim(),
+        path: normalizedPath,
+        wwn,
+      });
+    })
+  );
+
+  return Array.from(uniquePaths.values());
 };
 
 interface UseDiskOptions {
@@ -138,18 +208,8 @@ export const useDisk = (options?: UseDiskOptions) => {
   });
 };
 
-export const useDiskWwnMap = (options?: UseDiskOptions) => {
-  return useQuery<DiskWwnMapResponse, Error>({
-    queryKey: ['disk', 'wwn', 'map'],
-    queryFn: fetchDiskWwnMap,
-    refetchInterval: options?.refetchInterval ?? 1000,
-    refetchIntervalInBackground: true,
-    enabled: options?.enabled ?? true,
-  });
-};
-
 export const usePartitionedDisks = (options?: UseDiskOptions) => {
-  return useQuery<string[], Error>({
+  return useQuery<PartitionedDiskInfo[], Error>({
     queryKey: ['disk', 'partitioned'],
     queryFn: fetchPartitionedDisks,
     refetchInterval: options?.refetchInterval,
