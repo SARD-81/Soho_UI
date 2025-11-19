@@ -41,13 +41,6 @@ export interface DiskWwnMapResponse {
   data: Record<string, string>;
 }
 
-export interface FreeDiskResponse {
-  ok: boolean;
-  error: string | null;
-  data: string[];
-  details?: { count: number };
-}
-
 export interface DiskNamesResponse {
   ok: boolean;
   error: string | null;
