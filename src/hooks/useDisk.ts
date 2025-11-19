@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import type {
   DiskNamesResponse,
@@ -33,8 +34,28 @@ const normalizeDiskNames = (diskNames: unknown): string[] => {
     .filter((disk): disk is string => disk.length > 0);
 };
 
+const fetchWithTrailingSlashFallback = async <T>(url: string) => {
+  try {
+    const { data } = await axiosInstance.get<T>(url);
+    return data;
+  } catch (error) {
+    const isTrailingSlashRequest = url.endsWith('/');
+    if (
+      isTrailingSlashRequest &&
+      axios.isAxiosError(error) &&
+      error.response?.status === 404
+    ) {
+      const fallbackUrl = url.replace(/\/+$/, '');
+      const { data } = await axiosInstance.get<T>(fallbackUrl);
+      return data;
+    }
+
+    throw error;
+  }
+};
+
 const fetchDiskNames = async (): Promise<string[]> => {
-  const { data } = await axiosInstance.get<DiskNamesResponse>(
+  const data = await fetchWithTrailingSlashFallback<DiskNamesResponse>(
     '/api/disk/names/'
   );
 
@@ -51,19 +72,28 @@ const fetchDiskNames = async (): Promise<string[]> => {
 
 const fetchDiskPartitionStatus = async (diskName: string): Promise<boolean> => {
   const endpoint = `/api/disk/${encodeURIComponent(diskName)}/has-partitions/`;
-  const { data } = await axiosInstance.get<DiskPartitionStatusResponse>(
-    endpoint
-  );
 
-  if (data.ok === false) {
-    const message =
-      typeof data.error === 'string' && data.error.trim().length > 0
-        ? data.error
-        : DEFAULT_PARTITION_STATUS_ERROR_MESSAGE;
-    throw new Error(message);
+  try {
+    const data = await fetchWithTrailingSlashFallback<DiskPartitionStatusResponse>(
+      endpoint
+    );
+
+    if (data.ok === false) {
+      const message =
+        typeof data.error === 'string' && data.error.trim().length > 0
+          ? data.error
+          : DEFAULT_PARTITION_STATUS_ERROR_MESSAGE;
+      throw new Error(message);
+    }
+
+    return Boolean(data.data?.has_partitions);
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return false;
+    }
+
+    throw error;
   }
-
-  return Boolean(data.data?.has_partitions);
 };
 
 const fetchPartitionedDisks = async (): Promise<string[]> => {
@@ -75,8 +105,16 @@ const fetchPartitionedDisks = async (): Promise<string[]> => {
 
   const disksWithPartitions = await Promise.all(
     diskNames.map(async (diskName) => {
-      const hasPartitions = await fetchDiskPartitionStatus(diskName);
-      return hasPartitions ? diskName : null;
+      try {
+        const hasPartitions = await fetchDiskPartitionStatus(diskName);
+        return hasPartitions ? diskName : null;
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          return null;
+        }
+
+        throw error;
+      }
     })
   );
 
