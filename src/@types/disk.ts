@@ -48,6 +48,31 @@ export interface FreeDiskResponse {
   details?: { count: number };
 }
 
+export interface DiskNamesResponse {
+  ok: boolean;
+  error: string | null;
+  message?: string;
+  data?: {
+    disk_names?: string[];
+  };
+  details?: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+  request_data?: Record<string, unknown>;
+}
+
+export interface DiskPartitionStatusResponse {
+  ok: boolean;
+  error: string | null;
+  message?: string;
+  data?: {
+    disk: string;
+    has_partitions: boolean;
+  };
+  details?: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+  request_data?: Record<string, unknown>;
+}
+
 export interface DiskPartitionInfo {
   name: string | null;
   path: string | null;

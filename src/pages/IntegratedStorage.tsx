@@ -8,7 +8,7 @@ import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
-import { useDiskWwnMap, useFreeDisks } from '../hooks/useDisk';
+import { useDiskWwnMap, usePartitionedDisks } from '../hooks/useDisk';
 import { useZpool } from '../hooks/useZpool';
 
 const MAX_COMPARISON_ITEMS = 4;
@@ -50,11 +50,11 @@ const IntegratedStorage = () => {
   });
 
   const {
-    data: freeDisks,
-    isLoading: isFreeDiskLoading,
-    isFetching: isFreeDiskFetching,
-    error: freeDiskError,
-  } = useFreeDisks({
+    data: partitionedDisks,
+    isLoading: isPartitionedDiskLoading,
+    isFetching: isPartitionedDiskFetching,
+    error: partitionedDiskError,
+  } = usePartitionedDisks({
     enabled: createPool.isOpen,
     refetchInterval: createPool.isOpen ? 5000 : undefined,
   });
@@ -69,7 +69,7 @@ const IntegratedStorage = () => {
   });
 
   const deviceOptions = useMemo<DeviceOption[]>(() => {
-    if (!freeDisks || freeDisks.length === 0) {
+    if (!partitionedDisks || partitionedDisks.length === 0) {
       return [];
     }
 
@@ -77,7 +77,7 @@ const IntegratedStorage = () => {
     const uniqueValues = new Set<string>();
     const options: DeviceOption[] = [];
 
-    freeDisks.forEach((diskName) => {
+    partitionedDisks.forEach((diskName) => {
       const trimmedName = diskName.trim();
       if (!trimmedName) {
         return;
@@ -103,14 +103,14 @@ const IntegratedStorage = () => {
     });
 
     return options.sort((a, b) => a.label.localeCompare(b.label, 'en'));
-  }, [diskWwnMap?.data, freeDisks]);
+  }, [diskWwnMap?.data, partitionedDisks]);
 
   const isDiskLoading =
-    isFreeDiskLoading ||
-    (createPool.isOpen && isFreeDiskFetching && !freeDisks) ||
+    isPartitionedDiskLoading ||
+    (createPool.isOpen && isPartitionedDiskFetching && !partitionedDisks) ||
     (createPool.isOpen && isDiskMapFetching && !diskWwnMap);
 
-  const diskError = freeDiskError ?? diskMapError ?? null;
+  const diskError = partitionedDiskError ?? diskMapError ?? null;
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
   const poolNames = useMemo(
