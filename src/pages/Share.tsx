@@ -1,4 +1,4 @@
-import { Box, Button, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import {
   type SyntheticEvent,
   useCallback,
@@ -14,6 +14,7 @@ import CreateShareModal from '../components/share/CreateShareModal';
 import SelectedSharesDetailsPanel from '../components/share/SelectedSharesDetailsPanel';
 import SharesTable from '../components/share/SharesTable';
 import TabPanel from '../components/TabPanel';
+import TabNavigation from '../components/TabNavigation';
 import ConfirmDeleteSambaUserModal from '../components/users/ConfirmDeleteSambaUserModal';
 import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
 import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
@@ -489,26 +490,14 @@ const Share = () => {
       >
         اشتراک‌گذاری
       </Typography>
-      <Tabs
+      <TabNavigation
         value={activeTab}
         onChange={handleTabChange}
-        sx={{
-          mb: 0,
-          '& .MuiTab-root': {
-            color: 'var(--color-secondary)',
-            fontWeight: 600,
-            '&.Mui-selected': {
-              color: 'var(--color-primary)',
-            },
-          },
-          '& .MuiTabs-indicator': {
-            backgroundColor: 'var(--color-primary)',
-          },
-        }}
-      >
-        <Tab label="کاربران اشتراک فایل" value={SHARE_TABS.sambaUsers} />
-        <Tab label="اشتراک‌ها" value={SHARE_TABS.shares} />
-      </Tabs>
+        items={[
+          { label: 'کاربران اشتراک فایل', value: SHARE_TABS.sambaUsers },
+          { label: 'اشتراک‌ها', value: SHARE_TABS.shares },
+        ]}
+      />
 
       <TabPanel value={SHARE_TABS.shares} currentValue={activeTab}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>

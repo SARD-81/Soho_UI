@@ -1,4 +1,4 @@
-import { Tab, Tabs, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 import { type SyntheticEvent, useCallback, useState } from 'react';
 import TabPanel from '../components/TabPanel';
 import NetworkSettingsTable from '../components/settings/NetworkSettingsTable';
@@ -9,6 +9,7 @@ import {
   type SettingsTabValue,
 } from '../constants/settings';
 import PageContainer from '../components/PageContainer';
+import TabNavigation from '../components/TabNavigation';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<SettingsTabValue>(
@@ -31,27 +32,11 @@ const Settings = () => {
         تنظیمات
       </Typography>
 
-      <Tabs
+      <TabNavigation
         value={activeTab}
         onChange={handleTabChange}
-        sx={{
-          mt: 2,
-          '& .MuiTab-root': {
-            color: 'var(--color-secondary)',
-            fontWeight: 600,
-            '&.Mui-selected': {
-              color: 'var(--color-primary)',
-            },
-          },
-          '& .MuiTabs-indicator': {
-            backgroundColor: 'var(--color-primary)',
-          },
-        }}
-      >
-        {SETTINGS_TAB_ITEMS.map((tab) => (
-          <Tab key={tab.value} label={tab.label} value={tab.value} />
-        ))}
-      </Tabs>
+        items={SETTINGS_TAB_ITEMS}
+      />
 
       <TabPanel value={SETTINGS_TABS.network} currentValue={activeTab}>
         <NetworkSettingsTable />
