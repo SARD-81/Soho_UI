@@ -94,7 +94,10 @@ const deletePoolDisks = async (diskNames: string[]) => {
 
   for (const diskName of diskNames) {
     try {
-      await axiosInstance.post(`/api/disk/${encodeURIComponent(diskName)}/clear-zfs/`);
+      await axiosInstance.post(
+        `/api/disk/${encodeURIComponent(diskName)}/clear-zfs/`,
+        { save_to_db: true }
+      );
       await axiosInstance.post(`/api/disk/${encodeURIComponent(diskName)}/wipe/`);
     } catch (error) {
       errors.push(
