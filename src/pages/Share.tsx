@@ -1,4 +1,5 @@
 import { Box, Button, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   type SyntheticEvent,
   useCallback,
@@ -491,26 +492,29 @@ const Share = () => {
         اشتراک‌گذاری
       </Typography>
       <Box
-        sx={{
+        sx={(theme) => ({
           mt: 2,
-          borderRadius: 18,
+          borderRadius: theme.shape.borderRadius * 2,
           overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,0.08)',
-          background:
-            'linear-gradient(160deg, rgba(13, 26, 45, 0.9), rgba(8, 16, 30, 0.85))',
-          boxShadow:
-            '0 18px 40px -22px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.04)',
-        }}
+          border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+          background: `linear-gradient(150deg, ${alpha(
+            theme.palette.background.paper,
+            0.96
+          )}, ${alpha(theme.palette.background.default, 0.9)})`,
+          boxShadow: theme.shadows[3],
+        })}
       >
         <Box
-          sx={{
+          sx={(theme) => ({
             px: 2.5,
             pt: 2.5,
             pb: 1.5,
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
-            background:
-              'linear-gradient(145deg, rgba(21, 38, 65, 0.85), rgba(18, 34, 58, 0.7))',
-          }}
+            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+            background: `linear-gradient(140deg, ${alpha(
+              theme.palette.primary.main,
+              0.12
+            )}, ${alpha(theme.palette.primary.light, 0.08)})`,
+          })}
         >
           <ModernTabs value={activeTab} onChange={handleTabChange} variant="scrollable">
             <ModernTab
@@ -521,7 +525,12 @@ const Share = () => {
           </ModernTabs>
         </Box>
 
-        <Box sx={{ p: 3, backgroundColor: 'rgba(6, 12, 24, 0.8)' }}>
+        <Box
+          sx={(theme) => ({
+            p: 3,
+            backgroundColor: alpha(theme.palette.background.paper, 0.9),
+          })}
+        >
           <TabPanel
             value={SHARE_TABS.shares}
             currentValue={activeTab}
@@ -547,17 +556,19 @@ const Share = () => {
                 <Button
                   onClick={createShare.openCreateModal}
                   variant="contained"
-                  sx={{
+                  sx={(theme) => ({
                     px: 3,
                     py: 1.25,
-                    borderRadius: '3px',
+                    borderRadius: theme.shape.borderRadius,
                     fontWeight: 700,
                     fontSize: '0.95rem',
-                    background:
-                      'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-                    color: 'var(--color-bg)',
-                    boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-                  }}
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${alpha(
+                      theme.palette.primary.light,
+                      0.95
+                    )} 100%)`,
+                    color: theme.palette.background.default,
+                    boxShadow: `0 16px 32px -18px ${alpha(theme.palette.primary.light, 0.85)}`,
+                  })}
                 >
                   ایجاد اشتراک جدید
                 </Button>

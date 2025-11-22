@@ -1,4 +1,5 @@
 import { Box, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { type SyntheticEvent, useCallback, useState } from 'react';
 import TabPanel from '../components/TabPanel';
 import NetworkSettingsTable from '../components/settings/NetworkSettingsTable';
@@ -33,26 +34,29 @@ const Settings = () => {
       </Typography>
 
       <Box
-        sx={{
+        sx={(theme) => ({
           mt: 2,
-          borderRadius: 18,
+          borderRadius: theme.shape.borderRadius * 2,
           overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,0.08)',
-          background:
-            'linear-gradient(160deg, rgba(13, 26, 45, 0.9), rgba(8, 16, 30, 0.85))',
-          boxShadow:
-            '0 18px 40px -22px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.04)',
-        }}
+          border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+          background: `linear-gradient(150deg, ${alpha(
+            theme.palette.background.paper,
+            0.96
+          )}, ${alpha(theme.palette.background.default, 0.9)})`,
+          boxShadow: theme.shadows[3],
+        })}
       >
         <Box
-          sx={{
+          sx={(theme) => ({
             px: 2.5,
             pt: 2.5,
             pb: 1.5,
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
-            background:
-              'linear-gradient(145deg, rgba(21, 38, 65, 0.85), rgba(18, 34, 58, 0.7))',
-          }}
+            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+            background: `linear-gradient(140deg, ${alpha(
+              theme.palette.primary.main,
+              0.12
+            )}, ${alpha(theme.palette.primary.light, 0.08)})`,
+          })}
         >
           <ModernTabs value={activeTab} onChange={handleTabChange} variant="scrollable">
             {SETTINGS_TAB_ITEMS.map((tab) => (
@@ -61,7 +65,12 @@ const Settings = () => {
           </ModernTabs>
         </Box>
 
-        <Box sx={{ p: 3, backgroundColor: 'rgba(6, 12, 24, 0.8)' }}>
+        <Box
+          sx={(theme) => ({
+            p: 3,
+            backgroundColor: alpha(theme.palette.background.paper, 0.9),
+          })}
+        >
           <TabPanel
             value={SETTINGS_TABS.network}
             currentValue={activeTab}

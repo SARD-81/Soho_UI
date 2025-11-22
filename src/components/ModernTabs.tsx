@@ -1,5 +1,5 @@
 import { type TabProps, type TabsProps, Tab, Tabs } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { alpha, styled } from '@mui/material/styles';
 import { forwardRef } from 'react';
 
 const StyledTabs = styled((props: TabsProps) => (
@@ -10,13 +10,14 @@ const StyledTabs = styled((props: TabsProps) => (
 ))(({ theme }) => ({
   width: '100%',
   marginTop: theme.spacing(2),
-  borderRadius: 14,
-  padding: theme.spacing(0.75),
-  background:
-    'linear-gradient(145deg, rgba(14, 26, 45, 0.85), rgba(18, 32, 55, 0.7))',
-  border: '1px solid rgba(255,255,255,0.08)',
-  boxShadow:
-    '0 18px 30px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)',
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(1),
+  background: `linear-gradient(140deg, ${alpha(
+    theme.palette.background.paper,
+    0.95
+  )}, ${alpha(theme.palette.background.default, 0.92)})`,
+  border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+  boxShadow: theme.shadows[3],
   '& .MuiTabs-flexContainer': {
     gap: theme.spacing(1),
     flexWrap: 'wrap',
@@ -28,38 +29,40 @@ const StyledTabs = styled((props: TabsProps) => (
   },
   '& .MuiTabs-indicatorSpan': {
     width: '100%',
-    borderRadius: 12,
-    background:
-      'linear-gradient(120deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.9) 100%)',
-    boxShadow: '0 10px 22px -12px rgba(31,182,255,0.9)',
+    borderRadius: theme.shape.borderRadius * 1.5,
+    background: `linear-gradient(115deg, ${theme.palette.primary.main}, ${alpha(
+      theme.palette.primary.light,
+      0.9
+    )})`,
+    boxShadow: `0 10px 20px -12px ${alpha(theme.palette.primary.light, 0.8)}`,
   },
 }));
 
 const StyledTabRoot = styled(Tab)(({ theme }) => ({
-  borderRadius: 10,
+  borderRadius: theme.shape.borderRadius * 1.75,
   minHeight: 52,
   textTransform: 'none',
   minWidth: 180,
-  color: 'rgba(255,255,255,0.75)',
+  color: theme.palette.text.primary,
   fontWeight: 700,
   letterSpacing: '0.04em',
-  backgroundColor: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.07)',
-  backdropFilter: 'blur(6px)',
+  backgroundColor: alpha(theme.palette.background.paper, 0.7),
+  border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+  backdropFilter: 'blur(10px)',
   transition: 'all 200ms ease',
   alignItems: 'center',
   justifyContent: 'center',
   paddingInline: theme.spacing(3),
   '&:hover': {
-    color: 'var(--color-bg)',
-    backgroundColor: 'rgba(31, 182, 255, 0.14)',
-    boxShadow: '0 14px 30px -18px rgba(31, 182, 255, 0.9)',
+    color: theme.palette.background.default,
+    backgroundColor: alpha(theme.palette.primary.main, 0.14),
+    boxShadow: `0 14px 28px -18px ${alpha(theme.palette.primary.light, 0.8)}`,
   },
   '&.Mui-selected': {
-    color: 'var(--color-bg)',
-    backgroundColor: 'rgba(31, 182, 255, 0.18)',
-    boxShadow: '0 14px 32px -20px rgba(31, 182, 255, 0.9)',
-    borderColor: 'rgba(31, 182, 255, 0.45)',
+    color: theme.palette.background.default,
+    backgroundColor: alpha(theme.palette.primary.main, 0.18),
+    boxShadow: `0 14px 30px -18px ${alpha(theme.palette.primary.light, 0.85)}`,
+    borderColor: alpha(theme.palette.primary.main, 0.45),
   },
   '& .MuiTab-wrapper': {
     flexDirection: 'row',
