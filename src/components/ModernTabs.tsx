@@ -8,13 +8,18 @@ const StyledTabs = styled((props: TabsProps) => (
     TabIndicatorProps={{ children: <span className="MuiTabs-indicatorSpan" /> }}
   />
 ))(({ theme }) => ({
+  width: '100%',
   marginTop: theme.spacing(2),
   borderRadius: 14,
-  padding: theme.spacing(0.5),
-  background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 30px -22px rgba(0,0,0,0.6)',
+  padding: theme.spacing(0.75),
+  background:
+    'linear-gradient(145deg, rgba(14, 26, 45, 0.85), rgba(18, 32, 55, 0.7))',
+  border: '1px solid rgba(255,255,255,0.08)',
+  boxShadow:
+    '0 18px 30px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)',
   '& .MuiTabs-flexContainer': {
     gap: theme.spacing(1),
+    flexWrap: 'wrap',
   },
   '& .MuiTabs-indicator': {
     display: 'flex',
@@ -32,25 +37,29 @@ const StyledTabs = styled((props: TabsProps) => (
 
 const StyledTabRoot = styled(Tab)(({ theme }) => ({
   borderRadius: 10,
-  minHeight: 48,
+  minHeight: 52,
   textTransform: 'none',
-  minWidth: 140,
-  color: 'var(--color-secondary)',
+  minWidth: 180,
+  color: 'rgba(255,255,255,0.75)',
   fontWeight: 700,
   letterSpacing: '0.04em',
-  backgroundColor: 'rgba(255,255,255,0.04)',
+  backgroundColor: 'rgba(255,255,255,0.03)',
+  border: '1px solid rgba(255,255,255,0.07)',
+  backdropFilter: 'blur(6px)',
   transition: 'all 200ms ease',
   alignItems: 'center',
   justifyContent: 'center',
-  paddingInline: theme.spacing(2.5),
+  paddingInline: theme.spacing(3),
   '&:hover': {
-    color: 'var(--color-primary)',
-    backgroundColor: 'rgba(31, 182, 255, 0.08)',
+    color: 'var(--color-bg)',
+    backgroundColor: 'rgba(31, 182, 255, 0.14)',
+    boxShadow: '0 14px 30px -18px rgba(31, 182, 255, 0.9)',
   },
   '&.Mui-selected': {
     color: 'var(--color-bg)',
-    backgroundColor: 'rgba(31, 182, 255, 0.12)',
-    boxShadow: '0 12px 24px -16px rgba(31, 182, 255, 0.75)',
+    backgroundColor: 'rgba(31, 182, 255, 0.18)',
+    boxShadow: '0 14px 32px -20px rgba(31, 182, 255, 0.9)',
+    borderColor: 'rgba(31, 182, 255, 0.45)',
   },
   '& .MuiTab-wrapper': {
     flexDirection: 'row',

@@ -490,126 +490,165 @@ const Share = () => {
       >
         اشتراک‌گذاری
       </Typography>
-      <ModernTabs value={activeTab} onChange={handleTabChange}>
-        <ModernTab label="کاربران اشتراک فایل" value={SHARE_TABS.sambaUsers} />
-        <ModernTab label="اشتراک‌ها" value={SHARE_TABS.shares} />
-      </ModernTabs>
-
-      <TabPanel value={SHARE_TABS.shares} currentValue={activeTab}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 2,
-              flexWrap: 'wrap',
-            }}
-          >
-            <Typography
-              variant="h5"
-              sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
-            >
-              اشتراک‌گذاری فایل
-            </Typography>
-
-            <Button
-              onClick={createShare.openCreateModal}
-              variant="contained"
-              sx={{
-                px: 3,
-                py: 1.25,
-                borderRadius: '3px',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                background:
-                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-                color: 'var(--color-bg)',
-                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-              }}
-            >
-              ایجاد اشتراک جدید
-            </Button>
-          </Box>
-
-          <SharesTable
-            shares={shares}
-            isLoading={isLoading}
-            error={error}
-            selectedShares={selectedShares}
-            onToggleSelect={handleToggleSelect}
-            onDelete={handleDeleteShare}
-            pendingShareName={shareDeletion.pendingShareName}
-            isDeleting={shareDeletion.isDeleting}
-          />
-
-          <SelectedSharesDetailsPanel
-            items={comparisonItems}
-            onRemove={handleRemoveSelected}
-          />
+      <Box
+        sx={{
+          mt: 2,
+          borderRadius: 18,
+          overflow: 'hidden',
+          border: '1px solid rgba(255,255,255,0.08)',
+          background:
+            'linear-gradient(160deg, rgba(13, 26, 45, 0.9), rgba(8, 16, 30, 0.85))',
+          boxShadow:
+            '0 18px 40px -22px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.04)',
+        }}
+      >
+        <Box
+          sx={{
+            px: 2.5,
+            pt: 2.5,
+            pb: 1.5,
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            background:
+              'linear-gradient(145deg, rgba(21, 38, 65, 0.85), rgba(18, 34, 58, 0.7))',
+          }}
+        >
+          <ModernTabs value={activeTab} onChange={handleTabChange} variant="scrollable">
+            <ModernTab
+              label="کاربران اشتراک فایل"
+              value={SHARE_TABS.sambaUsers}
+            />
+            <ModernTab label="اشتراک‌ها" value={SHARE_TABS.shares} />
+          </ModernTabs>
         </Box>
-      </TabPanel>
 
-      <TabPanel value={SHARE_TABS.sambaUsers} currentValue={activeTab}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 2,
-              flexWrap: 'wrap',
-            }}
+        <Box sx={{ p: 3, backgroundColor: 'rgba(6, 12, 24, 0.8)' }}>
+          <TabPanel
+            value={SHARE_TABS.shares}
+            currentValue={activeTab}
+            disableSpacing
           >
-            <Typography
-              variant="h6"
-              sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
-            >
-              مدیریت کاربران
-            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <Typography
+                  variant="h5"
+                  sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+                >
+                  اشتراک‌گذاری فایل
+                </Typography>
 
-            <Button
-              onClick={() => handleOpenSambaCreateModal()}
-              variant="contained"
-              sx={{
-                px: 3,
-                py: 1.25,
-                borderRadius: '3px',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                background:
-                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-                color: 'var(--color-bg)',
-                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-              }}
-            >
-              افزودن کاربر
-            </Button>
-          </Box>
+                <Button
+                  onClick={createShare.openCreateModal}
+                  variant="contained"
+                  sx={{
+                    px: 3,
+                    py: 1.25,
+                    borderRadius: '3px',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    background:
+                      'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+                    color: 'var(--color-bg)',
+                    boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+                  }}
+                >
+                  ایجاد اشتراک جدید
+                </Button>
+              </Box>
 
-          <SambaUsersTable
-            users={sambaUsers}
-            isLoading={sambaUsersQuery.isLoading || sambaUsersQuery.isFetching}
-            error={sambaUsersQuery.error ?? null}
-            selectedUsers={selectedSambaUsers}
-            onToggleSelect={handleToggleSelectSambaUser}
-            onEnable={handleEnableSambaUser}
-            onEditPassword={handleOpenPasswordModal}
-            onDelete={handleDeleteSambaUser}
-            pendingEnableUsername={pendingEnableUsername}
-            isEnabling={enableSambaUser.isPending}
-            pendingPasswordUsername={pendingPasswordUsername}
-            isUpdatingPassword={updateSambaPassword.isPending}
-            pendingDeleteUsername={pendingDeleteUsername}
-            isDeleting={deleteSambaUser.isPending}
-          />
+              <SharesTable
+                shares={shares}
+                isLoading={isLoading}
+                error={error}
+                selectedShares={selectedShares}
+                onToggleSelect={handleToggleSelect}
+                onDelete={handleDeleteShare}
+                pendingShareName={shareDeletion.pendingShareName}
+                isDeleting={shareDeletion.isDeleting}
+              />
 
-          <SelectedSambaUsersDetailsPanel
-            items={selectedSambaUserItems}
-            onRemove={handleRemoveSelectedSambaUser}
-          />
+              <SelectedSharesDetailsPanel
+                items={comparisonItems}
+                onRemove={handleRemoveSelected}
+              />
+            </Box>
+          </TabPanel>
+
+          <TabPanel
+            value={SHARE_TABS.sambaUsers}
+            currentValue={activeTab}
+            disableSpacing
+          >
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+                >
+                  مدیریت کاربران
+                </Typography>
+
+                <Button
+                  onClick={() => handleOpenSambaCreateModal()}
+                  variant="contained"
+                  sx={{
+                    px: 3,
+                    py: 1.25,
+                    borderRadius: '3px',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    background:
+                      'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+                    color: 'var(--color-bg)',
+                    boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+                  }}
+                >
+                  افزودن کاربر
+                </Button>
+              </Box>
+
+              <SambaUsersTable
+                users={sambaUsers}
+                isLoading={
+                  sambaUsersQuery.isLoading || sambaUsersQuery.isFetching
+                }
+                error={sambaUsersQuery.error ?? null}
+                selectedUsers={selectedSambaUsers}
+                onToggleSelect={handleToggleSelectSambaUser}
+                onEnable={handleEnableSambaUser}
+                onEditPassword={handleOpenPasswordModal}
+                onDelete={handleDeleteSambaUser}
+                pendingEnableUsername={pendingEnableUsername}
+                isEnabling={enableSambaUser.isPending}
+                pendingPasswordUsername={pendingPasswordUsername}
+                isUpdatingPassword={updateSambaPassword.isPending}
+                pendingDeleteUsername={pendingDeleteUsername}
+                isDeleting={deleteSambaUser.isPending}
+              />
+
+              <SelectedSambaUsersDetailsPanel
+                items={selectedSambaUserItems}
+                onRemove={handleRemoveSelectedSambaUser}
+              />
+            </Box>
+          </TabPanel>
         </Box>
-      </TabPanel>
+      </Box>
 
       <CreateShareModal controller={createShare} />
 

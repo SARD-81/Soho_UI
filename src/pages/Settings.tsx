@@ -1,4 +1,4 @@
-import { Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { type SyntheticEvent, useCallback, useState } from 'react';
 import TabPanel from '../components/TabPanel';
 import NetworkSettingsTable from '../components/settings/NetworkSettingsTable';
@@ -32,19 +32,53 @@ const Settings = () => {
         تنظیمات
       </Typography>
 
-      <ModernTabs value={activeTab} onChange={handleTabChange}>
-        {SETTINGS_TAB_ITEMS.map((tab) => (
-          <ModernTab key={tab.value} label={tab.label} value={tab.value} />
-        ))}
-      </ModernTabs>
+      <Box
+        sx={{
+          mt: 2,
+          borderRadius: 18,
+          overflow: 'hidden',
+          border: '1px solid rgba(255,255,255,0.08)',
+          background:
+            'linear-gradient(160deg, rgba(13, 26, 45, 0.9), rgba(8, 16, 30, 0.85))',
+          boxShadow:
+            '0 18px 40px -22px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.04)',
+        }}
+      >
+        <Box
+          sx={{
+            px: 2.5,
+            pt: 2.5,
+            pb: 1.5,
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            background:
+              'linear-gradient(145deg, rgba(21, 38, 65, 0.85), rgba(18, 34, 58, 0.7))',
+          }}
+        >
+          <ModernTabs value={activeTab} onChange={handleTabChange} variant="scrollable">
+            {SETTINGS_TAB_ITEMS.map((tab) => (
+              <ModernTab key={tab.value} label={tab.label} value={tab.value} />
+            ))}
+          </ModernTabs>
+        </Box>
 
-      <TabPanel value={SETTINGS_TABS.network} currentValue={activeTab}>
-        <NetworkSettingsTable />
-      </TabPanel>
+        <Box sx={{ p: 3, backgroundColor: 'rgba(6, 12, 24, 0.8)' }}>
+          <TabPanel
+            value={SETTINGS_TABS.network}
+            currentValue={activeTab}
+            disableSpacing
+          >
+            <NetworkSettingsTable />
+          </TabPanel>
 
-      <TabPanel value={SETTINGS_TABS.users} currentValue={activeTab}>
-        <UserSettingsTable />
-      </TabPanel>
+          <TabPanel
+            value={SETTINGS_TABS.users}
+            currentValue={activeTab}
+            disableSpacing
+          >
+            <UserSettingsTable />
+          </TabPanel>
+        </Box>
+      </Box>
     </PageContainer>
   );
 };
