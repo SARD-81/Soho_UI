@@ -95,7 +95,7 @@ export const useCreatePool = ({
     CreatePoolPayload
   >({
     mutationFn: async (payload) => {
-      await axiosInstance.post('/api/zpool/create', payload);
+      await axiosInstance.post('/api/zpool/create/', payload);
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['zpool'] });
