@@ -9,6 +9,7 @@ import {
   type SettingsTabValue,
 } from '../constants/settings';
 import PageContainer from '../components/PageContainer';
+import ChromeTabLabel from '../components/tabs/ChromeTabLabel';
 import {
   tabContainerSx,
   tabListSx,
@@ -39,7 +40,11 @@ const Settings = () => {
       <Box sx={tabContainerSx}>
         <Tabs value={activeTab} onChange={handleTabChange} sx={tabListSx}>
           {SETTINGS_TAB_ITEMS.map((tab) => (
-            <Tab key={tab.value} label={tab.label} value={tab.value} />
+            <Tab
+              key={tab.value}
+              label={<ChromeTabLabel label={tab.label} />}
+              value={tab.value}
+            />
           ))}
         </Tabs>
 

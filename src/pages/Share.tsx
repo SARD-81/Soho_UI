@@ -19,6 +19,7 @@ import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
 import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
 import SambaUsersTable from '../components/users/SambaUsersTable';
 import SelectedSambaUsersDetailsPanel from '../components/users/SelectedSambaUsersDetailsPanel';
+import ChromeTabLabel from '../components/tabs/ChromeTabLabel';
 import {
   tabContainerSx,
   tabListSx,
@@ -496,8 +497,14 @@ const Share = () => {
       </Typography>
       <Box sx={tabContainerSx}>
         <Tabs value={activeTab} onChange={handleTabChange} sx={tabListSx}>
-          <Tab label="کاربران اشتراک فایل" value={SHARE_TABS.sambaUsers} />
-          <Tab label="اشتراک‌ها" value={SHARE_TABS.shares} />
+          <Tab
+            label={<ChromeTabLabel label="کاربران اشتراک فایل" />}
+            value={SHARE_TABS.sambaUsers}
+          />
+          <Tab
+            label={<ChromeTabLabel label="اشتراک‌ها" />}
+            value={SHARE_TABS.shares}
+          />
         </Tabs>
 
         <Box sx={tabPanelSx}>
