@@ -14,22 +14,22 @@ interface DeleteZpoolResponse {
   [key: string]: unknown;
 }
 
-interface PoolDiskEntry {
-  name?: string | null;
+interface PoolDeviceEntry {
+  disk_name?: string | null;
 }
 
-interface PoolDiskResponse {
+interface PoolDevicesResponse {
   ok?: boolean;
   error?: unknown;
-  data?: {
-    devices?: PoolDiskEntry[] | null;
-  } | null;
+  data?: PoolDeviceEntry[] | null;
 }
 
 const DEFAULT_FETCH_DISK_ERROR_MESSAGE =
   'امکان دریافت دیسک‌های متصل به فضای یکپارچه وجود ندارد.';
-const DEFAULT_DELETE_DISK_ERROR_MESSAGE =
-  'امکان حذف دیسک متصل به فضای یکپارچه وجود ندارد.';
+const DEFAULT_CLEAR_DISK_ERROR_MESSAGE =
+  'امکان پاکسازی ZFS دیسک متصل به فضای یکپارچه وجود ندارد.';
+const DEFAULT_WIPE_DISK_ERROR_MESSAGE =
+  'امکان پاکسازی دیسک متصل به فضای یکپارچه وجود ندارد.';
 const DEFAULT_DELETE_POOL_ERROR_MESSAGE = 'امکان حذف فضای یکپارچه وجود ندارد.';
 
 const extractApiErrorMessage = (error: unknown, fallback: string) => {
@@ -68,161 +68,96 @@ const extractApiErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
-const fetchAttachedDeviceNames = async (name: string) => {
-  const poolName = encodeURIComponent(name);
-  const endpoints = [`/api/zpool/disk/${poolName}/`, `/api/zpool/disk/${poolName}`];
-
-  for (const endpoint of endpoints) {
-    try {
-      const response = await axiosInstance.get<PoolDiskResponse>(endpoint);
-
-      if (response.data?.ok === false) {
-        const errorDetail = response.data?.error;
-        const errorMessage =
-          typeof errorDetail === 'string' && errorDetail.trim().length > 0
-            ? errorDetail
-            : DEFAULT_FETCH_DISK_ERROR_MESSAGE;
-        throw new Error(errorMessage);
-      }
-
-      const devices = response.data?.data?.devices ?? [];
-      return devices
-        .map((device) => device?.name?.trim())
-        .filter((deviceName): deviceName is string => Boolean(deviceName));
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 404) {
-        continue;
-      }
-
-      throw new Error(extractApiErrorMessage(error, DEFAULT_FETCH_DISK_ERROR_MESSAGE));
-    }
-  }
-
-  return [];
-};
-
-type RequestMethod = 'post' | 'delete';
-
-interface RequestAttemptConfig<Payload> {
-  endpoint: string;
-  method: RequestMethod;
-  payload: Payload;
-}
-
-const attemptRequestSequence = async <Payload, Response = unknown>(
-  attempts: RequestAttemptConfig<Payload>[]
-) => {
-  let lastError: unknown;
-
-  for (let index = 0; index < attempts.length; index += 1) {
-    const { endpoint, method, payload } = attempts[index];
-
-    try {
-      if (method === 'post') {
-        const { data } = await axiosInstance.post<Response>(endpoint, payload);
-        return data;
-      }
-
-      if (method === 'delete') {
-        const { data } = await axiosInstance.delete<Response>(endpoint, {
-          data: payload,
-        });
-        return data;
-      }
-    } catch (error) {
-      lastError = error;
-
-      if (index === attempts.length - 1) {
-        throw error;
-      }
-    }
-  }
-
-  throw lastError ?? new Error('درخواست با خطا مواجه شد.');
-};
-
-const deleteDiskByPath = async (diskPath: string) => {
-  const normalizedPath = diskPath.trim();
-  if (!normalizedPath) {
-    return;
-  }
-
-  const endpoints = ['/api/disk/delete/', '/api/disk/delete'] as const;
+const fetchPoolDevices = async (poolName: string) => {
+  const encodedPoolName = encodeURIComponent(poolName);
 
   try {
-    await attemptRequestSequence<{ disk_path: string }>(
-      endpoints.flatMap((endpoint) => [
-        {
-          endpoint,
-          method: 'post' as const,
-          payload: { disk_path: normalizedPath },
-        },
-        {
-          endpoint,
-          method: 'delete' as const,
-          payload: { disk_path: normalizedPath },
-        },
-      ])
+    const response = await axiosInstance.get<PoolDevicesResponse>(
+      `/api/zpool/${encodedPoolName}/devices/`
     );
-  } catch (error) {
-    if (isAxiosError(error) && error.response?.status === 404) {
-      return;
+
+    if (response.data?.ok === false) {
+      const errorDetail = response.data?.error;
+      const errorMessage =
+        typeof errorDetail === 'string' && errorDetail.trim().length > 0
+          ? errorDetail
+          : DEFAULT_FETCH_DISK_ERROR_MESSAGE;
+      throw new Error(errorMessage);
     }
 
-    throw error;
+    const devices = response.data?.data ?? [];
+
+    return devices
+      .map((device) => device.disk_name?.trim())
+      .filter((diskName): diskName is string => Boolean(diskName));
+  } catch (error) {
+    throw new Error(extractApiErrorMessage(error, DEFAULT_FETCH_DISK_ERROR_MESSAGE));
   }
+};
+
+const destroyPool = async (poolName: string) => {
+  const encodedPoolName = encodeURIComponent(poolName);
+
+  try {
+    const { data } = await axiosInstance.post<DeleteZpoolResponse>(
+      `/api/zpool/${encodedPoolName}/destroy/`
+    );
+    return data;
+  } catch (error) {
+    throw new Error(extractApiErrorMessage(error, DEFAULT_DELETE_POOL_ERROR_MESSAGE));
+  }
+};
+
+const clearDiskZfs = async (diskName: string) => {
+  const encodedDiskName = encodeURIComponent(diskName);
+
+  try {
+    await axiosInstance.post(`/api/disk/${encodedDiskName}/clear-zfs/`);
+  } catch (error) {
+    throw new Error(
+      extractApiErrorMessage(error, `${DEFAULT_CLEAR_DISK_ERROR_MESSAGE} (${diskName})`)
+    );
+  }
+};
+
+const wipeDisk = async (diskName: string) => {
+  const encodedDiskName = encodeURIComponent(diskName);
+
+  try {
+    await axiosInstance.post(`/api/disk/${encodedDiskName}/wipe/`);
+  } catch (error) {
+    throw new Error(
+      extractApiErrorMessage(error, `${DEFAULT_WIPE_DISK_ERROR_MESSAGE} (${diskName})`)
+    );
+  }
+};
+
+const cleanupDisk = async (diskName: string) => {
+  await clearDiskZfs(diskName);
+  await wipeDisk(diskName);
 };
 
 const deleteZpool = async ({ name }: DeleteZpoolPayload) => {
-  const deviceNames = await fetchAttachedDeviceNames(name);
-  const endpoints = ['/api/zpool/delete/', '/api/zpool/delete'] as const;
+  const deviceNames = await fetchPoolDevices(name);
+  const destroyResponse = await destroyPool(name);
 
-  let deleteResponse: DeleteZpoolResponse | undefined;
+  const diskCleanupErrors: string[] = [];
 
-  try {
-    deleteResponse = await attemptRequestSequence<
-      { pool_name: string },
-      DeleteZpoolResponse
-    >(
-      endpoints.flatMap((endpoint) => [
-        {
-          endpoint,
-          method: 'post' as const,
-          payload: { pool_name: name },
-        },
-        {
-          endpoint,
-          method: 'delete' as const,
-          payload: { pool_name: name },
-        },
-      ])
-    );
-  } catch (error) {
-    throw new Error(
-      extractApiErrorMessage(error, DEFAULT_DELETE_POOL_ERROR_MESSAGE)
-    );
-  }
-
-  const diskDeletionErrors: string[] = [];
-
-  for (const deviceName of deviceNames) {
+  for (const diskName of deviceNames) {
     try {
-      await deleteDiskByPath(deviceName);
+      await cleanupDisk(diskName);
     } catch (error) {
-      diskDeletionErrors.push(
-        extractApiErrorMessage(
-          error,
-          `${DEFAULT_DELETE_DISK_ERROR_MESSAGE} (${deviceName})`
-        )
+      diskCleanupErrors.push(
+        extractApiErrorMessage(error, `${DEFAULT_WIPE_DISK_ERROR_MESSAGE} (${diskName})`)
       );
     }
   }
 
-  if (diskDeletionErrors.length > 0) {
-    throw new Error(diskDeletionErrors.join('\n'));
+  if (diskCleanupErrors.length > 0) {
+    throw new Error(diskCleanupErrors.join('\n'));
   }
 
-  return deleteResponse;
+  return destroyResponse;
 };
 
 interface UseDeleteZpoolOptions {
