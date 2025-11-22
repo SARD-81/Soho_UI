@@ -52,32 +52,37 @@ const Disks = () => {
   }, []);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Box>
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-          اطلاعات دیسک‌ها
-        </Typography>
-        <Typography sx={{ color: 'var(--color-secondary)' }}>
-          فهرست دیسک‌های متصل به سامانه و وضعیت فعلی آن‌ها.
-        </Typography>
+    <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Typography
+            variant="h5"
+            sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+          >
+            اطلاعات دیسک‌ها
+          </Typography>
+          <Typography sx={{ color: 'var(--color-secondary)' }}>
+            فهرست دیسک‌های متصل به سامانه و وضعیت فعلی آن‌ها.
+          </Typography>
+        </Box>
+
+        <Stack direction='column' spacing={3} alignItems="flex-start">
+          <Box sx={{ flex: 1, width: '100%' }}>
+            <DisksTable
+              disks={disks}
+              isLoading={isLoading}
+              error={error ?? null}
+              selectedDiskNames={selectedDisks}
+              onToggleSelect={handleToggleSelect}
+              onIdentify={handleIdentifyDisk}
+            />
+          </Box>
+
+          <Box sx={{ width: { xs: '100%', xl: 'auto' } }}>
+            <SelectedDisksDetailsPanel items={detailItems} onRemove={handleRemoveSelected} />
+          </Box>
+        </Stack>
       </Box>
-
-      <Stack direction='column' spacing={3} alignItems="flex-start">
-        <Box sx={{ flex: 1, width: '100%' }}>
-          <DisksTable
-            disks={disks}
-            isLoading={isLoading}
-            error={error ?? null}
-            selectedDiskNames={selectedDisks}
-            onToggleSelect={handleToggleSelect}
-            onIdentify={handleIdentifyDisk}
-          />
-        </Box>
-
-        <Box sx={{ width: { xs: '100%', xl: 'auto' } }}>
-          <SelectedDisksDetailsPanel items={detailItems} onRemove={handleRemoveSelected} />
-        </Box>
-      </Stack>
     </Box>
   );
 };
