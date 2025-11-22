@@ -39,10 +39,7 @@ const Settings = () => {
           borderRadius: theme.shape.borderRadius * 2,
           overflow: 'hidden',
           border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-          background: `linear-gradient(150deg, ${alpha(
-            theme.palette.background.paper,
-            0.96
-          )}, ${alpha(theme.palette.background.default, 0.9)})`,
+          backgroundColor: alpha(theme.palette.background.paper, 0.96),
           boxShadow: theme.shadows[3],
         })}
       >
@@ -52,10 +49,7 @@ const Settings = () => {
             pt: 2.5,
             pb: 1.5,
             borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-            background: `linear-gradient(140deg, ${alpha(
-              theme.palette.primary.main,
-              0.12
-            )}, ${alpha(theme.palette.primary.light, 0.08)})`,
+            backgroundColor: alpha(theme.palette.primary.main, 0.1),
           })}
         >
           <ModernTabs value={activeTab} onChange={handleTabChange} variant="scrollable">

@@ -12,10 +12,7 @@ const StyledTabs = styled((props: TabsProps) => (
   marginTop: theme.spacing(2),
   borderRadius: theme.shape.borderRadius * 2,
   padding: theme.spacing(1),
-  background: `linear-gradient(140deg, ${alpha(
-    theme.palette.background.paper,
-    0.95
-  )}, ${alpha(theme.palette.background.default, 0.92)})`,
+  backgroundColor: alpha(theme.palette.background.paper, 0.94),
   border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
   boxShadow: theme.shadows[3],
   '& .MuiTabs-flexContainer': {
@@ -30,11 +27,8 @@ const StyledTabs = styled((props: TabsProps) => (
   '& .MuiTabs-indicatorSpan': {
     width: '100%',
     borderRadius: theme.shape.borderRadius * 1.5,
-    background: `linear-gradient(115deg, ${theme.palette.primary.main}, ${alpha(
-      theme.palette.primary.light,
-      0.9
-    )})`,
-    boxShadow: `0 10px 20px -12px ${alpha(theme.palette.primary.light, 0.8)}`,
+    backgroundColor: theme.palette.primary.main,
+    boxShadow: `0 10px 20px -12px ${alpha(theme.palette.primary.main, 0.7)}`,
   },
 }));
 
@@ -46,7 +40,7 @@ const StyledTabRoot = styled(Tab)(({ theme }) => ({
   color: theme.palette.text.primary,
   fontWeight: 700,
   letterSpacing: '0.04em',
-  backgroundColor: alpha(theme.palette.background.paper, 0.7),
+  backgroundColor: alpha(theme.palette.background.paper, 0.8),
   border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
   backdropFilter: 'blur(10px)',
   transition: 'all 200ms ease',
@@ -56,12 +50,12 @@ const StyledTabRoot = styled(Tab)(({ theme }) => ({
   '&:hover': {
     color: theme.palette.background.default,
     backgroundColor: alpha(theme.palette.primary.main, 0.14),
-    boxShadow: `0 14px 28px -18px ${alpha(theme.palette.primary.light, 0.8)}`,
+    boxShadow: `0 14px 24px -18px ${alpha(theme.palette.primary.main, 0.7)}`,
   },
   '&.Mui-selected': {
     color: theme.palette.background.default,
-    backgroundColor: alpha(theme.palette.primary.main, 0.18),
-    boxShadow: `0 14px 30px -18px ${alpha(theme.palette.primary.light, 0.85)}`,
+    backgroundColor: alpha(theme.palette.primary.main, 0.2),
+    boxShadow: `0 14px 26px -18px ${alpha(theme.palette.primary.main, 0.75)}`,
     borderColor: alpha(theme.palette.primary.main, 0.45),
   },
   '& .MuiTab-wrapper': {

@@ -497,10 +497,7 @@ const Share = () => {
           borderRadius: theme.shape.borderRadius * 2,
           overflow: 'hidden',
           border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-          background: `linear-gradient(150deg, ${alpha(
-            theme.palette.background.paper,
-            0.96
-          )}, ${alpha(theme.palette.background.default, 0.9)})`,
+          backgroundColor: alpha(theme.palette.background.paper, 0.96),
           boxShadow: theme.shadows[3],
         })}
       >
@@ -510,10 +507,7 @@ const Share = () => {
             pt: 2.5,
             pb: 1.5,
             borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-            background: `linear-gradient(140deg, ${alpha(
-              theme.palette.primary.main,
-              0.12
-            )}, ${alpha(theme.palette.primary.light, 0.08)})`,
+            backgroundColor: alpha(theme.palette.primary.main, 0.1),
           })}
         >
           <ModernTabs value={activeTab} onChange={handleTabChange} variant="scrollable">
@@ -562,12 +556,19 @@ const Share = () => {
                     borderRadius: theme.shape.borderRadius,
                     fontWeight: 700,
                     fontSize: '0.95rem',
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${alpha(
-                      theme.palette.primary.light,
-                      0.95
-                    )} 100%)`,
-                    color: theme.palette.background.default,
-                    boxShadow: `0 16px 32px -18px ${alpha(theme.palette.primary.light, 0.85)}`,
+                    backgroundColor: theme.palette.primary.main,
+                    color: theme.palette.primary.contrastText,
+                    boxShadow: `0 16px 32px -18px ${alpha(
+                      theme.palette.primary.main,
+                      0.7
+                    )}`,
+                    '&:hover': {
+                      backgroundColor: theme.palette.primary.dark,
+                      boxShadow: `0 16px 32px -18px ${alpha(
+                        theme.palette.primary.dark,
+                        0.7
+                      )}`,
+                    },
                   })}
                 >
                   ایجاد اشتراک جدید
@@ -623,10 +624,13 @@ const Share = () => {
                     borderRadius: '3px',
                     fontWeight: 700,
                     fontSize: '0.95rem',
-                    background:
-                      'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+                    backgroundColor: 'var(--color-primary)',
                     color: 'var(--color-bg)',
-                    boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+                    boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.6)',
+                    '&:hover': {
+                      backgroundColor: 'rgb(0, 128, 195)',
+                      boxShadow: '0 16px 32px -18px rgba(0, 128, 195, 0.65)',
+                    },
                   }}
                 >
                   افزودن کاربر
