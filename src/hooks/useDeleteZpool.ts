@@ -14,9 +14,10 @@ interface DeleteZpoolResponse {
   [key: string]: unknown;
 }
 
-interface PoolDeviceEntry {
-  disk_name?: string | null;
-}
+type PoolDeviceEntry = Partial<{
+  disk_name: string | null;
+  full_disk_name: string | null;
+}>;
 
 interface PoolDeviceResponse {
   ok?: boolean;
@@ -31,6 +32,15 @@ const DEFAULT_CLEAR_DISK_ERROR_MESSAGE =
 const DEFAULT_WIPE_DISK_ERROR_MESSAGE =
   'امکان پاک‌سازی دیسک متصل به فضای یکپارچه وجود ندارد.';
 const DEFAULT_DELETE_POOL_ERROR_MESSAGE = 'امکان حذف فضای یکپارچه وجود ندارد.';
+
+const normalizeDiskName = (diskName?: string | null) => {
+  const trimmedName = diskName?.trim();
+  if (!trimmedName) {
+    return null;
+  }
+
+  return trimmedName.replace(/^\/dev\//, '');
+};
 
 const extractApiErrorMessage = (error: unknown, fallback: string) => {
   if (isAxiosError(error)) {
@@ -84,9 +94,18 @@ const fetchPoolDeviceNames = async (name: string) => {
     }
 
     const devices = data?.data ?? [];
-    return devices
-      .map((device) => device?.disk_name?.trim())
+    const deviceNames = devices
+      .map((device) =>
+        normalizeDiskName(device?.disk_name) ??
+        normalizeDiskName(device?.full_disk_name)
+      )
       .filter((deviceName): deviceName is string => Boolean(deviceName));
+
+    if (deviceNames.length === 0) {
+      throw new Error(DEFAULT_FETCH_DISK_ERROR_MESSAGE);
+    }
+
+    return deviceNames;
   } catch (error) {
     throw new Error(extractApiErrorMessage(error, DEFAULT_FETCH_DISK_ERROR_MESSAGE));
   }
