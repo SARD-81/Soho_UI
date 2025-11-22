@@ -5,11 +5,13 @@ import type { ZpoolCapacityEntry } from '../@types/zpool';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
+import PoolDiskDetailModal from '../components/integrated-storage/PoolDiskDetailModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import PageContainer from '../components/PageContainer';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { usePartitionedDisks } from '../hooks/useDisk';
+import { type PoolDiskSlot, usePoolDeviceSlots } from '../hooks/usePoolDeviceSlots';
 import { useZpool } from '../hooks/useZpool';
 
 const MAX_COMPARISON_ITEMS = 4;
@@ -128,12 +130,24 @@ const IntegratedStorage = () => {
   );
 
   const [selectedPools, setSelectedPools] = useState<string[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<
+    { poolName: string; slot: PoolDiskSlot } | null
+  >(null);
 
   useEffect(() => {
     setSelectedPools((prev) =>
       prev.filter((poolName) => pools.some((pool) => pool.name === poolName))
     );
   }, [pools]);
+
+  const {
+    data: poolDevices,
+    isLoading: isPoolDeviceLoading,
+    isFetching: isPoolDeviceFetching,
+  } = usePoolDeviceSlots(poolNames, {
+    enabled: pools.length > 0,
+    refetchInterval: 20000,
+  });
 
   const handleEdit = useCallback((pool: ZpoolCapacityEntry) => {
     if (typeof window !== 'undefined') {
@@ -172,6 +186,16 @@ const IntegratedStorage = () => {
     },
     []
   );
+
+  const handleSlotClick = useCallback((poolName: string, slot: PoolDiskSlot) => {
+    setSelectedSlot({ poolName, slot });
+  }, []);
+
+  const handleCloseSlotModal = useCallback(() => {
+    setSelectedSlot(null);
+  }, []);
+
+  const isSlotLoading = isPoolDeviceLoading || isPoolDeviceFetching;
 
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
@@ -229,6 +253,10 @@ const IntegratedStorage = () => {
         isDeleteDisabled={poolDeletion.isDeleting}
         selectedPools={selectedPools}
         onToggleSelect={handleToggleSelect}
+        slotMap={poolDevices?.slotsByPool}
+        slotErrors={poolDevices?.errorsByPool}
+        isSlotLoading={isSlotLoading}
+        onSlotClick={handleSlotClick}
       />
 
       {/*{selectedPools.length > 0 && (*/}
@@ -239,6 +267,12 @@ const IntegratedStorage = () => {
       {/*)}*/}
 
       <ConfirmDeletePoolModal controller={poolDeletion} />
+      <PoolDiskDetailModal
+        open={Boolean(selectedSlot)}
+        onClose={handleCloseSlotModal}
+        slot={selectedSlot?.slot ?? null}
+        poolName={selectedSlot?.poolName ?? null}
+      />
     </PageContainer>
   );
 };

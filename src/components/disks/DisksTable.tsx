@@ -1,12 +1,11 @@
 import { Box, Button, Chip, Tooltip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { MdOutlineTravelExplore } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { DiskInventoryItem } from '../../@types/disk';
-import DataTable from '../DataTable';
 import { formatBytes } from '../../utils/formatters';
-import { truncateMiddle } from '../../utils/text';
+import DataTable from '../DataTable';
 
 interface DisksTableProps {
   disks: DiskInventoryItem[];
@@ -22,7 +21,9 @@ const formatStateLabel = (state: string | null | undefined) => {
   return normalized && normalized.length > 0 ? normalized : '-';
 };
 
-const resolveStateColor = (state: string | null | undefined): 'default' | 'success' | 'warning' | 'error' => {
+const resolveStateColor = (
+  state: string | null | undefined
+): 'default' | 'success' | 'warning' | 'error' => {
   const normalized = state?.toLowerCase();
 
   switch (normalized) {
@@ -51,14 +52,6 @@ const DisksTable = ({
   onIdentify,
 }: DisksTableProps) => {
   const theme = useTheme();
-  const [expandedWwns, setExpandedWwns] = useState<Record<string, boolean>>({});
-
-  const handleToggleWwn = useCallback((diskName: string) => {
-    setExpandedWwns((prev) => ({
-      ...prev,
-      [diskName]: !prev[diskName],
-    }));
-  }, []);
 
   const handleRowClick = useCallback(
     (disk: DiskInventoryItem) => {
@@ -116,34 +109,24 @@ const DisksTable = ({
           const wwn = disk.wwn?.trim();
 
           if (!wwn) {
-            return <Typography sx={{ color: 'var(--color-secondary)' }}>-</Typography>;
+            return (
+              <Typography sx={{ color: 'var(--color-secondary)' }}>
+                -
+              </Typography>
+            );
           }
 
-          const isExpanded = expandedWwns[disk.disk] ?? false;
-          const displayValue = isExpanded ? wwn : truncateMiddle(wwn, 22);
-          const tooltipTitle = isExpanded
-            ? 'برای مشاهده خلاصه دوباره کلیک کنید'
-            : 'برای مشاهده کامل کلیک کنید';
-
           return (
-            <Tooltip title={tooltipTitle} arrow>
-              <Button
-                size="small"
-                variant="text"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleToggleWwn(disk.disk);
-                }}
-                sx={{
-                  fontFamily: 'monospace',
-                  direction: 'ltr',
-                  color: 'var(--color-primary)',
-                  textTransform: 'none',
-                }}
-              >
-                {displayValue}
-              </Button>
-            </Tooltip>
+            <Typography
+              sx={{
+                color: 'var(--color-primary)',
+                fontFamily: 'monospace',
+                direction: 'ltr',
+                textTransform: 'none',
+              }}
+            >
+              {wwn}
+            </Typography>
           );
         },
       },
@@ -187,7 +170,7 @@ const DisksTable = ({
         ),
       },
     ];
-  }, [expandedWwns, handleToggleWwn, onIdentify]);
+  }, [ onIdentify]);
 
   return (
     <DataTable<DiskInventoryItem>

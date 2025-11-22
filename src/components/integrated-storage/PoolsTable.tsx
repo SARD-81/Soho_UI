@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
+import type { PoolDiskSlot, PoolSlotMap } from '../../hooks/usePoolDeviceSlots';
 import { formatBytes } from '../../utils/formatters.ts';
 import DataTable from '../DataTable';
 import {
@@ -28,6 +29,10 @@ interface PoolsTableProps {
   isDeleteDisabled: boolean;
   selectedPools: string[];
   onToggleSelect: (pool: ZpoolCapacityEntry, checked: boolean) => void;
+  slotMap?: PoolSlotMap;
+  slotErrors?: Record<string, string>;
+  isSlotLoading?: boolean;
+  onSlotClick?: (poolName: string, slot: PoolDiskSlot) => void;
 }
 
 const numberValueSx = {
@@ -48,6 +53,10 @@ const PoolsTable = ({
   isDeleteDisabled,
   selectedPools,
   onToggleSelect,
+  slotMap = {},
+  slotErrors = {},
+  isSlotLoading = false,
+  onSlotClick,
 }: PoolsTableProps) => {
   const columns: DataTableColumn<ZpoolCapacityEntry>[] = useMemo(
     () => [
@@ -86,6 +95,78 @@ const PoolsTable = ({
             {/*</Typography>*/}
           </Box>
         ),
+      },
+      {
+        id: 'slots',
+        header: 'شماره اسلات دیسک‌ها',
+        align: 'center',
+        cellSx: { minWidth: 220 },
+        renderCell: (pool) => {
+          const poolSlots = slotMap[pool.name] ?? [];
+          const poolError = slotErrors[pool.name];
+
+          if (isSlotLoading && poolSlots.length === 0) {
+            return <CircularProgress size={18} thickness={4} color="primary" />;
+          }
+
+          if (poolError) {
+            return (
+              <Typography sx={{ color: 'var(--color-error)', fontWeight: 700, fontSize: '0.9rem' }}>
+                {poolError}
+              </Typography>
+            );
+          }
+
+          if (poolSlots.length === 0) {
+            return (
+              <Typography sx={{ color: 'var(--color-secondary)' }}>
+                دستگاهی برای این فضا ثبت نشده است.
+              </Typography>
+            );
+          }
+
+          return (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+              {poolSlots.map((slot) => {
+                const slotLabel = slot.slotNumber ?? 'نامشخص';
+                const tooltipContent = (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>
+                      دیسک: {slot.diskName}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.9)' }}>
+                      {slot.wwn ? `WWN: ${slot.wwn}` : 'WWN نامشخص'}
+                    </Typography>
+                  </Box>
+                );
+
+                return (
+                  <Tooltip key={`${pool.name}-${slot.diskName}-${slotLabel}`} title={tooltipContent} arrow>
+                    <Chip
+                      label={`اسلات ${slotLabel}`}
+                      onClick={() => onSlotClick?.(pool.name, slot)}
+                      sx={{
+                        cursor: 'pointer',
+                        fontWeight: 800,
+                        color: 'var(--color-text)',
+                        letterSpacing: '0.2px',
+                        background:
+                          'linear-gradient(135deg, rgba(25,123,255,0.12) 0%, rgba(21,196,197,0.2) 100%)',
+                        border: '1px solid rgba(25,123,255,0.35)',
+                        boxShadow: '0 16px 34px -26px rgba(25,123,255,0.9)',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 16px 36px -24px rgba(14,174,164,0.9)',
+                        },
+                      }}
+                    />
+                  </Tooltip>
+                );
+              })}
+            </Box>
+          );
+        },
       },
       {
         id: 'total',
@@ -202,7 +283,17 @@ const PoolsTable = ({
         ),
       },
     ],
-    [isDeleteDisabled, onDelete, onEdit, onToggleSelect, selectedPools]
+    [
+      isDeleteDisabled,
+      isSlotLoading,
+      onDelete,
+      onEdit,
+      onSlotClick,
+      onToggleSelect,
+      selectedPools,
+      slotErrors,
+      slotMap,
+    ]
   );
 
   return (
