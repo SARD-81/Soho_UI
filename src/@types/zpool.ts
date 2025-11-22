@@ -29,3 +29,24 @@ export interface ZpoolDetailEntry {
 export interface ZpoolDetailResponse {
   data?: ZpoolDetailEntry[];
 }
+
+export interface ZpoolDeviceEntry {
+  full_path_wwn?: string | null;
+  full_disk_wwn?: string | null;
+  wwn?: string | null;
+  full_path_name?: string | null;
+  full_disk_name?: string | null;
+  disk_name?: string | null;
+  status?: string | null;
+  type?: string | null;
+}
+
+export interface ZpoolDeviceResponse {
+  ok: boolean;
+  error: string | null;
+  message?: string;
+  data?: ZpoolDeviceEntry[];
+  details?: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+  request_data?: Record<string, unknown>;
+}
