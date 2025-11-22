@@ -2,6 +2,7 @@ import { Box, Button, Typography } from '@mui/material';
 import { useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import type { FileSystemEntry } from '../@types/filesystem';
+import PageContainer from '../components/PageContainer';
 import ConfirmDeleteFileSystemModal from '../components/file-system/ConfirmDeleteFileSystemModal';
 import CreateFileSystemModal from '../components/file-system/CreateFileSystemModal';
 import FileSystemsTable from '../components/file-system/FileSystemsTable';
@@ -87,7 +88,7 @@ const FileSystem = () => {
   );
 
   return (
-    <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
+    <PageContainer>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Box
           sx={{
@@ -141,7 +142,7 @@ const FileSystem = () => {
       />
 
       <ConfirmDeleteFileSystemModal controller={deleteFileSystem} />
-    </Box>
+    </PageContainer>
   );
 };
 

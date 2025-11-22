@@ -2,6 +2,7 @@ import { Box, Button, Typography } from '@mui/material';
 import { useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import type { VolumeEntry } from '../@types/volume';
+import PageContainer from '../components/PageContainer';
 import ConfirmDeleteVolumeModal from '../components/block-storage/ConfirmDeleteVolumeModal';
 import CreateVolumeModal from '../components/block-storage/CreateVolumeModal';
 import VolumesTable from '../components/block-storage/VolumesTable';
@@ -71,7 +72,7 @@ const BlockStorage = () => {
   );
 
   return (
-    <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
+    <PageContainer>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Box
           sx={{
@@ -121,7 +122,7 @@ const BlockStorage = () => {
       />
 
       <ConfirmDeleteVolumeModal controller={volumeDeletion} />
-    </Box>
+    </PageContainer>
   );
 };
 

@@ -95,7 +95,7 @@ const DetailComparisonPanel = ({
             : '0 24px 55px -32px rgba(15, 73, 110, 0.45)',
         px: 3,
         py: 3,
-        maxWidth: '100%',
+        width: '100%',
       }}
     >
       <Typography
@@ -164,8 +164,9 @@ const DetailComparisonPanel = ({
                 py: 1.25,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 1,
+                justifyContent: 'center',
+                position: 'relative',
+                pl: column.onRemove ? 4 : 0,
                 minHeight: 64,
                 backgroundColor:
                   columnIndex % 2 === 1
@@ -193,6 +194,10 @@ const DetailComparisonPanel = ({
                     column.onRemove?.();
                   }}
                   sx={{
+                    position: 'absolute',
+                    right: 8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
                     color: 'var(--color-secondary)',
                     '&:hover': {
                       color: 'var(--color-error)',
@@ -255,7 +260,7 @@ const DetailComparisonPanel = ({
                       py: 1.5,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'flex-start',
+                      justifyContent: 'center',
                       backgroundColor: alpha(theme.palette.background.default, 0.1),
                       color: 'var(--color-secondary)',
                       fontWeight: 700,

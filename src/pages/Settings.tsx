@@ -8,6 +8,12 @@ import {
   SETTINGS_TABS,
   type SettingsTabValue,
 } from '../constants/settings';
+import PageContainer from '../components/PageContainer';
+import {
+  tabContainerSx,
+  tabListSx,
+  tabPanelSx,
+} from '../components/tabs/styles';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<SettingsTabValue>(
@@ -22,13 +28,7 @@ const Settings = () => {
   );
 
   return (
-    <Box
-      sx={{
-        p: 3,
-        fontFamily: 'var(--font-vazir)',
-        backgroundColor: 'var(--color-background)',
-      }}
-    >
+    <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
       <Typography
         variant="h5"
         sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
@@ -36,36 +36,32 @@ const Settings = () => {
         تنظیمات
       </Typography>
 
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        sx={{
-          mt: 2,
-          '& .MuiTab-root': {
-            color: 'var(--color-secondary)',
-            fontWeight: 600,
-            '&.Mui-selected': {
-              color: 'var(--color-primary)',
-            },
-          },
-          '& .MuiTabs-indicator': {
-            backgroundColor: 'var(--color-primary)',
-          },
-        }}
-      >
-        {SETTINGS_TAB_ITEMS.map((tab) => (
-          <Tab key={tab.value} label={tab.label} value={tab.value} />
-        ))}
-      </Tabs>
+      <Box sx={tabContainerSx}>
+        <Tabs value={activeTab} onChange={handleTabChange} sx={tabListSx}>
+          {SETTINGS_TAB_ITEMS.map((tab) => (
+            <Tab key={tab.value} label={tab.label} value={tab.value} />
+          ))}
+        </Tabs>
 
-      <TabPanel value={SETTINGS_TABS.network} currentValue={activeTab}>
-        <NetworkSettingsTable />
-      </TabPanel>
+        <Box sx={tabPanelSx}>
+          <TabPanel
+            value={SETTINGS_TABS.network}
+            currentValue={activeTab}
+            sx={{ mt: 0 }}
+          >
+            <NetworkSettingsTable />
+          </TabPanel>
 
-      <TabPanel value={SETTINGS_TABS.users} currentValue={activeTab}>
-        <UserSettingsTable />
-      </TabPanel>
-    </Box>
+          <TabPanel
+            value={SETTINGS_TABS.users}
+            currentValue={activeTab}
+            sx={{ mt: 0 }}
+          >
+            <UserSettingsTable />
+          </TabPanel>
+        </Box>
+      </Box>
+    </PageContainer>
   );
 };
 

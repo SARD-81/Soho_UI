@@ -1,11 +1,12 @@
-import { Box, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
+import PageContainer from '../components/PageContainer';
 
 const History = () => (
-  <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
+  <PageContainer>
     <Typography variant="h5" sx={{ color: 'var(--color-primary)' }}>
       تاریخچه
     </Typography>
-  </Box>
+  </PageContainer>
 );
 
 export default History;

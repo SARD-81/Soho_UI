@@ -23,9 +23,12 @@ const SelectedSharesDetailsPanel = ({
     values: detail ?? {},
   }));
 
+  const title =
+    columns.length > 1 ? 'مقایسه جزئیات اشتراک‌ها' : 'جزئیات اشتراک‌ها';
+
   return (
     <DetailComparisonPanel
-      title="مقایسه جزئیات اشتراک‌ها"
+      title={title}
       attributeLabel="ویژگی"
       columns={columns}
       formatValue={formatDetailValue}

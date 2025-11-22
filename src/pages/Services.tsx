@@ -2,6 +2,7 @@ import { Box, Typography } from '@mui/material';
 import { useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import type { ServiceActionType, ServiceValue } from '../@types/service';
+import PageContainer from '../components/PageContainer';
 import ServicesTable from '../components/services/ServicesTable';
 import { getServiceLabel } from '../constants/serviceLabels';
 import { useServiceAction } from '../hooks/useServiceAction';
@@ -58,7 +59,7 @@ const Services = () => {
   );
 
   return (
-    <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
+    <PageContainer>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Typography
           variant="h5"
@@ -76,7 +77,7 @@ const Services = () => {
           activeServiceName={serviceAction.variables?.service ?? null}
         />
       </Box>
-    </Box>
+    </PageContainer>
   );
 };
 

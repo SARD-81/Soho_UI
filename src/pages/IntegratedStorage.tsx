@@ -5,10 +5,13 @@ import type { ZpoolCapacityEntry } from '../@types/zpool';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
+import PoolDiskDetailModal from '../components/integrated-storage/PoolDiskDetailModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
+import PageContainer from '../components/PageContainer';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
-import { useDiskWwnMap, useFreeDisks } from '../hooks/useDisk';
+import { usePartitionedDisks } from '../hooks/useDisk';
+import { type PoolDiskSlot, usePoolDeviceSlots } from '../hooks/usePoolDeviceSlots';
 import { useZpool } from '../hooks/useZpool';
 
 const MAX_COMPARISON_ITEMS = 4;
@@ -50,81 +53,101 @@ const IntegratedStorage = () => {
   });
 
   const {
-    data: freeDisks,
-    isLoading: isFreeDiskLoading,
-    isFetching: isFreeDiskFetching,
-    error: freeDiskError,
-  } = useFreeDisks({
-    enabled: createPool.isOpen,
-    refetchInterval: createPool.isOpen ? 5000 : undefined,
-  });
-
-  const {
-    data: diskWwnMap,
-    isFetching: isDiskMapFetching,
-    error: diskMapError,
-  } = useDiskWwnMap({
+    data: partitionedDisks,
+    isLoading: isPartitionedDiskLoading,
+    isFetching: isPartitionedDiskFetching,
+    error: partitionedDiskError,
+  } = usePartitionedDisks({
     enabled: createPool.isOpen,
     refetchInterval: createPool.isOpen ? 5000 : undefined,
   });
 
   const deviceOptions = useMemo<DeviceOption[]>(() => {
-    if (!freeDisks || freeDisks.length === 0) {
+    if (!partitionedDisks || partitionedDisks.length === 0) {
       return [];
     }
 
-    const wwnMap = diskWwnMap?.data ?? {};
+    const buildDeviceIdentifier = (
+      devicePath: string | null,
+      wwn: string | null
+    ) => {
+      const trimmedPath = devicePath?.trim();
+
+      if (wwn) {
+        const trimmedWwn = wwn.trim();
+
+        if (trimmedWwn.length > 0) {
+          if (trimmedWwn.startsWith('/dev/')) {
+            return trimmedWwn;
+          }
+
+          const sanitizedWwn = trimmedWwn.replace(/^\/dev\/disk\/by-id\//, '');
+          return `/dev/disk/by-id/${sanitizedWwn}`;
+        }
+      }
+
+      if (trimmedPath && trimmedPath.length > 0) {
+        return trimmedPath;
+      }
+
+      return null;
+    };
+
     const uniqueValues = new Set<string>();
     const options: DeviceOption[] = [];
 
-    freeDisks.forEach((diskName) => {
-      const trimmedName = diskName.trim();
-      if (!trimmedName) {
+    partitionedDisks.forEach(({ name, path, wwn }) => {
+      const identifier = buildDeviceIdentifier(path, wwn);
+
+      if (!identifier || uniqueValues.has(identifier)) {
         return;
       }
 
-      const normalizedValue = trimmedName.startsWith('/dev/')
-        ? trimmedName
-        : `/dev/${trimmedName}`;
-
-      if (uniqueValues.has(normalizedValue)) {
-        return;
-      }
-
-      uniqueValues.add(normalizedValue);
-      const wwnPath = wwnMap[normalizedValue];
+      uniqueValues.add(identifier);
 
       options.push({
-        label: normalizedValue.replace(/^\/dev\//, ''),
-        value: normalizedValue,
-        tooltip: wwnPath ?? normalizedValue,
-        wwn: wwnPath,
+        label: (path ?? name).replace(/^\/dev\//, '') || name,
+        value: identifier,
+        tooltip: identifier,
+        wwn: wwn ?? undefined,
       });
     });
 
     return options.sort((a, b) => a.label.localeCompare(b.label, 'en'));
-  }, [diskWwnMap?.data, freeDisks]);
+  }, [partitionedDisks]);
 
   const isDiskLoading =
-    isFreeDiskLoading ||
-    (createPool.isOpen && isFreeDiskFetching && !freeDisks) ||
-    (createPool.isOpen && isDiskMapFetching && !diskWwnMap);
+    isPartitionedDiskLoading ||
+    (createPool.isOpen && isPartitionedDiskFetching && !partitionedDisks);
 
-  const diskError = freeDiskError ?? diskMapError ?? null;
+  const diskError = partitionedDiskError ?? null;
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
   const poolNames = useMemo(
-    () => pools.map((pool) => pool.name).filter((name) => name.trim().length > 0),
+    () =>
+      pools.map((pool) => pool.name).filter((name) => name.trim().length > 0),
     [pools]
   );
 
   const [selectedPools, setSelectedPools] = useState<string[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<
+    { poolName: string; slot: PoolDiskSlot } | null
+  >(null);
 
   useEffect(() => {
     setSelectedPools((prev) =>
       prev.filter((poolName) => pools.some((pool) => pool.name === poolName))
     );
   }, [pools]);
+
+  const {
+    data: poolDevices,
+    isLoading: isPoolDeviceLoading,
+    isFetching: isPoolDeviceFetching,
+  } = usePoolDeviceSlots(poolNames, {
+    enabled: pools.length > 0,
+    refetchInterval: 20000,
+  });
 
   const handleEdit = useCallback((pool: ZpoolCapacityEntry) => {
     if (typeof window !== 'undefined') {
@@ -152,10 +175,7 @@ const IntegratedStorage = () => {
           }
 
           if (prev.length >= MAX_COMPARISON_ITEMS) {
-            return [
-              ...prev.slice(0, MAX_COMPARISON_ITEMS - 1),
-              pool.name,
-            ];
+            return [...prev.slice(0, MAX_COMPARISON_ITEMS - 1), pool.name];
           }
 
           return [...prev, pool.name];
@@ -167,8 +187,18 @@ const IntegratedStorage = () => {
     []
   );
 
+  const handleSlotClick = useCallback((poolName: string, slot: PoolDiskSlot) => {
+    setSelectedSlot({ poolName, slot });
+  }, []);
+
+  const handleCloseSlotModal = useCallback(() => {
+    setSelectedSlot(null);
+  }, []);
+
+  const isSlotLoading = isPoolDeviceLoading || isPoolDeviceFetching;
+
   return (
-    <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
+    <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Box
           sx={{
@@ -223,6 +253,10 @@ const IntegratedStorage = () => {
         isDeleteDisabled={poolDeletion.isDeleting}
         selectedPools={selectedPools}
         onToggleSelect={handleToggleSelect}
+        slotMap={poolDevices?.slotsByPool}
+        slotErrors={poolDevices?.errorsByPool}
+        isSlotLoading={isSlotLoading}
+        onSlotClick={handleSlotClick}
       />
 
       {/*{selectedPools.length > 0 && (*/}
@@ -233,7 +267,13 @@ const IntegratedStorage = () => {
       {/*)}*/}
 
       <ConfirmDeletePoolModal controller={poolDeletion} />
-    </Box>
+      <PoolDiskDetailModal
+        open={Boolean(selectedSlot)}
+        onClose={handleCloseSlotModal}
+        slot={selectedSlot?.slot ?? null}
+        poolName={selectedSlot?.poolName ?? null}
+      />
+    </PageContainer>
   );
 };
 

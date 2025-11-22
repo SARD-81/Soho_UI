@@ -341,7 +341,7 @@ const CreatePoolModal = ({
                         />
                       }
                       label={
-                        <Tooltip title={device.tooltip} placement="top" arrow>
+                        <Tooltip title={device.wwn} placement="top" arrow>
                           <Typography
                             component="span"
                             sx={{ color: 'var(--color-text)' }}
