@@ -2,6 +2,7 @@ import { Box, Button, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import type { ZpoolCapacityEntry } from '../@types/zpool';
+import PageContainer from '../components/PageContainer';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
@@ -147,7 +148,7 @@ const IntegratedStorage = () => {
   );
 
   return (
-    <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
+    <PageContainer>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Box
           sx={{
@@ -212,7 +213,7 @@ const IntegratedStorage = () => {
       {/*)}*/}
 
       <ConfirmDeletePoolModal controller={poolDeletion} />
-    </Box>
+    </PageContainer>
   );
 };
 

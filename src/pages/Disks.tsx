@@ -2,6 +2,7 @@ import { Box, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import type { DiskInventoryItem } from '../@types/disk';
+import PageContainer from '../components/PageContainer';
 import DisksTable from '../components/disks/DisksTable';
 import SelectedDisksDetailsPanel from '../components/disks/SelectedDisksDetailsPanel';
 import { useDiskDetails, useDiskInventory } from '../hooks/useDiskInventory';
@@ -52,7 +53,7 @@ const Disks = () => {
   }, []);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <PageContainer>
       <Box>
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
           اطلاعات دیسک‌ها
@@ -78,7 +79,7 @@ const Disks = () => {
           <SelectedDisksDetailsPanel items={detailItems} onRemove={handleRemoveSelected} />
         </Box>
       </Stack>
-    </Box>
+    </PageContainer>
   );
 };
 

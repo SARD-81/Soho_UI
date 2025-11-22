@@ -9,6 +9,7 @@ import {
 import { toast } from 'react-hot-toast';
 import type { SambaShareEntry } from '../@types/samba';
 import TabPanel from '../components/TabPanel';
+import PageContainer from '../components/PageContainer';
 import ConfirmDeleteShareModal from '../components/share/ConfirmDeleteShareModal';
 import CreateShareModal from '../components/share/CreateShareModal';
 import SelectedSharesDetailsPanel from '../components/share/SelectedSharesDetailsPanel';
@@ -485,14 +486,7 @@ const Share = () => {
   );
 
   return (
-    <Box
-      sx={{
-        p: 3,
-        fontFamily: 'var(--font-vazir)',
-        backgroundColor: 'var(--color-background)',
-        // minHeight: '100%',
-      }}
-    >
+    <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
       <Tabs
         value={activeTab}
         onChange={handleTabChange}
@@ -663,7 +657,7 @@ const Share = () => {
         errorMessage={passwordModalError}
         isSubmitting={updateSambaPassword.isPending}
       />
-    </Box>
+    </PageContainer>
   );
 };
 
