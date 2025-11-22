@@ -39,32 +39,49 @@ export const tabListSx: SxProps<Theme> = {
     '&.Mui-selected': {
       color: 'var(--color-primary)',
       background:
-        'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.06) 100%)',
-      borderColor: 'rgba(255, 255, 255, 0.1)',
+        'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(245,247,250,0.96) 100%)',
+      borderColor: 'rgba(0, 0, 0, 0.06)',
       boxShadow:
-        '0 14px 35px -20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.14)',
-      clipPath: 'polygon(6% 0, 94% 0, 100% 32%, 100% 100%, 0 100%, 0 32%)',
-      transform: 'translateY(-2px)',
+        '0 18px 38px -24px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+      clipPath: 'polygon(9% 0, 91% 0, 100% 28%, 100% 100%, 0 100%, 0 28%)',
+      transform: 'translateY(-3px)',
+      borderRadius: '14px 14px 12px 12px',
+      zIndex: 1,
+      overflow: 'visible',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: '-12px',
+        left: '8%',
+        right: '8%',
+        height: 22,
+        background:
+          'radial-gradient(80% 140% at 50% 120%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 65%)',
+        borderRadius: '999px',
+        boxShadow: '0 -1px 0 rgba(255, 255, 255, 0.75)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      },
       '&::after': {
         content: '""',
         position: 'absolute',
         inset: 0,
-        borderRadius: '10px',
-        border: '1px solid rgba(0, 0, 0, 0.08)',
+        borderRadius: '14px 14px 12px 12px',
+        border: '1px solid rgba(0, 0, 0, 0.05)',
         boxShadow:
-          'inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 10px 24px rgba(0, 0, 0, 0.18)',
+          'inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 12px 28px rgba(0, 0, 0, 0.12)',
         mixBlendMode: 'screen',
         pointerEvents: 'none',
-        zIndex: -1,
+        zIndex: 0,
       },
     },
   },
   '& .MuiTabs-indicator': {
-    height: 4,
-    bottom: 4,
+    height: 3,
+    bottom: 6,
     borderRadius: '999px',
     background:
-      'linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+      'linear-gradient(90deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.12) 100%)',
   },
 };
 
