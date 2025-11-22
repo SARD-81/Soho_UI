@@ -14,6 +14,7 @@ import DashboardLayoutPanel, {
   type DashboardLayoutPanelWidget,
 } from '../components/dashboard/DashboardLayoutPanel';
 import SortableWidget from '../components/dashboard/SortableWidget';
+import PageContainer from '../components/PageContainer';
 import { useAuth } from '../contexts/AuthContext';
 import { TransitionGroup } from 'react-transition-group';
 
@@ -674,16 +675,7 @@ const Dashboard = () => {
   );
 
   return (
-    <Box
-      sx={{
-        p: { xs: 2, md: 3 },
-        fontFamily: 'var(--font-vazir)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 3,
-        width: '100%',
-      }}
-    >
+    <PageContainer>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         alignItems={{ xs: 'stretch', md: 'center' }}
@@ -816,7 +808,7 @@ const Dashboard = () => {
         onReset={handleResetLayout}
         isDirty={isDirty}
       />
-    </Box>
+    </PageContainer>
   );
 };
 

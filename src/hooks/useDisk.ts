@@ -80,7 +80,7 @@ const fetchDiskPartitionStatus = async (diskName: string): Promise<boolean> => {
       throw new Error(message);
     }
 
-    return Boolean(data.data?.has_partitions);
+    return Boolean(!data.data?.has_partitions);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       return false;

@@ -8,11 +8,12 @@ import {
 } from 'react';
 import { toast } from 'react-hot-toast';
 import type { SambaShareEntry } from '../@types/samba';
-import TabPanel from '../components/TabPanel';
+import PageContainer from '../components/PageContainer';
 import ConfirmDeleteShareModal from '../components/share/ConfirmDeleteShareModal';
 import CreateShareModal from '../components/share/CreateShareModal';
 import SelectedSharesDetailsPanel from '../components/share/SelectedSharesDetailsPanel';
 import SharesTable from '../components/share/SharesTable';
+import TabPanel from '../components/TabPanel';
 import ConfirmDeleteSambaUserModal from '../components/users/ConfirmDeleteSambaUserModal';
 import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
 import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
@@ -22,8 +23,8 @@ import { DEFAULT_LOGIN_SHELL } from '../constants/users';
 import { useCreateOsUser } from '../hooks/useCreateOsUser';
 import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
 import { useCreateShare } from '../hooks/useCreateShare';
-import { useDeleteShare } from '../hooks/useDeleteShare';
 import { useDeleteSambaUser } from '../hooks/useDeleteSambaUser';
+import { useDeleteShare } from '../hooks/useDeleteShare';
 import { useEnableSambaUser } from '../hooks/useEnableSambaUser';
 import { useSambaShares } from '../hooks/useSambaShares';
 import { useSambaUsers } from '../hooks/useSambaUsers';
@@ -70,11 +71,7 @@ const Share = () => {
   );
   const [deleteSambaError, setDeleteSambaError] = useState<string | null>(null);
 
-  const {
-    data: rawShares = [],
-    isLoading,
-    error,
-  } = useSambaShares();
+  const { data: rawShares = [], isLoading, error } = useSambaShares();
 
   const shares = useMemo(
     () =>
@@ -216,13 +213,11 @@ const Share = () => {
   const sambaUsers = useMemo(() => {
     const normalizedUsers = normalizeSambaUsers(sambaUsersQuery.data?.data);
 
-    return normalizedUsers
-      .slice()
-      .sort((a, b) =>
-        (a.username ?? '').localeCompare(b.username ?? '', 'en', {
-          sensitivity: 'base',
-        })
-      );
+    return normalizedUsers.slice().sort((a, b) =>
+      (a.username ?? '').localeCompare(b.username ?? '', 'en', {
+        sensitivity: 'base',
+      })
+    );
   }, [sambaUsersQuery.data?.data]);
 
   const normalizedSambaUsernames = useMemo(() => {
@@ -270,7 +265,10 @@ const Share = () => {
     },
     onError: (message, error, username) => {
       setDeleteSambaError(message);
-      if (error.response?.status === 400 && error.response.data?.code === 'samba_error') {
+      if (
+        error.response?.status === 400 &&
+        error.response.data?.code === 'samba_error'
+      ) {
         toast.error(
           `کاربر اشتراک فایل ${username} در اشتراک‌های فعال استفاده شده است. لطفاً ابتدا اشتراک‌های مرتبط را حذف کنید.`
         );
@@ -290,7 +288,9 @@ const Share = () => {
     },
     onError: (message) => {
       setPasswordModalError(message);
-      toast.error(`تغییر گذرواژه کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
+      toast.error(
+        `تغییر گذرواژه کاربر اشتراک فایل با خطا مواجه شد: ${message}`
+      );
     },
   });
 
@@ -365,10 +365,7 @@ const Share = () => {
           }
 
           if (prev.length >= MAX_COMPARISON_ITEMS) {
-            return [
-              ...prev.slice(0, MAX_COMPARISON_ITEMS - 1),
-              user.username,
-            ];
+            return [...prev.slice(0, MAX_COMPARISON_ITEMS - 1), user.username];
           }
 
           return [...prev, user.username];
@@ -485,19 +482,18 @@ const Share = () => {
   );
 
   return (
-    <Box
-      sx={{
-        p: 3,
-        fontFamily: 'var(--font-vazir)',
-        backgroundColor: 'var(--color-background)',
-        // minHeight: '100%',
-      }}
-    >
+    <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
+      <Typography
+        variant="h5"
+        sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+      >
+        اشتراک‌گذاری
+      </Typography>
       <Tabs
         value={activeTab}
         onChange={handleTabChange}
         sx={{
-          mb: 3,
+          mb: 0,
           '& .MuiTab-root': {
             color: 'var(--color-secondary)',
             fontWeight: 600,
@@ -663,7 +659,7 @@ const Share = () => {
         errorMessage={passwordModalError}
         isSubmitting={updateSambaPassword.isPending}
       />
-    </Box>
+    </PageContainer>
   );
 };
 

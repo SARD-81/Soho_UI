@@ -1,4 +1,4 @@
-import { Box, Tab, Tabs, Typography } from '@mui/material';
+import { Tab, Tabs, Typography } from '@mui/material';
 import { type SyntheticEvent, useCallback, useState } from 'react';
 import TabPanel from '../components/TabPanel';
 import NetworkSettingsTable from '../components/settings/NetworkSettingsTable';
@@ -8,6 +8,7 @@ import {
   SETTINGS_TABS,
   type SettingsTabValue,
 } from '../constants/settings';
+import PageContainer from '../components/PageContainer';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<SettingsTabValue>(
@@ -22,13 +23,7 @@ const Settings = () => {
   );
 
   return (
-    <Box
-      sx={{
-        p: 3,
-        fontFamily: 'var(--font-vazir)',
-        backgroundColor: 'var(--color-background)',
-      }}
-    >
+    <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
       <Typography
         variant="h5"
         sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
@@ -65,7 +60,7 @@ const Settings = () => {
       <TabPanel value={SETTINGS_TABS.users} currentValue={activeTab}>
         <UserSettingsTable />
       </TabPanel>
-    </Box>
+    </PageContainer>
   );
 };
 

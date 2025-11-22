@@ -6,6 +6,7 @@ import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDele
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
+import PageContainer from '../components/PageContainer';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { usePartitionedDisks } from '../hooks/useDisk';
@@ -64,20 +65,48 @@ const IntegratedStorage = () => {
       return [];
     }
 
+    const buildDeviceIdentifier = (
+      devicePath: string | null,
+      wwn: string | null
+    ) => {
+      const trimmedPath = devicePath?.trim();
+
+      if (wwn) {
+        const trimmedWwn = wwn.trim();
+
+        if (trimmedWwn.length > 0) {
+          if (trimmedWwn.startsWith('/dev/')) {
+            return trimmedWwn;
+          }
+
+          const sanitizedWwn = trimmedWwn.replace(/^\/dev\/disk\/by-id\//, '');
+          return `/dev/disk/by-id/${sanitizedWwn}`;
+        }
+      }
+
+      if (trimmedPath && trimmedPath.length > 0) {
+        return trimmedPath;
+      }
+
+      return null;
+    };
+
     const uniqueValues = new Set<string>();
     const options: DeviceOption[] = [];
 
     partitionedDisks.forEach(({ name, path, wwn }) => {
-      if (!path || uniqueValues.has(path)) {
+      const identifier = buildDeviceIdentifier(path, wwn);
+
+      if (!identifier || uniqueValues.has(identifier)) {
         return;
       }
 
-      uniqueValues.add(path);
+      uniqueValues.add(identifier);
 
       options.push({
-        label: path.replace(/^\/dev\//, '') || name,
-        value: path,
-        tooltip: wwn ?? path,
+        label: (path ?? name).replace(/^\/dev\//, '') || name,
+        value: identifier,
+        tooltip: identifier,
         wwn: wwn ?? undefined,
       });
     });
@@ -93,7 +122,8 @@ const IntegratedStorage = () => {
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
   const poolNames = useMemo(
-    () => pools.map((pool) => pool.name).filter((name) => name.trim().length > 0),
+    () =>
+      pools.map((pool) => pool.name).filter((name) => name.trim().length > 0),
     [pools]
   );
 
@@ -131,10 +161,7 @@ const IntegratedStorage = () => {
           }
 
           if (prev.length >= MAX_COMPARISON_ITEMS) {
-            return [
-              ...prev.slice(0, MAX_COMPARISON_ITEMS - 1),
-              pool.name,
-            ];
+            return [...prev.slice(0, MAX_COMPARISON_ITEMS - 1), pool.name];
           }
 
           return [...prev, pool.name];
@@ -147,7 +174,7 @@ const IntegratedStorage = () => {
   );
 
   return (
-    <Box sx={{ p: 3, fontFamily: 'var(--font-vazir)' }}>
+    <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Box
           sx={{
@@ -212,7 +239,7 @@ const IntegratedStorage = () => {
       {/*)}*/}
 
       <ConfirmDeletePoolModal controller={poolDeletion} />
-    </Box>
+    </PageContainer>
   );
 };
 

@@ -8,6 +8,7 @@ import {
 import { toast } from 'react-hot-toast';
 import type { CreateOsUserPayload, OsUserTableItem } from '../@types/users';
 import TabPanel from '../components/TabPanel';
+import PageContainer from '../components/PageContainer';
 import OsUserCreateModal from '../components/users/OsUserCreateModal';
 import OsUsersTable from '../components/users/OsUsersTable';
 import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
@@ -229,13 +230,8 @@ const Users = () => {
   );
 
   return (
-    <Box
-      sx={{
-        p: 3,
-        fontFamily: 'var(--font-vazir)',
-        backgroundColor: 'var(--color-background)',
-        minHeight: '100%',
-      }}
+    <PageContainer
+      sx={{ backgroundColor: 'var(--color-background)', minHeight: '100%' }}
     >
       <Typography
         variant="h5"
@@ -356,7 +352,7 @@ const Users = () => {
           .map((user) => user.username ?? '')
           .filter((username) => username)}
       />
-    </Box>
+    </PageContainer>
   );
 };
 
