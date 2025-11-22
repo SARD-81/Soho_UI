@@ -1,4 +1,4 @@
-import { Box, Button, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import {
   type SyntheticEvent,
   useCallback,
@@ -9,6 +9,7 @@ import {
 import { toast } from 'react-hot-toast';
 import type { SambaShareEntry } from '../@types/samba';
 import PageContainer from '../components/PageContainer';
+import { ModernTab, ModernTabs } from '../components/ModernTabs';
 import ConfirmDeleteShareModal from '../components/share/ConfirmDeleteShareModal';
 import CreateShareModal from '../components/share/CreateShareModal';
 import SelectedSharesDetailsPanel from '../components/share/SelectedSharesDetailsPanel';
@@ -489,26 +490,10 @@ const Share = () => {
       >
         اشتراک‌گذاری
       </Typography>
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        sx={{
-          mb: 0,
-          '& .MuiTab-root': {
-            color: 'var(--color-secondary)',
-            fontWeight: 600,
-            '&.Mui-selected': {
-              color: 'var(--color-primary)',
-            },
-          },
-          '& .MuiTabs-indicator': {
-            backgroundColor: 'var(--color-primary)',
-          },
-        }}
-      >
-        <Tab label="کاربران اشتراک فایل" value={SHARE_TABS.sambaUsers} />
-        <Tab label="اشتراک‌ها" value={SHARE_TABS.shares} />
-      </Tabs>
+      <ModernTabs value={activeTab} onChange={handleTabChange}>
+        <ModernTab label="کاربران اشتراک فایل" value={SHARE_TABS.sambaUsers} />
+        <ModernTab label="اشتراک‌ها" value={SHARE_TABS.shares} />
+      </ModernTabs>
 
       <TabPanel value={SHARE_TABS.shares} currentValue={activeTab}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
