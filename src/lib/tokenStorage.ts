@@ -1,4 +1,3 @@
-const ACCESS_TOKEN_KEY = 'auth:access-token';
 const REFRESH_TOKEN_KEY = 'auth:refresh-token';
 const USERNAME_KEY = 'auth:username';
 
@@ -8,8 +7,8 @@ const getWebStorage = (): Storage | null => {
   }
 
   const candidates: (Storage | undefined)[] = [
-    window.localStorage,
     window.sessionStorage,
+    window.localStorage,
   ];
 
   for (const storage of candidates) {
@@ -32,7 +31,17 @@ const getWebStorage = (): Storage | null => {
 
 const storageRef = getWebStorage();
 
-let accessToken: string | null | undefined;
+// Clean up any legacy access tokens that might have been persisted previously so
+// they are not exposed to long-lived storage and can only live in-memory.
+if (storageRef) {
+  try {
+    storageRef.removeItem('auth:access-token');
+  } catch (error) {
+    console.warn('Unable to remove legacy access token from storage', error);
+  }
+}
+
+let accessToken: string | null = null;
 let refreshToken: string | null | undefined;
 let storedUsername: string | null | undefined;
 
@@ -56,13 +65,6 @@ const writeToStorage = (key: string, value: string | null) => {
   }
 };
 
-const ensureAccessTokenLoaded = () => {
-  if (accessToken !== undefined) {
-    return;
-  }
-  accessToken = readFromStorage(ACCESS_TOKEN_KEY);
-};
-
 const ensureRefreshTokenLoaded = () => {
   if (refreshToken !== undefined) {
     return;
@@ -79,12 +81,10 @@ const ensureUsernameLoaded = () => {
 
 const tokenStorage = {
   getAccessToken: () => {
-    ensureAccessTokenLoaded();
-    return accessToken ?? null;
+    return accessToken;
   },
   setAccessToken: (token: string | null) => {
     accessToken = token;
-    writeToStorage(ACCESS_TOKEN_KEY, token);
   },
   getRefreshToken: () => {
     ensureRefreshTokenLoaded();

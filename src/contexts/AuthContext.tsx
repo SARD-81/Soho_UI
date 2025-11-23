@@ -18,6 +18,7 @@ import tokenStorage from '../lib/tokenStorage';
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  isAuthLoading: boolean;
   loginAction: (accessToken: string, refreshToken: string, username: string) => void;
   logout: () => Promise<void>;
   username: string | null;
@@ -38,11 +39,8 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    const initialAccess = tokenStorage.getAccessToken();
-    const initialRefresh = tokenStorage.getRefreshToken();
-    return Boolean(initialAccess || initialRefresh);
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [usernameState, setUsernameState] = useState<string | null>(() =>
     tokenStorage.getUsername()
   );
@@ -94,6 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      setIsAuthLoading(true);
       const storedAccess = tokenStorage.getAccessToken();
       const storedRefresh = tokenStorage.getRefreshToken();
       const savedUsername = tokenStorage.getUsername();
@@ -105,6 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setRefreshToken(storedRefresh);
           setUsername(savedUsername);
           setIsAuthenticated(true);
+          setIsAuthLoading(false);
           return;
         } catch (error) {
           console.warn('Stored access token failed verification, attempting refresh.', error);
@@ -113,6 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!storedRefresh) {
         clearAuthState();
+        setIsAuthLoading(false);
         return;
       }
 
@@ -125,6 +126,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (error) {
         console.error('Unable to restore session', error);
         clearAuthState();
+      } finally {
+        setIsAuthLoading(false);
       }
     };
 
@@ -198,8 +201,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [accessToken, refreshToken, clearAuthState]);
 
   const value = useMemo(
-    () => ({ isAuthenticated, loginAction, logout, username }),
-    [isAuthenticated, loginAction, logout, username]
+    () => ({ isAuthenticated, isAuthLoading, loginAction, logout, username }),
+    [isAuthenticated, isAuthLoading, loginAction, logout, username]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
