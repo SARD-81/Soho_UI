@@ -63,6 +63,7 @@ const PoolDiskDetailModal = ({ open, onClose, slot, poolName }: PoolDiskDetailMo
   const slotLabel = slot.slotNumber ?? 'نامشخص';
   const detailValues = buildDiskDetailValues(slot.detail);
   const detailEntries = Object.entries(detailValues);
+  const diskLink = `/disks?selected=${encodeURIComponent(slot.diskName)}`;
 
   return (
     <BlurModal
@@ -73,7 +74,7 @@ const PoolDiskDetailModal = ({ open, onClose, slot, poolName }: PoolDiskDetailMo
         <>
           <Button
             component={Link}
-            to="/disks"
+            to={diskLink}
             variant="contained"
             startIcon={<MdLaunch />}
             sx={{

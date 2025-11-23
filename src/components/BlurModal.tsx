@@ -9,6 +9,7 @@ interface BlurModalProps {
   actions?: ReactNode;
   children: ReactNode;
   maxWidth?: number | string;
+  maxHeight?: number | string;
 }
 
 const BlurModal = ({
@@ -18,6 +19,7 @@ const BlurModal = ({
   actions,
   children,
   maxWidth = 560,
+  maxHeight = '90vh',
 }: BlurModalProps) => {
   return (
     <Modal
@@ -32,23 +34,31 @@ const BlurModal = ({
           },
         },
       }}
+      sx={{ display: 'grid', placeItems: 'center', p: { xs: 2, sm: 3 } }}
     >
       <Box
         sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
           width: '100%',
           maxWidth,
+          maxHeight,
           borderRadius: '5px',
           bgcolor: 'var(--color-card-bg)',
           boxShadow: '0 30px 60px -32px rgba(0, 0, 0, 0.6)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <Box sx={{ p: 4 }}>
+        <Box
+          sx={{
+            p: { xs: 3, sm: 4 },
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+            overflowY: 'auto',
+          }}
+        >
           <Box
             sx={{
               display: 'flex',
@@ -56,6 +66,10 @@ const BlurModal = ({
               justifyContent: 'space-between',
               mb: 3,
               gap: 2,
+              position: 'sticky',
+              top: 0,
+              backgroundColor: 'var(--color-card-bg)',
+              zIndex: 1,
             }}
           >
             {title ? (
@@ -84,7 +98,7 @@ const BlurModal = ({
             </IconButton>
           </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
             {children}
           </Box>
         </Box>
