@@ -24,6 +24,11 @@ export const getTheme = (isDark: boolean) => {
     isDark ? '#e0e0e0' : '#1f1f1f'
   );
   const fontFamily = readCssVar('--font-vazir', 'Vazirmatn, Vazir, sans-serif');
+  const tooltipSurface = isDark ? 'rgba(15, 23, 42, 0.92)' : 'rgba(15, 23, 42, 0.94)';
+  const tooltipBorder = isDark ? 'rgba(148, 163, 184, 0.35)' : 'rgba(148, 163, 184, 0.45)';
+  const tooltipGlow = isDark
+    ? '0 18px 45px rgba(8, 47, 73, 0.55), 0 6px 18px rgba(8, 47, 73, 0.35)'
+    : '0 18px 45px rgba(8, 47, 73, 0.45), 0 6px 18px rgba(8, 47, 73, 0.25)';
 
   return createTheme({
     palette: {
@@ -96,6 +101,32 @@ export const getTheme = (isDark: boolean) => {
               fontFamily: fontFamily,
             },
             [`& .${legendClasses.mark}`]: {},
+          },
+        },
+      },
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            backgroundColor: tooltipSurface,
+            color: '#e2e8f0',
+            borderRadius: '14px',
+            padding: '10px 14px',
+            fontWeight: 600,
+            fontSize: '0.9rem',
+            letterSpacing: '0.01em',
+            border: `1px solid ${tooltipBorder}`,
+            boxShadow: tooltipGlow,
+            backdropFilter: 'blur(10px)',
+            backgroundImage:
+              'linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(16, 185, 129, 0.12))',
+            transition: 'transform 150ms ease, opacity 150ms ease',
+          },
+          arrow: {
+            color: tooltipSurface,
+            '&::before': {
+              border: `1px solid ${tooltipBorder}`,
+              boxShadow: tooltipGlow,
+            },
           },
         },
       },
