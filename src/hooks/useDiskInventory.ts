@@ -8,8 +8,8 @@ export const useDiskInventory = () =>
     queryFn: fetchDiskInventory,
     select: (items) =>
       [...items].sort((a, b) => a.disk.localeCompare(b.disk, 'fa-IR', { sensitivity: 'base' })),
-    refetchInterval: 30000,
-    refetchOnWindowFocus: false,
+    // refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   });
 
 export interface DiskDetailItemState {
@@ -26,8 +26,8 @@ export const useDiskDetails = (diskNames: string[]): DiskDetailItemState[] => {
       queryKey: ['disk', 'detail', diskName],
       queryFn: () => fetchDiskDetail(diskName),
       enabled: diskName.trim().length > 0,
-      staleTime: 30000,
-      refetchOnWindowFocus: false,
+      staleTime: 10000,
+      refetchOnWindowFocus: true,
     })),
   });
 

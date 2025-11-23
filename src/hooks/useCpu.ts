@@ -27,6 +27,6 @@ export const useCpu = () => {
   return useQuery<CpuResponse, Error>({
     queryKey: ['cpu'],
     queryFn: fetchCpu,
-    refetchInterval: 1000,
+    refetchInterval: 2000,
   });
 };

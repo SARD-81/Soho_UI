@@ -45,7 +45,7 @@ export const useNetwork = (enabled = true) => {
   return useQuery<NetworkData, Error>({
     queryKey: networkQueryKey,
     queryFn: fetchNetwork,
-    refetchInterval: enabled ? 1000 : false,
+    refetchInterval: 2000,
     enabled,
   });
 };

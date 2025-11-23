@@ -261,13 +261,15 @@ const fetchZpools = async (): Promise<ZpoolQueryResult> => {
 
 interface UseZpoolOptions {
   refetchInterval?: number;
+  enabled?: boolean;
 }
 
 export const useZpool = (options?: UseZpoolOptions) => {
   return useQuery<ZpoolQueryResult, Error>({
     queryKey: ['zpool'],
     queryFn: fetchZpools,
-    refetchInterval: options?.refetchInterval ?? 10 * 60 * 1000,
+    enabled: options?.enabled ?? true,
+    // refetchInterval: options?.refetchInterval ?? 10 * 60 * 1000,
     // refetchIntervalInBackground: true,
   });
 };
