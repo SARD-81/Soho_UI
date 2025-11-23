@@ -10,6 +10,10 @@ import { useCreateFileSystem } from '../hooks/useCreateFileSystem';
 import { useDeleteFileSystem } from '../hooks/useDeleteFileSystem';
 import { useFileSystems } from '../hooks/useFileSystems';
 import { useZpool } from '../hooks/useZpool';
+import {
+  buildKeyLengthMap,
+  sortKeysByLengthThenLocale,
+} from '../utils/keySort';
 
 const FileSystem = () => {
   const createFileSystem = useCreateFileSystem({
@@ -71,8 +75,25 @@ const FileSystem = () => {
       });
     });
 
-    return Array.from(keys).sort((a, b) =>
-      a.localeCompare(b, 'en', { sensitivity: 'base' })
+    const attributeLengthMap = buildKeyLengthMap(
+      filesystems.map((filesystem) =>
+        filesystem.attributes.reduce<Record<string, unknown>>(
+          (acc, attribute) => {
+            if (attribute.key !== 'name') {
+              acc[attribute.key] = attribute.value;
+            }
+
+            return acc;
+          },
+          {}
+        )
+      )
+    );
+
+    return sortKeysByLengthThenLocale(
+      Array.from(keys),
+      attributeLengthMap,
+      'en'
     );
   }, [filesystems]);
 

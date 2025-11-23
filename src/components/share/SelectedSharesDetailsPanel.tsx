@@ -1,6 +1,11 @@
+import { useMemo } from 'react';
 import type { SambaShareDetails } from '../../@types/samba';
 import DetailComparisonPanel from '../common/DetailComparisonPanel';
 import formatDetailValue from '../../utils/formatDetailValue';
+import {
+  buildKeyLengthMap,
+  createLengthAwareComparator,
+} from '../../utils/keySort';
 
 interface ShareDetailItem {
   shareName: string;
@@ -16,12 +21,26 @@ const SelectedSharesDetailsPanel = ({
   items,
   onRemove,
 }: SelectedSharesDetailsPanelProps) => {
-  const columns = items.map(({ shareName, detail }) => ({
-    id: shareName,
-    title: shareName,
-    onRemove: () => onRemove(shareName),
-    values: detail ?? {},
-  }));
+  const columns = useMemo(
+    () =>
+      items.map(({ shareName, detail }) => ({
+        id: shareName,
+        title: shareName,
+        onRemove: () => onRemove(shareName),
+        values: detail ?? {},
+      })),
+    [items, onRemove]
+  );
+
+  const attributeLengthMap = useMemo(
+    () => buildKeyLengthMap(columns.map((column) => column.values ?? {})),
+    [columns]
+  );
+
+  const attributeSort = useMemo(
+    () => createLengthAwareComparator(attributeLengthMap, 'fa-IR'),
+    [attributeLengthMap]
+  );
 
   const title =
     columns.length > 1 ? 'مقایسه جزئیات اشتراک‌ها' : 'جزئیات اشتراک‌ها';
@@ -33,7 +52,7 @@ const SelectedSharesDetailsPanel = ({
       columns={columns}
       formatValue={formatDetailValue}
       emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-      attributeSort={(a, b) => a.localeCompare(b, 'fa-IR')}
+      attributeSort={attributeSort}
     />
   );
 };

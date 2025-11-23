@@ -11,6 +11,10 @@ import { FiPlay, FiRefreshCw, FiStopCircle } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { ServiceActionType, ServiceValue } from '../../@types/service';
 import DataTable from '../DataTable';
+import {
+  buildKeyLengthMap,
+  createLengthAwareComparator,
+} from '../../utils/keySort';
 
 interface ServiceTableRow {
   name: string;
@@ -141,6 +145,11 @@ const ServicesTable = ({
   isActionLoading = false,
   activeServiceName = null,
 }: ServicesTableProps) => {
+  const detailLengthMap = useMemo(
+    () => buildKeyLengthMap(services.map((service) => service.details ?? {})),
+    [services]
+  );
+
   const detailKeys = useMemo(() => {
     const keys = new Set<string>();
 
@@ -152,8 +161,10 @@ const ServicesTable = ({
       });
     });
 
-    return Array.from(keys).sort((a, b) => a.localeCompare(b, 'fa'));
-  }, [services]);
+    return Array.from(keys).sort(
+      createLengthAwareComparator(detailLengthMap, 'fa')
+    );
+  }, [detailLengthMap, services]);
 
   const columns = useMemo<DataTableColumn<ServiceTableRow>[]>(() => {
     const indexColumn: DataTableColumn<ServiceTableRow> = {

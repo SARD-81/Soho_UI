@@ -6,6 +6,11 @@ import DetailComparisonPanel, {
 import type { DiskDetailItemState } from '../../hooks/useDiskInventory';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { buildDiskDetailValues } from '../../utils/diskDetails';
+import { useMemo } from 'react';
+import {
+  buildKeyLengthMap,
+  createLengthAwareComparator,
+} from '../../utils/keySort';
 
 interface SelectedDisksDetailsPanelProps {
   items: DiskDetailItemState[];
@@ -32,25 +37,39 @@ const formatDiskDetailValue = (value: unknown) => {
 };
 
 const SelectedDisksDetailsPanel = ({ items, onRemove }: SelectedDisksDetailsPanelProps) => {
-  const columns: DetailComparisonColumn[] = items.map((item) => {
-    let status: DetailComparisonStatus | undefined;
+  const columns: DetailComparisonColumn[] = useMemo(
+    () =>
+      items.map((item) => {
+        let status: DetailComparisonStatus | undefined;
 
-    if (item.isLoading || item.isFetching) {
-      status = { type: 'loading', message: 'در حال دریافت جزئیات...' };
-    } else if (item.error) {
-      status = { type: 'error', message: item.error.message };
-    } else if (!item.detail) {
-      status = { type: 'info', message: 'اطلاعاتی در دسترس نیست.' };
-    }
+        if (item.isLoading || item.isFetching) {
+          status = { type: 'loading', message: 'در حال دریافت جزئیات...' };
+        } else if (item.error) {
+          status = { type: 'error', message: item.error.message };
+        } else if (!item.detail) {
+          status = { type: 'info', message: 'اطلاعاتی در دسترس نیست.' };
+        }
 
-    return {
-      id: item.diskName,
-      title: item.diskName,
-      onRemove: () => onRemove(item.diskName),
-      values: buildDiskDetailValues(item.detail),
-      status,
-    };
-  });
+        return {
+          id: item.diskName,
+          title: item.diskName,
+          onRemove: () => onRemove(item.diskName),
+          values: buildDiskDetailValues(item.detail),
+          status,
+        };
+      }),
+    [items, onRemove]
+  );
+
+  const attributeLengthMap = useMemo(
+    () => buildKeyLengthMap(columns.map((column) => column.values ?? {})),
+    [columns]
+  );
+
+  const attributeSort = useMemo(
+    () => createLengthAwareComparator(attributeLengthMap, 'fa-IR'),
+    [attributeLengthMap]
+  );
 
   const title =
     columns.length > 1 ? 'مقایسه جزئیات دیسک‌ها' : 'جزئیات دیسک‌ها';
@@ -62,7 +81,7 @@ const SelectedDisksDetailsPanel = ({ items, onRemove }: SelectedDisksDetailsPane
       columns={columns}
       formatValue={formatDiskDetailValue}
       emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-      attributeSort={(a, b) => a.localeCompare(b, 'fa-IR')}
+      attributeSort={attributeSort}
     />
   );
 };

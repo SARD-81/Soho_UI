@@ -4,6 +4,11 @@ import DetailComparisonPanel, {
   type DetailComparisonStatus,
 } from '../common/DetailComparisonPanel';
 import formatDetailValue from '../../utils/formatDetailValue';
+import { useMemo } from 'react';
+import {
+  buildKeyLengthMap,
+  createLengthAwareComparator,
+} from '../../utils/keySort';
 
 interface PoolDetailItem {
   poolName: string;
@@ -21,33 +26,42 @@ const SelectedPoolsDetailsPanel = ({
   items,
   onRemove,
 }: SelectedPoolsDetailsPanelProps) => {
-  const columns: DetailComparisonColumn[] = items.map(({
-    poolName,
-    detail,
-    isLoading,
-    error,
-  }) => {
-    let status: DetailComparisonStatus | undefined;
+  const columns: DetailComparisonColumn[] = useMemo(
+    () =>
+      items.map(({ poolName, detail, isLoading, error }) => {
+        let status: DetailComparisonStatus | undefined;
 
-    if (isLoading) {
-      status = { type: 'loading', message: 'در حال دریافت اطلاعات...' };
-    } else if (error) {
-      status = {
-        type: 'error',
-        message: `خطا در دریافت اطلاعات: ${error.message}`,
-      };
-    } else if (!detail || Object.keys(detail).length === 0) {
-      status = { type: 'empty', message: 'اطلاعاتی برای نمایش وجود ندارد.' };
-    }
+        if (isLoading) {
+          status = { type: 'loading', message: 'در حال دریافت اطلاعات...' };
+        } else if (error) {
+          status = {
+            type: 'error',
+            message: `خطا در دریافت اطلاعات: ${error.message}`,
+          };
+        } else if (!detail || Object.keys(detail).length === 0) {
+          status = { type: 'empty', message: 'اطلاعاتی برای نمایش وجود ندارد.' };
+        }
 
-    return {
-      id: poolName,
-      title: poolName,
-      onRemove: () => onRemove(poolName),
-      values: detail ?? {},
-      status,
-    };
-  });
+        return {
+          id: poolName,
+          title: poolName,
+          onRemove: () => onRemove(poolName),
+          values: detail ?? {},
+          status,
+        };
+      }),
+    [items, onRemove]
+  );
+
+  const attributeLengthMap = useMemo(
+    () => buildKeyLengthMap(columns.map((column) => column.values ?? {})),
+    [columns]
+  );
+
+  const attributeSort = useMemo(
+    () => createLengthAwareComparator(attributeLengthMap, 'fa-IR'),
+    [attributeLengthMap]
+  );
 
   return (
     <DetailComparisonPanel
@@ -56,7 +70,7 @@ const SelectedPoolsDetailsPanel = ({
       columns={columns}
       formatValue={formatDetailValue}
       emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-      attributeSort={(a, b) => a.localeCompare(b, 'fa-IR')}
+      attributeSort={attributeSort}
     />
   );
 };
