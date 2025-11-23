@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
   DiskDetailResponse,
@@ -196,16 +197,28 @@ const fetchPartitionedDisks = async (): Promise<PartitionedDiskInfo[]> => {
 interface UseDiskOptions {
   refetchInterval?: number;
   enabled?: boolean;
+  refetchOnWindowFocus?: boolean;
 }
 
 export const useDisk = (options?: UseDiskOptions) => {
-  return useQuery<DiskResponse, Error>({
+  const isEnabled = options?.enabled ?? true;
+
+  const query = useQuery<DiskResponse, Error>({
     queryKey: ['disk'],
     queryFn: fetchDisk,
     refetchInterval: options?.refetchInterval ?? 1000,
     refetchIntervalInBackground: true,
-    enabled: options?.enabled ?? true,
+    enabled: isEnabled,
+    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? true,
   });
+
+  useEffect(() => {
+    if (isEnabled) {
+      query.refetch();
+    }
+  }, [isEnabled, query]);
+
+  return query;
 };
 
 export const usePartitionedDisks = (options?: UseDiskOptions) => {
