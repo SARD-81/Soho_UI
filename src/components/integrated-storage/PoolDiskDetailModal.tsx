@@ -1,10 +1,12 @@
 import { Box, Button, Chip, Divider, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
 import { MdArrowForward, MdLaunch, MdStorage } from 'react-icons/md';
 import type { PoolDiskSlot } from '../../hooks/usePoolDeviceSlots';
 import BlurModal from '../BlurModal';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { buildDiskDetailValues, formatNullableString } from '../../utils/diskDetails';
+import { buildKeyLengthMap, sortKeysByLengthThenLocale } from '../../utils/keySort';
 
 interface PoolDiskDetailModalProps {
   open: boolean;
@@ -56,13 +58,29 @@ const InfoTile = ({ label, value }: { label: string; value: unknown }) => (
 );
 
 const PoolDiskDetailModal = ({ open, onClose, slot, poolName }: PoolDiskDetailModalProps) => {
+  const detailValues = useMemo(
+    () => buildDiskDetailValues(slot?.detail ?? null),
+    [slot?.detail]
+  );
+  const attributeLengthMap = useMemo(
+    () => buildKeyLengthMap([detailValues]),
+    [detailValues]
+  );
+  const detailEntries = useMemo(
+    () =>
+      sortKeysByLengthThenLocale(
+        Object.keys(detailValues),
+        attributeLengthMap,
+        'fa-IR'
+      ).map((key) => [key, detailValues[key]] as [string, unknown]),
+    [attributeLengthMap, detailValues]
+  );
+
   if (!slot) {
     return null;
   }
 
   const slotLabel = slot.slotNumber ?? 'نامشخص';
-  const detailValues = buildDiskDetailValues(slot.detail);
-  const detailEntries = Object.entries(detailValues);
 
   return (
     <BlurModal
