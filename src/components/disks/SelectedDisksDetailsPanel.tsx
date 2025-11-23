@@ -6,6 +6,7 @@ import DetailComparisonPanel, {
 import type { DiskDetailItemState } from '../../hooks/useDiskInventory';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { buildDiskDetailValues } from '../../utils/diskDetails';
+import { createLengthAwareComparatorFromRecords } from '../../utils/keySort';
 
 interface SelectedDisksDetailsPanelProps {
   items: DiskDetailItemState[];
@@ -54,6 +55,10 @@ const SelectedDisksDetailsPanel = ({ items, onRemove }: SelectedDisksDetailsPane
 
   const title =
     columns.length > 1 ? 'مقایسه جزئیات دیسک‌ها' : 'جزئیات دیسک‌ها';
+  const attributeSort = createLengthAwareComparatorFromRecords(
+    columns.map(({ values }) => values),
+    'fa-IR'
+  );
 
   return (
     <DetailComparisonPanel
@@ -62,7 +67,7 @@ const SelectedDisksDetailsPanel = ({ items, onRemove }: SelectedDisksDetailsPane
       columns={columns}
       formatValue={formatDiskDetailValue}
       emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-      attributeSort={(a, b) => a.localeCompare(b, 'fa-IR')}
+      attributeSort={attributeSort}
     />
   );
 };

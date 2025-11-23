@@ -60,6 +60,11 @@ export const createLengthAwareComparator = (
     return a.localeCompare(b, locale);
   };
 
+export const createLengthAwareComparatorFromRecords = (
+  records: Array<Record<string, unknown>>,
+  locale: string
+) => createLengthAwareComparator(buildKeyLengthMap(records), locale);
+
 export const sortKeysByLengthThenLocale = (
   keys: string[],
   lengthMap: Record<string, number>,
