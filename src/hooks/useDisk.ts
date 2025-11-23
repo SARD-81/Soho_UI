@@ -202,7 +202,7 @@ export const useDisk = (options?: UseDiskOptions) => {
   return useQuery<DiskResponse, Error>({
     queryKey: ['disk'],
     queryFn: fetchDisk,
-    refetchInterval: options?.refetchInterval ?? 1000,
+    refetchInterval: options?.refetchInterval ?? 2000,
     refetchIntervalInBackground: true,
     enabled: options?.enabled ?? true,
   });

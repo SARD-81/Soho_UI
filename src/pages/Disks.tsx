@@ -1,5 +1,6 @@
 import { Box, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import type { DiskInventoryItem } from '../@types/disk';
 import PageContainer from '../components/PageContainer';
@@ -9,20 +10,90 @@ import { useDiskDetails, useDiskInventory } from '../hooks/useDiskInventory';
 
 const MAX_SELECTED_DISKS = 4;
 
+const normalizeSelection = (values: string[]) => {
+  const seen = new Set<string>();
+
+  return values
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+    .filter((value) => {
+      if (seen.has(value)) {
+        return false;
+      }
+
+      seen.add(value);
+      return true;
+    });
+};
+
+const areSelectionsEqual = (first: string[], second: string[]) =>
+  first.length === second.length && first.every((value, index) => value === second[index]);
+
 const Disks = () => {
   const [selectedDisks, setSelectedDisks] = useState<string[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: disks = [], isLoading, error } = useDiskInventory();
   const detailItems = useDiskDetails(selectedDisks);
 
+  const syncSelectionToQuery = useCallback(
+    (next: string[]) => {
+      setSearchParams((prevParams) => {
+        const params = new URLSearchParams(prevParams);
+
+        if (next.length > 0) {
+          params.set('selected', next.join(','));
+        } else {
+          params.delete('selected');
+        }
+
+        return params;
+      });
+    },
+    [setSearchParams]
+  );
+
   useEffect(() => {
-    setSelectedDisks((prev) =>
-      prev.filter((diskName) => disks.some((disk) => disk.disk === diskName))
-    );
-  }, [disks]);
+    const parsed = normalizeSelection((searchParams.get('selected') ?? '').split(','));
+    const limited = parsed.slice(-MAX_SELECTED_DISKS);
+
+    if (!areSelectionsEqual(limited, selectedDisks)) {
+      setSelectedDisks(limited);
+    }
+  }, [searchParams, selectedDisks]);
+
+  useEffect(() => {
+    setSelectedDisks((prev) => {
+      const filtered = prev
+        .filter((diskName) => disks.some((disk) => disk.disk === diskName))
+        .slice(-MAX_SELECTED_DISKS);
+
+      if (areSelectionsEqual(filtered, prev)) {
+        return prev;
+      }
+
+      syncSelectionToQuery(filtered);
+      return filtered;
+    });
+  }, [disks, syncSelectionToQuery]);
+
+  const updateSelection = useCallback(
+    (updater: (prev: string[]) => string[]) => {
+      setSelectedDisks((prev) => {
+        const next = normalizeSelection(updater(prev)).slice(-MAX_SELECTED_DISKS);
+
+        if (!areSelectionsEqual(prev, next)) {
+          syncSelectionToQuery(next);
+        }
+
+        return next;
+      });
+    },
+    [syncSelectionToQuery]
+  );
 
   const handleToggleSelect = useCallback(
     (disk: DiskInventoryItem, checked: boolean) => {
-      setSelectedDisks((prev) => {
+      updateSelection((prev) => {
         if (checked) {
           if (prev.includes(disk.disk)) {
             return prev;
@@ -40,12 +111,15 @@ const Disks = () => {
         return prev.filter((name) => name !== disk.disk);
       });
     },
-    []
+    [updateSelection]
   );
 
-  const handleRemoveSelected = useCallback((diskName: string) => {
-    setSelectedDisks((prev) => prev.filter((name) => name !== diskName));
-  }, []);
+  const handleRemoveSelected = useCallback(
+    (diskName: string) => {
+      updateSelection((prev) => prev.filter((name) => name !== diskName));
+    },
+    [updateSelection]
+  );
 
   const handleIdentifyDisk = useCallback((disk: DiskInventoryItem) => {
     toast(`در حال شناسایی دیسک ${disk.disk}...`);

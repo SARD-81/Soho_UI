@@ -9,6 +9,7 @@ interface BlurModalProps {
   actions?: ReactNode;
   children: ReactNode;
   maxWidth?: number | string;
+  maxHeight?: number | string;
 }
 
 const BlurModal = ({
@@ -18,6 +19,7 @@ const BlurModal = ({
   actions,
   children,
   maxWidth = 560,
+  maxHeight = '90vh',
 }: BlurModalProps) => {
   return (
     <Modal
@@ -41,11 +43,13 @@ const BlurModal = ({
           transform: 'translate(-50%, -50%)',
           width: '100%',
           maxWidth,
+          maxHeight,
           borderRadius: '5px',
           bgcolor: 'var(--color-card-bg)',
           boxShadow: '0 30px 60px -32px rgba(0, 0, 0, 0.6)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           overflow: 'hidden',
+          overflowY: 'auto',
         }}
       >
         <Box sx={{ p: 4 }}>

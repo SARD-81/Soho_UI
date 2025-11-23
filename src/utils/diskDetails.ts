@@ -62,35 +62,46 @@ export const buildDiskDetailValues = (
 
   const values: Record<string, unknown> = {};
 
-  const assignValue = (label: string, value: unknown) => {
-    values[label] = value ?? '-';
+  const assignValue = <T>(
+    label: string,
+    rawValue: T,
+    formatter: (value: NonNullable<T>) => unknown = (value) => value
+  ) => {
+    if (rawValue == null) {
+      return;
+    }
+
+    values[label] = formatter(rawValue as NonNullable<T>);
   };
 
-  assignValue('نام دیسک', formatNullableString(detail.disk));
-  assignValue('مدل', formatNullableString(detail.model));
-  assignValue('فروشنده', formatNullableString(detail.vendor));
-  assignValue('وضعیت', formatNullableString(detail.state));
-  assignValue('مسیر دستگاه', formatNullableString(detail.device_path));
-  assignValue('اندازه بلاک فیزیکی', formatBlockSize(detail.physical_block_size));
-  assignValue('اندازه بلاک منطقی', formatBlockSize(detail.logical_block_size));
-  assignValue('زمان‌بندی', formatNullableString(detail.scheduler));
-  assignValue('WWID', formatNullableString(detail.wwid));
-  assignValue('شناسه WWN', formatNullableString(detail.wwn));
-  assignValue('حجم کل', formatBytes(detail.total_bytes, { fallback: '-' }));
-  assignValue('حجم استفاده‌شده', formatBytes(detail.used_bytes, { fallback: '-' }));
-  assignValue('حجم آزاد', formatBytes(detail.free_bytes, { fallback: '-' }));
-  assignValue('درصد استفاده', formatPercent(detail.usage_percent));
-  assignValue(
-    'دمای فعلی',
-    detail.temperature_celsius == null
-      ? '-'
-      : `${detail.temperature_celsius} درجه`
+  assignValue('نام دیسک', detail.disk, formatNullableString);
+  assignValue('مدل', detail.model, formatNullableString);
+  assignValue('فروشنده', detail.vendor, formatNullableString);
+  assignValue('وضعیت', detail.state, formatNullableString);
+  assignValue('مسیر دستگاه', detail.device_path, formatNullableString);
+  assignValue('اندازه بلاک فیزیکی', detail.physical_block_size, formatBlockSize);
+  assignValue('اندازه بلاک منطقی', detail.logical_block_size, formatBlockSize);
+  assignValue('زمان‌بندی', detail.scheduler, formatNullableString);
+  assignValue('WWID', detail.wwid, formatNullableString);
+  assignValue('شناسه WWN', detail.wwn, formatNullableString);
+  assignValue('حجم کل', detail.total_bytes, (value) =>
+    formatBytes(value, { fallback: '-' })
   );
-  assignValue('UUID', formatNullableString(detail.uuid));
-  assignValue('شماره اسلات', formatNullableString(detail.slot_number));
-  assignValue('نوع دیسک', formatNullableString(detail.type));
-  assignValue('دارای پارتیشن', formatBoolean(detail.has_partition));
-  assignValue('پارتیشن‌ها', createPartitionLines(detail.partitions));
+  assignValue('حجم استفاده‌شده', detail.used_bytes, (value) =>
+    formatBytes(value, { fallback: '-' })
+  );
+  assignValue('حجم آزاد', detail.free_bytes, (value) =>
+    formatBytes(value, { fallback: '-' })
+  );
+  assignValue('درصد استفاده', detail.usage_percent, formatPercent);
+  assignValue('دمای فعلی', detail.temperature_celsius, (temperature) =>
+    `${temperature} درجه`
+  );
+  assignValue('UUID', detail.uuid, formatNullableString);
+  assignValue('شماره اسلات', detail.slot_number, formatNullableString);
+  assignValue('نوع دیسک', detail.type, formatNullableString);
+  assignValue('دارای پارتیشن', detail.has_partition, formatBoolean);
+  assignValue('پارتیشن‌ها', detail.partitions, createPartitionLines);
 
   return values;
 };

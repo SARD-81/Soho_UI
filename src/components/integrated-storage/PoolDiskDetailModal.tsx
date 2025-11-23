@@ -1,10 +1,14 @@
 import { Box, Button, Chip, Divider, Typography } from '@mui/material';
-import { Link } from 'react-router-dom';
 import { MdArrowForward, MdLaunch, MdStorage } from 'react-icons/md';
+import { Link } from 'react-router-dom';
 import type { PoolDiskSlot } from '../../hooks/usePoolDeviceSlots';
-import BlurModal from '../BlurModal';
+import {
+  buildDiskDetailValues,
+  formatNullableString,
+} from '../../utils/diskDetails';
 import formatDetailValue from '../../utils/formatDetailValue';
-import { buildDiskDetailValues, formatNullableString } from '../../utils/diskDetails';
+import { buildKeyLengthMap, sortKeysByLengthThenLocale } from '../../utils/keySort';
+import BlurModal from '../BlurModal';
 
 interface PoolDiskDetailModalProps {
   open: boolean;
@@ -20,7 +24,16 @@ const renderDetailValue = (value: unknown) => {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
         {formatted.split('\n').map((line, index) => (
-          <Typography key={`${line}-${index}`} sx={{ fontSize: '0.9rem', textAlign: 'right' }}>
+          <Typography
+            key={`${line}-${index}`}
+            sx={{
+              fontSize: '0.9rem',
+              textAlign: 'right',
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere',
+            }}
+          >
             {line}
           </Typography>
         ))}
@@ -46,23 +59,48 @@ const InfoTile = ({ label, value }: { label: string; value: unknown }) => (
       minHeight: 96,
     }}
   >
-    <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600, fontSize: '0.95rem' }}>
+    <Typography
+      sx={{
+        color: 'var(--color-secondary)',
+        fontWeight: 600,
+        fontSize: '0.95rem',
+      }}
+    >
       {label}
     </Typography>
-    <Typography sx={{ color: 'var(--color-text)', fontWeight: 700 }}>
+    <Typography
+      sx={{
+        color: 'var(--color-text)',
+        fontWeight: 700,
+        whiteSpace: 'normal',
+        wordBreak: 'break-word',
+        overflowWrap: 'anywhere',
+      }}
+    >
       {renderDetailValue(value)}
     </Typography>
   </Box>
 );
 
-const PoolDiskDetailModal = ({ open, onClose, slot, poolName }: PoolDiskDetailModalProps) => {
+const PoolDiskDetailModal = ({
+  open,
+  onClose,
+  slot,
+  poolName,
+}: PoolDiskDetailModalProps) => {
   if (!slot) {
     return null;
   }
 
   const slotLabel = slot.slotNumber ?? 'نامشخص';
   const detailValues = buildDiskDetailValues(slot.detail);
-  const detailEntries = Object.entries(detailValues);
+  const detailKeys = sortKeysByLengthThenLocale(
+    Object.keys(detailValues),
+    buildKeyLengthMap([detailValues]),
+    'fa-IR'
+  );
+  const detailEntries = detailKeys.map((key) => [key, detailValues[key]] as const);
+  const diskLink = `/disks?selected=${encodeURIComponent(slot.diskName)}`;
 
   return (
     <BlurModal
@@ -73,21 +111,28 @@ const PoolDiskDetailModal = ({ open, onClose, slot, poolName }: PoolDiskDetailMo
         <>
           <Button
             component={Link}
-            to="/disks"
+            to={diskLink}
             variant="contained"
             startIcon={<MdLaunch />}
             sx={{
               borderRadius: '8px',
               px: 2.5,
               fontWeight: 700,
+              color:"var(--color-text)",
               background:
                 'linear-gradient(135deg, rgba(21,196,197,0.9) 0%, rgba(25,123,255,0.95) 100%)',
               boxShadow: '0 18px 40px -22px rgba(25,123,255,0.8)',
             }}
           >
+            {' '}
             رفتن به صفحه دیسک‌ها
           </Button>
-          <Button onClick={onClose} variant="outlined" sx={{ borderRadius: '8px', px: 2.5 }}>
+          <Button
+            onClick={onClose}
+            variant="outlined"
+            sx={{ borderRadius: '8px', px: 2.5 }}
+          >
+            {' '}
             بستن
           </Button>
         </>
@@ -106,7 +151,14 @@ const PoolDiskDetailModal = ({ open, onClose, slot, poolName }: PoolDiskDetailMo
           boxShadow: '0 24px 48px -30px rgba(0,0,0,0.7)',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            flexWrap: 'wrap',
+          }}
+        >
           <Box
             sx={{
               width: 48,
@@ -121,7 +173,9 @@ const PoolDiskDetailModal = ({ open, onClose, slot, poolName }: PoolDiskDetailMo
             <MdStorage size={24} />
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-            <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: '#f7fbff' }}>
+            <Typography
+              sx={{ fontWeight: 800, fontSize: '1.1rem', color: '#f7fbff' }}
+            >
               دیسک {slot.diskName}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -142,7 +196,7 @@ const PoolDiskDetailModal = ({ open, onClose, slot, poolName }: PoolDiskDetailMo
             sx={{
               background:
                 'linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 100%)',
-              color: '#0b1d2f',
+              color: 'var(--color-text)',
               fontWeight: 800,
               letterSpacing: '0.2px',
               px: 1,
