@@ -2,7 +2,7 @@ import DetailComparisonPanel from '../common/DetailComparisonPanel';
 import type { SambaUserTableItem } from '../../@types/samba';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { createLengthAwareComparatorFromRecords } from '../../utils/keySort';
-import { omitNullishEntries } from '../../utils/detailValues';
+import { localizeDetailEntries } from '../../utils/detailLabels';
 
 interface SelectedSambaUsersDetailsPanelProps {
   items: SambaUserTableItem[];
@@ -17,7 +17,7 @@ const SelectedSambaUsersDetailsPanel = ({
     id: item.username,
     title: item.username,
     onRemove: () => onRemove(item.username),
-    values: omitNullishEntries(item.details),
+    values: localizeDetailEntries(item.details),
   }));
 
   const title =

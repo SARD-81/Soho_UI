@@ -2,7 +2,7 @@ import type { SambaShareDetails } from '../../@types/samba';
 import DetailComparisonPanel from '../common/DetailComparisonPanel';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { createLengthAwareComparatorFromRecords } from '../../utils/keySort';
-import { omitNullishEntries } from '../../utils/detailValues';
+import { localizeDetailEntries } from '../../utils/detailLabels';
 
 interface ShareDetailItem {
   shareName: string;
@@ -22,7 +22,7 @@ const SelectedSharesDetailsPanel = ({
     id: shareName,
     title: shareName,
     onRemove: () => onRemove(shareName),
-    values: omitNullishEntries(detail),
+    values: localizeDetailEntries(detail),
   }));
 
   const title =

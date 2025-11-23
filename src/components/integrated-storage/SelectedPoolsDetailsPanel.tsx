@@ -5,7 +5,7 @@ import DetailComparisonPanel, {
 } from '../common/DetailComparisonPanel';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { createLengthAwareComparatorFromRecords } from '../../utils/keySort';
-import { omitNullishEntries } from '../../utils/detailValues';
+import { localizeDetailEntries } from '../../utils/detailLabels';
 
 interface PoolDetailItem {
   poolName: string;
@@ -46,7 +46,7 @@ const SelectedPoolsDetailsPanel = ({
       id: poolName,
       title: poolName,
       onRemove: () => onRemove(poolName),
-      values: omitNullishEntries(detail),
+      values: localizeDetailEntries(detail),
       status,
     };
   });
