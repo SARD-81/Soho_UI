@@ -24,6 +24,14 @@ export const getTheme = (isDark: boolean) => {
     isDark ? '#e0e0e0' : '#1f1f1f'
   );
   const fontFamily = readCssVar('--font-vazir', 'Vazirmatn, Vazir, sans-serif');
+  const tooltipSurface = isDark ? 'rgba(15, 23, 42, 0.92)' : 'rgba(15, 23, 42, 0.94)';
+  const tooltipBorder = isDark ? 'rgba(148, 163, 184, 0.35)' : 'rgba(148, 163, 184, 0.45)';
+  const tooltipGlow = isDark
+    ? '0 18px 45px rgba(8, 47, 73, 0.55), 0 6px 18px rgba(8, 47, 73, 0.35)'
+    : '0 18px 45px rgba(8, 47, 73, 0.45), 0 6px 18px rgba(8, 47, 73, 0.25)';
+  const tooltipAccent = isDark ? '#38bdf8' : '#0ea5e9';
+  const tooltipAccentSoft = isDark ? 'rgba(56, 189, 248, 0.28)' : 'rgba(14, 165, 233, 0.24)';
+  const tooltipText = isDark ? '#e2e8f0' : '#e0f2fe';
 
   return createTheme({
     palette: {
@@ -96,6 +104,45 @@ export const getTheme = (isDark: boolean) => {
               fontFamily: fontFamily,
             },
             [`& .${legendClasses.mark}`]: {},
+          },
+        },
+      },
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            backgroundColor: tooltipSurface,
+            color: tooltipText,
+            borderRadius: '7px',
+            padding: '8px 12px',
+            fontWeight: 600,
+            fontSize: '0.72rem',
+            letterSpacing: '0.015em',
+            lineHeight: 1,
+            border: `1px solid ${tooltipBorder}`,
+            boxShadow: `${tooltipGlow}, inset 0 1px 0 rgba(255, 255, 255, 0.06)`,
+            backdropFilter: 'blur(12px) saturate(1.1)',
+            backgroundImage:
+              `linear-gradient(145deg, ${tooltipAccentSoft}, rgba(16, 185, 129, 0.18)), linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0))`,
+            transformOrigin: 'center top',
+            transition: 'transform 150ms ease, opacity 150ms ease, box-shadow 150ms ease',
+            boxSizing: 'border-box',
+          },
+          arrow: {
+            color: tooltipSurface,
+            '&::before': {
+              border: `1px solid ${tooltipBorder}`,
+              boxShadow: tooltipGlow,
+              background: tooltipSurface,
+            },
+            filter: 'drop-shadow(0 6px 12px rgba(15, 23, 42, 0.45))',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              borderRadius: 'inherit',
+              background: `radial-gradient(circle at 50% 0%, ${tooltipAccent} 0%, transparent 65%)`,
+              opacity: 0.15,
+            },
           },
         },
       },
