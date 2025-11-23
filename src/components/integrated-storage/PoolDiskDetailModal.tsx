@@ -7,6 +7,7 @@ import {
   formatNullableString,
 } from '../../utils/diskDetails';
 import formatDetailValue from '../../utils/formatDetailValue';
+import { buildKeyLengthMap, sortKeysByLengthThenLocale } from '../../utils/keySort';
 import BlurModal from '../BlurModal';
 
 interface PoolDiskDetailModalProps {
@@ -93,7 +94,12 @@ const PoolDiskDetailModal = ({
 
   const slotLabel = slot.slotNumber ?? 'نامشخص';
   const detailValues = buildDiskDetailValues(slot.detail);
-  const detailEntries = Object.entries(detailValues);
+  const detailKeys = sortKeysByLengthThenLocale(
+    Object.keys(detailValues),
+    buildKeyLengthMap([detailValues]),
+    'fa-IR'
+  );
+  const detailEntries = detailKeys.map((key) => [key, detailValues[key]] as const);
   const diskLink = `/disks?selected=${encodeURIComponent(slot.diskName)}`;
 
   return (
