@@ -29,6 +29,9 @@ export const getTheme = (isDark: boolean) => {
   const tooltipGlow = isDark
     ? '0 18px 45px rgba(8, 47, 73, 0.55), 0 6px 18px rgba(8, 47, 73, 0.35)'
     : '0 18px 45px rgba(8, 47, 73, 0.45), 0 6px 18px rgba(8, 47, 73, 0.25)';
+  const tooltipAccent = isDark ? '#38bdf8' : '#0ea5e9';
+  const tooltipAccentSoft = isDark ? 'rgba(56, 189, 248, 0.28)' : 'rgba(14, 165, 233, 0.24)';
+  const tooltipText = isDark ? '#e2e8f0' : '#e0f2fe';
 
   return createTheme({
     palette: {
@@ -108,24 +111,37 @@ export const getTheme = (isDark: boolean) => {
         styleOverrides: {
           tooltip: {
             backgroundColor: tooltipSurface,
-            color: '#e2e8f0',
+            color: tooltipText,
             borderRadius: '14px',
-            padding: '10px 14px',
+            padding: '12px 16px',
             fontWeight: 600,
-            fontSize: '0.9rem',
-            letterSpacing: '0.01em',
+            fontSize: '0.92rem',
+            letterSpacing: '0.015em',
+            lineHeight: 1.4,
             border: `1px solid ${tooltipBorder}`,
-            boxShadow: tooltipGlow,
-            backdropFilter: 'blur(10px)',
+            boxShadow: `${tooltipGlow}, inset 0 1px 0 rgba(255, 255, 255, 0.06)`,
+            backdropFilter: 'blur(12px) saturate(1.1)',
             backgroundImage:
-              'linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(16, 185, 129, 0.12))',
-            transition: 'transform 150ms ease, opacity 150ms ease',
+              `linear-gradient(145deg, ${tooltipAccentSoft}, rgba(16, 185, 129, 0.18)), linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0))`,
+            transformOrigin: 'center top',
+            transition: 'transform 150ms ease, opacity 150ms ease, box-shadow 150ms ease',
+            boxSizing: 'border-box',
           },
           arrow: {
             color: tooltipSurface,
             '&::before': {
               border: `1px solid ${tooltipBorder}`,
               boxShadow: tooltipGlow,
+              background: tooltipSurface,
+            },
+            filter: 'drop-shadow(0 6px 12px rgba(15, 23, 42, 0.45))',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              borderRadius: 'inherit',
+              background: `radial-gradient(circle at 50% 0%, ${tooltipAccent} 0%, transparent 65%)`,
+              opacity: 0.35,
             },
           },
         },
