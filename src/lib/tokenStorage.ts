@@ -1,67 +1,90 @@
+const ACCESS_TOKEN_KEY = 'auth:access-token';
 const REFRESH_TOKEN_KEY = 'auth:refresh-token';
 const USERNAME_KEY = 'auth:username';
 
-const getSessionStorage = (): Storage | null => {
-  if (typeof window === 'undefined' || typeof window.sessionStorage === 'undefined') {
+const getWebStorage = (): Storage | null => {
+  if (typeof window === 'undefined') {
     return null;
   }
 
-  try {
-    const storage = window.sessionStorage;
-    const testKey = '__auth_session_test__';
-    storage.setItem(testKey, '1');
-    storage.removeItem(testKey);
-    return storage;
-  } catch (error) {
-    console.warn('Session storage is not available, falling back to in-memory tokens.', error);
-    return null;
+  const candidates: (Storage | undefined)[] = [
+    window.localStorage,
+    window.sessionStorage,
+  ];
+
+  for (const storage of candidates) {
+    if (!storage) {
+      continue;
+    }
+
+    try {
+      const testKey = '__auth_storage_test__';
+      storage.setItem(testKey, '1');
+      storage.removeItem(testKey);
+      return storage;
+    } catch (error) {
+      console.warn('Web storage is not available, falling back to in-memory tokens.', error);
+    }
   }
+
+  return null;
 };
 
-const sessionStorageRef = getSessionStorage();
+const storageRef = getWebStorage();
 
-let accessToken: string | null = null;
+let accessToken: string | null | undefined;
 let refreshToken: string | null | undefined;
 let storedUsername: string | null | undefined;
 
-const readFromSession = (key: string): string | null => {
-  if (!sessionStorageRef) {
+const readFromStorage = (key: string): string | null => {
+  if (!storageRef) {
     return null;
   }
-  const value = sessionStorageRef.getItem(key);
+  const value = storageRef.getItem(key);
   return value ?? null;
 };
 
-const writeToSession = (key: string, value: string | null) => {
-  if (!sessionStorageRef) {
+const writeToStorage = (key: string, value: string | null) => {
+  if (!storageRef) {
     return;
   }
 
   if (value == null) {
-    sessionStorageRef.removeItem(key);
+    storageRef.removeItem(key);
   } else {
-    sessionStorageRef.setItem(key, value);
+    storageRef.setItem(key, value);
   }
+};
+
+const ensureAccessTokenLoaded = () => {
+  if (accessToken !== undefined) {
+    return;
+  }
+  accessToken = readFromStorage(ACCESS_TOKEN_KEY);
 };
 
 const ensureRefreshTokenLoaded = () => {
   if (refreshToken !== undefined) {
     return;
   }
-  refreshToken = readFromSession(REFRESH_TOKEN_KEY);
+  refreshToken = readFromStorage(REFRESH_TOKEN_KEY);
 };
 
 const ensureUsernameLoaded = () => {
   if (storedUsername !== undefined) {
     return;
   }
-  storedUsername = readFromSession(USERNAME_KEY);
+  storedUsername = readFromStorage(USERNAME_KEY);
 };
 
 const tokenStorage = {
-  getAccessToken: () => accessToken,
+  getAccessToken: () => {
+    ensureAccessTokenLoaded();
+    return accessToken ?? null;
+  },
   setAccessToken: (token: string | null) => {
     accessToken = token;
+    writeToStorage(ACCESS_TOKEN_KEY, token);
   },
   getRefreshToken: () => {
     ensureRefreshTokenLoaded();
@@ -69,7 +92,7 @@ const tokenStorage = {
   },
   setRefreshToken: (token: string | null) => {
     refreshToken = token;
-    writeToSession(REFRESH_TOKEN_KEY, token);
+    writeToStorage(REFRESH_TOKEN_KEY, token);
   },
   getUsername: () => {
     ensureUsernameLoaded();
@@ -77,7 +100,7 @@ const tokenStorage = {
   },
   setUsername: (username: string | null) => {
     storedUsername = username;
-    writeToSession(USERNAME_KEY, username);
+    writeToStorage(USERNAME_KEY, username);
   },
   setSession: ({
     accessToken: newAccess,
