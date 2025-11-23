@@ -1,6 +1,7 @@
 import type { SambaShareDetails } from '../../@types/samba';
 import DetailComparisonPanel from '../common/DetailComparisonPanel';
 import formatDetailValue from '../../utils/formatDetailValue';
+import { createLengthAwareComparatorFromRecords } from '../../utils/keySort';
 
 interface ShareDetailItem {
   shareName: string;
@@ -25,6 +26,10 @@ const SelectedSharesDetailsPanel = ({
 
   const title =
     columns.length > 1 ? 'مقایسه جزئیات اشتراک‌ها' : 'جزئیات اشتراک‌ها';
+  const attributeSort = createLengthAwareComparatorFromRecords(
+    columns.map(({ values }) => values),
+    'fa-IR'
+  );
 
   return (
     <DetailComparisonPanel
@@ -33,7 +38,7 @@ const SelectedSharesDetailsPanel = ({
       columns={columns}
       formatValue={formatDetailValue}
       emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-      attributeSort={(a, b) => a.localeCompare(b, 'fa-IR')}
+      attributeSort={attributeSort}
     />
   );
 };

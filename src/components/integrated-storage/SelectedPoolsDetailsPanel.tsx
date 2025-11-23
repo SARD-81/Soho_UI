@@ -4,6 +4,7 @@ import DetailComparisonPanel, {
   type DetailComparisonStatus,
 } from '../common/DetailComparisonPanel';
 import formatDetailValue from '../../utils/formatDetailValue';
+import { createLengthAwareComparatorFromRecords } from '../../utils/keySort';
 
 interface PoolDetailItem {
   poolName: string;
@@ -56,7 +57,10 @@ const SelectedPoolsDetailsPanel = ({
       columns={columns}
       formatValue={formatDetailValue}
       emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-      attributeSort={(a, b) => a.localeCompare(b, 'fa-IR')}
+      attributeSort={createLengthAwareComparatorFromRecords(
+        columns.map(({ values }) => values),
+        'fa-IR'
+      )}
     />
   );
 };
