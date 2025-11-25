@@ -71,7 +71,7 @@ const DetailComparisonPanel = ({
     });
   }
 
-  const gridColumns = `repeat(${visibleColumns.length + 1}, minmax(200px, 1fr))`;
+  const gridColumns = `max-content repeat(${visibleColumns.length}, minmax(200px, 1fr))`;
   const headerGradient =
     theme.palette.mode === 'dark'
       ? `linear-gradient(135deg, ${alpha('#00c6a9', 0.3)} 0%, ${alpha('#1fb6ff', 0.2)} 100%)`
@@ -145,11 +145,12 @@ const DetailComparisonPanel = ({
               py: 1.5,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: 'flex-end',
               fontWeight: 700,
               color: 'var(--color-primary)',
               fontSize: '0.95rem',
               minHeight: 64,
+              textAlign: 'right',
             }}
           >
             {attributeLabel}
@@ -260,13 +261,14 @@ const DetailComparisonPanel = ({
                       py: 1.5,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      justifyContent: 'flex-end',
                       backgroundColor: alpha(theme.palette.background.default, 0.1),
                       color: 'var(--color-secondary)',
                       fontWeight: 700,
                       borderBottom: isLastRow ? 'none' : `1px solid ${borderColor}`,
                       direction: 'rtl',
                       minHeight: 64,
+                      textAlign: 'right',
                     }}
                   >
                     {row.label}
