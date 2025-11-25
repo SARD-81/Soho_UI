@@ -206,15 +206,13 @@ const ReplaceDiskModal = ({
             </Typography>
           </Box> */}
 
-          <Box
-            sx={{ display: 'flex',  pt: 1 }}
-          >
+          <Box sx={{ display: 'flex', pt: 1 }}>
             <Box
               sx={{
                 display: 'flex',
                 // gridTemplateColumns: 'repeat(2, minmax(0, 1fr)) 48px',
                 gap: 3.5,
-                flexDirection:'column',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 p: 1,
@@ -223,9 +221,11 @@ const ReplaceDiskModal = ({
                 backgroundColor: 'var(--color-surface)',
               }}
             >
-                <Typography sx={{ fontWeight: 700, color: 'var(--color-primary)' }}>
-              دیسک فعلی
-            </Typography>
+              <Typography
+                sx={{ fontWeight: 700, color: 'var(--color-primary)' }}
+              >
+                دیسک فعلی
+              </Typography>
               <FormControl size="small" sx={{ minWidth: 200 }}>
                 {/* <InputLabel sx={{ color: 'var(--color-secondary)' }}>دیسک فعلی</InputLabel> */}
                 <Select
@@ -233,10 +233,18 @@ const ReplaceDiskModal = ({
                   //   label="دیسک فعلی"
                   onChange={handleOldChange}
                   sx={selectBaseStyles}
-                  MenuProps={{ PaperProps: { sx: { maxHeight: 280 } } }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { maxHeight: 280, color: 'var(--color-text)' },
+                    },
+                  }}
                   displayEmpty
                 >
-                  <MenuItem disabled value="">
+                  <MenuItem
+                    disabled
+                    value=""
+                    sx={{ color: 'var(--color-primary)' }}
+                  >
                     یک دیسک فعلی انتخاب کنید
                   </MenuItem>
                   {oldDeviceOptions.map((option) => (
@@ -246,13 +254,13 @@ const ReplaceDiskModal = ({
                   ))}
                 </Select>
               </FormControl>
-              </Box>
-                  <Box
+            </Box>
+            <Box
               sx={{
                 display: 'flex',
                 // gridTemplateColumns: 'repeat(2, minmax(0, 1fr)) 48px',
                 gap: 3.5,
-                flexDirection:'column',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 p: 1,
@@ -261,9 +269,11 @@ const ReplaceDiskModal = ({
                 backgroundColor: 'var(--color-surface)',
               }}
             >
-                <Typography sx={{ fontWeight: 700, color: 'var(--color-primary)' }}>
-              دیسک جدید
-            </Typography>
+              <Typography
+                sx={{ fontWeight: 700, color: 'var(--color-primary)' }}
+              >
+                دیسک جدید
+              </Typography>
               <FormControl
                 size="small"
                 // sx={{ minWidth: 220 }}
@@ -275,10 +285,18 @@ const ReplaceDiskModal = ({
                   //   label="دیسک جدید"
                   onChange={handleNewChange}
                   sx={selectBaseStyles}
-                  MenuProps={{ PaperProps: { sx: { maxHeight: 320 } } }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { maxHeight: 320, color: 'var(--color-text)' },
+                    },
+                  }}
                   displayEmpty
                 >
-                  <MenuItem disabled value="">
+                  <MenuItem
+                    disabled
+                    value=""
+                    sx={{ color: 'var(--color-primary)' }}
+                  >
                     {isNewDiskLoading
                       ? 'در حال بارگذاری دیسک‌ها...'
                       : 'یک دیسک بدون پارتیشن انتخاب کنید'}

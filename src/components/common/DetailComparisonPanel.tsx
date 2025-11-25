@@ -71,7 +71,8 @@ const DetailComparisonPanel = ({
     });
   }
 
-  const gridColumns = `repeat(${visibleColumns.length + 1}, minmax(200px, 1fr))`;
+  const gridColumns = `max-content repeat(${visibleColumns.length}, minmax(200px, 1fr))`;
+  const totalColumns = visibleColumns.length + 1;
   const headerGradient =
     theme.palette.mode === 'dark'
       ? `linear-gradient(135deg, ${alpha('#00c6a9', 0.3)} 0%, ${alpha('#1fb6ff', 0.2)} 100%)`
@@ -123,33 +124,37 @@ const DetailComparisonPanel = ({
             gridTemplateColumns: gridColumns,
             gridAutoRows: 'minmax(64px, auto)',
             alignItems: 'stretch',
-            background: headerGradient,
             '& > .comparison-cell': {
               borderLeft: `1px solid ${borderColor}`,
               borderRight: `1px solid ${borderColor}`,
               alignSelf: 'stretch',
               height: '100%',
-              '&:first-of-type': {
-                borderLeft: 'none',
-              },
-              '&:last-of-type': {
-                borderRight: 'none',
-              },
+            },
+            [`& > .comparison-cell:nth-of-type(${totalColumns}n + 1)`]: {
+              borderLeft: 'none',
+            },
+            [`& > .comparison-cell:nth-of-type(${totalColumns}n)`]: {
+              borderRight: 'none',
+            },
+            '& > .header-cell': {
+              background: headerGradient,
+              borderBottom: `1px solid ${borderColor}`,
             },
           }}
         >
           <Box
-            className="comparison-cell"
+            className="comparison-cell header-cell"
             sx={{
               px: 2,
               py: 1.5,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: 'flex-start',
               fontWeight: 700,
               color: 'var(--color-primary)',
               fontSize: '0.95rem',
               minHeight: 64,
+              textAlign: 'right',
             }}
           >
             {attributeLabel}
@@ -158,7 +163,7 @@ const DetailComparisonPanel = ({
           {visibleColumns.map((column, columnIndex) => (
             <Box
               key={column.id}
-              className="comparison-cell"
+              className="comparison-cell header-cell"
               sx={{
                 px: 2,
                 py: 1.25,
@@ -210,45 +215,26 @@ const DetailComparisonPanel = ({
               )}
             </Box>
           ))}
-        </Box>
 
-        {rows.length === 0 ? (
-          <Box
-            sx={{
-              px: 2,
-              py: 3,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: alpha(theme.palette.background.default, 0.55),
-            }}
-          >
-            <Typography sx={{ color: 'var(--color-secondary)' }}>
-              {emptyStateMessage}
-            </Typography>
-          </Box>
-        ) : (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: gridColumns,
-              gridAutoRows: 'minmax(64px, auto)',
-              alignItems: 'stretch',
-              '& > .comparison-cell': {
-                borderLeft: `1px solid ${borderColor}`,
-                borderRight: `1px solid ${borderColor}`,
-                alignSelf: 'stretch',
-                height: '100%',
-                '&:first-of-type': {
-                  borderLeft: 'none',
-                },
-                '&:last-of-type': {
-                  borderRight: 'none',
-                },
-              },
-            }}
-          >
-            {rows.map((row, rowIndex) => {
+          {rows.length === 0 ? (
+            <Box
+              className="comparison-cell"
+              sx={{
+                gridColumn: `1 / span ${totalColumns}`,
+                px: 2,
+                py: 3,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: alpha(theme.palette.background.default, 0.55),
+              }}
+            >
+              <Typography sx={{ color: 'var(--color-secondary)' }}>
+                {emptyStateMessage}
+              </Typography>
+            </Box>
+          ) : (
+            rows.map((row, rowIndex) => {
               const isLastRow = rowIndex === rows.length - 1;
 
               return (
@@ -260,13 +246,14 @@ const DetailComparisonPanel = ({
                       py: 1.5,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      justifyContent: 'flex-end',
                       backgroundColor: alpha(theme.palette.background.default, 0.1),
                       color: 'var(--color-secondary)',
                       fontWeight: 700,
                       borderBottom: isLastRow ? 'none' : `1px solid ${borderColor}`,
                       direction: 'rtl',
                       minHeight: 64,
+                      textAlign: 'right',
                     }}
                   >
                     {row.label}
@@ -364,9 +351,9 @@ const DetailComparisonPanel = ({
                   })}
                 </Box>
               );
-            })}
-          </Box>
-        )}
+            })
+          )}
+        </Box>
       </Box>
     </Box>
   );
