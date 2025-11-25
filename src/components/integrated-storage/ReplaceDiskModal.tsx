@@ -1,4 +1,13 @@
-import { Box, Button, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
+import {
+  Box,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { Fragment, type FormEvent, useEffect, useMemo, useState } from 'react';
 import type { DeviceOption } from './CreatePoolModal';
@@ -6,6 +15,7 @@ import type { ReplaceDevicePayload } from '../../hooks/useReplacePoolDisk';
 import type { PoolDiskSlot } from '../../hooks/usePoolDeviceSlots';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
+import { MdAddCircleOutline, MdClose } from 'react-icons/md';
 
 interface ReplaceDiskModalProps {
   open: boolean;
@@ -129,6 +139,10 @@ const ReplaceDiskModal = ({
     });
   };
 
+  const handleRemoveRow = (rowId: string) => {
+    setRows((prev) => (prev.length === 1 ? prev : prev.filter((row) => row.id !== rowId)));
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -218,10 +232,6 @@ const ReplaceDiskModal = ({
 
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-            gap: 2,
-            alignItems: 'center',
             backgroundColor: 'var(--color-card-bg)',
             border: '1px solid var(--color-divider)',
             borderRadius: 3,
@@ -230,90 +240,133 @@ const ReplaceDiskModal = ({
         >
           <Box
             sx={{
-              gridColumn: '1 / -1',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              mb: 0.5,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr)) 48px',
+              alignItems: 'center',
+              gap: 1.5,
+              pb: 1,
+              borderBottom: '1px solid var(--color-divider)',
             }}
           >
-            <Button
-              type="button"
-              onClick={handleAddRow}
-              variant="outlined"
-              disabled={rows.length >= oldDeviceOptions.length}
-              sx={{
-                color: 'var(--color-primary)',
-                borderColor: 'var(--color-primary)',
-                borderRadius: '6px',
-                fontWeight: 700,
-                px: 2.25,
-                py: 0.75,
-                '&:hover': {
-                  borderColor: 'var(--color-primary-dark)',
-                  backgroundColor: 'rgba(31, 182, 255, 0.08)',
-                },
-              }}
-            >
-              + افزودن جایگزینی
-            </Button>
+            <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+              دیسک فعلی
+            </Typography>
+            <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+              دیسک جدید
+            </Typography>
+            <Box />
           </Box>
 
-          <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-            دیسک فعلی
-          </Typography>
-          <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-            دیسک جدید
-          </Typography>
-
-          {rows.map((row) => (
-            <Fragment key={row.id}>
-              <FormControl key={`${row.id}-old`} size="small" sx={{ minWidth: 200 }}>
-                <InputLabel sx={{ color: 'var(--color-secondary)' }}>دیسک فعلی</InputLabel>
-                <Select
-                  value={row.oldDevice}
-                  label="دیسک فعلی"
-                  onChange={(event) => handleOldChange(row.id, event)}
-                  sx={selectBaseStyles}
-                  MenuProps={{ PaperProps: { sx: { maxHeight: 280 } } }}
-                  displayEmpty
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}>
+            {rows.map((row, rowIndex) => (
+              <Fragment key={row.id}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr)) 48px',
+                    gap: 1.5,
+                    alignItems: 'center',
+                    p: 1,
+                    border: '1px solid var(--color-divider)',
+                    borderRadius: 2,
+                    backgroundColor: 'var(--color-surface)',
+                  }}
                 >
-                  <MenuItem disabled value="">
-                    یک دیسک فعلی انتخاب کنید
-                  </MenuItem>
-                  {oldDeviceOptions.map((option) => (
-                    <MenuItem key={option.key} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  <FormControl key={`${row.id}-old`} size="small" sx={{ minWidth: 200 }}>
+                    <InputLabel sx={{ color: 'var(--color-secondary)' }}>دیسک فعلی</InputLabel>
+                    <Select
+                      value={row.oldDevice}
+                      label="دیسک فعلی"
+                      onChange={(event) => handleOldChange(row.id, event)}
+                      sx={selectBaseStyles}
+                      MenuProps={{ PaperProps: { sx: { maxHeight: 280 } } }}
+                      displayEmpty
+                    >
+                      <MenuItem disabled value="">
+                        یک دیسک فعلی انتخاب کنید
+                      </MenuItem>
+                      {oldDeviceOptions.map((option) => (
+                        <MenuItem key={option.key} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
 
-              <FormControl
-                size="small"
-                sx={{ minWidth: 220 }}
-                disabled={isNewDiskLoading}
-              >
-                <InputLabel sx={{ color: 'var(--color-secondary)' }}>دیسک جدید</InputLabel>
-                <Select
-                  value={row.newDevice}
-                  label="دیسک جدید"
-                  onChange={(event) => handleNewChange(row.id, event)}
-                  sx={selectBaseStyles}
-                  MenuProps={{ PaperProps: { sx: { maxHeight: 320 } } }}
-                  displayEmpty
-                >
-                  <MenuItem disabled value="">
-                    {isNewDiskLoading ? 'در حال بارگذاری دیسک‌ها...' : 'یک دیسک بدون پارتیشن انتخاب کنید'}
-                  </MenuItem>
-                  {newDiskOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Fragment>
-          ))}
+                  <FormControl
+                    size="small"
+                    sx={{ minWidth: 220 }}
+                    disabled={isNewDiskLoading}
+                  >
+                    <InputLabel sx={{ color: 'var(--color-secondary)' }}>دیسک جدید</InputLabel>
+                    <Select
+                      value={row.newDevice}
+                      label="دیسک جدید"
+                      onChange={(event) => handleNewChange(row.id, event)}
+                      sx={selectBaseStyles}
+                      MenuProps={{ PaperProps: { sx: { maxHeight: 320 } } }}
+                      displayEmpty
+                    >
+                      <MenuItem disabled value="">
+                        {isNewDiskLoading
+                          ? 'در حال بارگذاری دیسک‌ها...'
+                          : 'یک دیسک بدون پارتیشن انتخاب کنید'}
+                      </MenuItem>
+                      {newDiskOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <Tooltip title="حذف ردیف">
+                      <span>
+                        <IconButton
+                          aria-label="حذف ردیف"
+                          onClick={() => handleRemoveRow(row.id)}
+                          disabled={rows.length === 1 && rowIndex === 0}
+                          sx={{
+                            color: 'var(--color-error)',
+                            border: '1px solid var(--color-divider)',
+                            borderRadius: '8px',
+                            backgroundColor: 'var(--color-card-bg)',
+                            '&:hover': { backgroundColor: 'rgba(239, 83, 80, 0.08)' },
+                          }}
+                        >
+                          <MdClose size={20} />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </Box>
+                </Box>
+              </Fragment>
+            ))}
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start', pt: 0.5 }}>
+              <Tooltip title="افزودن ردیف جدید">
+                <span>
+                  <IconButton
+                    type="button"
+                    onClick={handleAddRow}
+                    disabled={rows.length >= oldDeviceOptions.length}
+                    sx={{
+                      color: 'var(--color-primary)',
+                      backgroundColor: 'var(--color-card-bg)',
+                      border: '1px dashed var(--color-primary)',
+                      borderRadius: '10px',
+                      '&:hover': {
+                        backgroundColor: 'rgba(31, 182, 255, 0.08)',
+                      },
+                    }}
+                  >
+                    <MdAddCircleOutline size={26} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Box>
+          </Box>
         </Box>
       </Box>
     </BlurModal>
