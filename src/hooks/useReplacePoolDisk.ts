@@ -75,6 +75,7 @@ export const useReplacePoolDisk = (
       onSuccess: (_data, variables) => {
         queryClient.invalidateQueries({ queryKey: ['zpool'] });
         queryClient.invalidateQueries({ queryKey: ['zpool', 'devices'], exact: false });
+        queryClient.invalidateQueries({ queryKey: ['zpool', 'devices', 'slots'], exact: false });
         queryClient.invalidateQueries({ queryKey: ['disk', 'partitioned'] });
         options.onSuccess?.(variables.poolName);
       },

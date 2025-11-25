@@ -135,16 +135,6 @@ const IntegratedStorage = () => {
 
   const diskError = partitionedDiskError ?? null;
 
-  const replaceDisk = useReplacePoolDisk({
-    onSuccess: (poolName) => {
-      toast.success(`جایگزینی دیسک برای فضای ${poolName} ثبت شد.`);
-      setReplacePoolName(null);
-    },
-    onError: (message, poolName) => {
-      toast.error(`جایگزینی دیسک برای ${poolName} با خطا مواجه شد: ${message}`);
-    },
-  });
-
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
   const poolNames = useMemo(
     () =>
@@ -167,9 +157,21 @@ const IntegratedStorage = () => {
     data: poolDevices,
     isLoading: isPoolDeviceLoading,
     isFetching: isPoolDeviceFetching,
+    refetch: refetchPoolSlots,
   } = usePoolDeviceSlots(poolNames, {
     enabled: pools.length > 0,
     refetchInterval: 20000,
+  });
+
+  const replaceDisk = useReplacePoolDisk({
+    onSuccess: (poolName) => {
+      toast.success(`جایگزینی دیسک برای فضای ${poolName} ثبت شد.`);
+      refetchPoolSlots();
+      setReplacePoolName(null);
+    },
+    onError: (message, poolName) => {
+      toast.error(`جایگزینی دیسک برای ${poolName} با خطا مواجه شد: ${message}`);
+    },
   });
 
   const handleEdit = useCallback((pool: ZpoolCapacityEntry) => {
