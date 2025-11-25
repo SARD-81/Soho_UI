@@ -1,42 +1,39 @@
-import type { AxiosError } from 'axios';
+import { isAxiosError } from 'axios';
 
-export interface ApiErrorResponse {
-  detail?: string;
-  message?: string;
-  errors?: string | string[];
-  [key: string]: unknown;
-}
+export const extractApiErrorMessage = (error: unknown, fallback: string) => {
+  if (isAxiosError(error)) {
+    const responseData = error.response?.data;
+    if (responseData && typeof responseData === 'object') {
+      const detail = (responseData as { detail?: unknown }).detail;
+      if (typeof detail === 'string' && detail.trim().length > 0) {
+        return detail;
+      }
 
-export const extractApiErrorMessage = (
-  error: AxiosError<ApiErrorResponse>
-): string => {
-  const payload = error.response?.data;
+      const message = (responseData as { message?: unknown }).message;
+      if (typeof message === 'string' && message.trim().length > 0) {
+        return message;
+      }
 
-  if (!payload) {
+      const nestedError = (responseData as { error?: unknown }).error;
+      if (nestedError && typeof nestedError === 'object') {
+        const nestedMessage = (nestedError as { message?: unknown }).message;
+        if (typeof nestedMessage === 'string' && nestedMessage.trim().length > 0) {
+          return nestedMessage;
+        }
+
+        const nestedDetail = (nestedError as { detail?: unknown }).detail;
+        if (typeof nestedDetail === 'string' && nestedDetail.trim().length > 0) {
+          return nestedDetail;
+        }
+      }
+    }
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
     return error.message;
   }
 
-  if (typeof payload === 'string') {
-    return payload;
-  }
-
-  if (payload.detail && typeof payload.detail === 'string') {
-    return payload.detail;
-  }
-
-  if (payload.message && typeof payload.message === 'string') {
-    return payload.message;
-  }
-
-  if (payload.errors) {
-    if (Array.isArray(payload.errors)) {
-      return payload.errors.join('، ');
-    }
-
-    if (typeof payload.errors === 'string') {
-      return payload.errors;
-    }
-  }
-
-  return error.message;
+  return fallback;
 };
+
+export default extractApiErrorMessage;

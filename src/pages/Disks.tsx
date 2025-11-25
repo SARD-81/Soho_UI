@@ -1,5 +1,5 @@
 import { Box, Stack, Typography } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import type { DiskInventoryItem } from '../@types/disk';
@@ -7,6 +7,9 @@ import PageContainer from '../components/PageContainer';
 import DisksTable from '../components/disks/DisksTable';
 import SelectedDisksDetailsPanel from '../components/disks/SelectedDisksDetailsPanel';
 import { useDiskDetails, useDiskInventory } from '../hooks/useDiskInventory';
+import usePoolDeviceNames from '../hooks/usePoolDeviceNames';
+import { cleanupDisk } from '../lib/diskMaintenance';
+import extractApiErrorMessage from '../utils/apiError';
 
 const MAX_SELECTED_DISKS = 4;
 
@@ -31,9 +34,15 @@ const areSelectionsEqual = (first: string[], second: string[]) =>
 
 const Disks = () => {
   const [selectedDisks, setSelectedDisks] = useState<string[]>([]);
+  const [wipingDisks, setWipingDisks] = useState<Record<string, boolean>>({});
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: disks = [], isLoading, error } = useDiskInventory();
   const detailItems = useDiskDetails(selectedDisks);
+  const {
+    data: poolDeviceNames = [],
+    error: poolDevicesError,
+    isLoading: isPoolDevicesLoading,
+  } = usePoolDeviceNames();
 
   const syncSelectionToQuery = useCallback(
     (next: string[]) => {
@@ -121,9 +130,45 @@ const Disks = () => {
     [updateSelection]
   );
 
-  const handleIdentifyDisk = useCallback((disk: DiskInventoryItem) => {
-    toast(`در حال شناسایی دیسک ${disk.disk}...`);
-  }, []);
+  useEffect(() => {
+    if (poolDevicesError) {
+      toast.error(poolDevicesError.message);
+    }
+  }, [poolDevicesError]);
+
+  const handleWipeDisk = useCallback(
+    async (disk: DiskInventoryItem) => {
+      const diskName = disk.disk;
+      const toastId = toast.loading(`در حال پاکسازی دیسک ${diskName}...`);
+
+      setWipingDisks((prev) => ({ ...prev, [diskName]: true }));
+
+      try {
+        await cleanupDisk(diskName);
+        toast.success(`دیسک ${diskName} پاکسازی شد.`, { id: toastId });
+      } catch (error) {
+        toast.error(
+          extractApiErrorMessage(error, 'پاکسازی دیسک با خطا مواجه شد.'),
+          { id: toastId }
+        );
+      } finally {
+        setWipingDisks((prev) => {
+          const next = { ...prev };
+          delete next[diskName];
+          return next;
+        });
+      }
+    },
+    []
+  );
+
+  const activeWipingDisks = useMemo(
+    () =>
+      Object.entries(wipingDisks)
+        .filter(([, isActive]) => isActive)
+        .map(([name]) => name),
+    [wipingDisks]
+  );
 
   return (
     <PageContainer>
@@ -144,7 +189,10 @@ const Disks = () => {
             error={error ?? null}
             selectedDiskNames={selectedDisks}
             onToggleSelect={handleToggleSelect}
-            onIdentify={handleIdentifyDisk}
+            onWipe={handleWipeDisk}
+            disabledDiskNames={poolDeviceNames}
+            wipingDiskNames={activeWipingDisks}
+            areActionsLoading={isPoolDevicesLoading}
           />
         </Box>
 

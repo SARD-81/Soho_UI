@@ -1,7 +1,7 @@
 import { Box, Button, Chip, Tooltip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
-import { MdOutlineTravelExplore } from 'react-icons/md';
+import { PiBroomFill } from "react-icons/pi";
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { DiskInventoryItem } from '../../@types/disk';
 import { formatBytes } from '../../utils/formatters';
@@ -13,7 +13,10 @@ interface DisksTableProps {
   error: Error | null;
   selectedDiskNames: string[];
   onToggleSelect: (disk: DiskInventoryItem, checked: boolean) => void;
-  onIdentify?: (disk: DiskInventoryItem) => void;
+  onWipe?: (disk: DiskInventoryItem) => void;
+  disabledDiskNames?: string[];
+  wipingDiskNames?: string[];
+  areActionsLoading?: boolean;
 }
 
 const formatStateLabel = (state: string | null | undefined) => {
@@ -49,9 +52,22 @@ const DisksTable = ({
   error,
   selectedDiskNames,
   onToggleSelect,
-  onIdentify,
+  onWipe,
+  disabledDiskNames = [],
+  wipingDiskNames = [],
+  areActionsLoading = false,
 }: DisksTableProps) => {
   const theme = useTheme();
+
+  const disabledDisks = useMemo(
+    () => new Set(disabledDiskNames.map((name) => name.trim()).filter(Boolean)),
+    [disabledDiskNames]
+  );
+
+  const wipingDisks = useMemo(
+    () => new Set(wipingDiskNames.map((name) => name.trim()).filter(Boolean)),
+    [wipingDiskNames]
+  );
 
   const handleRowClick = useCallback(
     (disk: DiskInventoryItem) => {
@@ -146,31 +162,37 @@ const DisksTable = ({
         ),
       },
       {
-        id: 'identify',
-        header: 'شناسایی دیسک',
+        id: 'actions',
+        header: 'عملیات',
         align: 'center',
         width: 160,
-        renderCell: (disk) => (
-          <Tooltip title="شناسایی دیسک" arrow>
-            <span>
-              <Button
-                variant="contained"
-                size="small"
-                color="primary"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onIdentify?.(disk);
-                }}
-                startIcon={<MdOutlineTravelExplore size={18} />}
-              >
-                شناسایی
-              </Button>
-            </span>
-          </Tooltip>
-        ),
+        renderCell: (disk) => {
+          const isDisabled =
+            areActionsLoading || disabledDisks.has(disk.disk) || wipingDisks.has(disk.disk);
+
+          return (
+            <Tooltip title="پاکسازی دیسک" arrow>
+              <span>
+                <Button
+                  variant="contained"
+                  size="small"
+                  color="error"
+                  disabled={isDisabled || !onWipe}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onWipe?.(disk);
+                  }}
+                  startIcon={<PiBroomFill size={18} />}
+                >
+                  پاکسازی
+                </Button>
+              </span>
+            </Tooltip>
+          );
+        },
       },
     ];
-  }, [ onIdentify]);
+  }, [areActionsLoading, disabledDisks, onWipe, wipingDisks]);
 
   return (
     <DataTable<DiskInventoryItem>

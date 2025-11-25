@@ -318,9 +318,10 @@ const CreatePoolModal = ({
               >
                 <FormGroup
                   sx={{
-                    display: 'grid',
-                    gridTemplateColumns:
-                      'repeat(auto-fill, minmax(180px, 1fr))',
+                    display: 'flex',
+                    flexDirection : "row",
+                    // gridTemplateColumns:
+                    //   'repeat(auto-fill, minmax(180px, 1fr))',
                     gap: 1,
                     p: 1.5,
                   }}

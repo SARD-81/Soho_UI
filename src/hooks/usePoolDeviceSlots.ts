@@ -10,6 +10,7 @@ export interface PoolDiskSlot {
   diskName: string;
   slotNumber: string | number | null;
   wwn: string | null;
+  path: string | null;
   detail: DiskInventoryItem | null;
 }
 
@@ -31,6 +32,37 @@ const normalizeDiskName = (device: ZpoolDeviceEntry) => {
   }
 
   return '';
+};
+
+const normalizeDevicePath = (
+  device: ZpoolDeviceEntry,
+  detail: DiskInventoryItem | null,
+  diskName: string
+) => {
+  const candidates = [
+    device.full_path_name,
+    device.full_disk_name,
+    detail?.device_path,
+    detail?.partitions?.[0]?.path,
+    device.disk_name,
+    diskName,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = String(candidate ?? '').trim();
+
+    if (!normalized) {
+      continue;
+    }
+
+    if (normalized.startsWith('/dev/')) {
+      return normalized;
+    }
+
+    return `/dev/${normalized.replace(/^\/dev\//, '')}`;
+  }
+
+  return null;
 };
 
 const normalizeWwn = (value: unknown) => {
@@ -73,10 +105,13 @@ const buildPoolSlotEntry = async (
     normalizeWwn(device.wwn) ||
     normalizeWwn(device.full_path_wwn);
 
+  const path = normalizeDevicePath(device, detail, diskName);
+
   return {
     diskName,
     slotNumber: detail.slot_number ?? null,
     wwn,
+    path,
     detail,
   };
 };
