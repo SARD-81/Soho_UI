@@ -1,4 +1,4 @@
-import { Box, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
+import { Box, Button, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { Fragment, type FormEvent, useEffect, useMemo, useState } from 'react';
 import type { DeviceOption } from './CreatePoolModal';
@@ -84,13 +84,14 @@ const ReplaceDiskModal = ({
 
   useEffect(() => {
     if (open) {
-      setRows(
-        oldDeviceOptions.map((option) => ({
-          id: option.key,
-          oldDevice: option.value,
+      const defaultOld = oldDeviceOptions[0]?.value ?? '';
+      setRows([
+        {
+          id: 'replace-row-0',
+          oldDevice: defaultOld,
           newDevice: '',
-        }))
-      );
+        },
+      ]);
       setValidationError(null);
     } else {
       setRows([]);
@@ -112,6 +113,22 @@ const ReplaceDiskModal = ({
     setValidationError(null);
   };
 
+  const getNextOldDevice = (usedDevices: string[]) =>
+    oldDeviceOptions.find((option) => !usedDevices.includes(option.value))?.value ?? '';
+
+  const handleAddRow = () => {
+    setRows((prev) => {
+      const nextOld = getNextOldDevice(prev.map((row) => row.oldDevice));
+      const newRow: ReplacementRow = {
+        id: `replace-row-${Date.now()}-${prev.length}`,
+        oldDevice: nextOld,
+        newDevice: '',
+      };
+
+      return [...prev, newRow];
+    });
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -128,6 +145,14 @@ const ReplaceDiskModal = ({
 
     if (hasMissingSelection) {
       setValidationError('لطفاً برای همه دیسک‌ها گزینه جایگزین انتخاب کنید.');
+      return;
+    }
+
+    const hasDuplicateOldDevices =
+      new Set(rows.map((row) => row.oldDevice)).size !== rows.length;
+
+    if (hasDuplicateOldDevices) {
+      setValidationError('هر دیسک فعلی فقط باید یک‌بار انتخاب شود.');
       return;
     }
 
@@ -203,6 +228,36 @@ const ReplaceDiskModal = ({
             p: 2,
           }}
         >
+          <Box
+            sx={{
+              gridColumn: '1 / -1',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              mb: 0.5,
+            }}
+          >
+            <Button
+              type="button"
+              onClick={handleAddRow}
+              variant="outlined"
+              disabled={rows.length >= oldDeviceOptions.length}
+              sx={{
+                color: 'var(--color-primary)',
+                borderColor: 'var(--color-primary)',
+                borderRadius: '6px',
+                fontWeight: 700,
+                px: 2.25,
+                py: 0.75,
+                '&:hover': {
+                  borderColor: 'var(--color-primary-dark)',
+                  backgroundColor: 'rgba(31, 182, 255, 0.08)',
+                },
+              }}
+            >
+              + افزودن جایگزینی
+            </Button>
+          </Box>
+
           <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
             دیسک فعلی
           </Typography>
@@ -220,7 +275,11 @@ const ReplaceDiskModal = ({
                   onChange={(event) => handleOldChange(row.id, event)}
                   sx={selectBaseStyles}
                   MenuProps={{ PaperProps: { sx: { maxHeight: 280 } } }}
+                  displayEmpty
                 >
+                  <MenuItem disabled value="">
+                    یک دیسک فعلی انتخاب کنید
+                  </MenuItem>
                   {oldDeviceOptions.map((option) => (
                     <MenuItem key={option.key} value={option.value}>
                       {option.label}
