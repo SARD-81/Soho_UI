@@ -19,8 +19,8 @@ const BlurModal = ({
   title,
   actions,
   children,
-  maxWidth = 700,
-  maxHeight = '90vh',
+  maxWidth,
+  maxHeight,
 }: BlurModalProps) => {
   return (
     <Modal
@@ -42,9 +42,10 @@ const BlurModal = ({
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: '100%',
-          maxWidth,
-          maxHeight,
+          width: 'auto',
+          ...(maxWidth && { maxWidth }),
+          ...(minWidth && { minWidth }),
+          ...(maxHeight && { maxHeight }),
           borderRadius: '5px',
           bgcolor: 'var(--color-card-bg)',
           boxShadow: '0 30px 60px -32px rgba(0, 0, 0, 0.6)',
