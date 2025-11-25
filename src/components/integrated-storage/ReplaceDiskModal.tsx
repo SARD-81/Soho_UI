@@ -52,36 +52,23 @@ const selectBaseStyles = {
 
 const normalizeOldDevice = (device: string) => {
   const trimmed = device.trim();
-  const withPrefix = trimmed.startsWith('/dev/')
-    ? trimmed
-    : `/dev/${trimmed.replace(/^\/dev\//, '')}`;
 
-  if (/(-part\d+|p\d+)$/.test(withPrefix)) {
-    return withPrefix;
+  if (/(-part\d+|p\d+)$/.test(trimmed)) {
+    return trimmed;
   }
 
-  return `${withPrefix}-part1`;
+  return `${trimmed}-part1`;
 };
 
 const buildOldDeviceOptions = (slots: PoolDiskSlot[]) =>
   slots.map((slot, index) => {
-    const trimmedWwn = slot.wwn?.trim();
-    const basePath =
-      slot.path?.trim() ||
-      (trimmedWwn
-        ? trimmedWwn.startsWith('/dev/')
-          ? trimmedWwn
-          : `/dev/disk/by-id/${
-              trimmedWwn.startsWith('wwn-') ? trimmedWwn : `wwn-${trimmedWwn}`
-            }`
-        : `/dev/${slot.diskName}`);
-    const value = normalizeOldDevice(basePath);
+    const basePath = slot.path?.trim() || `/dev/${slot.diskName}`;
     const label = slot.wwn
       ? `${slot.diskName} (${slot.wwn})`
       : `${slot.diskName}`;
 
     return {
-      value,
+      value: basePath,
       label,
       key: `${slot.diskName}-${index}`,
     };

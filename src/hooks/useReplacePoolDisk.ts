@@ -65,10 +65,12 @@ export const useReplacePoolDisk = (
   return useMutation<unknown, AxiosError<ApiErrorResponse>, ReplacePoolDeviceParams>(
     {
       mutationFn: async ({ poolName, replacements }) => {
-        await axiosInstance.post(
-          `/api/zpool/${encodeURIComponent(poolName)}/replace/`,
-          replacements
-        );
+        for (const replacement of replacements) {
+          await axiosInstance.post(
+            `/api/zpool/${encodeURIComponent(poolName)}/replace/`,
+            replacement
+          );
+        }
       },
       onSuccess: (_data, variables) => {
         queryClient.invalidateQueries({ queryKey: ['zpool'] });
