@@ -228,12 +228,12 @@ const IntegratedStorage = () => {
   }, [replaceDisk]);
 
   const handleSubmitReplacement = useCallback(
-    (payload: ReplaceDevicePayload[]) => {
+    (payload: ReplaceDevicePayload) => {
       if (!replacePoolName) {
         return;
       }
 
-      replaceDisk.mutate({ poolName: replacePoolName, replacements: payload });
+      replaceDisk.mutate({ poolName: replacePoolName, replacements: [payload] });
     },
     [replaceDisk, replacePoolName]
   );
