@@ -50,21 +50,32 @@ const selectBaseStyles = {
   color: 'var(--color-text)',
 };
 
-const ensurePartitionSuffix = (device: string) => {
-  const normalized = device.replace(/\s+/g, '').replace(/-part\d+$/, '');
-  return `${normalized}-part1`;
+const normalizeOldDevice = (device: string) => {
+  const trimmed = device.trim();
+  const withPrefix = trimmed.startsWith('/dev/')
+    ? trimmed
+    : `/dev/${trimmed.replace(/^\/dev\//, '')}`;
+
+  if (/(-part\d+|p\d+)$/.test(withPrefix)) {
+    return withPrefix;
+  }
+
+  return `${withPrefix}-part1`;
 };
 
 const buildOldDeviceOptions = (slots: PoolDiskSlot[]) =>
   slots.map((slot, index) => {
     const trimmedWwn = slot.wwn?.trim();
-    const basePath = trimmedWwn
-      ? trimmedWwn.startsWith('/dev/')
-        ? trimmedWwn
-        : `/dev/disk/by-id/${trimmedWwn.startsWith('wwn-') ? trimmedWwn : `wwn-${trimmedWwn}`}`
-      : `/dev/${slot.diskName}`;
-    const normalizedBase = basePath.startsWith('/dev/') ? basePath : `/dev/${basePath}`;
-    const value = ensurePartitionSuffix(normalizedBase);
+    const basePath =
+      slot.path?.trim() ||
+      (trimmedWwn
+        ? trimmedWwn.startsWith('/dev/')
+          ? trimmedWwn
+          : `/dev/disk/by-id/${
+              trimmedWwn.startsWith('wwn-') ? trimmedWwn : `wwn-${trimmedWwn}`
+            }`
+        : `/dev/${slot.diskName}`);
+    const value = normalizeOldDevice(basePath);
     const label = slot.wwn
       ? `${slot.diskName} (${slot.wwn})`
       : `${slot.diskName}`;
@@ -178,7 +189,7 @@ const ReplaceDiskModal = ({
     }
 
     const payload: ReplaceDevicePayload[] = rows.map((row) => ({
-      old_device: ensurePartitionSuffix(row.oldDevice),
+      old_device: normalizeOldDevice(row.oldDevice),
       new_device: row.newDevice,
       save_to_db: true,
     }));
