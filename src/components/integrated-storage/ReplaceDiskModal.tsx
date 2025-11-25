@@ -62,7 +62,12 @@ const normalizeOldDevice = (device: string) => {
 
 const buildOldDeviceOptions = (slots: PoolDiskSlot[]) =>
   slots.map((slot, index) => {
-    const basePath = slot.path?.trim() || `/dev/${slot.diskName}`;
+    const normalizedWwn = slot.wwn?.trim();
+    const wwnPath = normalizedWwn
+      ? `/dev/disk/by-id/${normalizedWwn.startsWith('wwn-') ? normalizedWwn : `wwn-${normalizedWwn}`}`
+      : null;
+
+    const basePath = wwnPath || slot.path?.trim() || `/dev/${slot.diskName}`;
     const label = slot.wwn
       ? `${slot.diskName} (${slot.wwn})`
       : `${slot.diskName}`;
