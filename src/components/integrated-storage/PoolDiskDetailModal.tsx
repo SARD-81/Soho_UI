@@ -1,5 +1,5 @@
 import { Box, Button, Chip, Divider, Typography } from '@mui/material';
-import { MdArrowForward, MdLaunch, MdStorage } from 'react-icons/md';
+import { MdLaunch, MdStorage } from 'react-icons/md';
 import { Link } from 'react-router-dom';
 import type { PoolDiskSlot } from '../../hooks/usePoolDeviceSlots';
 import {
@@ -7,7 +7,10 @@ import {
   formatNullableString,
 } from '../../utils/diskDetails';
 import formatDetailValue from '../../utils/formatDetailValue';
-import { buildKeyLengthMap, sortKeysByLengthThenLocale } from '../../utils/keySort';
+import {
+  buildKeyLengthMap,
+  sortKeysByLengthThenLocale,
+} from '../../utils/keySort';
 import BlurModal from '../BlurModal';
 
 interface PoolDiskDetailModalProps {
@@ -99,7 +102,9 @@ const PoolDiskDetailModal = ({
     buildKeyLengthMap([detailValues]),
     'fa-IR'
   );
-  const detailEntries = detailKeys.map((key) => [key, detailValues[key]] as const);
+  const detailEntries = detailKeys.map(
+    (key) => [key, detailValues[key]] as const
+  );
   const diskLink = `/disks?selected=${encodeURIComponent(slot.diskName)}`;
 
   return (
@@ -118,7 +123,7 @@ const PoolDiskDetailModal = ({
               borderRadius: '8px',
               px: 2.5,
               fontWeight: 700,
-              color:"var(--color-text)",
+              color: 'var(--color-text)',
               background:
                 'linear-gradient(135deg, rgba(21,196,197,0.9) 0%, rgba(25,123,255,0.95) 100%)',
               boxShadow: '0 18px 40px -22px rgba(25,123,255,0.8)',
@@ -140,9 +145,11 @@ const PoolDiskDetailModal = ({
     >
       <Box
         sx={{
-          background:
-            'linear-gradient(135deg, rgba(14,44,88,0.95) 0%, rgba(14,174,164,0.9) 100%)',
+          // background:
+          //   'linear-gradient(135deg, rgba(14,44,88,0.95) 0%, rgba(14,174,164,0.9) 100%)',
           color: '#eaf7ff',
+          
+              backgroundColor: 'rgba(56, 189, 248, 0.28)',
           borderRadius: '12px',
           p: 3,
           display: 'flex',
@@ -172,26 +179,41 @@ const PoolDiskDetailModal = ({
           >
             <MdStorage size={24} />
           </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-            <Typography
-              sx={{ fontWeight: 800, fontSize: '1.1rem', color: '#f7fbff' }}
-            >
-              دیسک {slot.diskName}
-            </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Box sx={{ display: 'flex', gap: 1.25 }}>
+              <Typography
+                sx={{ fontWeight: 800, fontSize: '1.1rem', color: '#f7fbff' }}
+              >
+                دیسک {slot.diskName} (اسلات {formatNullableString(slotLabel)})
+              </Typography>
+              {/* <Chip
+            label={`اسلات ${formatNullableString(slotLabel)}`}
+            sx={{
+              background:
+                'linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 100%)',
+              color: 'var(--color-text)',
+              fontWeight: 800,
+              letterSpacing: '0.2px',
+              // px: 1,
+              border: '1px solid rgba(255,255,255,0.36)',
+              boxShadow: '0 12px 32px -22px rgba(0,0,0,0.6)',
+            }}
+          /> */}
+            </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography sx={{ color: 'rgba(234,247,255,0.9)' }}>
                 فضای یکپارچه: {formatNullableString(poolName)}
               </Typography>
-              <MdArrowForward size={18} />
-              <Typography sx={{ color: 'rgba(234,247,255,0.9)' }}>
+              {/* <MdArrowForward size={18} /> */}
+              {/* <Typography sx={{ color: 'rgba(234,247,255,0.9)' }}>
                 شماره اسلات: {formatNullableString(slotLabel)}
-              </Typography>
+              </Typography> */}
             </Box>
           </Box>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Chip
+          {/* <Chip
             label={`اسلات ${formatNullableString(slotLabel)}`}
             sx={{
               background:
@@ -203,9 +225,9 @@ const PoolDiskDetailModal = ({
               border: '1px solid rgba(255,255,255,0.36)',
               boxShadow: '0 12px 32px -22px rgba(0,0,0,0.6)',
             }}
-          />
+          /> */}
           <Chip
-            label={slot.wwn ? `WWN: ${slot.wwn}` : 'WWN نامشخص'}
+            label={slot.wwn ? `Disk WWN: ${slot.wwn}` : 'WWN نامشخص'}
             sx={{
               backgroundColor: 'rgba(0,0,0,0.16)',
               color: '#eaf7ff',

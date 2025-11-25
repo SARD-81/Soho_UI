@@ -9,6 +9,7 @@ interface BlurModalProps {
   actions?: ReactNode;
   children: ReactNode;
   maxWidth?: number | string;
+  minWidth?: number | string;
   maxHeight?: number | string;
 }
 
@@ -18,7 +19,7 @@ const BlurModal = ({
   title,
   actions,
   children,
-  maxWidth = 560,
+  maxWidth = 700,
   maxHeight = '90vh',
 }: BlurModalProps) => {
   return (
