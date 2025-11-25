@@ -7,14 +7,69 @@ import type { DeviceOption } from '../components/integrated-storage/CreatePoolMo
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
 import PoolDiskDetailModal from '../components/integrated-storage/PoolDiskDetailModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
+import ReplaceDiskModal from '../components/integrated-storage/ReplaceDiskModal';
 import PageContainer from '../components/PageContainer';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
-import { usePartitionedDisks } from '../hooks/useDisk';
+import { type PartitionedDiskInfo, usePartitionedDisks } from '../hooks/useDisk';
 import { type PoolDiskSlot, usePoolDeviceSlots } from '../hooks/usePoolDeviceSlots';
+import { type ReplaceDevicePayload, useReplacePoolDisk } from '../hooks/useReplacePoolDisk';
 import { useZpool } from '../hooks/useZpool';
 
 const MAX_COMPARISON_ITEMS = 4;
+
+const mapPartitionedDisksToDeviceOptions = (
+  partitionedDisks?: PartitionedDiskInfo[] | null
+): DeviceOption[] => {
+  if (!partitionedDisks || partitionedDisks.length === 0) {
+    return [];
+  }
+
+  const buildDeviceIdentifier = (devicePath: string | null, wwn: string | null) => {
+    const trimmedPath = devicePath?.trim();
+
+    if (wwn) {
+      const trimmedWwn = wwn.trim();
+
+      if (trimmedWwn.length > 0) {
+        if (trimmedWwn.startsWith('/dev/')) {
+          return trimmedWwn;
+        }
+
+        const sanitizedWwn = trimmedWwn.replace(/^\/dev\/disk\/by-id\//, '');
+        return `/dev/disk/by-id/${sanitizedWwn}`;
+      }
+    }
+
+    if (trimmedPath && trimmedPath.length > 0) {
+      return trimmedPath;
+    }
+
+    return null;
+  };
+
+  const uniqueValues = new Set<string>();
+  const options: DeviceOption[] = [];
+
+  partitionedDisks.forEach(({ name, path, wwn }) => {
+    const identifier = buildDeviceIdentifier(path, wwn);
+
+    if (!identifier || uniqueValues.has(identifier)) {
+      return;
+    }
+
+    uniqueValues.add(identifier);
+
+    options.push({
+      label: (path ?? name).replace(/^\/dev\//, '') || name,
+      value: identifier,
+      tooltip: identifier,
+      wwn: wwn ?? undefined,
+    });
+  });
+
+  return options.sort((a, b) => a.label.localeCompare(b.label, 'en'));
+};
 
 const IntegratedStorage = () => {
   const createPool = useCreatePool({
@@ -52,75 +107,43 @@ const IntegratedStorage = () => {
     refetchInterval: 1000,
   });
 
+  const [replacePoolName, setReplacePoolName] = useState<string | null>(null);
+  const isReplaceModalOpen = Boolean(replacePoolName);
+
   const {
     data: partitionedDisks,
     isLoading: isPartitionedDiskLoading,
     isFetching: isPartitionedDiskFetching,
     error: partitionedDiskError,
   } = usePartitionedDisks({
-    enabled: createPool.isOpen,
-    refetchInterval: createPool.isOpen ? 5000 : undefined,
+    enabled: createPool.isOpen || isReplaceModalOpen,
+    refetchInterval: createPool.isOpen || isReplaceModalOpen ? 5000 : undefined,
   });
 
   const deviceOptions = useMemo<DeviceOption[]>(() => {
-    if (!partitionedDisks || partitionedDisks.length === 0) {
-      return [];
-    }
-
-    const buildDeviceIdentifier = (
-      devicePath: string | null,
-      wwn: string | null
-    ) => {
-      const trimmedPath = devicePath?.trim();
-
-      if (wwn) {
-        const trimmedWwn = wwn.trim();
-
-        if (trimmedWwn.length > 0) {
-          if (trimmedWwn.startsWith('/dev/')) {
-            return trimmedWwn;
-          }
-
-          const sanitizedWwn = trimmedWwn.replace(/^\/dev\/disk\/by-id\//, '');
-          return `/dev/disk/by-id/${sanitizedWwn}`;
-        }
-      }
-
-      if (trimmedPath && trimmedPath.length > 0) {
-        return trimmedPath;
-      }
-
-      return null;
-    };
-
-    const uniqueValues = new Set<string>();
-    const options: DeviceOption[] = [];
-
-    partitionedDisks.forEach(({ name, path, wwn }) => {
-      const identifier = buildDeviceIdentifier(path, wwn);
-
-      if (!identifier || uniqueValues.has(identifier)) {
-        return;
-      }
-
-      uniqueValues.add(identifier);
-
-      options.push({
-        label: (path ?? name).replace(/^\/dev\//, '') || name,
-        value: identifier,
-        tooltip: identifier,
-        wwn: wwn ?? undefined,
-      });
-    });
-
-    return options.sort((a, b) => a.label.localeCompare(b.label, 'en'));
+    return mapPartitionedDisksToDeviceOptions(partitionedDisks);
   }, [partitionedDisks]);
 
   const isDiskLoading =
     isPartitionedDiskLoading ||
-    (createPool.isOpen && isPartitionedDiskFetching && !partitionedDisks);
+    ((createPool.isOpen || isReplaceModalOpen) &&
+      isPartitionedDiskFetching &&
+      !partitionedDisks);
+  const isReplaceDiskLoading =
+    isPartitionedDiskLoading ||
+    (isReplaceModalOpen && isPartitionedDiskFetching && !partitionedDisks);
 
   const diskError = partitionedDiskError ?? null;
+
+  const replaceDisk = useReplacePoolDisk({
+    onSuccess: (poolName) => {
+      toast.success(`جایگزینی دیسک برای فضای ${poolName} ثبت شد.`);
+      setReplacePoolName(null);
+    },
+    onError: (message, poolName) => {
+      toast.error(`جایگزینی دیسک برای ${poolName} با خطا مواجه شد: ${message}`);
+    },
+  });
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
   const poolNames = useMemo(
@@ -166,6 +189,10 @@ const IntegratedStorage = () => {
     [poolDeletion]
   );
 
+  const handleOpenReplace = useCallback((pool: ZpoolCapacityEntry) => {
+    setReplacePoolName(pool.name);
+  }, []);
+
   const handleToggleSelect = useCallback(
     (pool: ZpoolCapacityEntry, checked: boolean) => {
       setSelectedPools((prev) => {
@@ -195,7 +222,30 @@ const IntegratedStorage = () => {
     setSelectedSlot(null);
   }, []);
 
+  const handleCloseReplace = useCallback(() => {
+    setReplacePoolName(null);
+    replaceDisk.reset();
+  }, [replaceDisk]);
+
+  const handleSubmitReplacement = useCallback(
+    (payload: ReplaceDevicePayload[]) => {
+      if (!replacePoolName) {
+        return;
+      }
+
+      replaceDisk.mutate({ poolName: replacePoolName, replacements: payload });
+    },
+    [replaceDisk, replacePoolName]
+  );
+
   const isSlotLoading = isPoolDeviceLoading || isPoolDeviceFetching;
+
+  const selectedPoolSlots = replacePoolName
+    ? poolDevices?.slotsByPool[replacePoolName] ?? []
+    : [];
+  const selectedPoolSlotError = replacePoolName
+    ? poolDevices?.errorsByPool[replacePoolName] ?? null
+    : null;
 
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
@@ -250,6 +300,7 @@ const IntegratedStorage = () => {
         error={zpoolError ?? null}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onReplace={handleOpenReplace}
         isDeleteDisabled={poolDeletion.isDeleting}
         selectedPools={selectedPools}
         onToggleSelect={handleToggleSelect}
@@ -257,6 +308,19 @@ const IntegratedStorage = () => {
         slotErrors={poolDevices?.errorsByPool}
         isSlotLoading={isSlotLoading}
         onSlotClick={handleSlotClick}
+      />
+
+      <ReplaceDiskModal
+        open={isReplaceModalOpen}
+        poolName={replacePoolName}
+        slots={selectedPoolSlots}
+        newDiskOptions={deviceOptions}
+        onClose={handleCloseReplace}
+        onSubmit={handleSubmitReplacement}
+        isSubmitting={replaceDisk.isPending}
+        slotError={selectedPoolSlotError}
+        isNewDiskLoading={isReplaceDiskLoading}
+        apiError={replaceDisk.error?.message ?? null}
       />
 
       {/*{selectedPools.length > 0 && (*/}
