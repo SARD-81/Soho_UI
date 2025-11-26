@@ -11,6 +11,10 @@ export const VDEV_TYPE_LABELS: Record<string, string> = {
 export const normalizeVdevType = (vdevType: string | null | undefined) => {
   const normalized = vdevType?.trim().toLowerCase() ?? '';
 
+  if (normalized === 'root') {
+    return 'disk';
+  }
+
   if (normalized === 'raidz1') {
     return 'raidz';
   }
