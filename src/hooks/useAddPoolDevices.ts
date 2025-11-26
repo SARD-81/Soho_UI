@@ -90,7 +90,10 @@ export const useAddPoolDevices = (options: UseAddPoolDevicesOptions = {}) => {
     [resetForm]
   );
 
-  const { isFetching: isVdevLoading } = useQuery<string, Error>({
+  const { data: fetchedVdevType, isFetching: isVdevLoading } = useQuery<
+    string,
+    Error
+  >({
     queryKey: ['zpool', 'vdev-type', poolName],
     queryFn: async () => {
       if (!poolName) {
@@ -156,6 +159,11 @@ export const useAddPoolDevices = (options: UseAddPoolDevicesOptions = {}) => {
     [addDevicesMutation.isPending]
   );
 
+  const effectiveVdevType = useMemo(
+    () => vdevType || fetchedVdevType || '',
+    [fetchedVdevType, vdevType]
+  );
+
   const toggleDevice = useCallback((device: string) => {
     setDevicesError(null);
     setApiError(null);
@@ -180,7 +188,7 @@ export const useAddPoolDevices = (options: UseAddPoolDevicesOptions = {}) => {
         return;
       }
 
-      const normalizedVdevType = normalizeVdevType(vdevType);
+      const normalizedVdevType = normalizeVdevType(effectiveVdevType);
 
       if (!normalizedVdevType) {
         setVdevError('نوع آرایه شناسایی نشده است.');
@@ -204,13 +212,13 @@ export const useAddPoolDevices = (options: UseAddPoolDevicesOptions = {}) => {
         save_to_db: true,
       });
     },
-    [addDevicesMutation, poolName, selectedDevices, vdevType]
+    [addDevicesMutation, effectiveVdevType, poolName, selectedDevices]
   );
 
   return {
     isOpen,
     poolName,
-    vdevType,
+    vdevType: effectiveVdevType,
     selectedDevices,
     devicesError,
     apiError,

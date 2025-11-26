@@ -4,6 +4,7 @@ import extractApiErrorMessage from '../utils/apiError';
 export interface PoolDeviceEntry {
   disk_name?: string | null;
   vdev_type?: string | null;
+  vdevType?: string | null;
 }
 
 interface PoolDevicesResponse {
@@ -50,7 +51,11 @@ export const fetchPoolDeviceNames = async (poolName: string) => {
 
 export const fetchPoolVdevType = async (poolName: string) => {
   const devices = await fetchPoolDevices(poolName);
-  const vdevType = devices.find((device) => device.vdev_type)?.vdev_type?.trim();
+
+  const vdevType = devices
+    .map((device) => device.vdev_type ?? device.vdevType ?? '')
+    .map((type) => type?.trim())
+    .find((type) => Boolean(type));
 
   return vdevType ?? '';
 };
