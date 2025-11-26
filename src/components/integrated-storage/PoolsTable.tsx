@@ -17,7 +17,6 @@ import {
   clampPercent,
   formatCapacity,
   resolveStatus,
-  STATUS_STYLES,
 } from './status';
 
 interface PoolsTableProps {
@@ -250,18 +249,14 @@ const PoolsTable = ({
         align: 'center',
         renderCell: (pool) => {
           const status = resolveStatus(pool.health);
-          const statusStyle = STATUS_STYLES[status.key];
 
           return (
             <Chip
               label={status.label}
-              sx={{
-                px: 1.5,
-                fontWeight: 600,
-                backgroundColor: statusStyle.bg,
-                color: statusStyle.color,
-                borderRadius: '5px',
-              }}
+              color={status.color}
+              variant="outlined"
+              size="small"
+              sx={{ fontWeight: 600, px: 0.5 }}
             />
           );
         },
