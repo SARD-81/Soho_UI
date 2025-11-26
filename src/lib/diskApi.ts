@@ -1,8 +1,15 @@
-import type { DiskDetailResponse, DiskInventoryItem, DiskInventoryResponse } from '../@types/disk';
+import type {
+  DiskDetailResponse,
+  DiskInventoryItem,
+  DiskInventoryResponse,
+  DiskPartitionStatusResponse,
+} from '../@types/disk';
 import axiosInstance from './axiosInstance';
 
 const DEFAULT_INVENTORY_ERROR_MESSAGE = 'امکان دریافت اطلاعات دیسک‌ها وجود ندارد.';
 const DEFAULT_DETAIL_ERROR_MESSAGE = 'امکان دریافت جزئیات دیسک وجود ندارد.';
+const DEFAULT_PARTITION_STATUS_ERROR_MESSAGE =
+  'امکان بررسی وضعیت پارتیشن‌های دیسک وجود ندارد.';
 
 export const normalizeErrorMessage = (
   message: string | null | undefined,
@@ -40,4 +47,24 @@ export const fetchDiskDetail = async (
   }
 
   return data.data ?? null;
+};
+
+export const fetchDiskPartitionStatus = async (diskName: string): Promise<boolean> => {
+  const normalizedDiskName = diskName.trim();
+
+  if (!normalizedDiskName) {
+    return false;
+  }
+
+  const { data } = await axiosInstance.get<DiskPartitionStatusResponse>(
+    `/api/disk/${encodeURIComponent(normalizedDiskName)}/has-partitions/`
+  );
+
+  if (data.ok === false) {
+    throw new Error(
+      normalizeErrorMessage(data.error, `${DEFAULT_PARTITION_STATUS_ERROR_MESSAGE} (${diskName})`)
+    );
+  }
+
+  return Boolean(data.data?.has_partitions);
 };

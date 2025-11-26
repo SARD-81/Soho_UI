@@ -6,7 +6,11 @@ import type { DiskInventoryItem } from '../@types/disk';
 import PageContainer from '../components/PageContainer';
 import DisksTable from '../components/disks/DisksTable';
 import SelectedDisksDetailsPanel from '../components/disks/SelectedDisksDetailsPanel';
-import { useDiskDetails, useDiskInventory } from '../hooks/useDiskInventory';
+import {
+  useDiskDetails,
+  useDiskInventory,
+  useDiskPartitionStatuses,
+} from '../hooks/useDiskInventory';
 import usePoolDeviceNames from '../hooks/usePoolDeviceNames';
 import { cleanupDisk } from '../lib/diskMaintenance';
 import extractApiErrorMessage from '../utils/apiError';
@@ -38,6 +42,9 @@ const Disks = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: disks = [], isLoading, error } = useDiskInventory();
   const detailItems = useDiskDetails(selectedDisks);
+  const diskNames = useMemo(() => disks.map((disk) => disk.disk), [disks]);
+  const { partitionedDiskNames, checkingDiskNames, error: partitionStatusError } =
+    useDiskPartitionStatuses(diskNames);
   const {
     data: poolDeviceNames = [],
     error: poolDevicesError,
@@ -136,6 +143,12 @@ const Disks = () => {
     }
   }, [poolDevicesError]);
 
+  useEffect(() => {
+    if (partitionStatusError) {
+      toast.error(partitionStatusError.message);
+    }
+  }, [partitionStatusError]);
+
   const handleWipeDisk = useCallback(
     async (disk: DiskInventoryItem) => {
       const diskName = disk.disk;
@@ -191,6 +204,8 @@ const Disks = () => {
             onToggleSelect={handleToggleSelect}
             onWipe={handleWipeDisk}
             disabledDiskNames={poolDeviceNames}
+            partitionedDiskNames={partitionedDiskNames}
+            checkingPartitionStatusDiskNames={checkingDiskNames}
             wipingDiskNames={activeWipingDisks}
             areActionsLoading={isPoolDevicesLoading}
           />

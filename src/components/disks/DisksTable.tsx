@@ -15,6 +15,8 @@ interface DisksTableProps {
   onToggleSelect: (disk: DiskInventoryItem, checked: boolean) => void;
   onWipe?: (disk: DiskInventoryItem) => void;
   disabledDiskNames?: string[];
+  partitionedDiskNames?: string[];
+  checkingPartitionStatusDiskNames?: string[];
   wipingDiskNames?: string[];
   areActionsLoading?: boolean;
 }
@@ -54,6 +56,8 @@ const DisksTable = ({
   onToggleSelect,
   onWipe,
   disabledDiskNames = [],
+  partitionedDiskNames = [],
+  checkingPartitionStatusDiskNames = [],
   wipingDiskNames = [],
   areActionsLoading = false,
 }: DisksTableProps) => {
@@ -62,6 +66,19 @@ const DisksTable = ({
   const disabledDisks = useMemo(
     () => new Set(disabledDiskNames.map((name) => name.trim()).filter(Boolean)),
     [disabledDiskNames]
+  );
+
+  const partitionedDisks = useMemo(
+    () => new Set(partitionedDiskNames.map((name) => name.trim()).filter(Boolean)),
+    [partitionedDiskNames]
+  );
+
+  const checkingPartitionStatusDisks = useMemo(
+    () =>
+      new Set(
+        checkingPartitionStatusDiskNames.map((name) => name.trim()).filter(Boolean)
+      ),
+    [checkingPartitionStatusDiskNames]
   );
 
   const wipingDisks = useMemo(
@@ -168,7 +185,11 @@ const DisksTable = ({
         width: 160,
         renderCell: (disk) => {
           const isDisabled =
-            areActionsLoading || disabledDisks.has(disk.disk) || wipingDisks.has(disk.disk);
+            areActionsLoading ||
+            disabledDisks.has(disk.disk) ||
+            wipingDisks.has(disk.disk) ||
+            partitionedDisks.has(disk.disk) ||
+            checkingPartitionStatusDisks.has(disk.disk);
 
           return (
             <Tooltip title="پاکسازی دیسک" arrow>
@@ -192,7 +213,14 @@ const DisksTable = ({
         },
       },
     ];
-  }, [areActionsLoading, disabledDisks, onWipe, wipingDisks]);
+  }, [
+    areActionsLoading,
+    checkingPartitionStatusDisks,
+    disabledDisks,
+    onWipe,
+    partitionedDisks,
+    wipingDisks,
+  ]);
 
   return (
     <DataTable<DiskInventoryItem>
