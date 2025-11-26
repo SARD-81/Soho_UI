@@ -18,7 +18,7 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
-import type { UseCreatePoolReturn } from '../../hooks/useCreatePool';
+import type { UseCreatePoolReturn, VdevType } from '../../hooks/useCreatePool';
 import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
@@ -147,7 +147,7 @@ const CreatePoolModal = ({
     if (vdevTypeError) {
       setVdevTypeError(null);
     }
-    setVdevType(event.target.value);
+    setVdevType(event.target.value as VdevType);
   };
 
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
