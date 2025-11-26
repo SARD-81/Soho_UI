@@ -7,7 +7,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
-import { MdDeleteOutline, MdSwapHoriz } from 'react-icons/md';
+import {
+  MdAddCircleOutline,
+  MdDeleteOutline,
+  MdSwapHoriz,
+} from 'react-icons/md';
+import { BiExport } from "react-icons/bi";
 import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
 import type { PoolDiskSlot, PoolSlotMap } from '../../hooks/usePoolDeviceSlots';
@@ -17,7 +22,6 @@ import {
   clampPercent,
   formatCapacity,
   resolveStatus,
-  STATUS_STYLES,
 } from './status';
 
 interface PoolsTableProps {
@@ -27,6 +31,8 @@ interface PoolsTableProps {
   onEdit: (pool: ZpoolCapacityEntry) => void;
   onDelete: (pool: ZpoolCapacityEntry) => void;
   onReplace: (pool: ZpoolCapacityEntry) => void;
+  onAddDevices: (pool: ZpoolCapacityEntry) => void;
+  onExport: (pool: ZpoolCapacityEntry) => void;
   isDeleteDisabled: boolean;
   selectedPools: string[];
   onToggleSelect: (pool: ZpoolCapacityEntry, checked: boolean) => void;
@@ -45,6 +51,13 @@ const numberValueSx = {
   fontVariantNumeric: 'tabular-nums',
 };
 
+const STATUS_COLOR_MAP = {
+  active: 'success',
+  warning: 'warning',
+  maintenance: 'info',
+  unknown: 'default',
+} as const;
+
 const PoolsTable = ({
   pools,
   isLoading,
@@ -52,6 +65,8 @@ const PoolsTable = ({
   onEdit,
   onDelete,
   onReplace,
+  onAddDevices,
+  onExport,
   isDeleteDisabled,
   selectedPools,
   onToggleSelect,
@@ -62,24 +77,6 @@ const PoolsTable = ({
 }: PoolsTableProps) => {
   const columns: DataTableColumn<ZpoolCapacityEntry>[] = useMemo(
     () => [
-      // {
-      //   id: 'select',
-      //   header: '',
-      //   align: 'center',
-      //   padding: 'checkbox',
-      //   width: 52,
-      //   headerSx: { width: 52 },
-      //   cellSx: { width: 52 },
-      //   getCellProps: () => ({ padding: 'checkbox' }),
-      //   renderCell: (pool) => (
-      //     <Checkbox
-      //       checked={selectedPools.includes(pool.name)}
-      //       onChange={(event) => onToggleSelect(pool, event.target.checked)}
-      //       color="primary"
-      //       inputProps={{ 'aria-label': `انتخاب ${pool.name}` }}
-      //     />
-      //   ),
-      // },
       {
         id: 'name',
         header: 'نام فضای یکپارچه',
@@ -89,13 +86,77 @@ const PoolsTable = ({
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
               {pool.name}
             </Typography>
-            {/*<Typography*/}
-            {/*  variant="caption"*/}
-            {/*  sx={{ color: 'var(--color-secondary)' }}*/}
-            {/*>*/}
-            {/*  وضعیت گزارش‌شده: {pool.health ?? 'نامشخص'}*/}
-            {/*</Typography>*/}
           </Box>
+        ),
+      },
+      {
+        id: 'total',
+        header: 'ظرفیت کل',
+        align: 'left',
+        renderCell: (pool) => (
+          <Typography sx={numberValueSx}>
+            {formatCapacity(pool.totalBytes)}
+          </Typography>
+        ),
+      },
+      {
+        id: 'used',
+        header: 'حجم مصرف‌شده',
+        align: 'center',
+        cellSx: { minWidth: 180 },
+        renderCell: (pool) => {
+          const utilization = clampPercent(pool.capacityPercent);
+
+          return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box
+                sx={{
+                  position: 'relative',
+                  height: 7,
+                  borderRadius: '5px',
+                  marginTop: 1,
+                  backgroundColor: 'rgba(0, 198, 169, 0.12)',
+                  overflow: 'hidden',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: `${utilization ?? 0}%`,
+                    transition: 'width 0.3s ease',
+                    height: '100%',
+                    background:
+                      'linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+                  }}
+                />
+              </Box>
+              <Typography variant="body2" sx={numberValueSx}>
+                {formatBytes(pool.usedBytes)}
+              </Typography>
+            </Box>
+          );
+        },
+      },
+      {
+        id: 'free',
+        header: 'حجم آزاد',
+        align: 'right',
+        renderCell: (pool) => (
+          <Typography sx={numberValueSx}>
+            {formatCapacity(pool.freeBytes)}
+          </Typography>
+        ),
+      },
+      {
+        id: 'vdev-type',
+        header: 'نوع آرایه',
+        align: 'right',
+        renderCell: (pool) => (
+          <Chip
+            label={pool.vdevLabel || '-'}
+            variant="outlined"
+            size="small"
+            sx={{ fontWeight: 700, px: 0.75, minWidth: 80 , color:"var(--color-secondary)" }}
+          />
         ),
       },
       {
@@ -171,87 +232,20 @@ const PoolsTable = ({
         },
       },
       {
-        id: 'total',
-        header: 'ظرفیت کل',
-        align: 'left',
-        renderCell: (pool) => (
-          <Typography sx={numberValueSx}>
-            {formatCapacity(pool.totalBytes)}
-          </Typography>
-        ),
-      },
-      {
-        id: 'used',
-        header: 'حجم مصرف‌شده',
-        align: 'center',
-        cellSx: { minWidth: 180 },
-        renderCell: (pool) => {
-          const utilization = clampPercent(pool.capacityPercent);
-
-          return (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Box
-                sx={{
-                  position: 'relative',
-                  height: 7,
-                  borderRadius: '5px',
-                  marginTop: 1,
-                  backgroundColor: 'rgba(0, 198, 169, 0.12)',
-                  overflow: 'hidden',
-                }}
-              >
-                <Box
-                  sx={{
-                    width: `${utilization ?? 0}%`,
-                    transition: 'width 0.3s ease',
-                    height: '100%',
-                    background:
-                      'linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
-                  }}
-                />
-              </Box>
-              <Typography variant="body2" sx={numberValueSx}>
-                {formatBytes(pool.usedBytes)}
-                {/*<Typography*/}
-                {/*  component="span"*/}
-                {/*  sx={{ mx: 0.5, color: 'var(--color-secondary)' }}*/}
-                {/*>*/}
-                {/*  از*/}
-                {/*</Typography>*/}
-                {/*{formatCapacity(pool.totalBytes)}*/}
-              </Typography>
-            </Box>
-          );
-        },
-      },
-      {
-        id: 'free',
-        header: 'حجم آزاد',
-        align: 'right',
-        renderCell: (pool) => (
-          <Typography sx={numberValueSx}>
-            {formatCapacity(pool.freeBytes)}
-          </Typography>
-        ),
-      },
-      {
         id: 'status',
         header: 'وضعیت',
         align: 'center',
         renderCell: (pool) => {
           const status = resolveStatus(pool.health);
-          const statusStyle = STATUS_STYLES[status.key];
+          const color = STATUS_COLOR_MAP[status.key] ?? 'default';
 
           return (
             <Chip
               label={status.label}
-              sx={{
-                px: 1.5,
-                fontWeight: 600,
-                backgroundColor: statusStyle.bg,
-                color: statusStyle.color,
-                borderRadius: '5px',
-              }}
+              color={color}
+              variant="outlined"
+              size="small"
+              sx={{ fontWeight: 700, px: 0.75, minWidth: 88, justifyContent: 'center' }}
             />
           );
         },
@@ -271,15 +265,24 @@ const PoolsTable = ({
                 <MdSwapHoriz size={24} />
               </IconButton>
             </Tooltip>
-            {/*<Tooltip title="ویرایش">*/}
-            {/*  <IconButton*/}
-            {/*    size="small"*/}
-            {/*    color="primary"*/}
-            {/*    onClick={() => onEdit(pool)}*/}
-            {/*  >*/}
-            {/*    <MdEdit size={18} />*/}
-            {/*  </IconButton>*/}
-            {/*</Tooltip>*/}
+            <Tooltip title="افزودن دیسک">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => onAddDevices(pool)}
+              >
+                <MdAddCircleOutline size={20} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="برون‌ریزی">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => onExport(pool)}
+              >
+                <BiExport size={20} />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="حذف">
               <IconButton
                 size="small"
@@ -299,6 +302,8 @@ const PoolsTable = ({
       isSlotLoading,
       onDelete,
       onEdit,
+      onAddDevices,
+      onExport,
       onReplace,
       onSlotClick,
       onToggleSelect,

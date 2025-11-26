@@ -2,12 +2,14 @@ import { Box, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import type { DiskInventoryItem } from '../@types/disk';
 import PageContainer from '../components/PageContainer';
 import DisksTable from '../components/disks/DisksTable';
 import SelectedDisksDetailsPanel from '../components/disks/SelectedDisksDetailsPanel';
 import { useDiskDetails, useDiskInventory } from '../hooks/useDiskInventory';
 import usePoolDeviceNames from '../hooks/usePoolDeviceNames';
+import { useDiskPartitionCounts } from '../hooks/useDiskPartitionCounts';
 import { cleanupDisk } from '../lib/diskMaintenance';
 import extractApiErrorMessage from '../utils/apiError';
 
@@ -35,14 +37,26 @@ const areSelectionsEqual = (first: string[], second: string[]) =>
 const Disks = () => {
   const [selectedDisks, setSelectedDisks] = useState<string[]>([]);
   const [wipingDisks, setWipingDisks] = useState<Record<string, boolean>>({});
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: disks = [], isLoading, error } = useDiskInventory();
   const detailItems = useDiskDetails(selectedDisks);
+  const diskNames = useMemo(() => disks.map((disk) => disk.disk), [disks]);
   const {
     data: poolDeviceNames = [],
     error: poolDevicesError,
     isLoading: isPoolDevicesLoading,
   } = usePoolDeviceNames();
+  const partitionCounts = useDiskPartitionCounts(diskNames);
+  const partitionCountLookup = useMemo(() => {
+    const lookup: Record<string, { partitionCount: number | null; isLoading: boolean }> = {};
+
+    partitionCounts.forEach(({ diskName, partitionCount, isLoading }) => {
+      lookup[diskName] = { partitionCount, isLoading };
+    });
+
+    return lookup;
+  }, [partitionCounts]);
 
   const syncSelectionToQuery = useCallback(
     (next: string[]) => {
@@ -146,6 +160,8 @@ const Disks = () => {
       try {
         await cleanupDisk(diskName);
         toast.success(`دیسک ${diskName} پاکسازی شد.`, { id: toastId });
+        queryClient.invalidateQueries({ queryKey: ['disk', 'inventory'] });
+        queryClient.invalidateQueries({ queryKey: ['disk', 'partition-count', diskName] });
       } catch (error) {
         toast.error(
           extractApiErrorMessage(error, 'پاکسازی دیسک با خطا مواجه شد.'),
@@ -159,7 +175,7 @@ const Disks = () => {
         });
       }
     },
-    []
+    [queryClient]
   );
 
   const activeWipingDisks = useMemo(
@@ -172,7 +188,7 @@ const Disks = () => {
 
   return (
     <PageContainer>
-      <Box>
+      <Box sx={{ mb: -5 }}>
         <Typography
           variant="h5"
           sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
@@ -193,6 +209,7 @@ const Disks = () => {
             disabledDiskNames={poolDeviceNames}
             wipingDiskNames={activeWipingDisks}
             areActionsLoading={isPoolDevicesLoading}
+            partitionStatus={partitionCountLookup}
           />
         </Box>
 

@@ -62,6 +62,19 @@ export interface DiskPartitionStatusResponse {
   request_data?: Record<string, unknown>;
 }
 
+export interface DiskPartitionCountResponse {
+  ok: boolean;
+  error: string | null;
+  message?: string;
+  data?: {
+    disk: string;
+    partition_count: number;
+  };
+  details?: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+  request_data?: Record<string, unknown>;
+}
+
 export interface DiskPartitionInfo {
   name: string | null;
   path: string | null;

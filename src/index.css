@@ -9,9 +9,17 @@
     src: url("/fonts/GFSDidot-Regular.ttf") format('truetype');
 }
 
+@font-face {
+    font-family: 'Roboto';
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("/fonts/Roboto-Regular.ttf") format('truetype');
+}
+
 :root {
     --font-vazir: 'Vazirmatn', sans-serif;
     --font-didot: 'Didot', serif;
+    --font-roboto: 'Roboto', serif;
 
     /* Light theme variables */
 

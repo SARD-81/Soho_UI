@@ -14,6 +14,8 @@ export interface ZpoolCapacityEntry {
   deduplicationRatio?: number | null;
   fragmentationPercent?: number | null;
   health?: string;
+  vdevType?: string | null;
+  vdevLabel?: string | null;
   raw: ZpoolCapacityPayload;
 }
 

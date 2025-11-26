@@ -73,7 +73,7 @@ const BlockStorage = () => {
 
   return (
     <PageContainer>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 , mb: -5 }}>
         <Box
           sx={{
             display: 'flex',

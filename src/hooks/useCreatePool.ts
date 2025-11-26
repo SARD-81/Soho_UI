@@ -18,6 +18,56 @@ interface CreatePoolPayload {
   save_to_db: boolean;
 }
 
+export type VdevType = 'disk' | 'mirror' | 'raidz' | '';
+
+const validatePoolName = (trimmedName: string): string | null => {
+  if (!trimmedName) {
+    return 'لطفاً نام فضای یکپارچه را وارد کنید.';
+  }
+
+  if (!/^[A-Za-z0-9]+$/.test(trimmedName)) {
+    return 'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.';
+  }
+
+  if (/^[0-9]/.test(trimmedName)) {
+    return 'نام فضای یکپارچه نمی‌تواند با عدد شروع شود.';
+  }
+
+  return null;
+};
+
+const vdevSpecificDeviceRules: Record<Exclude<VdevType, ''>, (count: number) => string | null> = {
+  disk: () => null,
+  mirror: (count) => {
+    if (count < 2 || count % 2 !== 0) {
+      return 'برای MIRROR تعداد دیسک‌ها باید عددی زوج و حداقل ۲ باشد.';
+    }
+
+    return null;
+  },
+  raidz: (count) => {
+    if (count < 3) {
+      return 'برای RAID5 حداقل سه دیسک انتخاب کنید.';
+    }
+
+    return null;
+  },
+};
+
+const resolveDevicesError = (deviceCount: number, vdevType: VdevType) => {
+  if (deviceCount === 0) {
+    return 'حداقل یک دیسک را انتخاب کنید.';
+  }
+
+  const rule = vdevType ? vdevSpecificDeviceRules[vdevType] : null;
+
+  if (!rule) {
+    return null;
+  }
+
+  return rule(deviceCount);
+};
+
 interface UseCreatePoolOptions {
   onSuccess?: (poolName: string) => void;
   onError?: (errorMessage: string) => void;
@@ -62,7 +112,7 @@ export const useCreatePool = ({
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [poolName, setPoolName] = useState('');
-  const [vdevType, setVdevType] = useState('');
+  const [vdevType, setVdevType] = useState<VdevType>('');
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   const [poolNameError, setPoolNameError] = useState<string | null>(null);
   const [vdevTypeError, setVdevTypeError] = useState<string | null>(null);
@@ -134,16 +184,9 @@ export const useCreatePool = ({
       const trimmedName = poolName.trim();
       let hasError = false;
 
-      if (!trimmedName) {
-        setPoolNameError('لطفاً نام فضای یکپارچه را وارد کنید.');
-        hasError = true;
-      } else if (!/^[A-Za-z0-9]+$/.test(trimmedName)) {
-        setPoolNameError(
-          'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.'
-        );
-        hasError = true;
-      } else if (/^[0-9]/.test(trimmedName)) {
-        setPoolNameError('نام فضای یکپارچه نمی‌تواند با عدد شروع شود.');
+      const resolvedPoolNameError = validatePoolName(trimmedName);
+      if (resolvedPoolNameError) {
+        setPoolNameError(resolvedPoolNameError);
         hasError = true;
       }
 
@@ -153,22 +196,11 @@ export const useCreatePool = ({
       }
 
       const deviceCount = selectedDevices.length;
+      const resolvedDevicesError = resolveDevicesError(deviceCount, vdevType);
 
-      if (deviceCount === 0) {
-        setDevicesError('حداقل یک دیسک را انتخاب کنید.');
+      if (resolvedDevicesError) {
+        setDevicesError(resolvedDevicesError);
         hasError = true;
-      } else if (vdevType === 'mirror') {
-        if (deviceCount < 2 || deviceCount % 2 !== 0) {
-          setDevicesError(
-            'برای MIRROR تعداد دیسک‌ها باید عددی زوج و حداقل ۲ باشد.'
-          );
-          hasError = true;
-        }
-      } else if (vdevType === 'raidz') {
-        if (deviceCount < 3) {
-          setDevicesError('برای RAID5 حداقل سه دیسک انتخاب کنید.');
-          hasError = true;
-        }
       }
 
       if (hasError) {

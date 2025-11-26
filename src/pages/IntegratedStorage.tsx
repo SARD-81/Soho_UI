@@ -6,15 +6,21 @@ import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDele
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
 import PoolDiskDetailModal from '../components/integrated-storage/PoolDiskDetailModal';
+import AddPoolDiskModal from '../components/integrated-storage/AddPoolDiskModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import ReplaceDiskModal from '../components/integrated-storage/ReplaceDiskModal';
 import PageContainer from '../components/PageContainer';
+import { useAddPoolDevices } from '../hooks/useAddPoolDevices';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
+import ConfirmExportPoolModal from '../components/integrated-storage/ConfirmExportPoolModal';
+import ImportPoolModal from '../components/integrated-storage/ImportPoolModal';
 import { type PartitionedDiskInfo, usePartitionedDisks } from '../hooks/useDisk';
 import { type PoolDiskSlot, usePoolDeviceSlots } from '../hooks/usePoolDeviceSlots';
 import { type ReplaceDevicePayload, useReplacePoolDisk } from '../hooks/useReplacePoolDisk';
 import { useZpool } from '../hooks/useZpool';
+import { useExportPool } from '../hooks/useExportPool';
+import { useImportPool } from '../hooks/useImportPool';
 
 const MAX_COMPARISON_ITEMS = 4;
 
@@ -99,6 +105,24 @@ const IntegratedStorage = () => {
     },
   });
 
+  const poolExport = useExportPool({
+    onSuccess: (poolName) => {
+      toast.success(`برون‌ریزی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
+    },
+    onError: (error, poolName) => {
+      toast.error(`برون‌ریزی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`);
+    },
+  });
+
+  const poolImport = useImportPool({
+    onSuccess: (poolName) => {
+      toast.success(`درون‌ریزی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
+    },
+    onError: (error, poolName) => {
+      toast.error(`درون‌ریزی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`);
+    },
+  });
+
   const {
     data,
     isLoading: isPoolsLoading,
@@ -109,31 +133,6 @@ const IntegratedStorage = () => {
 
   const [replacePoolName, setReplacePoolName] = useState<string | null>(null);
   const isReplaceModalOpen = Boolean(replacePoolName);
-
-  const {
-    data: partitionedDisks,
-    isLoading: isPartitionedDiskLoading,
-    isFetching: isPartitionedDiskFetching,
-    error: partitionedDiskError,
-  } = usePartitionedDisks({
-    enabled: createPool.isOpen || isReplaceModalOpen,
-    refetchInterval: createPool.isOpen || isReplaceModalOpen ? 5000 : undefined,
-  });
-
-  const deviceOptions = useMemo<DeviceOption[]>(() => {
-    return mapPartitionedDisksToDeviceOptions(partitionedDisks);
-  }, [partitionedDisks]);
-
-  const isDiskLoading =
-    isPartitionedDiskLoading ||
-    ((createPool.isOpen || isReplaceModalOpen) &&
-      isPartitionedDiskFetching &&
-      !partitionedDisks);
-  const isReplaceDiskLoading =
-    isPartitionedDiskLoading ||
-    (isReplaceModalOpen && isPartitionedDiskFetching && !partitionedDisks);
-
-  const diskError = partitionedDiskError ?? null;
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
   const poolNames = useMemo(
@@ -162,6 +161,47 @@ const IntegratedStorage = () => {
     enabled: pools.length > 0,
     refetchInterval: 20000,
   });
+
+  const addPoolDevices = useAddPoolDevices({
+    onSuccess: (poolName) => {
+      toast.success(`افزودن دیسک به ${poolName} ثبت شد.`);
+      refetchPoolSlots();
+    },
+    onError: (message, poolName) => {
+      toast.error(`افزودن دیسک به ${poolName} با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const {
+    data: partitionedDisks,
+    isLoading: isPartitionedDiskLoading,
+    isFetching: isPartitionedDiskFetching,
+    error: partitionedDiskError,
+  } = usePartitionedDisks({
+    enabled: createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen,
+    refetchInterval:
+      createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen
+        ? 5000
+        : undefined,
+  });
+
+  const deviceOptions = useMemo<DeviceOption[]>(() => {
+    return mapPartitionedDisksToDeviceOptions(partitionedDisks);
+  }, [partitionedDisks]);
+
+  const isDiskLoading =
+    isPartitionedDiskLoading ||
+    ((createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen) &&
+      isPartitionedDiskFetching &&
+      !partitionedDisks);
+  const isReplaceDiskLoading =
+    isPartitionedDiskLoading ||
+    (isReplaceModalOpen && isPartitionedDiskFetching && !partitionedDisks);
+  const isAddDiskLoading =
+    isPartitionedDiskLoading ||
+    (addPoolDevices.isOpen && isPartitionedDiskFetching && !partitionedDisks);
+
+  const diskError = partitionedDiskError ?? null;
 
   const replaceDisk = useReplacePoolDisk({
     onSuccess: (poolName) => {
@@ -194,6 +234,13 @@ const IntegratedStorage = () => {
   const handleOpenReplace = useCallback((pool: ZpoolCapacityEntry) => {
     setReplacePoolName(pool.name);
   }, []);
+
+  const handleOpenAddDevices = useCallback(
+    (pool: ZpoolCapacityEntry) => {
+      addPoolDevices.openModal(pool.name);
+    },
+    [addPoolDevices]
+  );
 
   const handleToggleSelect = useCallback(
     (pool: ZpoolCapacityEntry, checked: boolean) => {
@@ -251,13 +298,13 @@ const IntegratedStorage = () => {
 
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 , mb: -5 }}>
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 2,
+            // gap: 2,
             flexWrap: 'wrap',
           }}
         >
@@ -268,23 +315,40 @@ const IntegratedStorage = () => {
             فضای یکپارچه
           </Typography>
 
-          <Button
-            onClick={handleOpenCreate}
-            variant="contained"
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: '3px',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              background:
-                'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-              color: 'var(--color-bg)',
-              boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-            }}
-          >
-            ایجاد
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              onClick={poolImport.openModal}
+              variant="outlined"
+              sx={{
+                px: 2.5,
+                py: 1,
+                borderRadius: '3px',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                color: 'var(--color-primary)',
+                borderColor: 'rgba(31, 182, 255, 0.5)',
+              }}
+            >
+              درون‌ریزی
+            </Button>
+            <Button
+              onClick={handleOpenCreate}
+              variant="contained"
+              sx={{
+                px: 3,
+                py: 1.25,
+                borderRadius: '3px',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                background:
+                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+                color: 'var(--color-bg)',
+                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+              }}
+            >
+              ایجاد
+            </Button>
+          </Box>
         </Box>
       </Box>
 
@@ -303,6 +367,8 @@ const IntegratedStorage = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onReplace={handleOpenReplace}
+        onAddDevices={handleOpenAddDevices}
+        onExport={poolExport.requestExport}
         isDeleteDisabled={poolDeletion.isDeleting}
         selectedPools={selectedPools}
         onToggleSelect={handleToggleSelect}
@@ -310,6 +376,13 @@ const IntegratedStorage = () => {
         slotErrors={poolDevices?.errorsByPool}
         isSlotLoading={isSlotLoading}
         onSlotClick={handleSlotClick}
+      />
+
+      <AddPoolDiskModal
+        controller={addPoolDevices}
+        deviceOptions={deviceOptions}
+        isDiskLoading={isAddDiskLoading}
+        diskError={diskError}
       />
 
       <ReplaceDiskModal
@@ -333,12 +406,14 @@ const IntegratedStorage = () => {
       {/*)}*/}
 
       <ConfirmDeletePoolModal controller={poolDeletion} />
+      <ConfirmExportPoolModal controller={poolExport} />
       <PoolDiskDetailModal
         open={Boolean(selectedSlot)}
         onClose={handleCloseSlotModal}
         slot={selectedSlot?.slot ?? null}
         poolName={selectedSlot?.poolName ?? null}
       />
+      <ImportPoolModal controller={poolImport} />
     </PageContainer>
   );
 };

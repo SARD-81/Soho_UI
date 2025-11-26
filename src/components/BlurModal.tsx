@@ -20,7 +20,7 @@ const BlurModal = ({
   actions,
   children,
   maxWidth,
-  minWidth,
+  minWidth = "455px",
   maxHeight = "90vh",
 }: BlurModalProps) => {
   return (
@@ -45,7 +45,7 @@ const BlurModal = ({
           transform: 'translate(-50%, -50%)',
           width: 'auto',
           ...(maxWidth && { maxWidth }),
-          ...(minWidth && { minWidth }),
+          minWidth ,
           ...(maxHeight && { maxHeight }),
           borderRadius: '5px',
           bgcolor: 'var(--color-card-bg)',

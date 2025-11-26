@@ -6,6 +6,7 @@ import type {
   ZpoolQueryResult,
 } from '../@types/zpool';
 import axiosInstance from '../lib/axiosInstance';
+import { normalizeVdevType, resolveVdevLabel } from '../constants/vdev';
 
 const ZPOOL_LIST_ENDPOINT = '/api/zpool/';
 
@@ -198,6 +199,17 @@ const normalizeZpoolCapacity = (
     (raw as Record<string, unknown>).status ??
     (raw as Record<string, unknown>).state;
 
+  const vdevTypeSource =
+    (raw as Record<string, unknown>).vdev_type ??
+    (raw as Record<string, unknown>).vdevType ??
+    (raw as Record<string, unknown>).vdevtype;
+  const vdevType =
+    typeof vdevTypeSource === 'string' && vdevTypeSource.trim().length > 0
+      ? vdevTypeSource.trim()
+      : null;
+  const normalizedVdevType = normalizeVdevType(vdevType);
+  const vdevLabel = vdevType ? resolveVdevLabel(vdevType) : null;
+
   return {
     name:
       typeof raw.name === 'string' && raw.name.trim()
@@ -222,6 +234,8 @@ const normalizeZpoolCapacity = (
         : Array.isArray(healthSource)
           ? healthSource.join(', ')
           : undefined,
+    vdevType: normalizedVdevType || null,
+    vdevLabel,
     raw,
   };
 };
@@ -269,7 +283,7 @@ export const useZpool = (options?: UseZpoolOptions) => {
     queryKey: ['zpool'],
     queryFn: fetchZpools,
     enabled: options?.enabled ?? true,
-    // refetchInterval: options?.refetchInterval ?? 10 * 60 * 1000,
-    // refetchIntervalInBackground: true,
+    refetchInterval: 5000,
+    // refetchIntervalInBackground: Boolean(options?.refetchInterval),
   });
 };
