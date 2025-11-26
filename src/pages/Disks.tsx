@@ -8,6 +8,7 @@ import DisksTable from '../components/disks/DisksTable';
 import SelectedDisksDetailsPanel from '../components/disks/SelectedDisksDetailsPanel';
 import { useDiskDetails, useDiskInventory } from '../hooks/useDiskInventory';
 import usePoolDeviceNames from '../hooks/usePoolDeviceNames';
+import { useDiskPartitionCounts } from '../hooks/useDiskPartitionCounts';
 import { cleanupDisk } from '../lib/diskMaintenance';
 import extractApiErrorMessage from '../utils/apiError';
 
@@ -38,11 +39,22 @@ const Disks = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: disks = [], isLoading, error } = useDiskInventory();
   const detailItems = useDiskDetails(selectedDisks);
+  const diskNames = useMemo(() => disks.map((disk) => disk.disk), [disks]);
   const {
     data: poolDeviceNames = [],
     error: poolDevicesError,
     isLoading: isPoolDevicesLoading,
   } = usePoolDeviceNames();
+  const partitionCounts = useDiskPartitionCounts(diskNames);
+  const partitionCountLookup = useMemo(() => {
+    const lookup: Record<string, { partitionCount: number | null; isLoading: boolean }> = {};
+
+    partitionCounts.forEach(({ diskName, partitionCount, isLoading }) => {
+      lookup[diskName] = { partitionCount, isLoading };
+    });
+
+    return lookup;
+  }, [partitionCounts]);
 
   const syncSelectionToQuery = useCallback(
     (next: string[]) => {
@@ -193,6 +205,7 @@ const Disks = () => {
             disabledDiskNames={poolDeviceNames}
             wipingDiskNames={activeWipingDisks}
             areActionsLoading={isPoolDevicesLoading}
+            partitionStatus={partitionCountLookup}
           />
         </Box>
 

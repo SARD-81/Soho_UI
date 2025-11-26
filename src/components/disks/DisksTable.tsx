@@ -1,7 +1,7 @@
 import { Box, Button, Chip, Tooltip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
-import { PiBroomFill } from "react-icons/pi";
+import { PiBroomFill } from 'react-icons/pi';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { DiskInventoryItem } from '../../@types/disk';
 import { formatBytes } from '../../utils/formatters';
@@ -17,6 +17,7 @@ interface DisksTableProps {
   disabledDiskNames?: string[];
   wipingDiskNames?: string[];
   areActionsLoading?: boolean;
+  partitionStatus?: Record<string, { partitionCount: number | null; isLoading: boolean }>;
 }
 
 const formatStateLabel = (state: string | null | undefined) => {
@@ -56,6 +57,7 @@ const DisksTable = ({
   disabledDiskNames = [],
   wipingDiskNames = [],
   areActionsLoading = false,
+  partitionStatus = {},
 }: DisksTableProps) => {
   const theme = useTheme();
 
@@ -67,6 +69,25 @@ const DisksTable = ({
   const wipingDisks = useMemo(
     () => new Set(wipingDiskNames.map((name) => name.trim()).filter(Boolean)),
     [wipingDiskNames]
+  );
+
+  const resolvePartitionStatus = useCallback(
+    (diskName: string) =>
+      partitionStatus[diskName] ?? { partitionCount: null, isLoading: false },
+    [partitionStatus]
+  );
+
+  const renderStateChip = useCallback(
+    (label: string, color: 'default' | 'success' | 'warning' | 'error') => (
+      <Chip
+        label={label}
+        color={color}
+        variant="outlined"
+        size="small"
+        sx={{ fontWeight: 600, px: 0.5 }}
+      />
+    ),
+    []
   );
 
   const handleRowClick = useCallback(
@@ -151,15 +172,8 @@ const DisksTable = ({
         header: 'وضعیت',
         align: 'center',
         width: 140,
-        renderCell: (disk) => (
-          <Chip
-            label={formatStateLabel(disk.state)}
-            color={resolveStateColor(disk.state)}
-            variant="outlined"
-            size="small"
-            sx={{ fontWeight: 600, px: 0.5 }}
-          />
-        ),
+        renderCell: (disk) =>
+          renderStateChip(formatStateLabel(disk.state), resolveStateColor(disk.state)),
       },
       {
         id: 'actions',
@@ -169,6 +183,24 @@ const DisksTable = ({
         renderCell: (disk) => {
           const isDisabled =
             areActionsLoading || disabledDisks.has(disk.disk) || wipingDisks.has(disk.disk);
+          const { partitionCount, isLoading: isPartitionLoading } =
+            resolvePartitionStatus(disk.disk);
+          const hasPartitions =
+            typeof partitionCount === 'number'
+              ? partitionCount > 0
+              : Boolean(disk.has_partition);
+          const hasNoPartitions =
+            typeof partitionCount === 'number'
+              ? partitionCount === 0
+              : disk.has_partition === false;
+
+          if (disabledDisks.has(disk.disk) && hasPartitions) {
+            return renderStateChip('busy', 'warning');
+          }
+
+          if (hasNoPartitions) {
+            return renderStateChip('free', 'success');
+          }
 
           return (
             <Tooltip title="پاکسازی دیسک" arrow>
@@ -177,14 +209,19 @@ const DisksTable = ({
                   variant="contained"
                   size="small"
                   color="error"
-                  disabled={isDisabled || !onWipe}
+                  disabled={
+                    isDisabled ||
+                    !onWipe ||
+                    isPartitionLoading ||
+                    hasNoPartitions ||
+                    !hasPartitions
+                  }
                   onClick={(event) => {
                     event.stopPropagation();
                     onWipe?.(disk);
                   }}
-                  startIcon={<PiBroomFill size={18} />}
                 >
-                  پاکسازی
+                  <PiBroomFill size={18} />
                 </Button>
               </span>
             </Tooltip>
@@ -192,7 +229,14 @@ const DisksTable = ({
         },
       },
     ];
-  }, [areActionsLoading, disabledDisks, onWipe, wipingDisks]);
+  }, [
+    areActionsLoading,
+    disabledDisks,
+    onWipe,
+    renderStateChip,
+    resolvePartitionStatus,
+    wipingDisks,
+  ]);
 
   return (
     <DataTable<DiskInventoryItem>
