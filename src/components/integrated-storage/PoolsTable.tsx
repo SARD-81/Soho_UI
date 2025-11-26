@@ -7,7 +7,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
-import { MdDeleteOutline, MdSwapHoriz } from 'react-icons/md';
+import { MdAddCircleOutline, MdDeleteOutline, MdSwapHoriz } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
 import type { PoolDiskSlot, PoolSlotMap } from '../../hooks/usePoolDeviceSlots';
@@ -27,6 +27,7 @@ interface PoolsTableProps {
   onEdit: (pool: ZpoolCapacityEntry) => void;
   onDelete: (pool: ZpoolCapacityEntry) => void;
   onReplace: (pool: ZpoolCapacityEntry) => void;
+  onAddDevices: (pool: ZpoolCapacityEntry) => void;
   isDeleteDisabled: boolean;
   selectedPools: string[];
   onToggleSelect: (pool: ZpoolCapacityEntry, checked: boolean) => void;
@@ -52,6 +53,7 @@ const PoolsTable = ({
   onEdit,
   onDelete,
   onReplace,
+  onAddDevices,
   isDeleteDisabled,
   selectedPools,
   onToggleSelect,
@@ -271,6 +273,15 @@ const PoolsTable = ({
                 <MdSwapHoriz size={24} />
               </IconButton>
             </Tooltip>
+            <Tooltip title="افزودن دیسک">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => onAddDevices(pool)}
+              >
+                <MdAddCircleOutline size={20} />
+              </IconButton>
+            </Tooltip>
             {/*<Tooltip title="ویرایش">*/}
             {/*  <IconButton*/}
             {/*    size="small"*/}
@@ -299,6 +310,7 @@ const PoolsTable = ({
       isSlotLoading,
       onDelete,
       onEdit,
+      onAddDevices,
       onReplace,
       onSlotClick,
       onToggleSelect,

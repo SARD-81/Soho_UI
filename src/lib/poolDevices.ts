@@ -1,8 +1,10 @@
 import axiosInstance from './axiosInstance';
 import extractApiErrorMessage from '../utils/apiError';
 
-interface PoolDeviceEntry {
+export interface PoolDeviceEntry {
   disk_name?: string | null;
+  vdev_type?: string | null;
+  vdevType?: string | null;
 }
 
 interface PoolDevicesResponse {
@@ -14,7 +16,7 @@ interface PoolDevicesResponse {
 export const DEFAULT_FETCH_POOL_DEVICES_ERROR_MESSAGE =
   'امکان دریافت دیسک‌های متصل به فضای یکپارچه وجود ندارد.';
 
-export const fetchPoolDeviceNames = async (poolName: string) => {
+export const fetchPoolDevices = async (poolName: string) => {
   const encodedPoolName = encodeURIComponent(poolName);
 
   try {
@@ -31,16 +33,31 @@ export const fetchPoolDeviceNames = async (poolName: string) => {
       throw new Error(errorMessage);
     }
 
-    const devices = response.data?.data ?? [];
-
-    return devices
-      .map((device) => device.disk_name?.trim())
-      .filter((diskName): diskName is string => Boolean(diskName));
+    return response.data?.data ?? [];
   } catch (error) {
     throw new Error(
       extractApiErrorMessage(error, DEFAULT_FETCH_POOL_DEVICES_ERROR_MESSAGE)
     );
   }
+};
+
+export const fetchPoolDeviceNames = async (poolName: string) => {
+  const devices = await fetchPoolDevices(poolName);
+
+  return devices
+    .map((device) => device.disk_name?.trim())
+    .filter((diskName): diskName is string => Boolean(diskName));
+};
+
+export const fetchPoolVdevType = async (poolName: string) => {
+  const devices = await fetchPoolDevices(poolName);
+
+  const vdevType = devices
+    .map((device) => device.vdev_type ?? device.vdevType ?? '')
+    .map((type) => type?.trim())
+    .find((type) => Boolean(type));
+
+  return vdevType ?? '';
 };
 
 export default fetchPoolDeviceNames;
