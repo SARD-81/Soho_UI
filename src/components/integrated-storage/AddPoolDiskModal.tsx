@@ -87,7 +87,7 @@ const AddPoolDiskModal = ({
           confirmLabel="ثبت"
           loadingLabel="در حال ثبت..."
           isLoading={isSubmitting || isVdevLoading}
-          disabled={isSubmitting || isVdevLoading || !poolName || !vdevType}
+          disabled={isSubmitting || isVdevLoading || !poolName}
           cancelProps={{ sx: { borderRadius: '3px', px: 3 } }}
           confirmProps={{
             type: 'submit',
@@ -119,7 +119,7 @@ const AddPoolDiskModal = ({
           نوع آرایه
         </InputLabel>
         <TextField
-          value={vdevLabel}
+          value={vdevType || vdevLabel}
           id="vdev-type"
           disabled
           fullWidth
