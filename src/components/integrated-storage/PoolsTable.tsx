@@ -7,7 +7,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
-import { MdAddCircleOutline, MdDeleteOutline, MdSwapHoriz } from 'react-icons/md';
+import {
+  MdAddCircleOutline,
+  MdDeleteOutline,
+  MdFileDownload,
+  MdSwapHoriz,
+} from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
 import type { PoolDiskSlot, PoolSlotMap } from '../../hooks/usePoolDeviceSlots';
@@ -27,6 +32,7 @@ interface PoolsTableProps {
   onDelete: (pool: ZpoolCapacityEntry) => void;
   onReplace: (pool: ZpoolCapacityEntry) => void;
   onAddDevices: (pool: ZpoolCapacityEntry) => void;
+  onExport: (pool: ZpoolCapacityEntry) => void;
   isDeleteDisabled: boolean;
   selectedPools: string[];
   onToggleSelect: (pool: ZpoolCapacityEntry, checked: boolean) => void;
@@ -60,6 +66,7 @@ const PoolsTable = ({
   onDelete,
   onReplace,
   onAddDevices,
+  onExport,
   isDeleteDisabled,
   selectedPools,
   onToggleSelect,
@@ -267,6 +274,15 @@ const PoolsTable = ({
                 <MdAddCircleOutline size={20} />
               </IconButton>
             </Tooltip>
+            <Tooltip title="برون‌ریزی">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => onExport(pool)}
+              >
+                <MdFileDownload size={20} />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="حذف">
               <IconButton
                 size="small"
@@ -287,6 +303,7 @@ const PoolsTable = ({
       onDelete,
       onEdit,
       onAddDevices,
+      onExport,
       onReplace,
       onSlotClick,
       onToggleSelect,
