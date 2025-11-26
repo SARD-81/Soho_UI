@@ -104,10 +104,12 @@ export const useAddPoolDevices = (options: UseAddPoolDevicesOptions = {}) => {
     gcTime: 0,
     refetchOnWindowFocus: false,
     onSuccess: (type) => {
+      const normalized = normalizeVdevType(type);
+
       setVdevType(type);
-      if (!type) {
-        setVdevError('نوع آرایه این فضا قابل شناسایی نیست.');
-      }
+      setVdevError(
+        normalized ? null : 'نوع آرایه این فضا قابل شناسایی نیست.'
+      );
     },
     onError: (error) => {
       setVdevError(error.message);
@@ -178,13 +180,15 @@ export const useAddPoolDevices = (options: UseAddPoolDevicesOptions = {}) => {
         return;
       }
 
-      if (!vdevType) {
+      const normalizedVdevType = normalizeVdevType(vdevType);
+
+      if (!normalizedVdevType) {
         setVdevError('نوع آرایه شناسایی نشده است.');
         return;
       }
 
       const validationMessage = validateVdevDeviceSelection(
-        vdevType,
+        normalizedVdevType,
         selectedDevices.length
       );
 
@@ -196,7 +200,7 @@ export const useAddPoolDevices = (options: UseAddPoolDevicesOptions = {}) => {
       addDevicesMutation.mutate({
         pool_name: poolName,
         devices: selectedDevices,
-        vdev_type: normalizeVdevType(vdevType),
+        vdev_type: normalizedVdevType,
         save_to_db: true,
       });
     },

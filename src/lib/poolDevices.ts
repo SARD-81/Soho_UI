@@ -1,5 +1,4 @@
 import axiosInstance from './axiosInstance';
-import { normalizeVdevType } from '../constants/vdev';
 import extractApiErrorMessage from '../utils/apiError';
 
 export interface PoolDeviceEntry {
@@ -51,9 +50,9 @@ export const fetchPoolDeviceNames = async (poolName: string) => {
 
 export const fetchPoolVdevType = async (poolName: string) => {
   const devices = await fetchPoolDevices(poolName);
-  const vdevType = devices.find((device) => device.vdev_type)?.vdev_type ?? '';
+  const vdevType = devices.find((device) => device.vdev_type)?.vdev_type?.trim();
 
-  return normalizeVdevType(vdevType);
+  return vdevType ?? '';
 };
 
 export default fetchPoolDeviceNames;
