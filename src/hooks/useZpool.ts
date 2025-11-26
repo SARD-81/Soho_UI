@@ -30,6 +30,12 @@ const BYTE_UNITS: Record<string, number> = {
   pib: 1024 ** 5,
 };
 
+const VDEV_TYPE_LABELS: Record<string, string> = {
+  disk: 'STRIPE',
+  mirror: 'MIRROR',
+  raidz: 'RAID5',
+};
+
 const parseByteValue = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
@@ -193,6 +199,18 @@ const normalizeZpoolCapacity = (
   const fragmentationPercent =
     fragmentationSource != null ? parsePercentValue(fragmentationSource) : null;
 
+  const vdevTypeSource =
+    (raw as Record<string, unknown>).vdev_type ??
+    (raw as Record<string, unknown>).vdevType ??
+    (raw as Record<string, unknown>).vdevtype;
+  const vdevType =
+    typeof vdevTypeSource === 'string' && vdevTypeSource.trim()
+      ? vdevTypeSource.trim()
+      : null;
+  const vdevTypeLabel = vdevType
+    ? VDEV_TYPE_LABELS[vdevType.toLowerCase()] ?? vdevType
+    : null;
+
   const healthSource =
     raw.health ??
     (raw as Record<string, unknown>).status ??
@@ -216,6 +234,8 @@ const normalizeZpoolCapacity = (
       fragmentationPercent != null && Number.isFinite(fragmentationPercent)
         ? clampPercent(fragmentationPercent)
         : null,
+    vdevType,
+    vdevTypeLabel,
     health:
       typeof healthSource === 'string'
         ? healthSource

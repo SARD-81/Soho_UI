@@ -99,6 +99,80 @@ const PoolsTable = ({
         ),
       },
       {
+        id: 'total',
+        header: 'ظرفیت کل',
+        align: 'left',
+        renderCell: (pool) => (
+          <Typography sx={numberValueSx}>
+            {formatCapacity(pool.totalBytes)}
+          </Typography>
+        ),
+      },
+      {
+        id: 'used',
+        header: 'حجم مصرف‌شده',
+        align: 'center',
+        cellSx: { minWidth: 180 },
+        renderCell: (pool) => {
+          const utilization = clampPercent(pool.capacityPercent);
+
+          return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box
+                sx={{
+                  position: 'relative',
+                  height: 7,
+                  borderRadius: '5px',
+                  marginTop: 1,
+                  backgroundColor: 'rgba(0, 198, 169, 0.12)',
+                  overflow: 'hidden',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: `${utilization ?? 0}%`,
+                    transition: 'width 0.3s ease',
+                    height: '100%',
+                    background:
+                      'linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+                  }}
+                />
+              </Box>
+              <Typography variant="body2" sx={numberValueSx}>
+                {formatBytes(pool.usedBytes)}
+                {/*<Typography*/}
+                {/*  component="span"*/}
+                {/*  sx={{ mx: 0.5, color: 'var(--color-secondary)' }}*/}
+                {/*>*/}
+                {/*  از*/}
+                {/*</Typography>*/}
+                {/*{formatCapacity(pool.totalBytes)}*/}
+              </Typography>
+            </Box>
+          );
+        },
+      },
+      {
+        id: 'free',
+        header: 'حجم آزاد',
+        align: 'right',
+        renderCell: (pool) => (
+          <Typography sx={numberValueSx}>
+            {formatCapacity(pool.freeBytes)}
+          </Typography>
+        ),
+      },
+      {
+        id: 'vdevType',
+        header: 'نوع آرایه',
+        align: 'center',
+        renderCell: (pool) => (
+          <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+            {pool.vdevTypeLabel ?? pool.vdevType ?? 'نامشخص'}
+          </Typography>
+        ),
+      },
+      {
         id: 'slots',
         header: 'شماره اسلات دیسک‌ها',
         align: 'center',
@@ -169,70 +243,6 @@ const PoolsTable = ({
             </Box>
           );
         },
-      },
-      {
-        id: 'total',
-        header: 'ظرفیت کل',
-        align: 'left',
-        renderCell: (pool) => (
-          <Typography sx={numberValueSx}>
-            {formatCapacity(pool.totalBytes)}
-          </Typography>
-        ),
-      },
-      {
-        id: 'used',
-        header: 'حجم مصرف‌شده',
-        align: 'center',
-        cellSx: { minWidth: 180 },
-        renderCell: (pool) => {
-          const utilization = clampPercent(pool.capacityPercent);
-
-          return (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Box
-                sx={{
-                  position: 'relative',
-                  height: 7,
-                  borderRadius: '5px',
-                  marginTop: 1,
-                  backgroundColor: 'rgba(0, 198, 169, 0.12)',
-                  overflow: 'hidden',
-                }}
-              >
-                <Box
-                  sx={{
-                    width: `${utilization ?? 0}%`,
-                    transition: 'width 0.3s ease',
-                    height: '100%',
-                    background:
-                      'linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
-                  }}
-                />
-              </Box>
-              <Typography variant="body2" sx={numberValueSx}>
-                {formatBytes(pool.usedBytes)}
-                {/*<Typography*/}
-                {/*  component="span"*/}
-                {/*  sx={{ mx: 0.5, color: 'var(--color-secondary)' }}*/}
-                {/*>*/}
-                {/*  از*/}
-                {/*</Typography>*/}
-                {/*{formatCapacity(pool.totalBytes)}*/}
-              </Typography>
-            </Box>
-          );
-        },
-      },
-      {
-        id: 'free',
-        header: 'حجم آزاد',
-        align: 'right',
-        renderCell: (pool) => (
-          <Typography sx={numberValueSx}>
-            {formatCapacity(pool.freeBytes)}
-          </Typography>
-        ),
       },
       {
         id: 'status',
