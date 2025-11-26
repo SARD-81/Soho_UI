@@ -18,6 +18,7 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import { resolveVdevLabel } from '../../constants/vdev';
 import type { UseCreatePoolReturn } from '../../hooks/useCreatePool';
 import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
@@ -273,9 +274,9 @@ const CreatePoolModal = ({
               >
                 یکی از گزینه های زیر را انتخاب کنید
               </MenuItem>
-              <MenuItem value="disk">STRIPE</MenuItem>
-              <MenuItem value="mirror">MIRROR</MenuItem>
-              <MenuItem value="raidz">RAID5</MenuItem>
+              <MenuItem value="disk">{resolveVdevLabel('disk')}</MenuItem>
+              <MenuItem value="mirror">{resolveVdevLabel('mirror')}</MenuItem>
+              <MenuItem value="raidz">{resolveVdevLabel('raidz')}</MenuItem>
             </Select>
             {vdevTypeError && (
               <FormHelperText>{vdevTypeError}</FormHelperText>

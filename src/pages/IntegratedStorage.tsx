@@ -6,9 +6,11 @@ import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDele
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
 import PoolDiskDetailModal from '../components/integrated-storage/PoolDiskDetailModal';
+import AddPoolDiskModal from '../components/integrated-storage/AddPoolDiskModal';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import ReplaceDiskModal from '../components/integrated-storage/ReplaceDiskModal';
 import PageContainer from '../components/PageContainer';
+import { useAddPoolDevices } from '../hooks/useAddPoolDevices';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
 import { type PartitionedDiskInfo, usePartitionedDisks } from '../hooks/useDisk';
@@ -110,31 +112,6 @@ const IntegratedStorage = () => {
   const [replacePoolName, setReplacePoolName] = useState<string | null>(null);
   const isReplaceModalOpen = Boolean(replacePoolName);
 
-  const {
-    data: partitionedDisks,
-    isLoading: isPartitionedDiskLoading,
-    isFetching: isPartitionedDiskFetching,
-    error: partitionedDiskError,
-  } = usePartitionedDisks({
-    enabled: createPool.isOpen || isReplaceModalOpen,
-    refetchInterval: createPool.isOpen || isReplaceModalOpen ? 5000 : undefined,
-  });
-
-  const deviceOptions = useMemo<DeviceOption[]>(() => {
-    return mapPartitionedDisksToDeviceOptions(partitionedDisks);
-  }, [partitionedDisks]);
-
-  const isDiskLoading =
-    isPartitionedDiskLoading ||
-    ((createPool.isOpen || isReplaceModalOpen) &&
-      isPartitionedDiskFetching &&
-      !partitionedDisks);
-  const isReplaceDiskLoading =
-    isPartitionedDiskLoading ||
-    (isReplaceModalOpen && isPartitionedDiskFetching && !partitionedDisks);
-
-  const diskError = partitionedDiskError ?? null;
-
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
   const poolNames = useMemo(
     () =>
@@ -162,6 +139,47 @@ const IntegratedStorage = () => {
     enabled: pools.length > 0,
     refetchInterval: 20000,
   });
+
+  const addPoolDevices = useAddPoolDevices({
+    onSuccess: (poolName) => {
+      toast.success(`افزودن دیسک به ${poolName} ثبت شد.`);
+      refetchPoolSlots();
+    },
+    onError: (message, poolName) => {
+      toast.error(`افزودن دیسک به ${poolName} با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const {
+    data: partitionedDisks,
+    isLoading: isPartitionedDiskLoading,
+    isFetching: isPartitionedDiskFetching,
+    error: partitionedDiskError,
+  } = usePartitionedDisks({
+    enabled: createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen,
+    refetchInterval:
+      createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen
+        ? 5000
+        : undefined,
+  });
+
+  const deviceOptions = useMemo<DeviceOption[]>(() => {
+    return mapPartitionedDisksToDeviceOptions(partitionedDisks);
+  }, [partitionedDisks]);
+
+  const isDiskLoading =
+    isPartitionedDiskLoading ||
+    ((createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen) &&
+      isPartitionedDiskFetching &&
+      !partitionedDisks);
+  const isReplaceDiskLoading =
+    isPartitionedDiskLoading ||
+    (isReplaceModalOpen && isPartitionedDiskFetching && !partitionedDisks);
+  const isAddDiskLoading =
+    isPartitionedDiskLoading ||
+    (addPoolDevices.isOpen && isPartitionedDiskFetching && !partitionedDisks);
+
+  const diskError = partitionedDiskError ?? null;
 
   const replaceDisk = useReplacePoolDisk({
     onSuccess: (poolName) => {
@@ -194,6 +212,13 @@ const IntegratedStorage = () => {
   const handleOpenReplace = useCallback((pool: ZpoolCapacityEntry) => {
     setReplacePoolName(pool.name);
   }, []);
+
+  const handleOpenAddDevices = useCallback(
+    (pool: ZpoolCapacityEntry) => {
+      addPoolDevices.openModal(pool.name);
+    },
+    [addPoolDevices]
+  );
 
   const handleToggleSelect = useCallback(
     (pool: ZpoolCapacityEntry, checked: boolean) => {
@@ -303,6 +328,7 @@ const IntegratedStorage = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onReplace={handleOpenReplace}
+        onAddDevices={handleOpenAddDevices}
         isDeleteDisabled={poolDeletion.isDeleting}
         selectedPools={selectedPools}
         onToggleSelect={handleToggleSelect}
@@ -310,6 +336,13 @@ const IntegratedStorage = () => {
         slotErrors={poolDevices?.errorsByPool}
         isSlotLoading={isSlotLoading}
         onSlotClick={handleSlotClick}
+      />
+
+      <AddPoolDiskModal
+        controller={addPoolDevices}
+        deviceOptions={deviceOptions}
+        isDiskLoading={isAddDiskLoading}
+        diskError={diskError}
       />
 
       <ReplaceDiskModal

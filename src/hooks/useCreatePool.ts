@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { FormEvent } from 'react';
 import { useCallback, useState } from 'react';
+import { normalizeVdevType, validateVdevDeviceSelection } from '../constants/vdev';
 import axiosInstance from '../lib/axiosInstance';
 
 interface ApiErrorResponse {
@@ -152,23 +153,14 @@ export const useCreatePool = ({
         hasError = true;
       }
 
-      const deviceCount = selectedDevices.length;
+      const validationError = validateVdevDeviceSelection(
+        vdevType,
+        selectedDevices.length
+      );
 
-      if (deviceCount === 0) {
-        setDevicesError('حداقل یک دیسک را انتخاب کنید.');
+      if (validationError) {
+        setDevicesError(validationError);
         hasError = true;
-      } else if (vdevType === 'mirror') {
-        if (deviceCount < 2 || deviceCount % 2 !== 0) {
-          setDevicesError(
-            'برای MIRROR تعداد دیسک‌ها باید عددی زوج و حداقل ۲ باشد.'
-          );
-          hasError = true;
-        }
-      } else if (vdevType === 'raidz') {
-        if (deviceCount < 3) {
-          setDevicesError('برای RAID5 حداقل سه دیسک انتخاب کنید.');
-          hasError = true;
-        }
       }
 
       if (hasError) {
@@ -178,7 +170,7 @@ export const useCreatePool = ({
       createPoolMutation.mutate({
         pool_name: trimmedName,
         devices: selectedDevices,
-        vdev_type: vdevType,
+        vdev_type: normalizeVdevType(vdevType),
         save_to_db: true,
       });
     },
