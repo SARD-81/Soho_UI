@@ -2,6 +2,7 @@ import { Box, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import type { DiskInventoryItem } from '../@types/disk';
 import PageContainer from '../components/PageContainer';
 import DisksTable from '../components/disks/DisksTable';
@@ -36,6 +37,7 @@ const areSelectionsEqual = (first: string[], second: string[]) =>
 const Disks = () => {
   const [selectedDisks, setSelectedDisks] = useState<string[]>([]);
   const [wipingDisks, setWipingDisks] = useState<Record<string, boolean>>({});
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: disks = [], isLoading, error } = useDiskInventory();
   const detailItems = useDiskDetails(selectedDisks);
@@ -158,6 +160,8 @@ const Disks = () => {
       try {
         await cleanupDisk(diskName);
         toast.success(`دیسک ${diskName} پاکسازی شد.`, { id: toastId });
+        queryClient.invalidateQueries({ queryKey: ['disk', 'inventory'] });
+        queryClient.invalidateQueries({ queryKey: ['disk', 'partition-count', diskName] });
       } catch (error) {
         toast.error(
           extractApiErrorMessage(error, 'پاکسازی دیسک با خطا مواجه شد.'),
@@ -171,7 +175,7 @@ const Disks = () => {
         });
       }
     },
-    []
+    [queryClient]
   );
 
   const activeWipingDisks = useMemo(

@@ -283,7 +283,7 @@ export const useZpool = (options?: UseZpoolOptions) => {
     queryKey: ['zpool'],
     queryFn: fetchZpools,
     enabled: options?.enabled ?? true,
-    // refetchInterval: options?.refetchInterval ?? 10 * 60 * 1000,
-    // refetchIntervalInBackground: true,
+    refetchInterval: 5000,
+    // refetchIntervalInBackground: Boolean(options?.refetchInterval),
   });
 };

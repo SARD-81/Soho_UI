@@ -1,11 +1,11 @@
-import { Box, Button, Chip, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, Tooltip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
-import { PiBroomFill } from 'react-icons/pi';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { DiskInventoryItem } from '../../@types/disk';
 import { formatBytes } from '../../utils/formatters';
 import DataTable from '../DataTable';
+import { PiBroomFill } from 'react-icons/pi';
 
 interface DisksTableProps {
   disks: DiskInventoryItem[];
@@ -17,7 +17,10 @@ interface DisksTableProps {
   disabledDiskNames?: string[];
   wipingDiskNames?: string[];
   areActionsLoading?: boolean;
-  partitionStatus?: Record<string, { partitionCount: number | null; isLoading: boolean }>;
+  partitionStatus?: Record<
+    string,
+    { partitionCount: number | null; isLoading: boolean }
+  >;
 }
 
 const formatStateLabel = (state: string | null | undefined) => {
@@ -157,7 +160,7 @@ const DisksTable = ({
             <Typography
               sx={{
                 color: 'var(--color-primary)',
-                fontFamily: 'monospace',
+                fontFamily: 'var(--font-roboto)',
                 direction: 'ltr',
                 textTransform: 'none',
               }}
@@ -173,7 +176,10 @@ const DisksTable = ({
         align: 'center',
         width: 140,
         renderCell: (disk) =>
-          renderStateChip(formatStateLabel(disk.state), resolveStateColor(disk.state)),
+          renderStateChip(
+            formatStateLabel(disk.state),
+            resolveStateColor(disk.state)
+          ),
       },
       {
         id: 'actions',
@@ -182,7 +188,9 @@ const DisksTable = ({
         width: 160,
         renderCell: (disk) => {
           const isDisabled =
-            areActionsLoading || disabledDisks.has(disk.disk) || wipingDisks.has(disk.disk);
+            areActionsLoading ||
+            disabledDisks.has(disk.disk) ||
+            wipingDisks.has(disk.disk);
           const { partitionCount, isLoading: isPartitionLoading } =
             resolvePartitionStatus(disk.disk);
           const hasPartitions =
@@ -205,7 +213,7 @@ const DisksTable = ({
           return (
             <Tooltip title="پاکسازی دیسک" arrow>
               <span>
-                <Button
+                {/* <Button
                   variant="contained"
                   size="small"
                   color="error"
@@ -220,9 +228,27 @@ const DisksTable = ({
                     event.stopPropagation();
                     onWipe?.(disk);
                   }}
-                >
-                  <PiBroomFill size={18} />
-                </Button>
+                > */}
+                <Chip
+                  label={<PiBroomFill size={18} />}
+                  clickable={
+                    isDisabled ||
+                    !onWipe ||
+                    isPartitionLoading ||
+                    hasNoPartitions ||
+                    !hasPartitions
+                  }
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onWipe?.(disk);
+                  }}
+                  color= "error"
+                  variant="filled"
+                  size="small"
+                  sx={{ fontWeight: 600, px: 0.5 }}
+                />
+                {/* <PiBroomFill size={18} /> */}
+                {/* </Button> */}
               </span>
             </Tooltip>
           );

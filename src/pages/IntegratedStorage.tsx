@@ -13,10 +13,14 @@ import PageContainer from '../components/PageContainer';
 import { useAddPoolDevices } from '../hooks/useAddPoolDevices';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
+import ConfirmExportPoolModal from '../components/integrated-storage/ConfirmExportPoolModal';
+import ImportPoolModal from '../components/integrated-storage/ImportPoolModal';
 import { type PartitionedDiskInfo, usePartitionedDisks } from '../hooks/useDisk';
 import { type PoolDiskSlot, usePoolDeviceSlots } from '../hooks/usePoolDeviceSlots';
 import { type ReplaceDevicePayload, useReplacePoolDisk } from '../hooks/useReplacePoolDisk';
 import { useZpool } from '../hooks/useZpool';
+import { useExportPool } from '../hooks/useExportPool';
+import { useImportPool } from '../hooks/useImportPool';
 
 const MAX_COMPARISON_ITEMS = 4;
 
@@ -98,6 +102,24 @@ const IntegratedStorage = () => {
       toast.error(
         `حذف فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`
       );
+    },
+  });
+
+  const poolExport = useExportPool({
+    onSuccess: (poolName) => {
+      toast.success(`برون‌ریزی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
+    },
+    onError: (error, poolName) => {
+      toast.error(`برون‌ریزی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`);
+    },
+  });
+
+  const poolImport = useImportPool({
+    onSuccess: (poolName) => {
+      toast.success(`درون‌ریزی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
+    },
+    onError: (error, poolName) => {
+      toast.error(`درون‌ریزی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`);
     },
   });
 
@@ -293,23 +315,40 @@ const IntegratedStorage = () => {
             فضای یکپارچه
           </Typography>
 
-          <Button
-            onClick={handleOpenCreate}
-            variant="contained"
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: '3px',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              background:
-                'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-              color: 'var(--color-bg)',
-              boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-            }}
-          >
-            ایجاد
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              onClick={poolImport.openModal}
+              variant="outlined"
+              sx={{
+                px: 2.5,
+                py: 1,
+                borderRadius: '3px',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                color: 'var(--color-primary)',
+                borderColor: 'rgba(31, 182, 255, 0.5)',
+              }}
+            >
+              درون‌ریزی
+            </Button>
+            <Button
+              onClick={handleOpenCreate}
+              variant="contained"
+              sx={{
+                px: 3,
+                py: 1.25,
+                borderRadius: '3px',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                background:
+                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+                color: 'var(--color-bg)',
+                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+              }}
+            >
+              ایجاد
+            </Button>
+          </Box>
         </Box>
       </Box>
 
@@ -329,6 +368,7 @@ const IntegratedStorage = () => {
         onDelete={handleDelete}
         onReplace={handleOpenReplace}
         onAddDevices={handleOpenAddDevices}
+        onExport={poolExport.requestExport}
         isDeleteDisabled={poolDeletion.isDeleting}
         selectedPools={selectedPools}
         onToggleSelect={handleToggleSelect}
@@ -366,12 +406,14 @@ const IntegratedStorage = () => {
       {/*)}*/}
 
       <ConfirmDeletePoolModal controller={poolDeletion} />
+      <ConfirmExportPoolModal controller={poolExport} />
       <PoolDiskDetailModal
         open={Boolean(selectedSlot)}
         onClose={handleCloseSlotModal}
         slot={selectedSlot?.slot ?? null}
         poolName={selectedSlot?.poolName ?? null}
       />
+      <ImportPoolModal controller={poolImport} />
     </PageContainer>
   );
 };
