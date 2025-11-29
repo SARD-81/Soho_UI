@@ -6,6 +6,7 @@ import type { DiskInventoryItem } from '../../@types/disk';
 import { formatBytes } from '../../utils/formatters';
 import DataTable from '../DataTable';
 import { PiBroomFill } from 'react-icons/pi';
+import DiskInlineDetail from './DiskInlineDetail';
 
 interface DisksTableProps {
   disks: DiskInventoryItem[];
@@ -21,6 +22,12 @@ interface DisksTableProps {
     string,
     { partitionCount: number | null; isLoading: boolean }
   >;
+  expandedDiskName?: string | null;
+  expandedDiskDetail?: {
+    detail: DiskInventoryItem | null;
+    isLoading: boolean;
+    error: Error | null;
+  } | null;
 }
 
 const formatStateLabel = (state: string | null | undefined) => {
@@ -61,6 +68,8 @@ const DisksTable = ({
   wipingDiskNames = [],
   areActionsLoading = false,
   partitionStatus = {},
+  expandedDiskName,
+  expandedDiskDetail,
 }: DisksTableProps) => {
   const theme = useTheme();
 
@@ -272,6 +281,18 @@ const DisksTable = ({
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}
+      expandedRowId={expandedDiskName ?? null}
+      renderExpandedRow={(disk) =>
+        expandedDiskName === disk.disk
+          ? (
+              <DiskInlineDetail
+                disk={expandedDiskDetail?.detail ?? disk}
+                isLoading={expandedDiskDetail?.isLoading ?? false}
+                error={expandedDiskDetail?.error ?? null}
+              />
+            )
+          : null
+      }
       bodyRowSx={(disk: DiskInventoryItem) => ({
         ...resolveRowSx(disk),
         transition: 'background-color 0.2s ease',

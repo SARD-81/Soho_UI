@@ -12,7 +12,6 @@ import PoolsTable from '../components/integrated-storage/PoolsTable';
 import ReplaceDiskModal from '../components/integrated-storage/ReplaceDiskModal';
 import PageContainer from '../components/PageContainer';
 import SelectedPoolsDetailsPanel from '../components/integrated-storage/SelectedPoolsDetailsPanel';
-import PoolPropertyToggle from '../components/integrated-storage/PoolPropertyToggle';
 import { useAddPoolDevices } from '../hooks/useAddPoolDevices';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
@@ -25,43 +24,8 @@ import { useZpool } from '../hooks/useZpool';
 import { useExportPool } from '../hooks/useExportPool';
 import { useImportPool } from '../hooks/useImportPool';
 import { fetchZpoolDetails, zpoolDetailQueryKey } from '../hooks/useZpoolDetails';
-import {
-  localizeDetailEntries,
-  translateDetailKey,
-} from '../utils/detailLabels';
 
 const MAX_COMPARISON_ITEMS = 4;
-
-const INTERACTIVE_POOL_PROPERTIES = [
-  'autoexpand',
-  'autoreplace',
-  'autotrim',
-  'compatibility',
-  'listsnapshots',
-  'multihost',
-] as const;
-
-const buildPoolDetailValues = (
-  detail: ZpoolDetailEntry | null,
-  poolName: string
-): Record<string, unknown> => {
-  const localizedValues = localizeDetailEntries(detail);
-
-  INTERACTIVE_POOL_PROPERTIES.forEach((propertyKey) => {
-    const label = translateDetailKey(propertyKey);
-
-    localizedValues[label] = (
-      <PoolPropertyToggle
-        key={`${poolName}-${propertyKey}`}
-        poolName={poolName}
-        propertyKey={propertyKey}
-        value={detail?.[propertyKey]}
-      />
-    );
-  });
-
-  return localizedValues;
-};
 
 const mapPartitionedDisksToDeviceOptions = (
   partitionedDisks?: PartitionedDiskInfo[] | null
@@ -352,17 +316,30 @@ const IntegratedStorage = () => {
     () =>
       selectedPools.map((poolName, index) => {
         const query = selectedPoolDetails[index];
-        const rawDetail = query?.data ?? poolByName[poolName]?.raw ?? null;
-        const enhancedDetail = buildPoolDetailValues(rawDetail, poolName);
+        const rawDetail = (query?.data ?? poolByName[poolName]?.raw ?? null) as
+          | ZpoolDetailEntry
+          | null;
+        const detailWithMetadata = rawDetail
+          ? { ...rawDetail, poolName }
+          : null;
 
         return {
           poolName,
-          detail: enhancedDetail,
+          detail: detailWithMetadata,
           isLoading: query?.isLoading ?? false,
           error: (query?.error as Error) ?? null,
         };
       }),
     [poolByName, selectedPoolDetails, selectedPools]
+  );
+
+  const expandedPoolName = selectedPools.length === 1 ? selectedPools[0] : null;
+  const expandedPoolDetail = useMemo(
+    () =>
+      expandedPoolName
+        ? selectedPoolDetailItems.find((item) => item.poolName === expandedPoolName) ?? null
+        : null,
+    [expandedPoolName, selectedPoolDetailItems]
   );
 
   const handleRemoveSelected = useCallback((poolName: string) => {
@@ -449,6 +426,8 @@ const IntegratedStorage = () => {
         slotErrors={poolDevices?.errorsByPool}
         isSlotLoading={isSlotLoading}
         onSlotClick={handleSlotClick}
+        expandedPoolName={expandedPoolName}
+        expandedPoolDetail={expandedPoolDetail}
       />
 
       <AddPoolDiskModal
@@ -471,7 +450,7 @@ const IntegratedStorage = () => {
         apiError={replaceDisk.error?.message ?? null}
       />
 
-      {selectedPools.length > 0 && (
+      {selectedPools.length > 1 && (
         <SelectedPoolsDetailsPanel
           items={selectedPoolDetailItems}
           onRemove={handleRemoveSelected}

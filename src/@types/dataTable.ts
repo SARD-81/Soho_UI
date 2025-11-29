@@ -26,6 +26,8 @@ export interface DataTableProps<T> {
   getRowId: (row: T, index: number) => string;
   isLoading?: boolean;
   error?: Error | null;
+  expandedRowId?: string | null;
+  renderExpandedRow?: (row: T, index: number) => ReactNode;
   renderLoadingState?: () => ReactNode;
   renderErrorState?: (error: Error) => ReactNode;
   renderEmptyState?: () => ReactNode;
