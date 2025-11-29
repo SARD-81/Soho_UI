@@ -174,6 +174,10 @@ const IntegratedStorage = () => {
   const isReplaceModalOpen = Boolean(replacePoolName);
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
+  const poolByName = useMemo(
+    () => Object.fromEntries(pools.map((pool) => [pool.name, pool])),
+    [pools]
+  );
   const poolNames = useMemo(
     () =>
       pools.map((pool) => pool.name).filter((name) => name.trim().length > 0),
@@ -348,7 +352,7 @@ const IntegratedStorage = () => {
     () =>
       selectedPools.map((poolName, index) => {
         const query = selectedPoolDetails[index];
-        const rawDetail = query?.data ?? null;
+        const rawDetail = query?.data ?? poolByName[poolName]?.raw ?? null;
         const enhancedDetail = buildPoolDetailValues(rawDetail, poolName);
 
         return {
@@ -358,7 +362,7 @@ const IntegratedStorage = () => {
           error: (query?.error as Error) ?? null,
         };
       }),
-    [selectedPoolDetails, selectedPools]
+    [poolByName, selectedPoolDetails, selectedPools]
   );
 
   const handleRemoveSelected = useCallback((poolName: string) => {
