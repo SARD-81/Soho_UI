@@ -7,7 +7,7 @@ import type {
 } from '../@types/filesystem';
 import axiosInstance from '../lib/axiosInstance';
 
-const FILESYSTEM_LIST_ENDPOINT = '/api/filesystem/';
+const FILESYSTEM_LIST_ENDPOINT = '/api/filesystem/filesystems/';
 
 const formatAttributeValue = (value: unknown): string => {
   if (value == null) {

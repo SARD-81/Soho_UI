@@ -6,7 +6,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useMemo } from 'react';
+import { alpha, useTheme } from '@mui/material/styles';
+import { useCallback, useMemo } from 'react';
 import {
   MdAddCircleOutline,
   MdDeleteOutline,
@@ -75,6 +76,34 @@ const PoolsTable = ({
   isSlotLoading = false,
   onSlotClick,
 }: PoolsTableProps) => {
+  const theme = useTheme();
+
+  const handleRowClick = useCallback(
+    (pool: ZpoolCapacityEntry) => {
+      const isSelected = selectedPools.includes(pool.name);
+      onToggleSelect(pool, !isSelected);
+    },
+    [onToggleSelect, selectedPools]
+  );
+
+  const resolveRowSx = useCallback(
+    (pool: ZpoolCapacityEntry) => {
+      const isSelected = selectedPools.includes(pool.name);
+
+      if (!isSelected) {
+        return {};
+      }
+
+      return {
+        backgroundColor: alpha(theme.palette.primary.main, 0.08),
+        '&:hover': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.14),
+        },
+      };
+    },
+    [selectedPools, theme]
+  );
+
   const columns: DataTableColumn<ZpoolCapacityEntry>[] = useMemo(
     () => [
       {
@@ -207,7 +236,10 @@ const PoolsTable = ({
                   <Tooltip key={`${pool.name}-${slot.diskName}-${slotLabel}`} title={tooltipContent} arrow>
                     <Chip
                       label={`اسلات ${slotLabel}`}
-                      onClick={() => onSlotClick?.(pool.name, slot)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSlotClick?.(pool.name, slot);
+                      }}
                       sx={{
                         cursor: 'pointer',
                         fontWeight: 800,
@@ -260,7 +292,10 @@ const PoolsTable = ({
               <IconButton
                 size="small"
                 color="primary"
-                onClick={() => onReplace(pool)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onReplace(pool);
+                }}
               >
                 <MdSwapHoriz size={24} />
               </IconButton>
@@ -269,7 +304,10 @@ const PoolsTable = ({
               <IconButton
                 size="small"
                 color="primary"
-                onClick={() => onAddDevices(pool)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onAddDevices(pool);
+                }}
               >
                 <MdAddCircleOutline size={20} />
               </IconButton>
@@ -278,7 +316,10 @@ const PoolsTable = ({
               <IconButton
                 size="small"
                 color="primary"
-                onClick={() => onExport(pool)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onExport(pool);
+                }}
               >
                 <BiExport size={20} />
               </IconButton>
@@ -287,7 +328,10 @@ const PoolsTable = ({
               <IconButton
                 size="small"
                 color="error"
-                onClick={() => onDelete(pool)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete(pool);
+                }}
                 disabled={isDeleteDisabled}
               >
                 <MdDeleteOutline size={18} />
@@ -306,8 +350,6 @@ const PoolsTable = ({
       onExport,
       onReplace,
       onSlotClick,
-      onToggleSelect,
-      selectedPools,
       slotErrors,
       slotMap,
     ]
@@ -320,6 +362,11 @@ const PoolsTable = ({
       getRowId={(pool) => pool.name}
       isLoading={isLoading}
       error={error}
+      onRowClick={handleRowClick}
+      bodyRowSx={(pool: ZpoolCapacityEntry) => ({
+        ...resolveRowSx(pool),
+        transition: 'background-color 0.2s ease',
+      })}
       renderLoadingState={() => (
         <Box
           sx={{

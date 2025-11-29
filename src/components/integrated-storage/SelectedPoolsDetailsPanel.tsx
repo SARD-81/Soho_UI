@@ -6,6 +6,7 @@ import DetailComparisonPanel, {
 import formatDetailValue from '../../utils/formatDetailValue';
 import { createLengthAwareComparatorFromRecords } from '../../utils/keySort';
 import { omitNullishEntries } from '../../utils/detailValues';
+import { isValidElement, useMemo } from 'react';
 
 interface PoolDetailItem {
   poolName: string;
@@ -23,6 +24,15 @@ const SelectedPoolsDetailsPanel = ({
   items,
   onRemove,
 }: SelectedPoolsDetailsPanelProps) => {
+  const formatValue = useMemo(
+    () =>
+      (value: unknown) =>
+        isValidElement(value)
+          ? value
+          : formatDetailValue(value),
+    []
+  );
+
   const columns: DetailComparisonColumn[] = items.map(({
     poolName,
     detail,
@@ -56,7 +66,7 @@ const SelectedPoolsDetailsPanel = ({
       title="مقایسه جزئیات فضاهای یکپارچه"
       attributeLabel="ویژگی"
       columns={columns}
-      formatValue={formatDetailValue}
+      formatValue={formatValue}
       emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
       attributeSort={createLengthAwareComparatorFromRecords(
         columns.map(({ values }) => values),
