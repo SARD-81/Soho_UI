@@ -18,12 +18,15 @@ import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
 import type { PoolDiskSlot, PoolSlotMap } from '../../hooks/usePoolDeviceSlots';
 import { formatBytes } from '../../utils/formatters.ts';
+import { translateDetailKey } from '../../utils/detailLabels.ts';
+import formatDetailValue from '../../utils/formatDetailValue.ts';
 import DataTable from '../DataTable';
 import {
   clampPercent,
   formatCapacity,
   resolveStatus,
 } from './status';
+import PoolPropertyToggle from './PoolPropertyToggle';
 
 interface PoolsTableProps {
   pools: ZpoolCapacityEntry[];
@@ -77,6 +80,18 @@ const PoolsTable = ({
   onSlotClick,
 }: PoolsTableProps) => {
   const theme = useTheme();
+  const togglableProps = useMemo(
+    () =>
+      new Set([
+        'autoexpand',
+        'autoreplace',
+        'autotrim',
+        'compatibility',
+        'listsnapshots',
+        'multihost',
+      ]),
+    []
+  );
 
   const handleRowClick = useCallback(
     (pool: ZpoolCapacityEntry) => {
@@ -117,6 +132,75 @@ const PoolsTable = ({
             </Typography>
           </Box>
         ),
+      },
+      {
+        id: 'properties',
+        header: 'ویژگی‌ها',
+        align: 'left',
+        cellSx: { minWidth: 420, maxWidth: 520 },
+        renderCell: (pool) => {
+          const rawEntries = Object.entries(pool.raw ?? {});
+
+          return (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+                gap: 1,
+              }}
+            >
+              {rawEntries.map(([key, value]) => {
+                const normalizedKey = key.toLowerCase();
+                const label = translateDetailKey(normalizedKey);
+                const isToggle = togglableProps.has(normalizedKey);
+
+                return (
+                  <Box
+                    key={`${pool.name}-${normalizedKey}`}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: 'rgba(0,0,0,0.02)',
+                      borderRadius: 1,
+                      px: 1,
+                      py: 0.75,
+                      gap: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+                      {label}
+                    </Typography>
+                    <Box sx={{ minWidth: isToggle ? 140 : 'auto', textAlign: 'left' }}>
+                      {isToggle ? (
+                        <Box
+                          onClick={(event) => event.stopPropagation()}
+                          onMouseDown={(event) => event.stopPropagation()}
+                        >
+                          <PoolPropertyToggle
+                            poolName={pool.name}
+                            propertyKey={key}
+                            value={value}
+                          />
+                        </Box>
+                      ) : (
+                        <Typography
+                          sx={{
+                            color: 'var(--color-secondary)',
+                            fontWeight: 600,
+                            direction: 'ltr',
+                          }}
+                        >
+                          {formatDetailValue(value)}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
+          );
+        },
       },
       {
         id: 'total',
@@ -349,6 +433,7 @@ const PoolsTable = ({
       onAddDevices,
       onExport,
       onReplace,
+      togglableProps,
       onSlotClick,
       slotErrors,
       slotMap,
