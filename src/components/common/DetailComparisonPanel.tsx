@@ -1,7 +1,7 @@
 import { Box, CircularProgress, IconButton, Typography, useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { MdClose } from 'react-icons/md';
-import type { ReactNode } from 'react';
+import { isValidElement, type ReactNode } from 'react';
 
 export type DetailComparisonStatus =
   | { type: 'loading'; message?: string }
@@ -307,21 +307,27 @@ const DetailComparisonPanel = ({
                       }
                     } else {
                       const value = column.values[row.key];
-                      content = (
-                        <Typography
-                          sx={{
-                            color: 'var(--color-text)',
-                            fontWeight: 500,
-                            textAlign: 'center',
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-word',
-                            direction: 'rtl',
-                            unicodeBidi: 'plaintext',
-                          }}
-                        >
-                          {formatValue(value)}
-                        </Typography>
-                      );
+                      const renderedValue = formatValue(value);
+
+                      if (isValidElement(renderedValue)) {
+                        content = renderedValue;
+                      } else {
+                        content = (
+                          <Typography
+                            sx={{
+                              color: 'var(--color-text)',
+                              fontWeight: 500,
+                              textAlign: 'center',
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                              direction: 'rtl',
+                              unicodeBidi: 'plaintext',
+                            }}
+                          >
+                            {renderedValue}
+                          </Typography>
+                        );
+                      }
                     }
 
                     return (

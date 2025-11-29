@@ -9,6 +9,7 @@ import axiosInstance from '../lib/axiosInstance';
 import { normalizeVdevType, resolveVdevLabel } from '../constants/vdev';
 
 const ZPOOL_LIST_ENDPOINT = '/api/zpool/';
+export const zpoolQueryKey = ['zpool'] as const;
 
 const BYTE_UNITS: Record<string, number> = {
   b: 1,
@@ -280,7 +281,7 @@ interface UseZpoolOptions {
 
 export const useZpool = (options?: UseZpoolOptions) => {
   return useQuery<ZpoolQueryResult, Error>({
-    queryKey: ['zpool'],
+    queryKey: zpoolQueryKey,
     queryFn: fetchZpools,
     enabled: options?.enabled ?? true,
     refetchInterval: 5000,

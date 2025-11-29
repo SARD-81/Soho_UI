@@ -57,7 +57,7 @@ const NORMALIZED_KEY_LABELS: Record<string, string> = {
   freebytes: 'حجم آزاد',
   free_bytes: 'حجم آزاد',
   alloc: 'حجم تخصیص‌یافته',
-  allocated: 'تخصیص‌یافته',
+  allocated: 'فضای تخصیص‌یافته',
   capacity: 'ظرفیت',
   capacitypercent: 'درصد ظرفیت',
   capacity_percent: 'درصد ظرفیت',
@@ -68,15 +68,20 @@ const NORMALIZED_KEY_LABELS: Record<string, string> = {
   deduplication: 'رفع تکرار',
   deduplicationratio: 'نرخ رفع تکرار',
   deduplication_ratio: 'نرخ رفع تکرار',
+  dedupratio: 'نسبت رفع تکرار',
   version: 'نسخه',
   ashift: 'اندازه شیفت بلوک',
   altroot: 'ریشه جایگزین',
   autoexpand: 'گسترش خودکار',
   autoreplace: 'جایگزینی خودکار',
+  autotrim: 'برش خودکار',
+  bootfs: 'فایل‌سیستم بوت',
   failmode: 'حالت شکست',
   readonlyprop: 'ویژگی فقط خواندنی',
-  'cachefile': 'فایل کش',
+  compatibility: 'سازگاری',
+  cachefile: 'فایل کش',
   'comment prop': 'ویژگی توضیح',
+  checkpoint: 'نقطه بازیابی',
   encryption: 'رمزنگاری',
   checksum: 'چک‌سام',
   compression: 'فشرده‌سازی',
@@ -84,6 +89,19 @@ const NORMALIZED_KEY_LABELS: Record<string, string> = {
   mount_point: 'نقطه مونت',
   'raid mode': 'حالت RAID',
   'Full Name': 'نام کامل',
+  dedupditto: 'تعداد نسخه‌های رفع تکرار',
+  delegation: 'تفویض اختیار',
+  disks: 'دیسک‌ها',
+  expandsize: 'اندازه گسترش',
+  freeing: 'در حال آزادسازی',
+  leaked: 'نشتی',
+  listsnapshots: 'نمایش اسنپ‌شات‌ها',
+  load_guid: 'شناسه GUID بارگذاری',
+  maxblocksize: 'حداکثر اندازه بلاک',
+  maxdnodesize: 'حداکثر اندازه dnode',
+  multihost: 'چندمیزبانی',
+  tname: 'نام موقت',
+  vdev_type: 'نوع VDEV',
 };
 
 const WORD_TRANSLATIONS: Record<string, string> = {
@@ -171,6 +189,8 @@ const translateKey = (key: string) => {
 
   return translateViaWords(normalizedKey);
 };
+
+export const translateDetailKey = translateKey;
 
 export const localizeDetailEntries = (
   values: Record<string, unknown> | null | undefined
