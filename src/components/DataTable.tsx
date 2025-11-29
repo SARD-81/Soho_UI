@@ -82,6 +82,8 @@ const DataTable = <T,>({
   headRowSx,
   bodyRowSx,
   onRowClick,
+  expandedRowId,
+  renderExpandedRow,
   containerProps,
   tableProps,
   pagination,
@@ -181,46 +183,56 @@ const DataTable = <T,>({
               : undefined;
 
             return (
-              <TableRow
-                key={rowId}
-                hover={Boolean(onRowClick)}
-                onClick={
-                  onRowClick
-                    ? () => {
-                        onRowClick(row, index);
-                      }
-                    : undefined
-                }
-                sx={mergeSx(defaultBodyRowSx, resolvedRowSx, clickableRowSx)}
-              >
-                {columns.map((column) => {
-                  const cellProps = column.getCellProps?.(row, index) ?? {};
-                  const {
-                    sx: cellPropsSx,
-                    align: cellAlign,
-                    padding: cellPadding,
-                    ...restCellProps
-                  } = cellProps;
-                  const widthSx = createWidthSx(column.width);
+              <>
+                <TableRow
+                  key={rowId}
+                  hover={Boolean(onRowClick)}
+                  onClick={
+                    onRowClick
+                      ? () => {
+                          onRowClick(row, index);
+                        }
+                      : undefined
+                  }
+                  sx={mergeSx(defaultBodyRowSx, resolvedRowSx, clickableRowSx)}
+                >
+                  {columns.map((column) => {
+                    const cellProps = column.getCellProps?.(row, index) ?? {};
+                    const {
+                      sx: cellPropsSx,
+                      align: cellAlign,
+                      padding: cellPadding,
+                      ...restCellProps
+                    } = cellProps;
+                    const widthSx = createWidthSx(column.width);
 
-                  return (
-                    <TableCell
-                      key={column.id}
-                      align={cellAlign ?? column.align}
-                      padding={cellPadding ?? column.padding}
-                      sx={mergeSx(
-                        defaultBodyCellSx,
-                        widthSx,
-                        column.cellSx,
-                        cellPropsSx
-                      )}
-                      {...restCellProps}
-                    >
-                      {column.renderCell(row, index)}
+                    return (
+                      <TableCell
+                        key={column.id}
+                        align={cellAlign ?? column.align}
+                        padding={cellPadding ?? column.padding}
+                        sx={mergeSx(
+                          defaultBodyCellSx,
+                          widthSx,
+                          column.cellSx,
+                          cellPropsSx
+                        )}
+                        {...restCellProps}
+                      >
+                        {column.renderCell(row, index)}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+
+                {renderExpandedRow && expandedRowId === rowId ? (
+                  <TableRow key={`${rowId}-expanded`}>
+                    <TableCell colSpan={columns.length} sx={{ p: 0 }}>
+                      {renderExpandedRow(row, index)}
                     </TableCell>
-                  );
-                })}
-              </TableRow>
+                  </TableRow>
+                ) : null}
+              </>
             );
           })}
         </TableBody>

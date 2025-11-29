@@ -305,12 +305,14 @@ const DetailComparisonPanel = ({
                           </Typography>
                         );
                       }
-                    } else {
+                  } else {
                       const value = column.values[row.key];
-                      const renderedValue = formatValue(value);
+                      const formattedValue = isValidElement(value)
+                        ? value
+                        : formatValue(value);
 
-                      if (isValidElement(renderedValue)) {
-                        content = renderedValue;
+                      if (isValidElement(formattedValue)) {
+                        content = formattedValue;
                       } else {
                         content = (
                           <Typography
@@ -324,7 +326,7 @@ const DetailComparisonPanel = ({
                               unicodeBidi: 'plaintext',
                             }}
                           >
-                            {renderedValue}
+                            {formattedValue ?? '-'}
                           </Typography>
                         );
                       }

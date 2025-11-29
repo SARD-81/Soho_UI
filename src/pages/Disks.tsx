@@ -186,6 +186,15 @@ const Disks = () => {
     [wipingDisks]
   );
 
+  const expandedDiskName = selectedDisks.length === 1 ? selectedDisks[0] : null;
+  const expandedDiskDetail = useMemo(
+    () =>
+      expandedDiskName
+        ? detailItems.find((item) => item.diskName === expandedDiskName) ?? null
+        : null,
+    [detailItems, expandedDiskName]
+  );
+
   return (
     <PageContainer>
       <Box sx={{ mb: -5 }}>
@@ -210,15 +219,19 @@ const Disks = () => {
             wipingDiskNames={activeWipingDisks}
             areActionsLoading={isPoolDevicesLoading}
             partitionStatus={partitionCountLookup}
+            expandedDiskName={expandedDiskName}
+            expandedDiskDetail={expandedDiskDetail}
           />
         </Box>
 
-        <Box sx={{ width: { xs: '100%', xl: 'auto' } }}>
-          <SelectedDisksDetailsPanel
-            items={detailItems}
-            onRemove={handleRemoveSelected}
-          />
-        </Box>
+        {selectedDisks.length > 1 && (
+          <Box sx={{ width: { xs: '100%', xl: 'auto' } }}>
+            <SelectedDisksDetailsPanel
+              items={detailItems}
+              onRemove={handleRemoveSelected}
+            />
+          </Box>
+        )}
       </Stack>
     </PageContainer>
   );

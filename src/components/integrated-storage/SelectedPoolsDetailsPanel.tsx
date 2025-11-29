@@ -1,12 +1,13 @@
 import type { ZpoolDetailEntry } from '../../@types/zpool';
+import { isValidElement, useMemo } from 'react';
 import DetailComparisonPanel, {
   type DetailComparisonColumn,
   type DetailComparisonStatus,
 } from '../common/DetailComparisonPanel';
+import { buildColumnFromConfig } from '../common/attributeConfig';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { createLengthAwareComparatorFromRecords } from '../../utils/keySort';
-import { omitNullishEntries } from '../../utils/detailValues';
-import { isValidElement, useMemo } from 'react';
+import { createPoolAttributeConfig, type PoolDetailModel } from './poolAttributeConfig';
 
 interface PoolDetailItem {
   poolName: string;
@@ -52,11 +53,22 @@ const SelectedPoolsDetailsPanel = ({
       status = { type: 'empty', message: 'اطلاعاتی برای نمایش وجود ندارد.' };
     }
 
+    const detailWithMetadata: PoolDetailModel | null = detail
+      ? { ...detail, poolName }
+      : null;
+
+    const columnFromConfig = detailWithMetadata
+      ? buildColumnFromConfig(
+          detailWithMetadata.poolName,
+          (detailWithMetadata.name as string | undefined) ?? poolName,
+          detailWithMetadata,
+          createPoolAttributeConfig(detailWithMetadata)
+        )
+      : { id: poolName, title: poolName, values: {} };
+
     return {
-      id: poolName,
-      title: poolName,
+      ...columnFromConfig,
       onRemove: () => onRemove(poolName),
-      values: omitNullishEntries(detail),
       status,
     };
   });

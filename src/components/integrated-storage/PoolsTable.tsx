@@ -15,10 +15,11 @@ import {
 } from 'react-icons/md';
 import { BiExport } from "react-icons/bi";
 import type { DataTableColumn } from '../../@types/dataTable.ts';
-import type { ZpoolCapacityEntry } from '../../@types/zpool';
+import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../../@types/zpool';
 import type { PoolDiskSlot, PoolSlotMap } from '../../hooks/usePoolDeviceSlots';
 import { formatBytes } from '../../utils/formatters.ts';
 import DataTable from '../DataTable';
+import PoolInlineDetail from './PoolInlineDetail';
 import {
   clampPercent,
   formatCapacity,
@@ -41,6 +42,12 @@ interface PoolsTableProps {
   slotErrors?: Record<string, string>;
   isSlotLoading?: boolean;
   onSlotClick?: (poolName: string, slot: PoolDiskSlot) => void;
+  expandedPoolName?: string | null;
+  expandedPoolDetail?: {
+    detail: ZpoolDetailEntry | null;
+    isLoading: boolean;
+    error: Error | null;
+  } | null;
 }
 
 const numberValueSx = {
@@ -75,6 +82,8 @@ const PoolsTable = ({
   slotErrors = {},
   isSlotLoading = false,
   onSlotClick,
+  expandedPoolName,
+  expandedPoolDetail,
 }: PoolsTableProps) => {
   const theme = useTheme();
 
@@ -363,6 +372,17 @@ const PoolsTable = ({
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}
+      expandedRowId={expandedPoolName ?? null}
+      renderExpandedRow={(pool) =>
+        expandedPoolName === pool.name ? (
+          <PoolInlineDetail
+            pool={pool}
+            detail={expandedPoolDetail?.detail ?? null}
+            isLoading={expandedPoolDetail?.isLoading ?? false}
+            error={expandedPoolDetail?.error ?? null}
+          />
+        ) : null
+      }
       bodyRowSx={(pool: ZpoolCapacityEntry) => ({
         ...resolveRowSx(pool),
         transition: 'background-color 0.2s ease',
