@@ -107,29 +107,6 @@ const PoolsTable = ({
   const columns: DataTableColumn<ZpoolCapacityEntry>[] = useMemo(
     () => [
       {
-        id: 'select',
-        header: 'انتخاب',
-        align: 'center',
-        width: 120,
-        renderCell: (pool) => {
-          const isSelected = selectedPools.includes(pool.name);
-
-          return (
-            <Chip
-              label={isSelected ? 'انتخاب شده' : 'انتخاب'}
-              color={isSelected ? 'success' : 'default'}
-              variant={isSelected ? 'filled' : 'outlined'}
-              size="small"
-              onClick={(event) => {
-                event.stopPropagation();
-                onToggleSelect(pool, !isSelected);
-              }}
-              sx={{ fontWeight: 700, px: 0.75, minWidth: 100 }}
-            />
-          );
-        },
-      },
-      {
         id: 'name',
         header: 'نام فضای یکپارچه',
         align: 'left',
@@ -373,8 +350,6 @@ const PoolsTable = ({
       onExport,
       onReplace,
       onSlotClick,
-      onToggleSelect,
-      selectedPools,
       slotErrors,
       slotMap,
     ]

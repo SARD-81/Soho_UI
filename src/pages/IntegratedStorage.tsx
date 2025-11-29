@@ -25,6 +25,10 @@ import { useZpool } from '../hooks/useZpool';
 import { useExportPool } from '../hooks/useExportPool';
 import { useImportPool } from '../hooks/useImportPool';
 import { fetchZpoolDetails, zpoolDetailQueryKey } from '../hooks/useZpoolDetails';
+import {
+  localizeDetailEntries,
+  translateDetailKey,
+} from '../utils/detailLabels';
 
 const MAX_COMPARISON_ITEMS = 4;
 
@@ -41,12 +45,12 @@ const buildPoolDetailValues = (
   detail: ZpoolDetailEntry | null,
   poolName: string
 ): Record<string, unknown> => {
-  const enhanced: Record<string, unknown> = {
-    ...(detail ?? {}),
-  };
+  const localizedValues = localizeDetailEntries(detail);
 
   INTERACTIVE_POOL_PROPERTIES.forEach((propertyKey) => {
-    enhanced[propertyKey] = (
+    const label = translateDetailKey(propertyKey);
+
+    localizedValues[label] = (
       <PoolPropertyToggle
         key={`${poolName}-${propertyKey}`}
         poolName={poolName}
@@ -56,7 +60,7 @@ const buildPoolDetailValues = (
     );
   });
 
-  return enhanced;
+  return localizedValues;
 };
 
 const mapPartitionedDisksToDeviceOptions = (
