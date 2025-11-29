@@ -1,45 +1,42 @@
 import styled from 'styled-components';
 
-const Switch = () => {
+interface ToggleBtnProps {
+  checked?: boolean;
+  disabled?: boolean;
+  id?: string;
+  onChange?: (checked: boolean) => void;
+}
+
+const ToggleBtn = ({ checked = false, disabled = false, id, onChange }: ToggleBtnProps) => {
   return (
     <StyledWrapper>
-      <div>
-        <p className="component-title">iOS Switch + bigger size when active</p>
-        <div className="switch-parent">
-          <input type="checkbox" className="checkbox" id="checkbox" />
-          <label className="switch" htmlFor="checkbox">
-            <span className="slider" />
-          </label>
-        </div>
+      <div className="switch-parent">
+        <input
+          type="checkbox"
+          className="checkbox"
+          id={id ?? 'toggle-btn'}
+          checked={checked}
+          disabled={disabled}
+          onChange={(event) => onChange?.(event.target.checked)}
+        />
+        <label className="switch" htmlFor={id ?? 'toggle-btn'}>
+          <span className="slider" />
+        </label>
       </div>
     </StyledWrapper>
   );
-}
+};
 
 const StyledWrapper = styled.div`
-  /* Remove this container when use*/
-  .component-title {
-    width: 100%;
-    position: absolute;
-    z-index: 999;
-    top: 30px;
-    left: 0;
-    padding: 0;
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 700;
-    color: #888;
-    text-align: center;
-  }
-
-  /* The switch - the box around the slider */
   .switch-parent {
-    width: 51px;
-    height: 31px;
+    width: 54px;
+    height: 32px;
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  /* Hide default HTML checkbox */
   .checkbox {
     opacity: 0;
     width: 0;
@@ -51,44 +48,52 @@ const StyledWrapper = styled.div`
     width: 100%;
     height: 100%;
     display: block;
-    background-color: #e9e9eb;
-    border-radius: 16px;
+    background: linear-gradient(135deg, #e4e7ec 0%, #f4f6f8 100%);
+    border-radius: 18px;
     cursor: pointer;
-    transition: all 0.2s ease-out;
-    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.15), 0px 3px 1px rgba(0, 0, 0, 0.06);
+    transition: all 0.25s ease-out;
+    box-shadow: 0px 6px 16px rgba(15, 73, 110, 0.12);
+    border: 1px solid rgba(0, 0, 0, 0.06);
   }
 
-  /* The slider */
   .slider {
-    width: 27px;
-    height: 27px;
+    width: 26px;
+    height: 26px;
     position: absolute;
-    left: calc(50% - 27px / 2 - 10px);
-    top: calc(50% - 27px / 2);
+    left: 4px;
+    top: 3px;
     border-radius: 20px;
     background: #ffffff;
-    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.15), 0px 3px 1px rgba(0, 0, 0, 0.06);
-    transition: all 0.2s ease-out;
+    box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.15), 0px 3px 1px rgba(0, 0, 0, 0.06);
+    transition: all 0.25s ease-out;
     cursor: pointer;
   }
 
   .switch-parent:active .slider {
-    width: 37px;
-    border-radius: 20px;
-  }
-
-  .checkbox:checked + .switch:active .slider {
-    width: 37px;
-    left: calc(30% - 27px / 2 + 10px);
+    width: 32px;
   }
 
   .checkbox:checked + .switch {
-    background-color: #34c759;
+    background: linear-gradient(135deg, #00c6a9 0%, #1fb6ff 100%);
+    box-shadow: 0px 12px 24px rgba(0, 198, 169, 0.35);
+    border-color: rgba(0, 198, 169, 0.35);
   }
 
   .checkbox:checked + .switch .slider {
-    left: calc(50% - 27px / 2 + 10px);
-    top: calc(50% - 27px / 2);
-  }`;
+    left: 24px;
+  }
 
-export default Switch;
+  .checkbox:disabled + .switch {
+    cursor: not-allowed;
+    background: #eceff3;
+    border-color: #eceff3;
+    box-shadow: none;
+  }
+
+  .checkbox:disabled + .switch .slider {
+    background: #f6f7fb;
+    box-shadow: none;
+  }
+`;
+
+export default ToggleBtn;

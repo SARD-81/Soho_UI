@@ -1,7 +1,8 @@
 import { Box, Button, Typography } from '@mui/material';
+import { useQueries } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import type { ZpoolCapacityEntry } from '../@types/zpool';
+import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
@@ -10,6 +11,8 @@ import AddPoolDiskModal from '../components/integrated-storage/AddPoolDiskModal'
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import ReplaceDiskModal from '../components/integrated-storage/ReplaceDiskModal';
 import PageContainer from '../components/PageContainer';
+import SelectedPoolsDetailsPanel from '../components/integrated-storage/SelectedPoolsDetailsPanel';
+import PoolPropertyToggle from '../components/integrated-storage/PoolPropertyToggle';
 import { useAddPoolDevices } from '../hooks/useAddPoolDevices';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
@@ -21,8 +24,40 @@ import { type ReplaceDevicePayload, useReplacePoolDisk } from '../hooks/useRepla
 import { useZpool } from '../hooks/useZpool';
 import { useExportPool } from '../hooks/useExportPool';
 import { useImportPool } from '../hooks/useImportPool';
+import { fetchZpoolDetails, zpoolDetailQueryKey } from '../hooks/useZpoolDetails';
 
 const MAX_COMPARISON_ITEMS = 4;
+
+const INTERACTIVE_POOL_PROPERTIES = [
+  'autoexpand',
+  'autoreplace',
+  'autotrim',
+  'compatibility',
+  'listsnapshots',
+  'multihost',
+] as const;
+
+const buildPoolDetailValues = (
+  detail: ZpoolDetailEntry | null,
+  poolName: string
+): Record<string, unknown> => {
+  const enhanced: Record<string, unknown> = {
+    ...(detail ?? {}),
+  };
+
+  INTERACTIVE_POOL_PROPERTIES.forEach((propertyKey) => {
+    enhanced[propertyKey] = (
+      <PoolPropertyToggle
+        key={`${poolName}-${propertyKey}`}
+        poolName={poolName}
+        propertyKey={propertyKey}
+        value={detail?.[propertyKey]}
+      />
+    );
+  });
+
+  return enhanced;
+};
 
 const mapPartitionedDisksToDeviceOptions = (
   partitionedDisks?: PartitionedDiskInfo[] | null
@@ -296,6 +331,36 @@ const IntegratedStorage = () => {
     ? poolDevices?.errorsByPool[replacePoolName] ?? null
     : null;
 
+  const selectedPoolDetails = useQueries({
+    queries: selectedPools.map((poolName) => ({
+      queryKey: zpoolDetailQueryKey(poolName),
+      queryFn: () => fetchZpoolDetails(poolName),
+      enabled: selectedPools.length > 0,
+      refetchInterval: 10000,
+    })),
+  });
+
+  const selectedPoolDetailItems = useMemo(
+    () =>
+      selectedPools.map((poolName, index) => {
+        const query = selectedPoolDetails[index];
+        const rawDetail = query?.data ?? null;
+        const enhancedDetail = buildPoolDetailValues(rawDetail, poolName);
+
+        return {
+          poolName,
+          detail: enhancedDetail,
+          isLoading: query?.isLoading ?? false,
+          error: (query?.error as Error) ?? null,
+        };
+      }),
+    [selectedPoolDetails, selectedPools]
+  );
+
+  const handleRemoveSelected = useCallback((poolName: string) => {
+    setSelectedPools((prev) => prev.filter((name) => name !== poolName));
+  }, []);
+
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 , mb: -5 }}>
@@ -398,12 +463,12 @@ const IntegratedStorage = () => {
         apiError={replaceDisk.error?.message ?? null}
       />
 
-      {/*{selectedPools.length > 0 && (*/}
-      {/*  <SelectedPoolsDetailsPanel*/}
-      {/*    items={selectedPoolDetailItems}*/}
-      {/*    onRemove={handleRemoveSelected}*/}
-      {/*  />*/}
-      {/*)}*/}
+      {selectedPools.length > 0 && (
+        <SelectedPoolsDetailsPanel
+          items={selectedPoolDetailItems}
+          onRemove={handleRemoveSelected}
+        />
+      )}
 
       <ConfirmDeletePoolModal controller={poolDeletion} />
       <ConfirmExportPoolModal controller={poolExport} />
