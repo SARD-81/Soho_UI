@@ -3,10 +3,12 @@ import DetailComparisonPanel, {
   type DetailComparisonColumn,
   type DetailComparisonStatus,
 } from '../common/DetailComparisonPanel';
+import SingleDetailView from '../common/SingleDetailView';
 import type { DiskDetailItemState } from '../../hooks/useDiskInventory';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { buildDiskDetailValues } from '../../utils/diskDetails';
-import { createLengthAwareComparatorFromRecords } from '../../utils/keySort';
+import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
+import { DISK_DETAIL_LAYOUT } from '../../config/detailLayouts';
 
 interface SelectedDisksDetailsPanelProps {
   items: DiskDetailItemState[];
@@ -55,20 +57,34 @@ const SelectedDisksDetailsPanel = ({ items, onRemove }: SelectedDisksDetailsPane
 
   const title =
     columns.length > 1 ? 'مقایسه جزئیات دیسک‌ها' : 'جزئیات دیسک‌ها';
-  const attributeSort = createLengthAwareComparatorFromRecords(
+  const attributeSort = createPriorityAwareComparatorFromRecords(
     columns.map(({ values }) => values),
-    'fa-IR'
+    'fa-IR',
+    DISK_DETAIL_LAYOUT.comparisonPriority
   );
 
   return (
-    <DetailComparisonPanel
-      title={title}
-      attributeLabel="ویژگی"
-      columns={columns}
-      formatValue={formatDiskDetailValue}
-      emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-      attributeSort={attributeSort}
-    />
+    columns.length === 1 ? (
+      <SingleDetailView
+        title={title}
+        sections={DISK_DETAIL_LAYOUT.sections}
+        values={columns[0].values}
+        status={columns[0].status}
+        formatValue={formatDiskDetailValue}
+        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+        attributeOrder={DISK_DETAIL_LAYOUT.comparisonPriority}
+        attributeSort={attributeSort}
+      />
+    ) : (
+      <DetailComparisonPanel
+        title={title}
+        attributeLabel="ویژگی"
+        columns={columns}
+        formatValue={formatDiskDetailValue}
+        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+        attributeSort={attributeSort}
+      />
+    )
   );
 };
 

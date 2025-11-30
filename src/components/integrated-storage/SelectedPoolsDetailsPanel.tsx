@@ -3,10 +3,12 @@ import DetailComparisonPanel, {
   type DetailComparisonColumn,
   type DetailComparisonStatus,
 } from '../common/DetailComparisonPanel';
+import SingleDetailView from '../common/SingleDetailView';
 import formatDetailValue from '../../utils/formatDetailValue';
-import { createLengthAwareComparatorFromRecords } from '../../utils/keySort';
+import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import { omitNullishEntries } from '../../utils/detailValues';
 import { isValidElement, useMemo } from 'react';
+import { POOL_DETAIL_LAYOUT } from '../../config/detailLayouts';
 
 interface PoolDetailItem {
   poolName: string;
@@ -62,17 +64,35 @@ const SelectedPoolsDetailsPanel = ({
   });
 
   return (
-    <DetailComparisonPanel
-      title="مقایسه جزئیات فضاهای یکپارچه"
-      attributeLabel="ویژگی"
-      columns={columns}
-      formatValue={formatValue}
-      emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-      attributeSort={createLengthAwareComparatorFromRecords(
-        columns.map(({ values }) => values),
-        'fa-IR'
-      )}
-    />
+    columns.length === 1 ? (
+      <SingleDetailView
+        title="جزئیات فضای یکپارچه"
+        sections={POOL_DETAIL_LAYOUT.sections}
+        values={columns[0].values}
+        status={columns[0].status}
+        formatValue={formatValue}
+        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+        attributeOrder={POOL_DETAIL_LAYOUT.comparisonPriority}
+        attributeSort={createPriorityAwareComparatorFromRecords(
+          columns.map(({ values }) => values),
+          'fa-IR',
+          POOL_DETAIL_LAYOUT.comparisonPriority
+        )}
+      />
+    ) : (
+      <DetailComparisonPanel
+        title="مقایسه جزئیات فضاهای یکپارچه"
+        attributeLabel="ویژگی"
+        columns={columns}
+        formatValue={formatValue}
+        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+        attributeSort={createPriorityAwareComparatorFromRecords(
+          columns.map(({ values }) => values),
+          'fa-IR',
+          POOL_DETAIL_LAYOUT.comparisonPriority
+        )}
+      />
+    )
   );
 };
 

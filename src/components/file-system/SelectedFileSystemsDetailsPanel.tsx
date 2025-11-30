@@ -1,8 +1,10 @@
 import DetailComparisonPanel from '../common/DetailComparisonPanel';
+import SingleDetailView from '../common/SingleDetailView';
 import type { FileSystemEntry } from '../../@types/filesystem';
 import formatDetailValue from '../../utils/formatDetailValue';
-import { createLengthAwareComparatorFromRecords } from '../../utils/keySort';
+import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import buildFilesystemDetailValues from '../../utils/filesystemDetails';
+import { FILESYSTEM_DETAIL_LAYOUT } from '../../config/detailLayouts';
 
 interface SelectedFileSystemsDetailsPanelProps {
   items: FileSystemEntry[];
@@ -24,17 +26,35 @@ const SelectedFileSystemsDetailsPanel = ({
     columns.length > 1 ? 'مقایسه جزئیات فضاهای فایلی' : 'جزئیات فضای فایلی';
 
   return (
-    <DetailComparisonPanel
-      title={title}
-      attributeLabel="ویژگی"
-      columns={columns}
-      formatValue={formatDetailValue}
-      emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-      attributeSort={createLengthAwareComparatorFromRecords(
-        columns.map(({ values }) => values),
-        'fa-IR'
-      )}
-    />
+    columns.length === 1 ? (
+      <SingleDetailView
+        title={title}
+        sections={FILESYSTEM_DETAIL_LAYOUT.sections}
+        values={columns[0].values}
+        status={columns[0].status}
+        formatValue={formatDetailValue}
+        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+        attributeOrder={FILESYSTEM_DETAIL_LAYOUT.comparisonPriority}
+        attributeSort={createPriorityAwareComparatorFromRecords(
+          columns.map(({ values }) => values),
+          'fa-IR',
+          FILESYSTEM_DETAIL_LAYOUT.comparisonPriority
+        )}
+      />
+    ) : (
+      <DetailComparisonPanel
+        title={title}
+        attributeLabel="ویژگی"
+        columns={columns}
+        formatValue={formatDetailValue}
+        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+        attributeSort={createPriorityAwareComparatorFromRecords(
+          columns.map(({ values }) => values),
+          'fa-IR',
+          FILESYSTEM_DETAIL_LAYOUT.comparisonPriority
+        )}
+      />
+    )
   );
 };
 
