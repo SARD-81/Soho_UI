@@ -58,6 +58,8 @@ const CreateFileSystemModal = ({
     nameError,
     quotaAmount,
     setQuotaAmount,
+    quotaUnit,
+    setQuotaUnit,
     quotaError,
     apiError,
     isCreating,
@@ -129,6 +131,10 @@ const CreateFileSystemModal = ({
       .replace(/(\..*)\./g, '$1');
 
     setQuotaAmount(numericOnlyValue);
+  };
+
+  const handleQuotaUnitChange = (event: SelectChangeEvent<string>) => {
+    setQuotaUnit(event.target.value as 'G' | 'T');
   };
 
   const normalizedFilesystemMap = useMemo(() => {
@@ -334,34 +340,50 @@ const CreateFileSystemModal = ({
             id="filesystem-quota-input"
             sx={{ color: 'var(--color-text)' }}
           >
-            حجم فضای فایلی (GB)
+            حجم فضای فایلی
           </InputLabel>
-          <TextField
-            // label="حجم فضای فایلی (GB)"
-            value={quotaAmount}
-            onChange={handleQuotaChange}
-            fullWidth
-            placeholder="حجم فضای فایلی را به گیگابایت وارد کنید."
-            id="filesystem-quota-input"
-            size="small"
-            autoComplete="off"
-            error={Boolean(quotaError) || hasPersianQuota}
-            helperText={
-              (hasPersianQuota &&
-                'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
-              quotaError
-            }
-            type="text"
-            InputLabelProps={{ shrink: true }}
-            InputProps={{
-              sx: inputBaseStyles,
-              endAdornment: <InputAdornment position="end">GB</InputAdornment>,
-            }}
-            inputProps={{
-              inputMode: 'decimal',
-              pattern: '[0-9]*[.,]?[0-9]*',
-            }}
-          />
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              // label="حجم فضای فایلی"
+              value={quotaAmount}
+              onChange={handleQuotaChange}
+              fullWidth
+              placeholder="حجم فضای فایلی را وارد کنید."
+              id="filesystem-quota-input"
+              size="small"
+              autoComplete="off"
+              error={Boolean(quotaError) || hasPersianQuota}
+              helperText={
+                (hasPersianQuota &&
+                  'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+                quotaError
+              }
+              type="text"
+              InputLabelProps={{ shrink: true }}
+              InputProps={{
+                sx: inputBaseStyles,
+              }}
+              inputProps={{
+                inputMode: 'decimal',
+                pattern: '[0-9]*[.,]?[0-9]*',
+              }}
+            />
+            <FormControl size="small" sx={{ minWidth: 90 }}>
+              <InputLabel id="filesystem-quota-unit" sx={{ color: 'var(--color-text)' }}>
+                واحد
+              </InputLabel>
+              <Select
+                labelId="filesystem-quota-unit"
+                value={quotaUnit}
+                onChange={handleQuotaUnitChange}
+                sx={inputBaseStyles}
+                label="واحد"
+              >
+                <MenuItem value="G">G</MenuItem>
+                <MenuItem value="T">T</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
 
           {apiError && (
             <Typography sx={{ color: 'var(--color-error)', fontWeight: 600 }}>

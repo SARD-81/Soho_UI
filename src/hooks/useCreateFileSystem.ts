@@ -12,9 +12,14 @@ interface ApiErrorResponse {
 }
 
 interface CreateFileSystemPayload {
-  filesystem_name: string;
   quota: string;
   reservation: string;
+  save_to_db: boolean;
+}
+
+interface CreateFileSystemVariables extends CreateFileSystemPayload {
+  poolName: string;
+  filesystemName: string;
 }
 
 interface UseCreateFileSystemOptions {
@@ -63,6 +68,7 @@ export const useCreateFileSystem = ({
   const [selectedPool, setSelectedPool] = useState('');
   const [filesystemName, setFileSystemName] = useState('');
   const [quotaAmount, setQuotaAmount] = useState('');
+  const [quotaUnit, setQuotaUnit] = useState<'G' | 'T'>('G');
   const [poolError, setPoolError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [quotaError, setQuotaError] = useState<string | null>(null);
@@ -72,6 +78,7 @@ export const useCreateFileSystem = ({
     setSelectedPool('');
     setFileSystemName('');
     setQuotaAmount('');
+    setQuotaUnit('G');
     setPoolError(null);
     setNameError(null);
     setQuotaError(null);
@@ -91,15 +98,18 @@ export const useCreateFileSystem = ({
   const createFileSystemMutation = useMutation<
     unknown,
     AxiosError<ApiErrorResponse>,
-    CreateFileSystemPayload
+    CreateFileSystemVariables
   >({
-    mutationFn: async (payload) => {
-      await axiosInstance.post('/api/filesystem/create/', payload);
+    mutationFn: async ({ poolName, filesystemName, ...payload }) => {
+      await axiosInstance.post(
+        `/api/filesystem/filesystems/${poolName}/${filesystemName}/`,
+        payload
+      );
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['filesystems'] });
       handleClose();
-      onSuccess?.(variables.filesystem_name);
+      onSuccess?.(`${variables.poolName}/${variables.filesystemName}`);
     },
     onError: (error) => {
       const message = extractApiMessage(error);
@@ -141,7 +151,7 @@ export const useCreateFileSystem = ({
       }
 
       if (!trimmedQuota) {
-        setQuotaError('حجم فضای فایلی را به گیگابایت وارد کنید.');
+        setQuotaError('حجم فضای فایلی را وارد کنید.');
         hasError = true;
       } else {
         const quotaValue = Number(trimmedQuota);
@@ -156,15 +166,21 @@ export const useCreateFileSystem = ({
         return;
       }
 
-      const payload: CreateFileSystemPayload = {
-        filesystem_name: `${trimmedPool}/${trimmedName}`.replace(/\s+/g, ''),
-        quota: `${trimmedQuota}G`,
-        reservation: `${trimmedQuota}G`,
+      const sanitizedPool = trimmedPool.replace(/\s+/g, '');
+      const sanitizedName = trimmedName.replace(/\s+/g, '');
+      const formattedQuota = `${trimmedQuota}${quotaUnit}`;
+
+      const payload: CreateFileSystemVariables = {
+        poolName: sanitizedPool,
+        filesystemName: sanitizedName,
+        quota: formattedQuota,
+        reservation: formattedQuota,
+        save_to_db: false,
       };
 
       createFileSystemMutation.mutate(payload);
     },
-    [createFileSystemMutation, filesystemName, quotaAmount, selectedPool]
+    [createFileSystemMutation, filesystemName, quotaAmount, quotaUnit, selectedPool]
   );
 
   return {
@@ -175,6 +191,8 @@ export const useCreateFileSystem = ({
     setFileSystemName,
     quotaAmount,
     setQuotaAmount,
+    quotaUnit,
+    setQuotaUnit,
     poolError,
     setPoolError,
     nameError,
