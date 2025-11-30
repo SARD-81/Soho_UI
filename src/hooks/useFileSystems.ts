@@ -8,6 +8,7 @@ import type {
 import axiosInstance from '../lib/axiosInstance';
 
 const FILESYSTEM_LIST_ENDPOINT = '/api/filesystem/filesystems/';
+const FILESYSTEM_DETAIL_ENDPOINT = '/api/filesystem/filesystems';
 
 const formatAttributeValue = (value: unknown): string => {
   if (value == null) {
@@ -46,42 +47,25 @@ const ensureObject = (raw: unknown): FileSystemRawEntry => {
   return {};
 };
 
-const deriveNameParts = (
-  fullNameHint: string | undefined,
-  raw: FileSystemRawEntry,
-  index: number
-) => {
-  const rawName = raw.name;
+const deriveNameParts = (fullName: string, index: number) => {
   const fallbackName = `filesystem-${index + 1}`;
-  const fullNameSource = (() => {
-    if (typeof fullNameHint === 'string' && fullNameHint.trim().length > 0) {
-      return fullNameHint.trim();
-    }
-
-    if (typeof rawName === 'string' && rawName.trim().length > 0) {
-      return rawName.trim();
-    }
-
-    return fallbackName;
-  })();
-
+  const fullNameSource = fullName.trim().length > 0 ? fullName.trim() : fallbackName;
   const [poolPart, ...rest] = fullNameSource.split('/');
   const poolName = poolPart?.trim() ? poolPart.trim() : 'نامشخص';
-  const filesystemNameSource =
-    rest.length > 0 ? rest.join('/') : fullNameSource;
+  const filesystemNameSource = rest.length > 0 ? rest.join('/') : poolPart;
   const filesystemName =
-    filesystemNameSource.trim().length > 0
+    filesystemNameSource && filesystemNameSource.trim().length > 0
       ? filesystemNameSource.trim()
-      : fullNameSource;
+      : fallbackName;
 
   return {
-    fullName: fullNameSource,
+    fullName: `${poolName}/${filesystemName}`,
     poolName,
     filesystemName,
   };
 };
 
-const enrichAttributes = (raw: FileSystemRawEntry, fullName: string) => {
+const normalizeAttributes = (raw: FileSystemRawEntry, fullName: string) => {
   const normalized = { ...raw };
 
   if (
@@ -98,7 +82,12 @@ const enrichAttributes = (raw: FileSystemRawEntry, fullName: string) => {
 
   const attributeMap = entries.reduce<Record<string, string>>(
     (acc, attribute) => {
-      acc[attribute.key] = attribute.value;
+      const normalizedKey = attribute.key.trim();
+      const normalizedValue = attribute.value;
+
+      acc[normalizedKey] = normalizedValue;
+      acc[normalizedKey.toLowerCase()] = normalizedValue;
+
       return acc;
     },
     {}
@@ -131,62 +120,67 @@ const extractMountpoint = (
   return '—';
 };
 
-const normalizeFileSystemEntry = (
-  fullNameHint: string | undefined,
-  raw: unknown,
-  index: number
-): FileSystemEntry => {
-  const normalizedRaw = ensureObject(raw);
-  const { fullName, poolName, filesystemName } = deriveNameParts(
-    fullNameHint,
-    normalizedRaw,
-    index
+const fetchFileSystemNames = async (): Promise<string[]> => {
+  const response = await axiosInstance.get<FileSystemApiResponse>(
+    FILESYSTEM_LIST_ENDPOINT
   );
-  const { entries, attributeMap } = enrichAttributes(normalizedRaw, fullName);
-  const mountpoint = extractMountpoint(normalizedRaw, attributeMap);
+  const payload = response.data;
+  const data = payload?.data;
+
+  if (Array.isArray(data)) {
+    return data.filter((item): item is string => typeof item === 'string');
+  }
+
+  return [];
+};
+
+const fetchFileSystemDetail = async (
+  fullName: string,
+  index: number
+): Promise<FileSystemEntry> => {
+  const { poolName, filesystemName, fullName: normalizedName } =
+    deriveNameParts(fullName, index);
+  const detailResponse = await axiosInstance.get<FileSystemApiResponse>(
+    `${FILESYSTEM_DETAIL_ENDPOINT}/${encodeURIComponent(poolName)}/${encodeURIComponent(
+      filesystemName
+    )}/`
+  );
+
+  const detailPayload = detailResponse.data;
+  const rawDetail = ensureObject(detailPayload?.data);
+  const { entries, attributeMap } = normalizeAttributes(rawDetail, normalizedName);
+  const mountpoint = extractMountpoint(rawDetail, attributeMap);
 
   return {
-    id: fullName,
-    fullName,
+    id: normalizedName,
+    fullName: normalizedName,
     poolName,
     filesystemName,
     mountpoint,
     attributes: entries,
     attributeMap,
-    raw: normalizedRaw,
+    raw: rawDetail,
   };
 };
 
 const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
-  const response = await axiosInstance.get<FileSystemApiResponse>(
-    FILESYSTEM_LIST_ENDPOINT
+  const filesystemNames = await fetchFileSystemNames();
+  const filesystems = await Promise.all(
+    filesystemNames.map((fullName, index) =>
+      fetchFileSystemDetail(fullName, index).catch(() =>
+        fetchFileSystemDetail(`نامشخص/${fullName}`, index)
+      )
+    )
   );
 
-  const payload = response.data;
-  const data = payload?.data;
+  const uniqueFilesystems = filesystems.filter((filesystem) => {
+    const poolName = filesystem.poolName.trim().toLowerCase();
+    const fullName = filesystem.fullName.trim().toLowerCase();
 
-  const filesystems = (() => {
-    if (Array.isArray(data)) {
-      return data.map((raw, index) =>
-        normalizeFileSystemEntry(undefined, raw, index)
-      );
-    }
+    return poolName.length === 0 || fullName !== poolName;
+  });
 
-    if (data && typeof data === 'object') {
-      return Object.entries(data).map(([fullName, raw], index) =>
-        normalizeFileSystemEntry(fullName, raw, index)
-      );
-    }
-
-    return [] as FileSystemEntry[];
-  })()
-    .filter((filesystem) => {
-      const poolName = filesystem.poolName.trim().toLowerCase();
-      const fullName = filesystem.fullName.trim().toLowerCase();
-
-      return poolName.length === 0 || fullName !== poolName;
-    })
-    .sort((a, b) => {
+  uniqueFilesystems.sort((a, b) => {
     const poolCompare = a.poolName.localeCompare(b.poolName, 'fa');
     if (poolCompare !== 0) {
       return poolCompare;
@@ -195,7 +189,7 @@ const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
     return a.filesystemName.localeCompare(b.filesystemName, 'fa');
   });
 
-  return { filesystems };
+  return { filesystems: uniqueFilesystems };
 };
 
 export const useFileSystems = () =>

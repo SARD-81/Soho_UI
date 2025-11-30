@@ -29,8 +29,14 @@ const FileSystemsTable = ({
   isDeleteDisabled,
 }: FileSystemsTableProps) => {
   const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
-    const getAttributeValue = (filesystem: FileSystemEntry, key: string) =>
-      filesystem.attributeMap?.[key] ?? '—';
+    const getAttributeValue = (filesystem: FileSystemEntry, key: string) => {
+      if (!filesystem.attributeMap) return '—';
+
+      const directValue = filesystem.attributeMap[key];
+      if (directValue != null) return directValue;
+
+      return filesystem.attributeMap[key.toLowerCase()] ?? '—';
+    };
 
     const baseColumns: DataTableColumn<FileSystemEntry>[] = [
       // {
@@ -74,7 +80,7 @@ const FileSystemsTable = ({
         renderCell: (filesystem) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {getAttributeValue(filesystem, 'Used')}
+              {getAttributeValue(filesystem, 'used')}
             </Typography>
           </Box>
         ),
@@ -86,7 +92,7 @@ const FileSystemsTable = ({
         renderCell: (filesystem) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {getAttributeValue(filesystem, 'Available')}
+              {getAttributeValue(filesystem, 'available')}
             </Typography>
           </Box>
         ),
@@ -98,7 +104,7 @@ const FileSystemsTable = ({
         renderCell: (filesystem) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {getAttributeValue(filesystem, 'Referenced')}
+              {getAttributeValue(filesystem, 'referenced')}
             </Typography>
           </Box>
         ),
