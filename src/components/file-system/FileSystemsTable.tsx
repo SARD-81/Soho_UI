@@ -5,7 +5,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useMemo } from 'react';
+import { alpha, useTheme } from '@mui/material/styles';
+import { useCallback, useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { FileSystemEntry } from '../../@types/filesystem';
@@ -16,6 +17,8 @@ interface FileSystemsTableProps {
   attributeKeys: string[];
   isLoading: boolean;
   error: Error | null;
+  selectedFileSystems: string[];
+  onToggleSelect: (filesystem: FileSystemEntry, checked: boolean) => void;
   onDeleteFilesystem: (filesystem: FileSystemEntry) => void;
   isDeleteDisabled: boolean;
 }
@@ -25,9 +28,39 @@ const FileSystemsTable = ({
   attributeKeys,
   isLoading,
   error,
+  selectedFileSystems,
+  onToggleSelect,
   onDeleteFilesystem,
   isDeleteDisabled,
 }: FileSystemsTableProps) => {
+  const theme = useTheme();
+
+  const handleRowClick = useCallback(
+    (filesystem: FileSystemEntry) => {
+      const isSelected = selectedFileSystems.includes(filesystem.id);
+      onToggleSelect(filesystem, !isSelected);
+    },
+    [onToggleSelect, selectedFileSystems]
+  );
+
+  const resolveRowSx = useCallback(
+    (filesystem: FileSystemEntry) => {
+      const isSelected = selectedFileSystems.includes(filesystem.id);
+
+      if (!isSelected) {
+        return {};
+      }
+
+      return {
+        backgroundColor: alpha(theme.palette.primary.main, 0.12),
+        '&:hover': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.18),
+        },
+      };
+    },
+    [selectedFileSystems, theme]
+  );
+
   const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
     const getAttributeValue = (filesystem: FileSystemEntry, key: string) =>
       filesystem.attributeMap?.[key] ?? '—';
@@ -138,7 +171,10 @@ const FileSystemsTable = ({
             <IconButton
               size="small"
               color="error"
-              onClick={() => onDeleteFilesystem(filesystem)}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDeleteFilesystem(filesystem);
+              }}
               disabled={isDeleteDisabled}
             >
               <MdDeleteOutline size={18} />
@@ -158,6 +194,11 @@ const FileSystemsTable = ({
       getRowId={(filesystem) => filesystem.id}
       isLoading={isLoading}
       error={error}
+      onRowClick={handleRowClick}
+      bodyRowSx={(filesystem: FileSystemEntry) => ({
+        ...resolveRowSx(filesystem),
+        transition: 'background-color 0.2s ease',
+      })}
       renderLoadingState={() => (
         <Box
           sx={{
