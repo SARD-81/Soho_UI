@@ -65,8 +65,53 @@ export const createLengthAwareComparatorFromRecords = (
   locale: string
 ) => createLengthAwareComparator(buildKeyLengthMap(records), locale);
 
+export const createPriorityAwareComparator = (
+  priorityKeys: string[],
+  fallbackComparator: (a: string, b: string) => number
+) => {
+  const priorityMap = new Map(priorityKeys.map((key, index) => [key, index]));
+
+  return (a: string, b: string) => {
+    const aPriority = priorityMap.get(a);
+    const bPriority = priorityMap.get(b);
+
+    const hasPriorityA = aPriority !== undefined;
+    const hasPriorityB = bPriority !== undefined;
+
+    if (hasPriorityA && hasPriorityB) {
+      return (aPriority ?? 0) - (bPriority ?? 0);
+    }
+
+    if (hasPriorityA) {
+      return -1;
+    }
+
+    if (hasPriorityB) {
+      return 1;
+    }
+
+    return fallbackComparator(a, b);
+  };
+};
+
+export const createPriorityAwareComparatorFromRecords = (
+  records: Array<Record<string, unknown>>,
+  locale: string,
+  priorityKeys: string[]
+) =>
+  createPriorityAwareComparator(
+    priorityKeys,
+    createLengthAwareComparatorFromRecords(records, locale)
+  );
+
 export const sortKeysByLengthThenLocale = (
   keys: string[],
   lengthMap: Record<string, number>,
   locale: string
 ) => [...keys].sort(createLengthAwareComparator(lengthMap, locale));
+
+export const sortKeysWithPriority = (
+  keys: string[],
+  priorityKeys: string[],
+  fallbackComparator: (a: string, b: string) => number
+) => [...keys].sort(createPriorityAwareComparator(priorityKeys, fallbackComparator));
