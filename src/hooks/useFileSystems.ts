@@ -8,6 +8,7 @@ import type {
 import axiosInstance from '../lib/axiosInstance';
 
 const FILESYSTEM_LIST_ENDPOINT = '/api/filesystem/filesystems/';
+const FILESYSTEM_DETAIL_BASE_ENDPOINT = '/api/filesystem/filesystems';
 
 const formatAttributeValue = (value: unknown): string => {
   if (value == null) {
@@ -157,29 +158,52 @@ const normalizeFileSystemEntry = (
   };
 };
 
-const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
+const fetchFileSystemNames = async (): Promise<string[]> => {
   const response = await axiosInstance.get<FileSystemApiResponse>(
     FILESYSTEM_LIST_ENDPOINT
   );
 
-  const payload = response.data;
-  const data = payload?.data;
+  const names = response.data?.data;
+  if (!Array.isArray(names)) {
+    return [];
+  }
 
-  const filesystems = (() => {
-    if (Array.isArray(data)) {
-      return data.map((raw, index) =>
-        normalizeFileSystemEntry(undefined, raw, index)
-      );
-    }
+  return names
+    .filter((name): name is string => typeof name === 'string')
+    .map((name) => name.trim())
+    .filter((name) => name.length > 0);
+};
 
-    if (data && typeof data === 'object') {
-      return Object.entries(data).map(([fullName, raw], index) =>
-        normalizeFileSystemEntry(fullName, raw, index)
-      );
-    }
+const buildDetailEndpoint = (poolName: string, filesystemName: string) =>
+  `${FILESYSTEM_DETAIL_BASE_ENDPOINT}/${encodeURIComponent(
+    poolName
+  )}/${encodeURIComponent(filesystemName)}/`;
 
-    return [] as FileSystemEntry[];
-  })()
+const fetchFileSystemDetail = async (
+  fullName: string,
+  index: number
+): Promise<FileSystemEntry> => {
+  const [poolNamePart, ...filesystemParts] = fullName.split('/');
+  const poolName = poolNamePart?.trim() ?? '';
+  const filesystemName = filesystemParts.join('/').trim();
+
+  const endpoint = buildDetailEndpoint(poolName, filesystemName || fullName);
+  const response = await axiosInstance.get<FileSystemApiResponse>(endpoint);
+  const rawEntry = response.data?.data;
+
+  return normalizeFileSystemEntry(fullName, rawEntry, index);
+};
+
+const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
+  const filesystemNames = await fetchFileSystemNames();
+
+  const filesystems = (
+    await Promise.all(
+      filesystemNames.map((fullName, index) =>
+        fetchFileSystemDetail(fullName, index)
+      )
+    )
+  )
     .filter((filesystem) => {
       const poolName = filesystem.poolName.trim().toLowerCase();
       const fullName = filesystem.fullName.trim().toLowerCase();
@@ -187,13 +211,13 @@ const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
       return poolName.length === 0 || fullName !== poolName;
     })
     .sort((a, b) => {
-    const poolCompare = a.poolName.localeCompare(b.poolName, 'fa');
-    if (poolCompare !== 0) {
-      return poolCompare;
-    }
+      const poolCompare = a.poolName.localeCompare(b.poolName, 'fa');
+      if (poolCompare !== 0) {
+        return poolCompare;
+      }
 
-    return a.filesystemName.localeCompare(b.filesystemName, 'fa');
-  });
+      return a.filesystemName.localeCompare(b.filesystemName, 'fa');
+    });
 
   return { filesystems };
 };
