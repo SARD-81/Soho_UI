@@ -104,10 +104,12 @@ export const useDeleteZpool = ({
   const handleClose = useCallback(() => {
     setTargetPool(null);
     setErrorMessage(null);
+    
   }, []);
 
   const confirmDelete = useCallback(() => {
     if (!targetPool || deleteMutation.isPending) {
+
       return;
     }
 

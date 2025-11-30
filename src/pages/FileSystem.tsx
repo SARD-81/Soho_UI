@@ -1,11 +1,12 @@
 import { Box, Button, Typography } from '@mui/material';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import type { FileSystemEntry } from '../@types/filesystem';
 import PageContainer from '../components/PageContainer';
 import ConfirmDeleteFileSystemModal from '../components/file-system/ConfirmDeleteFileSystemModal';
 import CreateFileSystemModal from '../components/file-system/CreateFileSystemModal';
 import FileSystemsTable from '../components/file-system/FileSystemsTable';
+import SelectedFileSystemsDetailsPanel from '../components/file-system/SelectedFileSystemsDetailsPanel';
 import { useCreateFileSystem } from '../hooks/useCreateFileSystem';
 import { useDeleteFileSystem } from '../hooks/useDeleteFileSystem';
 import { useFileSystems } from '../hooks/useFileSystems';
@@ -41,6 +42,7 @@ const FileSystem = () => {
 
   const { data, isLoading, error } = useFileSystems();
   const { data: poolData } = useZpool();
+  const [selectedFilesystems, setSelectedFilesystems] = useState<string[]>([]);
 
   const poolOptions = useMemo(
     () =>
@@ -76,6 +78,14 @@ const FileSystem = () => {
     );
   }, [filesystems]);
 
+  useEffect(() => {
+    setSelectedFilesystems((prev) =>
+      prev.filter((filesystemId) =>
+        filesystems.some((filesystem) => filesystem.id === filesystemId)
+      )
+    );
+  }, [filesystems]);
+
   const handleOpenCreate = useCallback(() => {
     createFileSystem.openCreateModal();
   }, [createFileSystem]);
@@ -86,6 +96,35 @@ const FileSystem = () => {
     },
     [deleteFileSystem]
   );
+
+  const handleToggleSelect = useCallback(
+    (filesystem: FileSystemEntry, checked: boolean) => {
+      setSelectedFilesystems((prev) => {
+        if (checked) {
+          if (prev.includes(filesystem.id)) {
+            return prev;
+          }
+
+          return [...prev, filesystem.id];
+        }
+
+        return prev.filter((id) => id !== filesystem.id);
+      });
+    },
+    []
+  );
+
+  const handleRemoveSelected = useCallback((filesystemId: string) => {
+    setSelectedFilesystems((prev) => prev.filter((id) => id !== filesystemId));
+  }, []);
+
+  const selectedFilesystemDetails = useMemo(() => {
+    const lookup = new Map(filesystems.map((filesystem) => [filesystem.id, filesystem]));
+
+    return selectedFilesystems
+      .map((filesystemId) => lookup.get(filesystemId))
+      .filter((item): item is FileSystemEntry => Boolean(item));
+  }, [filesystems, selectedFilesystems]);
 
   return (
     <PageContainer>
@@ -132,14 +171,23 @@ const FileSystem = () => {
         existingFilesystems={filesystems}
       />
 
-      <FileSystemsTable
-        filesystems={filesystems}
-        attributeKeys={attributeKeys}
-        isLoading={isLoading}
-        error={error ?? null}
-        onDeleteFilesystem={handleDelete}
-        isDeleteDisabled={deleteFileSystem.isDeleting}
-      />
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <FileSystemsTable
+          filesystems={filesystems}
+          attributeKeys={attributeKeys}
+          isLoading={isLoading}
+          error={error ?? null}
+          onDeleteFilesystem={handleDelete}
+          isDeleteDisabled={deleteFileSystem.isDeleting}
+          selectedFilesystems={selectedFilesystems}
+          onToggleSelect={handleToggleSelect}
+        />
+
+        <SelectedFileSystemsDetailsPanel
+          items={selectedFilesystemDetails}
+          onRemove={handleRemoveSelected}
+        />
+      </Box>
 
       <ConfirmDeleteFileSystemModal controller={deleteFileSystem} />
     </PageContainer>
