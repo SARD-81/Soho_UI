@@ -8,7 +8,9 @@ import type {
 import axiosInstance from '../lib/axiosInstance';
 
 interface DeleteFileSystemPayload {
-  filesystem_name: string;
+  poolName: string;
+  filesystemName: string;
+  fullName: string;
 }
 
 interface DeleteFileSystemResponse {
@@ -56,14 +58,16 @@ const extractDeleteFileSystemErrorMessage = (error: unknown, fallback: string) =
 };
 
 const deleteFileSystemRequest = async ({
-  filesystem_name,
+  poolName,
+  filesystemName,
 }: DeleteFileSystemPayload): Promise<DeleteFileSystemResponse> => {
   try {
+    const deleteUrl = `/api/filesystem/filesystems/${encodeURIComponent(
+      poolName
+    )}/${encodeURIComponent(filesystemName)}/`;
+
     const response = await axiosInstance.delete<DeleteFileSystemResponse>(
-      '/api/filesystem/delete/',
-      {
-        data: { filesystem_name },
-      }
+      deleteUrl
     );
 
     return response.data;
@@ -108,7 +112,7 @@ export const useDeleteFileSystem = ({
           return {
             ...current,
             filesystems: current.filesystems.filter(
-              (filesystem) => filesystem.fullName !== variables.filesystem_name
+              (filesystem) => filesystem.fullName !== variables.fullName
             ),
           };
         }
@@ -136,7 +140,11 @@ export const useDeleteFileSystem = ({
     setErrorMessage(null);
 
     deleteMutation.mutate(
-      { filesystem_name: targetFileSystem.fullName },
+      {
+        poolName: targetFileSystem.poolName,
+        filesystemName: targetFileSystem.filesystemName,
+        fullName: targetFileSystem.fullName,
+      },
       {
         onSuccess: () => {
           onSuccess?.(targetFileSystem.fullName);

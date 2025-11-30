@@ -96,7 +96,7 @@ const DetailComparisonPanel = ({
             : '0 24px 55px -32px rgba(15, 73, 110, 0.45)',
         px: 3,
         py: 3,
-        width: '100%',
+        width: 'fit-content',
       }}
     >
       <Typography

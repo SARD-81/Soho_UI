@@ -5,7 +5,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useMemo } from 'react';
+import { alpha, useTheme } from '@mui/material/styles';
+import { useCallback, useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { FileSystemEntry } from '../../@types/filesystem';
@@ -18,6 +19,8 @@ interface FileSystemsTableProps {
   error: Error | null;
   onDeleteFilesystem: (filesystem: FileSystemEntry) => void;
   isDeleteDisabled: boolean;
+  selectedFilesystems: string[];
+  onToggleSelect: (filesystem: FileSystemEntry, checked: boolean) => void;
 }
 
 const FileSystemsTable = ({
@@ -27,10 +30,20 @@ const FileSystemsTable = ({
   error,
   onDeleteFilesystem,
   isDeleteDisabled,
+  selectedFilesystems,
+  onToggleSelect,
 }: FileSystemsTableProps) => {
+  const theme = useTheme();
+
   const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
-    const getAttributeValue = (filesystem: FileSystemEntry, key: string) =>
-      filesystem.attributeMap?.[key] ?? '—';
+    const getAttributeValue = (filesystem: FileSystemEntry, key: string) => {
+      if (!filesystem.attributeMap) return '—';
+
+      const directValue = filesystem.attributeMap[key];
+      if (directValue != null) return directValue;
+
+      return filesystem.attributeMap[key.toLowerCase()] ?? '—';
+    };
 
     const baseColumns: DataTableColumn<FileSystemEntry>[] = [
       // {
@@ -74,7 +87,7 @@ const FileSystemsTable = ({
         renderCell: (filesystem) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {getAttributeValue(filesystem, 'Used')}
+              {getAttributeValue(filesystem, 'used')}
             </Typography>
           </Box>
         ),
@@ -86,7 +99,7 @@ const FileSystemsTable = ({
         renderCell: (filesystem) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {getAttributeValue(filesystem, 'Available')}
+              {getAttributeValue(filesystem, 'available')}
             </Typography>
           </Box>
         ),
@@ -98,7 +111,7 @@ const FileSystemsTable = ({
         renderCell: (filesystem) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
             <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {getAttributeValue(filesystem, 'Referenced')}
+              {getAttributeValue(filesystem, 'referenced')}
             </Typography>
           </Box>
         ),
@@ -138,7 +151,10 @@ const FileSystemsTable = ({
             <IconButton
               size="small"
               color="error"
-              onClick={() => onDeleteFilesystem(filesystem)}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDeleteFilesystem(filesystem);
+              }}
               disabled={isDeleteDisabled}
             >
               <MdDeleteOutline size={18} />
@@ -151,6 +167,32 @@ const FileSystemsTable = ({
     return [...baseColumns, actionColumn];
   }, [attributeKeys, isDeleteDisabled, onDeleteFilesystem]);
 
+  const handleRowClick = useCallback(
+    (filesystem: FileSystemEntry) => {
+      const isSelected = selectedFilesystems.includes(filesystem.id);
+      onToggleSelect(filesystem, !isSelected);
+    },
+    [onToggleSelect, selectedFilesystems]
+  );
+
+  const resolveRowSx = useCallback(
+    (filesystem: FileSystemEntry) => {
+      const isSelected = selectedFilesystems.includes(filesystem.id);
+
+      if (!isSelected) {
+        return {};
+      }
+
+      return {
+        backgroundColor: alpha(theme.palette.primary.main, 0.12),
+        '&:hover': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.18),
+        },
+      };
+    },
+    [selectedFilesystems, theme]
+  );
+
   return (
     <DataTable<FileSystemEntry>
       columns={columns}
@@ -158,6 +200,8 @@ const FileSystemsTable = ({
       getRowId={(filesystem) => filesystem.id}
       isLoading={isLoading}
       error={error}
+      onRowClick={handleRowClick}
+      bodyRowSx={resolveRowSx}
       renderLoadingState={() => (
         <Box
           sx={{

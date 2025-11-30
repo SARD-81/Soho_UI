@@ -21,6 +21,7 @@ const ConfirmDeletePoolModal = ({
 
   if (errorMessage) {
     console.log(errorMessage);
+    controller.isOpen = false;
   }
 
   return (
