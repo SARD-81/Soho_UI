@@ -29,8 +29,8 @@ const ToggleBtn = ({ checked = false, disabled = false, id, onChange }: ToggleBt
 
 const StyledWrapper = styled.div`
   .switch-parent {
-    width: 54px;
-    height: 32px;
+    width: 44px;
+    height: 22px;
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -57,11 +57,11 @@ const StyledWrapper = styled.div`
   }
 
   .slider {
-    width: 26px;
-    height: 26px;
+    width: 17px;
+    height: 17px;
     position: absolute;
     left: 4px;
-    top: 3px;
+    top: 2.2px;
     border-radius: 20px;
     background: #ffffff;
     box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.15), 0px 3px 1px rgba(0, 0, 0, 0.06);
