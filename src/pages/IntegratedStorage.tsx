@@ -139,8 +139,9 @@ const IntegratedStorage = () => {
       }
 
       toast.error(
-        `حذف فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`
+        `حذف فضای یکپارچه ${poolName} با خطا مواجه شد`
       );
+      console.log(error.message)
     },
   });
 
@@ -402,7 +403,7 @@ const IntegratedStorage = () => {
                 borderColor: 'rgba(31, 182, 255, 0.5)',
               }}
             >
-              درون‌ریزی
+فراخوانی            
             </Button>
             <Button
               onClick={handleOpenCreate}

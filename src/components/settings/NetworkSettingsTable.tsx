@@ -175,7 +175,7 @@ const NetworkSettingsTable = () => {
 
     const netmaskColumn: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'detail-netmask',
-      header: 'Netmask',
+      header: 'ماسک شبکه',
       align: 'center',
       renderCell: (row) => {
         if (row.ipv4Entries.length === 0) {
@@ -196,7 +196,7 @@ const NetworkSettingsTable = () => {
 
     const speedColumn: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'link-speed',
-      header: 'link-speed',
+      header: 'سرعت لینک',
       align: 'center',
       renderCell: (row) => (
         <Typography
@@ -204,7 +204,7 @@ const NetworkSettingsTable = () => {
           sx={{
             display: 'block',
             textAlign: 'center',
-            direction: 'ltr',
+            direction: 'rtl',
             fontVariantNumeric: 'tabular-nums',
             color: 'var(--color-text)',
           }}

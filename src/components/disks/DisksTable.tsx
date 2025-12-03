@@ -132,12 +132,38 @@ const DisksTable = ({
         ),
       },
       {
+        id: 'disk',
+        header: 'شماره اسلات دیسک',
+        align: 'center',
+        renderCell: (disk) => (
+          <Chip
+                      label={`اسلات ${disk.slot_number}`}
+                      
+                      sx={{
+                        cursor: 'pointer',
+                        fontWeight: 800,
+                        color: 'var(--color-text)',
+                        letterSpacing: '0.2px',
+                        background:
+                          'linear-gradient(135deg, rgba(25,123,255,0.12) 0%, rgba(21,196,197,0.2) 100%)',
+                        border: '1px solid rgba(25,123,255,0.35)',
+                        boxShadow: '0 16px 34px -26px rgba(25,123,255,0.9)',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 16px 36px -24px rgba(14,174,164,0.9)',
+                        },
+                      }}
+                    />
+        ),
+      },
+      {
         id: 'total_bytes',
         header: 'حجم کل',
         align: 'center',
         renderCell: (disk) => (
-          <Typography sx={{ fontWeight: 600, color: 'var(--color-text)' }}>
-            {formatBytes(disk.total_bytes, { fallback: '-' })}
+          <Typography sx={{ fontWeight: 600, color: 'var(--color-text)',direction: 'rtl' }}>
+            {formatBytes(disk.total_bytes , { fallback: '-' })}
           </Typography>
         ),
       },
@@ -177,6 +203,7 @@ const DisksTable = ({
         width: 140,
         renderCell: (disk) =>
           renderStateChip(
+            disk.state === 'running' ? 'فعال' :
             formatStateLabel(disk.state),
             resolveStateColor(disk.state)
           ),
@@ -203,11 +230,11 @@ const DisksTable = ({
               : disk.has_partition === false;
 
           if (disabledDisks.has(disk.disk) && hasPartitions) {
-            return renderStateChip('busy', 'error');
+            return renderStateChip('در حال استفاده', 'error');
           }
 
           if (hasNoPartitions) {
-            return renderStateChip('free', 'warning');
+            return renderStateChip('آزاد', 'warning');
           }
 
           return (

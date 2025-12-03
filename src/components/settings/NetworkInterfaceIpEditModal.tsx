@@ -136,7 +136,7 @@ const NetworkInterfaceIpEditModal = ({
         sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
       >
         <Typography sx={{ color: 'var(--color-secondary)' }}>
-          آدرس IP و Netmask جدید برای رابط انتخاب‌شده را وارد کنید.
+          آدرس IP و ماسک شبکه جدید برای رابط انتخاب‌شده را وارد کنید.
         </Typography>
         <InputLabel
           sx={{ color: 'var(--color-secondary)' }}
@@ -186,7 +186,7 @@ const NetworkInterfaceIpEditModal = ({
           }}
         />
         <InputLabel sx={{ color: 'var(--color-secondary)' }} id="netmask-label">
-          Netmask
+          ماسک شبکه
         </InputLabel>
         <TextField
           // label="نت‌ماسک"

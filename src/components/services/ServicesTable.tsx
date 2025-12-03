@@ -114,7 +114,7 @@ const formatServiceValue = (value: ServiceValue) => {
   }
 
   if (typeof value === 'number' && Number.isFinite(value)) {
-    return new Intl.NumberFormat('en-US').format(value);
+    return value //new Intl.NumberFormat('en-US').format(value);
   }
 
   if (typeof value === 'string') {
