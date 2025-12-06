@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { CreateSambaUserPayload } from '../@types/samba';
 import axiosInstance from '../lib/axiosInstance';
-import type { ApiErrorResponse } from '../utils/apiError';
 import { extractApiErrorMessage } from '../utils/apiError';
 import { sambaUsersQueryKey } from './useSambaUsers';
 
@@ -23,7 +22,7 @@ export const useCreateSambaUser = ({
 
   return useMutation<
     unknown,
-    AxiosError<ApiErrorResponse>,
+    AxiosError,
     CreateSambaUserPayload
   >({
     mutationFn: createSambaUserRequest,
@@ -32,7 +31,10 @@ export const useCreateSambaUser = ({
       onSuccess?.(variables.username);
     },
     onError: (error) => {
-      const message = extractApiErrorMessage(error);
+      const message = extractApiErrorMessage(
+        error,
+        'ایجاد کاربر اشتراک فایل با خطا مواجه شد.'
+      );
       onError?.(message);
     },
   });

@@ -1,4 +1,4 @@
-import DetailComparisonPanel from '../common/DetailComparisonPanel';
+import DetailComparisonPanel, { type DetailComparisonColumn } from '../common/DetailComparisonPanel';
 import SingleDetailView from '../common/SingleDetailView';
 import type { FileSystemEntry } from '../../@types/filesystem';
 import formatDetailValue from '../../utils/formatDetailValue';
@@ -15,7 +15,7 @@ const SelectedFileSystemsDetailsPanel = ({
   items,
   onRemove,
 }: SelectedFileSystemsDetailsPanelProps) => {
-  const columns = items.map((filesystem) => ({
+  const columns: DetailComparisonColumn[] = items.map((filesystem) => ({
     id: filesystem.id,
     title: filesystem.filesystemName,
     onRemove: () => onRemove(filesystem.id),
@@ -31,7 +31,6 @@ const SelectedFileSystemsDetailsPanel = ({
         title={title}
         sections={FILESYSTEM_DETAIL_LAYOUT.sections}
         values={columns[0].values}
-        status={columns[0].status}
         formatValue={formatDetailValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={FILESYSTEM_DETAIL_LAYOUT.comparisonPriority}

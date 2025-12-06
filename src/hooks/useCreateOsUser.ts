@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { CreateOsUserPayload } from '../@types/users';
 import axiosInstance from '../lib/axiosInstance';
-import type { ApiErrorResponse } from '../utils/apiError';
 import { extractApiErrorMessage } from '../utils/apiError';
 import { osUsersBaseQueryKey } from './useOsUsers';
 
@@ -33,7 +32,7 @@ export const useCreateOsUser = ({
 
   return useMutation<
     unknown,
-    AxiosError<ApiErrorResponse>,
+    AxiosError,
     CreateOsUserPayload
   >({
     mutationFn: createOsUserRequest,
@@ -42,7 +41,7 @@ export const useCreateOsUser = ({
       onSuccess?.(variables.username);
     },
     onError: (error) => {
-      const message = extractApiErrorMessage(error);
+      const message = extractApiErrorMessage(error, 'ایجاد کاربر سیستم با خطا مواجه شد.');
       onError?.(message);
     },
   });

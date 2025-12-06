@@ -93,9 +93,7 @@ const SelectedPoolsDetailsPanel = ({
         columns={columns}
         formatValue={formatValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-        attributeOrder={POOL_DETAIL_LAYOUT.comparisonPriority}
         attributeSort={attributeSort}
-        sections={POOL_DETAIL_LAYOUT.sections}
       />
     )
   );
