@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { CreateWebUserPayload } from '../@types/users';
 import axiosInstance from '../lib/axiosInstance';
-import { type ApiErrorResponse, extractApiErrorMessage } from '../utils/apiError';
+import { extractApiErrorMessage } from '../utils/apiError';
 import { webUsersQueryKey } from './useWebUsers';
 
 const createWebUserRequest = async (payload: CreateWebUserPayload) => {
@@ -22,7 +22,7 @@ export const useCreateWebUser = ({
 
   return useMutation<
     unknown,
-    AxiosError<ApiErrorResponse>,
+    AxiosError,
     CreateWebUserPayload
   >({
     mutationFn: createWebUserRequest,
@@ -31,7 +31,7 @@ export const useCreateWebUser = ({
       onSuccess?.(variables.username);
     },
     onError: (error) => {
-      const message = extractApiErrorMessage(error);
+      const message = extractApiErrorMessage(error, 'ایجاد کاربر وب با خطا مواجه شد.');
       onError?.(message);
     },
   });
