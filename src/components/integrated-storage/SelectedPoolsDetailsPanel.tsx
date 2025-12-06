@@ -63,12 +63,16 @@ const SelectedPoolsDetailsPanel = ({
     };
   });
   const title =
-      columns.length > 1 ? 'مقایسه جزئیات فضاهای یکپارچه' : 'جزئیات فضاهای یکپارچه';
-    const attributeSort = createPriorityAwareComparatorFromRecords(
-      columns.map(({ values }) => values),
-      'fa-IR',
-      POOL_DETAIL_LAYOUT.comparisonPriority
-    );
+    columns.length > 1 ? 'مقایسه جزئیات فضاهای یکپارچه' : 'جزئیات فضاهای یکپارچه';
+  const attributeSort = useMemo(
+    () =>
+      createPriorityAwareComparatorFromRecords(
+        columns.map(({ values }) => values),
+        'fa-IR',
+        POOL_DETAIL_LAYOUT.comparisonPriority
+      ),
+    [columns]
+  );
 
   return (
     columns.length === 1 ? (
@@ -89,11 +93,9 @@ const SelectedPoolsDetailsPanel = ({
         columns={columns}
         formatValue={formatValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-        attributeSort={createPriorityAwareComparatorFromRecords(
-          columns.map(({ values }) => values),
-          'fa-IR',
-          POOL_DETAIL_LAYOUT.comparisonPriority
-        )}
+        attributeOrder={POOL_DETAIL_LAYOUT.comparisonPriority}
+        attributeSort={attributeSort}
+        sections={POOL_DETAIL_LAYOUT.sections}
       />
     )
   );

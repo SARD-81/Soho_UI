@@ -143,7 +143,7 @@ const AddPoolDiskModal = ({
           }}
         >
           <Typography sx={{ fontWeight: 700, color: 'var(--color-text)', mb: 1 }}>
-            تعداد دیسک‌ها باید با نوع vdev سازگار باشد:
+            تعداد دیسک‌ها باید با نوع آرایه دیسک سازگار باشد:
           </Typography>
           <Box component="ul" sx={{ m: 0, pl: 3, color: 'var(--color-text)', lineHeight: 2 }}>
             {validationRules.map((rule) => (
