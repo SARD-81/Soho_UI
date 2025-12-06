@@ -37,20 +37,28 @@ export const formatBlockSize = (value: string | number | null | undefined) => {
   return normalized.length > 0 ? normalized : '-';
 };
 
-export const createPartitionLines = (partitions: DiskInventoryItem['partitions']) => {
+export const createPartitionRows = (
+  partitions: DiskInventoryItem['partitions']
+): Array<{
+  name?: string | null;
+  path?: string | null;
+  size?: string | null;
+  mount_point?: string | null;
+  filesystem?: string | null;
+  wwn?: string | null;
+}> => {
   if (!Array.isArray(partitions) || partitions.length === 0) {
-    return '-';
+    return [];
   }
 
-  return partitions
-    .map((partition) => {
-      const name = formatNullableString(partition?.name);
-      const size = formatBytes(partition?.size_bytes, { fallback: '-' });
-      const mountPoint = formatNullableString(partition?.mount_point);
-      const filesystem = formatNullableString(partition?.filesystem);
-      return `${name} | ${size} | نقطه مونت: ${mountPoint} | فایل‌سیستم: ${filesystem}`;
-    })
-    .join('\n');
+  return partitions.map((partition) => ({
+    name: formatNullableString(partition?.name),
+    path: formatNullableString(partition?.path),
+    size: formatBytes(partition?.size_bytes, { fallback: '-' }),
+    mount_point: formatNullableString(partition?.mount_point),
+    filesystem: formatNullableString(partition?.filesystem),
+    wwn: formatNullableString(partition?.wwn),
+  }));
 };
 
 export const buildDiskDetailValues = (
@@ -101,7 +109,11 @@ export const buildDiskDetailValues = (
   assignValue('شماره اسلات', detail.slot_number, formatNullableString);
   assignValue('نوع دیسک', detail.type, formatNullableString);
   assignValue('دارای پارتیشن', detail.has_partition, formatBoolean);
-  assignValue('پارتیشن‌ها', detail.partitions, createPartitionLines);
+  const partitionRows = createPartitionRows(detail.partitions);
+
+  if (partitionRows.length > 0) {
+    values['پارتیشن‌ها'] = partitionRows;
+  }
 
   return values;
 };

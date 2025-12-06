@@ -6,9 +6,29 @@ import DetailComparisonPanel, {
 import SingleDetailView from '../common/SingleDetailView';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
-import { omitNullishEntries } from '../../utils/detailValues';
 import { isValidElement, useMemo } from 'react';
 import { POOL_DETAIL_LAYOUT } from '../../config/detailLayouts';
+
+const normalizePoolDetailValues = (
+  detail: ZpoolDetailEntry | null
+): Record<string, unknown> => {
+  if (!detail) {
+    return {};
+  }
+
+  const allowedKeys = new Set(
+    POOL_DETAIL_LAYOUT.sections.flatMap((section) => section.keys)
+  );
+
+  return Object.entries(detail).reduce<Record<string, unknown>>((acc, [key, value]) => {
+    if (!allowedKeys.has(key) || value == null) {
+      return acc;
+    }
+
+    acc[key] = value;
+    return acc;
+  }, {});
+};
 
 interface PoolDetailItem {
   poolName: string;
@@ -58,7 +78,7 @@ const SelectedPoolsDetailsPanel = ({
       id: poolName,
       title: poolName,
       onRemove: () => onRemove(poolName),
-      values: omitNullishEntries(detail),
+      values: normalizePoolDetailValues(detail),
       status,
     };
   });

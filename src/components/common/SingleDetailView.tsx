@@ -29,6 +29,15 @@ interface DiskRow extends Record<string, unknown> {
   full_disk_wwn?: DiskValue;
 }
 
+interface PartitionRow extends Record<string, unknown> {
+  name?: DiskValue;
+  path?: DiskValue;
+  size?: DiskValue;
+  mount_point?: DiskValue;
+  filesystem?: DiskValue;
+  wwn?: DiskValue;
+}
+
 interface SingleDetailViewProps {
   title: string;
   values: Record<string, unknown>;
@@ -117,6 +126,82 @@ const renderDiskTable = (
 const isDiskRowArray = (value: unknown): value is DiskRow[] =>
   Array.isArray(value) && value.every((item) => item !== null && typeof item === 'object');
 
+const renderPartitionTable = (
+  partitions: PartitionRow[],
+  headerGradient: string,
+  borderColor: string,
+  alternatingCellBg: string[],
+  selectedRowHover: string
+) => (
+  <Box sx={{ mt: 1 }}>
+    <Table size="small" sx={{ border: `1px solid ${borderColor}`, direction: 'rtl' }}>
+      <TableHead>
+        <TableRow>
+          {[
+            'نام پارتیشن',
+            'مسیر',
+            'حجم',
+            'نقطه مونت',
+            'فایل‌سیستم',
+            'WWN',
+          ]
+            .slice()
+            .reverse()
+            .map((label) => (
+              <TableCell
+                key={label}
+                sx={{
+                  background: headerGradient,
+                  borderColor,
+                  fontWeight: 800,
+                  color: 'var(--color-primary)',
+                  textAlign: 'center',
+                }}
+              >
+                {label}
+              </TableCell>
+            ))}
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {partitions.map((partition, index) => (
+          <TableRow
+            key={`${partition.name ?? partition.path}-${index}`}
+            sx={{
+              backgroundColor: alternatingCellBg[index % 2],
+              '&:hover td': { backgroundColor: selectedRowHover },
+              '&:last-of-type td': { borderBottom: 'none' },
+            }}
+          >
+            <TableCell sx={{ borderColor, textAlign: 'center' }}>
+              {partition.wwn ?? '-'}
+            </TableCell>
+            <TableCell sx={{ borderColor, textAlign: 'center' }}>
+              {partition.filesystem ?? '-'}
+            </TableCell>
+            <TableCell sx={{ borderColor, textAlign: 'center' }}>
+              {partition.mount_point ?? '-'}
+            </TableCell>
+            <TableCell sx={{ borderColor, textAlign: 'center', fontWeight: 600 }}>
+              {partition.size ?? '-'}
+            </TableCell>
+            <TableCell sx={{ borderColor, textAlign: 'center' }}>
+              {partition.path ?? '-'}
+            </TableCell>
+            <TableCell sx={{ borderColor, fontWeight: 700, textAlign: 'center' }}>
+              {partition.name ?? '-'}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </Box>
+);
+
+const isPartitionRowArray = (value: unknown): value is PartitionRow[] =>
+  Array.isArray(value) &&
+  value.every((item) => item !== null && typeof item === 'object' && 'name' in item);
+
 const SingleDetailView = ({
   title,
   values,
@@ -165,6 +250,16 @@ const SingleDetailView = ({
   const renderFormattedValue = (value: unknown) => {
     if (isDiskRowArray(value)) {
       return renderDiskTable(value, headerGradient, borderColor, alternatingCellBg, selectedRowHover);
+    }
+
+    if (isPartitionRowArray(value)) {
+      return renderPartitionTable(
+        value,
+        headerGradient,
+        borderColor,
+        alternatingCellBg,
+        selectedRowHover
+      );
     }
 
     const renderedValue = formatValue(value);
