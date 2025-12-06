@@ -9,6 +9,7 @@ import axiosInstance from '../lib/axiosInstance';
 
 const FILESYSTEM_LIST_ENDPOINT = '/api/filesystem/filesystems/';
 const FILESYSTEM_DETAIL_ENDPOINT = '/api/filesystem/filesystems';
+const detailCache = new Map<string, Promise<FileSystemEntry>>();
 
 const formatAttributeValue = (value: unknown): string => {
   if (value == null) {
@@ -163,12 +164,31 @@ const fetchFileSystemDetail = async (
   };
 };
 
+const fetchFileSystemDetailCached = (
+  fullName: string,
+  index: number
+): Promise<FileSystemEntry> => {
+  const cacheKey = `${fullName}::${index}`;
+
+  if (detailCache.has(cacheKey)) {
+    return detailCache.get(cacheKey) as Promise<FileSystemEntry>;
+  }
+
+  const fetchPromise = fetchFileSystemDetail(fullName, index).catch((error) => {
+    detailCache.delete(cacheKey);
+    throw error;
+  });
+
+  detailCache.set(cacheKey, fetchPromise);
+  return fetchPromise;
+};
+
 const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
   const filesystemNames = await fetchFileSystemNames();
   const filesystems = await Promise.all(
     filesystemNames.map((fullName, index) =>
-      fetchFileSystemDetail(fullName, index).catch(() =>
-        fetchFileSystemDetail(`نامشخص/${fullName}`, index)
+      fetchFileSystemDetailCached(fullName, index).catch(() =>
+        fetchFileSystemDetailCached(`نامشخص/${fullName}`, index)
       )
     )
   );
@@ -196,7 +216,10 @@ export const useFileSystems = () =>
   useQuery<FileSystemQueryResult, Error>({
     queryKey: ['filesystems'],
     queryFn: fetchFileSystems,
-    staleTime: 15000,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
 export type UseFileSystemsReturn = ReturnType<typeof useFileSystems>;
