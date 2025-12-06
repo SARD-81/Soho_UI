@@ -17,9 +17,39 @@ const Settings = lazy(() => import('../pages/Settings.tsx'));
 const Share = lazy(() => import('../pages/Share.tsx'));
 const Users = lazy(() => import('../pages/Users.tsx'));
 
+const routePrefetchers = [
+  () => import('../pages/Dashboard.tsx'),
+  () => import('../pages/Disks.tsx'),
+  () => import('../pages/IntegratedStorage.tsx'),
+  () => import('../pages/BlockStorage.tsx'),
+  () => import('../pages/FileSystem.tsx'),
+  () => import('../pages/Services.tsx'),
+  () => import('../pages/Users.tsx'),
+  () => import('../pages/Settings.tsx'),
+  () => import('../pages/Share.tsx'),
+  () => import('../pages/History.tsx'),
+  () => import('../pages/NotFoundPage.tsx'),
+];
+
 const withSuspense = (node: ReactNode) => (
   <Suspense fallback={<LoadingComponent />}>{node}</Suspense>
 );
+
+export const prefetchRouteModules = () => {
+  const schedule =
+    typeof window !== 'undefined' && 'requestIdleCallback' in window
+      ? (window as typeof window & { requestIdleCallback: typeof requestIdleCallback }).requestIdleCallback
+      : (callback: IdleRequestCallback) => window.setTimeout(() => callback({
+            didTimeout: false,
+            timeRemaining: () => 15,
+          } as IdleDeadline), 500);
+
+  schedule(() => {
+    routePrefetchers.forEach((prefetch) => {
+      prefetch().catch(() => {});
+    });
+  });
+};
 
 const router = createBrowserRouter([
   {
