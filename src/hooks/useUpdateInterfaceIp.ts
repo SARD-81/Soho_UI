@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { UpdateInterfaceIpPayload } from '../@types/network';
 import axiosInstance from '../lib/axiosInstance';
-import type { ApiErrorResponse } from '../utils/apiError';
 import { extractApiErrorMessage } from '../utils/apiError';
 import { networkQueryKey } from './useNetwork';
 
@@ -31,7 +30,7 @@ export const useUpdateInterfaceIp = ({
 
   return useMutation<
     unknown,
-    AxiosError<ApiErrorResponse>,
+    AxiosError,
     UpdateInterfaceIpPayload
   >({
     mutationFn: updateInterfaceIpRequest,
@@ -40,7 +39,7 @@ export const useUpdateInterfaceIp = ({
       onSuccess?.(variables.interfaceName);
     },
     onError: (error) => {
-      const message = extractApiErrorMessage(error);
+      const message = extractApiErrorMessage(error, 'به‌روزرسانی آی‌پی با خطا مواجه شد.');
       onError?.(message);
     },
   });
