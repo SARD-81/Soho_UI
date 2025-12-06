@@ -177,6 +177,9 @@ const SingleDetailView = ({
             fontSize: '0.95rem',
             textAlign: 'center',
             whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            direction: 'rtl',
+            unicodeBidi: 'plaintext',
           }}
         >
           {renderedValue}
@@ -243,7 +246,6 @@ const SingleDetailView = ({
           fontWeight: 800,
           color: 'var(--color-primary)',
           letterSpacing: 0.5,
-          textAlign: 'center',
         }}
       >
         {title}
@@ -279,7 +281,10 @@ const SingleDetailView = ({
                 mb: 2,
                 borderRadius: 2,
                 border: `1px solid ${borderColor}`,
-                backgroundColor: alpha(theme.palette.background.default, 0.4),
+                backgroundColor: alpha(
+                  theme.palette.background.paper,
+                  theme.palette.mode === 'dark' ? 0.9 : 0.65
+                ),
                 overflow: 'hidden',
               }}
             >
@@ -322,6 +327,7 @@ const SingleDetailView = ({
                           textAlign: 'center',
                           color: 'var(--color-text)',
                           fontWeight: 500,
+                          minHeight: 64,
                         }}
                       >
                         {renderFormattedValue(values[key])}
@@ -333,10 +339,11 @@ const SingleDetailView = ({
                           fontWeight: 700,
                           backgroundColor: alpha(theme.palette.background.default, 0.1),
                           color: 'var(--color-secondary)',
-                          textAlign: 'left',
+                          textAlign: 'right',
                           direction: 'rtl',
                           fontSize: '0.95rem',
                           letterSpacing: 0.2,
+                          minHeight: 64,
                         }}
                       >
                         {key}
