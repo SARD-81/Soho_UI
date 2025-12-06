@@ -2,6 +2,8 @@ import { Box, CircularProgress, IconButton, Typography, useTheme } from '@mui/ma
 import { alpha } from '@mui/material/styles';
 import { MdClose } from 'react-icons/md';
 import { isValidElement, type ReactNode } from 'react';
+import type { DetailLayoutConfig } from '../../config/detailLayouts';
+import { sortKeysWithPriority } from '../../utils/keySort';
 
 export type DetailComparisonStatus =
   | { type: 'loading'; message?: string }
@@ -24,6 +26,8 @@ interface DetailComparisonPanelProps {
   formatValue: (value: unknown) => ReactNode;
   emptyStateMessage: string;
   attributeSort?: (a: string, b: string) => number;
+  attributeOrder?: DetailLayoutConfig['comparisonPriority'];
+  sections?: DetailLayoutConfig['sections'];
 }
 
 const DetailComparisonPanel = ({
@@ -33,6 +37,8 @@ const DetailComparisonPanel = ({
   formatValue,
   emptyStateMessage,
   attributeSort,
+  attributeOrder,
+  sections,
 }: DetailComparisonPanelProps) => {
   const theme = useTheme();
 
@@ -43,32 +49,72 @@ const DetailComparisonPanel = ({
   const visibleColumns =
     columns.length > 4 ? columns.slice(-4) : columns;
 
-  const attributeKeys = Array.from(
-    visibleColumns.reduce((acc, column) => {
-      Object.keys(column.values ?? {}).forEach((key) => acc.add(key));
-      return acc;
-    }, new Set<string>())
-  ).sort((a, b) => {
-    if (attributeSort) {
-      return attributeSort(a, b);
-    }
-
-    return a.localeCompare(b, 'fa-IR');
-  });
+  const attributeComparator = attributeSort ?? ((a: string, b: string) => a.localeCompare(b, 'fa-IR'));
+  const attributeKeys = sortKeysWithPriority(
+    Array.from(
+      visibleColumns.reduce((acc, column) => {
+        Object.keys(column.values ?? {}).forEach((key) => acc.add(key));
+        return acc;
+      }, new Set<string>())
+    ),
+    attributeOrder ?? [],
+    attributeComparator
+  );
 
   const hasStatuses = visibleColumns.some((column) => column.status);
   const hasAttributes = attributeKeys.length > 0;
 
-  const rows: Array<{ type: 'status' | 'attribute'; key: string; label: string }> = [];
+  const rows: Array<{ type: 'status' | 'attribute' | 'section'; key: string; label: string }> = [];
 
   if (hasStatuses) {
     rows.push({ type: 'status', key: '__status__', label: 'وضعیت' });
   }
 
   if (hasAttributes) {
-    attributeKeys.forEach((key) => {
-      rows.push({ type: 'attribute', key, label: key });
-    });
+    if (sections?.length) {
+      const defaultSectionId = sections[0]?.id;
+      const sectionAssignments = new Map(
+        sections.map((section) => [section.id, [] as string[]])
+      );
+      const assignedKeys = new Set<string>();
+
+      attributeKeys.forEach((key) => {
+        const targetSectionId = sections.find((section) => section.keys.includes(key))?.id ?? defaultSectionId;
+
+        if (!targetSectionId) {
+          return;
+        }
+
+        sectionAssignments.get(targetSectionId)?.push(key);
+        assignedKeys.add(key);
+      });
+
+      sections.forEach((section) => {
+        const keysForSection = sectionAssignments.get(section.id) ?? [];
+
+        if (section.optional && keysForSection.length === 0) {
+          return;
+        }
+
+        rows.push({
+          type: 'section',
+          key: `section-${section.id}`,
+          label: section.title,
+        });
+
+        keysForSection.forEach((key) => {
+          rows.push({ type: 'attribute', key, label: key });
+        });
+      });
+
+      attributeKeys
+        .filter((key) => !assignedKeys.has(key))
+        .forEach((key) => rows.push({ type: 'attribute', key, label: key }));
+    } else {
+      attributeKeys.forEach((key) => {
+        rows.push({ type: 'attribute', key, label: key });
+      });
+    }
   }
 
   const gridColumns = `max-content repeat(${visibleColumns.length}, minmax(200px, 1fr))`;
@@ -236,6 +282,33 @@ const DetailComparisonPanel = ({
           ) : (
             rows.map((row, rowIndex) => {
               const isLastRow = rowIndex === rows.length - 1;
+
+              if (row.type === 'section') {
+                return (
+                  <Box
+                    key={row.key}
+                    className="comparison-cell"
+                    sx={{
+                      gridColumn: `1 / span ${totalColumns}`,
+                      px: 2,
+                      py: 1.25,
+                      background: headerGradient,
+                      borderBottom: `1px solid ${borderColor}`,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: 'var(--color-primary)',
+                        fontWeight: 800,
+                        fontSize: '0.95rem',
+                        textAlign: 'right',
+                      }}
+                    >
+                      {row.label}
+                    </Typography>
+                  </Box>
+                );
+              }
 
               return (
                 <Box key={row.key} sx={{ display: 'contents' }}>
