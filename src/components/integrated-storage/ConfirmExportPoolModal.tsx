@@ -14,13 +14,13 @@ const ConfirmExportPoolModal = ({ controller }: ConfirmExportPoolModalProps) => 
     <BlurModal
       open={isOpen}
       onClose={closeModal}
-      title="برون‌ریزی فضای یکپارچه"
+      title="آزادسازی فضای یکپارچه"
       actions={
         <ModalActionButtons
           onCancel={closeModal}
           onConfirm={confirmExport}
-          confirmLabel="برون‌ریزی"
-          loadingLabel="در حال برون‌ریزی..."
+          confirmLabel="آزادسازی"
+          loadingLabel="در حال آزادسازی..."
           isLoading={isExporting}
           disabled={isExporting}
           disableConfirmGradient
@@ -29,7 +29,7 @@ const ConfirmExportPoolModal = ({ controller }: ConfirmExportPoolModalProps) => 
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Typography sx={{ color: 'var(--color-text)' }}>
-          آیا از برون‌ریزی فضای یکپارچه{' '}
+          آیا از آزادسازی فضای یکپارچه{' '}
           <Typography component="span" sx={{ fontWeight: 700 }}>
             {targetPool?.name}
           </Typography>{' '}

@@ -175,7 +175,7 @@ const SingleDetailView = ({
           sx={{
             color: 'var(--color-text)',
             fontSize: '0.95rem',
-            textAlign: 'right',
+            textAlign: 'center',
             whiteSpace: 'pre-wrap',
           }}
         >
@@ -243,7 +243,7 @@ const SingleDetailView = ({
           fontWeight: 800,
           color: 'var(--color-primary)',
           letterSpacing: 0.5,
-          textAlign: 'right',
+          textAlign: 'center',
         }}
       >
         {title}
@@ -296,7 +296,7 @@ const SingleDetailView = ({
                     color: 'var(--color-primary)',
                     fontWeight: 800,
                     fontSize: '0.95rem',
-                    textAlign: 'right',
+                    textAlign: 'center',
                   }}
                 >
                   {section.title}
@@ -333,7 +333,7 @@ const SingleDetailView = ({
                           fontWeight: 700,
                           backgroundColor: alpha(theme.palette.background.default, 0.1),
                           color: 'var(--color-secondary)',
-                          textAlign: 'right',
+                          textAlign: 'left',
                           direction: 'rtl',
                           fontSize: '0.95rem',
                           letterSpacing: 0.2,

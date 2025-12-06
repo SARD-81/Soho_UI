@@ -217,9 +217,31 @@ const PoolsTable = ({
             );
           }
 
+          const sortedSlots = [...poolSlots].sort((a, b) => {
+            const aNumeric = Number(a.slotNumber);
+            const bNumeric = Number(b.slotNumber);
+            const aIsNumeric = !Number.isNaN(aNumeric);
+            const bIsNumeric = !Number.isNaN(bNumeric);
+
+            if (aIsNumeric && bIsNumeric) {
+              return aNumeric - bNumeric;
+            }
+
+            if (aIsNumeric) return -1;
+            if (bIsNumeric) return 1;
+            if (a.slotNumber == null && b.slotNumber == null) return 0;
+            if (a.slotNumber == null) return 1;
+            if (b.slotNumber == null) return -1;
+
+            return String(b.slotNumber).localeCompare(String(a.slotNumber), undefined, {
+              numeric: true,
+              sensitivity: 'base',
+            });
+          });
+
           return (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-              {poolSlots.map((slot) => {
+              {sortedSlots.map((slot) => {
                 const slotLabel = slot.slotNumber ?? 'نامشخص';
                 const tooltipContent = (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -312,7 +334,7 @@ const PoolsTable = ({
                 <MdAddCircleOutline size={20} />
               </IconButton>
             </Tooltip>
-            <Tooltip title="برون‌ریزی">
+            <Tooltip title="آزادسازی">
               <IconButton
                 size="small"
                 color="primary"

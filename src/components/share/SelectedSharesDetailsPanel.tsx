@@ -1,5 +1,7 @@
 import type { SambaShareDetails } from '../../@types/samba';
-import DetailComparisonPanel from '../common/DetailComparisonPanel';
+import DetailComparisonPanel, {
+  type DetailComparisonColumn,
+} from '../common/DetailComparisonPanel';
 import SingleDetailView from '../common/SingleDetailView';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
@@ -20,7 +22,7 @@ const SelectedSharesDetailsPanel = ({
   items,
   onRemove,
 }: SelectedSharesDetailsPanelProps) => {
-  const columns = items.map(({ shareName, detail }) => ({
+  const columns: DetailComparisonColumn[] = items.map(({ shareName, detail }) => ({
     id: shareName,
     title: shareName,
     onRemove: () => onRemove(shareName),

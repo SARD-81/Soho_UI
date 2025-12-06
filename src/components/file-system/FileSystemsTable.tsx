@@ -70,7 +70,7 @@ const FileSystemsTable = ({
       },
       {
         id: 'mountpoint',
-        header: 'mountpoint',
+        header: 'نقطه اتصال',
         align: 'left',
         renderCell: (filesystem) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
