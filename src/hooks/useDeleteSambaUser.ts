@@ -36,7 +36,10 @@ export const useDeleteSambaUser = ({
       onSuccess?.(username);
     },
     onError: (error, username) => {
-      const message = extractApiErrorMessage(error);
+      const message = extractApiErrorMessage(
+        error,
+        'خطا در حذف کاربر سامبا رخ داد.'
+      );
       onError?.(message, error, username);
     },
   });

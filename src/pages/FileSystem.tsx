@@ -1,7 +1,10 @@
 import { Box, Button, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import type { FileSystemEntry } from '../@types/filesystem';
+import type {
+  FileSystemAttributeEntry,
+  FileSystemEntry,
+} from '../@types/filesystem';
 import PageContainer from '../components/PageContainer';
 import ConfirmDeleteFileSystemModal from '../components/file-system/ConfirmDeleteFileSystemModal';
 import CreateFileSystemModal from '../components/file-system/CreateFileSystemModal';
@@ -66,7 +69,7 @@ const FileSystem = () => {
     const keys = new Set<string>();
 
     filesystems.forEach((filesystem) => {
-      filesystem.attributes.forEach((attribute) => {
+      filesystem.attributes.forEach((attribute: FileSystemAttributeEntry) => {
         if (attribute.key !== 'name') {
           keys.add(attribute.key);
         }

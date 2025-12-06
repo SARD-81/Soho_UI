@@ -40,7 +40,10 @@ export const useUpdateInterfaceIp = ({
       onSuccess?.(variables.interfaceName);
     },
     onError: (error) => {
-      const message = extractApiErrorMessage(error);
+      const message = extractApiErrorMessage(
+        error,
+        'خطا در به‌روزرسانی آدرس IP رابط رخ داد.'
+      );
       onError?.(message);
     },
   });

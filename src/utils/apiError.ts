@@ -1,5 +1,16 @@
 import { isAxiosError } from 'axios';
 
+export interface ApiErrorResponse {
+  detail?: string;
+  message?: string;
+  error?: {
+    message?: string;
+    detail?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 export const extractApiErrorMessage = (error: unknown, fallback: string) => {
   if (isAxiosError(error)) {
     const responseData = error.response?.data;

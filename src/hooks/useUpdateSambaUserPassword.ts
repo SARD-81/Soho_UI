@@ -34,7 +34,10 @@ export const useUpdateSambaUserPassword = ({
       onSuccess?.(variables.username);
     },
     onError: (error) => {
-      const message = extractApiErrorMessage(error);
+      const message = extractApiErrorMessage(
+        error,
+        'خطا در به‌روزرسانی رمز عبور سامبا رخ داد.'
+      );
       onError?.(message);
     },
   });

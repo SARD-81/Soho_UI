@@ -32,7 +32,10 @@ export const useEnableSambaUser = ({
       onSuccess?.(variables.username);
     },
     onError: (error) => {
-      const message = extractApiErrorMessage(error);
+      const message = extractApiErrorMessage(
+        error,
+        'خطا در فعال‌سازی کاربر سامبا رخ داد.'
+      );
       onError?.(message);
     },
   });

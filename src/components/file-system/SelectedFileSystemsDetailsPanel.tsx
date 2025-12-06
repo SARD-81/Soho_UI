@@ -31,7 +31,6 @@ const SelectedFileSystemsDetailsPanel = ({
         title={title}
         sections={FILESYSTEM_DETAIL_LAYOUT.sections}
         values={columns[0].values}
-        status={columns[0].status}
         formatValue={formatDetailValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={FILESYSTEM_DETAIL_LAYOUT.comparisonPriority}

@@ -27,7 +27,10 @@ export const useDeleteWebUser = ({
       onSuccess?.(username);
     },
     onError: (error, username) => {
-      const message = extractApiErrorMessage(error);
+      const message = extractApiErrorMessage(
+        error,
+        'خطا در حذف کاربر وب رخ داد.'
+      );
       onError?.(message, username);
     },
   });

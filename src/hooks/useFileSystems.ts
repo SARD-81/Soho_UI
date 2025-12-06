@@ -193,10 +193,11 @@ const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
 };
 
 export const useFileSystems = () =>
-  useQuery<FileSystemQueryResult, Error>({
+  useQuery<FileSystemQueryResult, Error, FileSystemQueryResult>({
     queryKey: ['filesystems'],
     queryFn: fetchFileSystems,
     staleTime: 15000,
+    gcTime: 10 * 60 * 1000,
   });
 
 export type UseFileSystemsReturn = ReturnType<typeof useFileSystems>;

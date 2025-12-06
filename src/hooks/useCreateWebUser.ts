@@ -31,7 +31,10 @@ export const useCreateWebUser = ({
       onSuccess?.(variables.username);
     },
     onError: (error) => {
-      const message = extractApiErrorMessage(error);
+      const message = extractApiErrorMessage(
+        error,
+        'خطا در ایجاد کاربر وب رخ داد.'
+      );
       onError?.(message);
     },
   });

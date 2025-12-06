@@ -38,7 +38,6 @@ const SelectedSambaUsersDetailsPanel = ({
         title={title}
         sections={SAMBA_USER_DETAIL_LAYOUT.sections}
         values={columns[0].values}
-        status={columns[0].status}
         formatValue={formatDetailValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={SAMBA_USER_DETAIL_LAYOUT.comparisonPriority}
