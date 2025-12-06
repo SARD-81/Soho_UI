@@ -62,22 +62,25 @@ const SelectedPoolsDetailsPanel = ({
       status,
     };
   });
+  const title =
+      columns.length > 1 ? 'مقایسه جزئیات فضاهای یکپارچه' : 'جزئیات فضاهای یکپارچه';
+    const attributeSort = createPriorityAwareComparatorFromRecords(
+      columns.map(({ values }) => values),
+      'fa-IR',
+      POOL_DETAIL_LAYOUT.comparisonPriority
+    );
 
   return (
     columns.length === 1 ? (
       <SingleDetailView
-        title="جزئیات فضای یکپارچه"
+        title={title}
         sections={POOL_DETAIL_LAYOUT.sections}
         values={columns[0].values}
         status={columns[0].status}
         formatValue={formatValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={POOL_DETAIL_LAYOUT.comparisonPriority}
-        attributeSort={createPriorityAwareComparatorFromRecords(
-          columns.map(({ values }) => values),
-          'fa-IR',
-          POOL_DETAIL_LAYOUT.comparisonPriority
-        )}
+        attributeSort={attributeSort}
       />
     ) : (
       <DetailComparisonPanel
