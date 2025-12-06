@@ -271,8 +271,8 @@ const Share = () => {
     onError: (message, error, username) => {
       setDeleteSambaError(message);
       if (
-        error.response?.status === 400 &&
-        error.response.data?.code === 'samba_error'
+        error.response?.status === 400
+        
       ) {
         toast.error(
           `کاربر اشتراک فایل ${username} در اشتراک‌های فعال استفاده شده است. لطفاً ابتدا اشتراک‌های مرتبط را حذف کنید.`

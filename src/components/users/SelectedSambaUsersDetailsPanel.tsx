@@ -1,4 +1,4 @@
-import DetailComparisonPanel from '../common/DetailComparisonPanel';
+import DetailComparisonPanel, { type DetailComparisonColumn } from '../common/DetailComparisonPanel';
 import SingleDetailView from '../common/SingleDetailView';
 import type { SambaUserTableItem } from '../../@types/samba';
 import formatDetailValue from '../../utils/formatDetailValue';
@@ -15,7 +15,7 @@ const SelectedSambaUsersDetailsPanel = ({
   items,
   onRemove,
 }: SelectedSambaUsersDetailsPanelProps) => {
-  const columns = items.map((item) => ({
+  const columns: DetailComparisonColumn[] = items.map((item) => ({
     id: item.username,
     title: item.username,
     onRemove: () => onRemove(item.username),
@@ -38,7 +38,6 @@ const SelectedSambaUsersDetailsPanel = ({
         title={title}
         sections={SAMBA_USER_DETAIL_LAYOUT.sections}
         values={columns[0].values}
-        status={columns[0].status}
         formatValue={formatDetailValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={SAMBA_USER_DETAIL_LAYOUT.comparisonPriority}

@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import axiosInstance from '../lib/axiosInstance';
-import type { ApiErrorResponse } from '../utils/apiError';
 import { extractApiErrorMessage } from '../utils/apiError';
 import { osUsersBaseQueryKey } from './useOsUsers';
 import { sambaUsersQueryKey } from './useSambaUsers';
@@ -17,7 +16,7 @@ interface UseDeleteSambaUserOptions {
   onSuccess?: (username: string) => void;
   onError?: (
     message: string,
-    error: AxiosError<ApiErrorResponse>,
+    error: AxiosError,
     username: string
   ) => void;
 }
@@ -28,7 +27,7 @@ export const useDeleteSambaUser = ({
 }: UseDeleteSambaUserOptions = {}) => {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, AxiosError<ApiErrorResponse>, string>({
+  return useMutation<unknown, AxiosError, string>({
     mutationFn: deleteSambaUserRequest,
     onSuccess: (_data, username) => {
       queryClient.invalidateQueries({ queryKey: sambaUsersQueryKey });
@@ -36,7 +35,10 @@ export const useDeleteSambaUser = ({
       onSuccess?.(username);
     },
     onError: (error, username) => {
-      const message = extractApiErrorMessage(error);
+      const message = extractApiErrorMessage(
+        error,
+        'حذف کاربر اشتراک فایل با خطا مواجه شد.'
+      );
       onError?.(message, error, username);
     },
   });
