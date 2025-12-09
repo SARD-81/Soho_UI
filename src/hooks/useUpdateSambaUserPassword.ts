@@ -1,15 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { UpdateSambaUserPasswordPayload } from '../@types/samba';
-import axiosInstance from '../lib/axiosInstance';
+import { updateSambaUser } from '../lib/sambaUserService';
 import { extractApiErrorMessage } from '../utils/apiError';
 import { sambaUsersQueryKey } from './useSambaUsers';
-
-const updatePasswordRequest = async (
-  payload: UpdateSambaUserPasswordPayload
-) => {
-  await axiosInstance.post('/api/samba/user/passwd/', payload);
-};
 
 interface UseUpdateSambaUserPasswordOptions {
   onSuccess?: (username: string) => void;
@@ -27,7 +21,13 @@ export const useUpdateSambaUserPassword = ({
     AxiosError,
     UpdateSambaUserPasswordPayload
   >({
-    mutationFn: updatePasswordRequest,
+    mutationFn: ({ username, new_password }) =>
+      updateSambaUser({
+        username,
+        action: 'change_password',
+        new_password,
+        save_to_db: false,
+      }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sambaUsersQueryKey });
       onSuccess?.(variables.username);

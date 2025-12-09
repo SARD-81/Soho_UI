@@ -52,6 +52,8 @@ export interface SambaUsersResponse {
   [key: string]: unknown;
 }
 
+export type SambaUserAccountStatus = 'enabled' | 'disabled' | 'unknown';
+
 export interface SambaUserTableItem {
   id: string;
   username: string;
@@ -69,13 +71,51 @@ export interface SambaUserTableItem {
 export interface CreateSambaUserPayload {
   username: string;
   password: string;
+  save_to_db?: boolean;
 }
 
-export interface EnableSambaUserPayload {
+export type SambaUserUpdateAction = 'enable' | 'disable' | 'change_password';
+
+export interface UpdateSambaUserPayload {
   username: string;
+  action: SambaUserUpdateAction;
+  new_password?: string;
+  save_to_db?: boolean;
 }
 
-export interface UpdateSambaUserPasswordPayload {
-  username: string;
-  new_password: string;
+export type UpdateSambaUserPasswordPayload = Pick<
+  UpdateSambaUserPayload,
+  'username' | 'new_password'
+>;
+
+export interface SambaGroupEntry {
+  name: string;
+  gid: string;
+  members: string[];
+}
+
+export interface SambaGroupsResponse {
+  data?: SambaGroupEntry[];
+  [key: string]: unknown;
+}
+
+export interface SambaGroupMembersResponse {
+  data?: SambaGroupEntry;
+  [key: string]: unknown;
+}
+
+export interface SambaGroupMembersListEntry {
+  name?: string;
+  groupname?: string;
+  members: string[];
+}
+
+export interface SambaGroupMembersListResponse {
+  data?: SambaGroupMembersListEntry[];
+  [key: string]: unknown;
+}
+
+export interface SambaUsernamesResponse {
+  data?: string[] | Record<string, string>;
+  [key: string]: unknown;
 }

@@ -160,8 +160,14 @@ const normalizeSambaUser = (
       : {};
 
   const usernameEntry =
-    findValue(record, ['username', 'user', 'accountname', 'name']) ??
-    (typeof value === 'string' ? { key: 'username', value } : undefined);
+    findValue(record, [
+      'unix username',
+      'unix_username',
+      'username',
+      'user',
+      'accountname',
+      'name',
+    ]) ?? (typeof value === 'string' ? { key: 'username', value } : undefined);
 
   const resolvedIdentifier = toOptionalString(identifier);
   const username =
@@ -197,9 +203,10 @@ const normalizeSambaUser = (
 
   const details = enhanceDetailsRecord(record);
 
-  const hasUsernameInDetails = Object.keys(details).some(
-    (key) => normalizeKey(key) === 'username'
-  );
+  const hasUsernameInDetails = Object.keys(details).some((key) => {
+    const normalizedKey = normalizeKey(key);
+    return normalizedKey === 'username' || normalizedKey === 'unixusername';
+  });
 
   if (!hasUsernameInDetails && username) {
     details['Username'] = username;

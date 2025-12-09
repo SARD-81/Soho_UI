@@ -44,6 +44,7 @@ const SambaUserCreateModal = ({
   const [hasPersianPassword, setHasPersianPassword] = useState(false);
   const [hasInvalidUsernameCharacters, setHasInvalidUsernameCharacters] =
     useState(false);
+  const [showRequiredErrors, setShowRequiredErrors] = useState(false);
 
   const normalizedExistingUsernames = useMemo(() => {
     return new Set(
@@ -62,6 +63,7 @@ const SambaUserCreateModal = ({
       setHasPersianUsername(false);
       setHasPersianPassword(false);
       setHasInvalidUsernameCharacters(false);
+      setShowRequiredErrors(false);
     }
   }, [initialUsername, open]);
 
@@ -109,6 +111,7 @@ const SambaUserCreateModal = ({
 
   const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
+    setShowRequiredErrors(false);
     const {
       sanitizedValue,
       hadPersianCharacters,
@@ -126,6 +129,7 @@ const SambaUserCreateModal = ({
 
   const handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
+    setShowRequiredErrors(false);
     const sanitizedValue = removePersianCharacters(value);
     setHasPersianPassword(sanitizedValue !== value);
     setPassword(sanitizedValue);
@@ -138,6 +142,7 @@ const SambaUserCreateModal = ({
     const normalizedUsername = trimmedUsername.toLowerCase();
 
     if (!trimmedUsername || !password) {
+      setShowRequiredErrors(true);
       return;
     }
 
@@ -173,12 +178,12 @@ const SambaUserCreateModal = ({
     <FiCheckCircle color="var(--color-success)" size={18} />
   ) : null;
 
-  const isConfirmDisabled =
-    isSubmitting ||
-    !trimmedUsername ||
-    !password ||
-    isDuplicate ||
-    hasInvalidUsernameCharacters;
+  // const isConfirmDisabled =
+  //   isSubmitting ||
+  //   !trimmedUsername ||
+  //   !password ||
+  //   isDuplicate ||
+  //   hasInvalidUsernameCharacters;
 
   return (
     <BlurModal
@@ -187,10 +192,11 @@ const SambaUserCreateModal = ({
       title="ایجاد کاربر "
       actions={
         <ModalActionButtons
+        onCancel={onClose}
           confirmLabel="ایجاد کاربر"
           loadingLabel="در حال ایجاد..."
           isLoading={isSubmitting}
-          disabled={isConfirmDisabled}
+          // disabled={isConfirmDisabled}
           disableConfirmGradient
           confirmProps={{
             type: 'submit',
@@ -209,7 +215,7 @@ const SambaUserCreateModal = ({
               '&.Mui-disabled': {
                 backgroundColor:
                   'color-mix(in srgb, var(--color-secondary) 25%, transparent)',
-                color: 'var(--color-secondary)',
+                color: 'var(--color-bg)',
               },
             },
           }}
@@ -240,9 +246,15 @@ const SambaUserCreateModal = ({
           id="samba-username-input"
           size="small"
           error={
-            isDuplicate || hasPersianUsername || hasInvalidUsernameCharacters
+            isDuplicate ||
+            hasPersianUsername ||
+            hasInvalidUsernameCharacters ||
+            (showRequiredErrors && !trimmedUsername)
           }
           helperText={
+            (showRequiredErrors &&
+              !trimmedUsername &&
+              'پر کردن این فیلد الزامی است.') ||
             (hasPersianUsername &&
               'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
             (hasInvalidUsernameCharacters && lowercaseEnglishWarningMessage) ||
@@ -276,9 +288,14 @@ const SambaUserCreateModal = ({
           id="samba-password-input"
           fullWidth
           size="small"
-          error={hasPersianPassword}
+          error={hasPersianPassword || (showRequiredErrors && !password)}
           helperText={
-            hasPersianPassword ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.' : undefined
+            (showRequiredErrors &&
+              !password &&
+              'پر کردن این فیلد الزامی است.') ||
+            (hasPersianPassword
+              ? 'استفاده از حروف فارسی در این فیلد مجاز نیست.'
+              : undefined)
           }
           InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
           InputProps={{
