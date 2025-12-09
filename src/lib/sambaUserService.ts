@@ -24,6 +24,33 @@ export const fetchSambaUsers = async ({
   return data;
 };
 
+export const fetchSambaUserAccountFlags = async (
+  username: string
+): Promise<string | null> => {
+  const encodedUsername = encodeURIComponent(username);
+
+  const { data } = await axiosInstance.get<{ data?: unknown }>(
+    `${SAMBA_USERS_BASE_URL}${encodedUsername}/`,
+    {
+      params: { property: 'Account Flags' },
+    }
+  );
+
+  if (typeof data?.data === 'string') {
+    return data.data;
+  }
+
+  if (Array.isArray(data?.data) && data.data.length > 0) {
+    const [firstEntry] = data.data;
+
+    if (typeof firstEntry === 'string') {
+      return firstEntry;
+    }
+  }
+
+  return null;
+};
+
 export const createSambaUser = async ({
   username,
   password,
@@ -70,6 +97,7 @@ export const sambaUserService = {
   createSambaUser,
   deleteSambaUser,
   updateSambaUser,
+  fetchSambaUserAccountFlags,
 };
 
 export default sambaUserService;

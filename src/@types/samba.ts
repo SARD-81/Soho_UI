@@ -52,6 +52,8 @@ export interface SambaUsersResponse {
   [key: string]: unknown;
 }
 
+export type SambaUserAccountStatus = 'enabled' | 'disabled' | 'unknown';
+
 export interface SambaUserTableItem {
   id: string;
   username: string;
