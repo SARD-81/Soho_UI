@@ -87,3 +87,14 @@ export type UpdateSambaUserPasswordPayload = Pick<
   UpdateSambaUserPayload,
   'username' | 'new_password'
 >;
+
+export interface SambaGroupEntry {
+  name: string;
+  gid: string;
+  members: string[];
+}
+
+export interface SambaGroupsResponse {
+  data?: SambaGroupEntry[];
+  [key: string]: unknown;
+}

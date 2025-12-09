@@ -28,19 +28,27 @@ import { DEFAULT_LOGIN_SHELL } from '../constants/users';
 import { useCreateOsUser } from '../hooks/useCreateOsUser';
 import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
 import { useCreateShare } from '../hooks/useCreateShare';
+import { useCreateSambaGroup } from '../hooks/useCreateSambaGroup';
 import { useDeleteSambaUser } from '../hooks/useDeleteSambaUser';
 import { useDeleteShare } from '../hooks/useDeleteShare';
+import { useDeleteSambaGroup } from '../hooks/useDeleteSambaGroup';
+import { useSambaGroups } from '../hooks/useSambaGroups';
 import { useSambaUserAccountFlags } from '../hooks/useSambaUserAccountFlags';
 import { useSambaShares } from '../hooks/useSambaShares';
 import { useSambaUsers } from '../hooks/useSambaUsers';
 import { useServiceAction } from '../hooks/useServiceAction';
+import { useUpdateSambaGroupMember } from '../hooks/useUpdateSambaGroupMember';
 import { useUpdateSambaUserStatus } from '../hooks/useUpdateSambaUserStatus';
 import { useUpdateSambaUserPassword } from '../hooks/useUpdateSambaUserPassword';
 import { normalizeSambaUsers } from '../utils/sambaUsers';
+import SambaGroupCreateModal from '../components/groups/SambaGroupCreateModal';
+import SambaGroupMemberModal from '../components/groups/SambaGroupMemberModal';
+import SambaGroupsTable from '../components/groups/SambaGroupsTable';
 
 const SHARE_TABS = {
   shares: 'shares',
   sambaUsers: 'samba-users',
+  sambaGroups: 'samba-groups',
 } as const;
 
 type ShareTabValue = (typeof SHARE_TABS)[keyof typeof SHARE_TABS];
@@ -76,6 +84,20 @@ const Share = () => {
     null
   );
   const [deleteSambaError, setDeleteSambaError] = useState<string | null>(null);
+  const [isGroupCreateModalOpen, setIsGroupCreateModalOpen] = useState(false);
+  const [groupCreateError, setGroupCreateError] = useState<string | null>(null);
+  const [pendingGroupDelete, setPendingGroupDelete] = useState<string | null>(
+    null
+  );
+  const [pendingGroupMember, setPendingGroupMember] = useState<string | null>(
+    null
+  );
+  const [groupMemberModalState, setGroupMemberModalState] = useState<{
+    open: boolean;
+    action: 'add' | 'remove';
+    groupname: string | null;
+    error: string | null;
+  }>({ open: false, action: 'add', groupname: null, error: null });
 
   const { data: rawShares = [], isLoading, error } = useSambaShares();
 
@@ -239,6 +261,18 @@ const Share = () => {
     enabled: activeTab === SHARE_TABS.sambaUsers,
   });
 
+  const sambaGroupsQuery = useSambaGroups({
+    enabled: activeTab === SHARE_TABS.sambaGroups,
+  });
+
+  const sambaGroups = useMemo(
+    () =>
+      (sambaGroupsQuery.data ?? []).slice().sort((a, b) =>
+        a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })
+      ),
+    [sambaGroupsQuery.data]
+  );
+
   const createOsUser = useCreateOsUser({
     onSuccess: (username) => {
       toast.success(`کاربر ${username} با موفقیت ایجاد شد.`);
@@ -304,6 +338,49 @@ const Share = () => {
       toast.error(
         `تغییر گذرواژه کاربر اشتراک فایل با خطا مواجه شد: ${message}`
       );
+    },
+  });
+
+  const createSambaGroup = useCreateSambaGroup({
+    onSuccess: (groupname) => {
+      toast.success(`گروه ${groupname} با موفقیت ایجاد شد.`);
+      setIsGroupCreateModalOpen(false);
+      setGroupCreateError(null);
+    },
+    onError: (message) => {
+      setGroupCreateError(message);
+      toast.error(`ایجاد گروه اشتراک فایل با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const deleteSambaGroup = useDeleteSambaGroup({
+    onSuccess: (groupname) => {
+      toast.success(`گروه ${groupname} با موفقیت حذف شد.`);
+    },
+    onError: (message, groupname) => {
+      toast.error(`حذف گروه ${groupname} با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const updateSambaGroupMember = useUpdateSambaGroupMember({
+    onSuccess: (groupname, username, action) => {
+      const actionLabel = action === 'add' ? 'به گروه افزوده شد' : 'از گروه حذف شد';
+      toast.success(`کاربر ${username} ${actionLabel}.`);
+      setGroupMemberModalState((prev) => ({
+        ...prev,
+        open: false,
+        groupname: null,
+        error: null,
+      }));
+      setPendingGroupMember(null);
+    },
+    onError: (message, groupname, username, action) => {
+      const actionLabel = action === 'add' ? 'افزودن' : 'حذف';
+      setGroupMemberModalState((prev) => ({ ...prev, error: message }));
+      toast.error(
+        `${actionLabel} کاربر ${username} در گروه ${groupname} با خطا مواجه شد: ${message}`
+      );
+      setPendingGroupMember(null);
     },
   });
 
@@ -442,6 +519,93 @@ const Share = () => {
     [updateSambaPassword]
   );
 
+  const handleOpenGroupCreateModal = useCallback(() => {
+    setGroupCreateError(null);
+    createSambaGroup.reset();
+    setIsGroupCreateModalOpen(true);
+  }, [createSambaGroup]);
+
+  const handleCloseGroupCreateModal = useCallback(() => {
+    if (createSambaGroup.isPending) {
+      return;
+    }
+
+    setIsGroupCreateModalOpen(false);
+    setGroupCreateError(null);
+    createSambaGroup.reset();
+  }, [createSambaGroup]);
+
+  const handleSubmitCreateGroup = useCallback(
+    (groupname: string) => {
+      setGroupCreateError(null);
+      createSambaGroup.mutate(groupname);
+    },
+    [createSambaGroup]
+  );
+
+  const handleOpenGroupMemberModal = useCallback(
+    (group: { name: string }, action: 'add' | 'remove') => {
+      setGroupMemberModalState({ open: true, action, groupname: group.name, error: null });
+      updateSambaGroupMember.reset();
+    },
+    [updateSambaGroupMember]
+  );
+
+  const handleCloseGroupMemberModal = useCallback(() => {
+    if (updateSambaGroupMember.isPending) {
+      return;
+    }
+
+    setGroupMemberModalState({ open: false, action: 'add', groupname: null, error: null });
+    setPendingGroupMember(null);
+    updateSambaGroupMember.reset();
+  }, [updateSambaGroupMember]);
+
+  const handleSubmitGroupMember = useCallback(
+    (username: string) => {
+      if (!groupMemberModalState.groupname) {
+        return;
+      }
+
+      const trimmedUsername = username.trim();
+      if (!trimmedUsername) {
+        return;
+      }
+
+      const targetGroup = groupMemberModalState.groupname;
+      setPendingGroupMember(targetGroup);
+      setGroupMemberModalState((prev) => ({ ...prev, error: null }));
+
+      updateSambaGroupMember.mutate(
+        {
+          groupname: targetGroup,
+          username: trimmedUsername,
+          action: groupMemberModalState.action,
+        },
+        {
+          onSettled: () => {
+            setPendingGroupMember(null);
+          },
+        }
+      );
+    },
+    [groupMemberModalState, updateSambaGroupMember]
+  );
+
+  const handleDeleteSambaGroup = useCallback(
+    (group: { name: string }) => {
+      const targetGroup = group.name;
+      setPendingGroupDelete(targetGroup);
+
+      deleteSambaGroup.mutate(targetGroup, {
+        onSettled: () => {
+          setPendingGroupDelete(null);
+        },
+      });
+    },
+    [deleteSambaGroup]
+  );
+
   const isDeletingSambaUser = deleteSambaUser.isPending;
 
   const handleDeleteSambaUser = useCallback(
@@ -509,10 +673,65 @@ const Share = () => {
       <Box sx={tabContainerSx}>
         <Tabs value={activeTab} onChange={handleTabChange} sx={tabListSx}>
           <Tab label="کاربران اشتراک فایل" value={SHARE_TABS.sambaUsers} />
+          <Tab label="گروه‌های اشتراک فایل" value={SHARE_TABS.sambaGroups} />
           <Tab label="اشتراک‌ها" value={SHARE_TABS.shares} />
         </Tabs>
 
         <Box sx={tabPanelSx}>
+          <TabPanel
+            value={SHARE_TABS.sambaGroups}
+            currentValue={activeTab}
+            sx={{ mt: 0 }}
+          >
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+                >
+                  مدیریت گروه‌های اشتراک فایل
+                </Typography>
+
+                <Button
+                  onClick={handleOpenGroupCreateModal}
+                  variant="contained"
+                  sx={{
+                    px: 3,
+                    py: 1.25,
+                    borderRadius: '3px',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    background:
+                      'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+                    color: 'var(--color-bg)',
+                    boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+                  }}
+                >
+                  ایجاد
+                </Button>
+              </Box>
+
+              <SambaGroupsTable
+                groups={sambaGroups}
+                isLoading={sambaGroupsQuery.isLoading || sambaGroupsQuery.isFetching}
+                error={sambaGroupsQuery.error ?? null}
+                pendingDeleteGroup={pendingGroupDelete}
+                pendingMemberGroup={pendingGroupMember}
+                onAddUser={(group) => handleOpenGroupMemberModal(group, 'add')}
+                onRemoveUser={(group) => handleOpenGroupMemberModal(group, 'remove')}
+                onDelete={handleDeleteSambaGroup}
+              />
+            </Box>
+          </TabPanel>
+
           <TabPanel
             value={SHARE_TABS.shares}
             currentValue={activeTab}
@@ -645,6 +864,24 @@ const Share = () => {
       </Box>
 
       <CreateShareModal controller={createShare} />
+
+      <SambaGroupCreateModal
+        open={isGroupCreateModalOpen}
+        onClose={handleCloseGroupCreateModal}
+        onSubmit={handleSubmitCreateGroup}
+        isSubmitting={createSambaGroup.isPending}
+        errorMessage={groupCreateError}
+      />
+
+      <SambaGroupMemberModal
+        open={groupMemberModalState.open}
+        action={groupMemberModalState.action}
+        groupname={groupMemberModalState.groupname}
+        onClose={handleCloseGroupMemberModal}
+        onSubmit={handleSubmitGroupMember}
+        isSubmitting={updateSambaGroupMember.isPending}
+        errorMessage={groupMemberModalState.error}
+      />
 
       <ConfirmDeleteShareModal controller={shareDeletion} />
 
