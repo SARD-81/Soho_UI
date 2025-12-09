@@ -13,14 +13,16 @@ const resolveAccountStatus = (
     return 'unknown';
   }
 
-  const normalizedFlags = accountFlags.trim();
+  const normalizedFlags = accountFlags
+    .replace(/[\[\]\s]/g, '')
+    .toUpperCase();
 
-  if (normalizedFlags === '[U          ]') {
-    return 'enabled';
+  if (normalizedFlags.includes('DU')) {
+    return 'disabled';
   }
 
-  if (normalizedFlags === '[DU         ]') {
-    return 'disabled';
+  if (normalizedFlags.includes('U')) {
+    return 'enabled';
   }
 
   return 'unknown';
