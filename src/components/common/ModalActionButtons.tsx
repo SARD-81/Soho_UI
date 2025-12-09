@@ -17,6 +17,7 @@ interface ModalActionButtonsProps {
   confirmProps?: ButtonProps;
   cancelProps?: ButtonProps;
   disableConfirmGradient?: boolean;
+  hideConfirm?: boolean;
 }
 
 const baseButtonSx: SxProps<Theme> = {
@@ -59,6 +60,7 @@ const ModalActionButtons = ({
   confirmProps,
   cancelProps,
   disableConfirmGradient = false,
+  hideConfirm = false,
 }: ModalActionButtonsProps) => {
   const {
     sx: confirmSxProp,
@@ -124,16 +126,18 @@ const ModalActionButtons = ({
         </Button>
       ) : null}
 
-      <Button
-        onClick={handleConfirmClick}
-        variant={confirmVariant ?? 'contained'}
-        color={confirmColor}
-        disabled={confirmDisabled}
-        sx={confirmSx}
-        {...confirmRest}
-      >
-        {isLoading && loadingLabel ? loadingLabel : confirmLabel}
-      </Button>
+      {hideConfirm ? null : (
+        <Button
+          onClick={handleConfirmClick}
+          variant={confirmVariant ?? 'contained'}
+          color={confirmColor}
+          disabled={confirmDisabled}
+          sx={confirmSx}
+          {...confirmRest}
+        >
+          {isLoading && loadingLabel ? loadingLabel : confirmLabel}
+        </Button>
+      )}
     </Box>
   );
 };

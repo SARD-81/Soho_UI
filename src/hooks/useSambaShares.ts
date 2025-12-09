@@ -28,7 +28,7 @@ export const useSambaShares = () =>
   useQuery<SambaSharesResponse, Error, SambaShareEntry[]>({
     queryKey: sambaSharesQueryKey,
     queryFn: fetchSambaShares,
-    refetchInterval: 10000,
+    // refetchInterval: 10000,
     select: mapShares,
   });
 

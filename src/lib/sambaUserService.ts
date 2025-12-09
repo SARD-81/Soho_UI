@@ -1,5 +1,6 @@
 import type {
   CreateSambaUserPayload,
+  SambaUsernamesResponse,
   SambaUsersResponse,
   SambaUserUpdateAction,
   UpdateSambaUserPayload,
@@ -22,6 +23,43 @@ export const fetchSambaUsers = async ({
   );
 
   return data;
+};
+
+export const fetchSambaUsernames = async ({
+  signal,
+}: { signal?: AbortSignal } = {}): Promise<string[]> => {
+  const { data } = await axiosInstance.get<SambaUsernamesResponse>(
+    SAMBA_USERS_BASE_URL,
+    {
+      params: { property: 'Unix username' },
+      signal,
+    }
+  );
+
+  const raw = data?.data;
+
+  if (Array.isArray(raw)) {
+    return raw
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object') {
+          const record = item as Record<string, unknown>;
+          if (typeof record['Unix username'] === 'string') {
+            return record['Unix username'];
+          }
+        }
+        return null;
+      })
+      .filter((item): item is string => Boolean(item));
+  }
+
+  if (raw && typeof raw === 'object') {
+    return Object.values(raw).filter(
+      (value): value is string => typeof value === 'string'
+    );
+  }
+
+  return [];
 };
 
 export const fetchSambaUserAccountFlags = async (
