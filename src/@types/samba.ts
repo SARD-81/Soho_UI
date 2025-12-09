@@ -104,8 +104,14 @@ export interface SambaGroupMembersResponse {
   [key: string]: unknown;
 }
 
+export interface SambaGroupMembersListEntry {
+  name?: string;
+  groupname?: string;
+  members: string[];
+}
+
 export interface SambaGroupMembersListResponse {
-  data?: Pick<SambaGroupEntry, 'name' | 'members'>[];
+  data?: SambaGroupMembersListEntry[];
   [key: string]: unknown;
 }
 

@@ -1,5 +1,6 @@
 import type {
   SambaGroupEntry,
+  SambaGroupMembersListEntry,
   SambaGroupMembersListResponse,
   SambaGroupMembersResponse,
   SambaGroupsResponse,
@@ -78,7 +79,17 @@ export const fetchSambaGroupMembers = async (
     }
   );
 
-  return data?.data ?? null;
+  const group = data?.data;
+
+  if (!group) return null;
+
+  const resolvedName = (group as SambaGroupMembersListEntry).groupname || group.name;
+
+  return {
+    ...group,
+    name: resolvedName || groupname,
+    members: group.members ?? [],
+  };
 };
 
 export const fetchSambaGroupsMembersList = async ({
@@ -92,7 +103,18 @@ export const fetchSambaGroupsMembersList = async ({
     }
   );
 
-  return data?.data ?? [];
+  const rawGroups = data?.data ?? [];
+
+  return rawGroups
+    .map((entry: SambaGroupMembersListEntry) => {
+      const resolvedName = entry.name || entry.groupname || '';
+
+      return {
+        name: resolvedName,
+        members: entry.members ?? [],
+      };
+    })
+    .filter((entry) => entry.name.trim().length > 0);
 };
 
 export const sambaGroupService = {

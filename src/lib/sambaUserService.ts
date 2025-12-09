@@ -40,7 +40,16 @@ export const fetchSambaUsernames = async ({
 
   if (Array.isArray(raw)) {
     return raw
-      .map((item) => (typeof item === 'string' ? item : null))
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object') {
+          const record = item as Record<string, unknown>;
+          if (typeof record['Unix username'] === 'string') {
+            return record['Unix username'];
+          }
+        }
+        return null;
+      })
       .filter((item): item is string => Boolean(item));
   }
 
