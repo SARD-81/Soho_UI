@@ -36,19 +36,36 @@ export const fetchSambaUserAccountFlags = async (
     }
   );
 
-  if (typeof data?.data === 'string') {
-    return data.data;
-  }
-
-  if (Array.isArray(data?.data) && data.data.length > 0) {
-    const [firstEntry] = data.data;
-
-    if (typeof firstEntry === 'string') {
-      return firstEntry;
+  const extractAccountFlags = (raw: unknown): string | null => {
+    if (typeof raw === 'string') {
+      return raw;
     }
-  }
 
-  return null;
+    if (Array.isArray(raw)) {
+      const firstStringEntry = raw.find((entry) => typeof entry === 'string');
+      return typeof firstStringEntry === 'string' ? firstStringEntry : null;
+    }
+
+    if (raw && typeof raw === 'object') {
+      const objectValue = raw as Record<string, unknown>;
+
+      if (typeof objectValue['Account Flags'] === 'string') {
+        return objectValue['Account Flags'];
+      }
+
+      const firstStringValue = Object.values(objectValue).find(
+        (value) => typeof value === 'string'
+      );
+
+      if (typeof firstStringValue === 'string') {
+        return firstStringValue;
+      }
+    }
+
+    return null;
+  };
+
+  return extractAccountFlags(data?.data);
 };
 
 export const createSambaUser = async ({

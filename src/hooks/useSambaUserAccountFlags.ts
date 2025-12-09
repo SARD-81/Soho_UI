@@ -17,7 +17,7 @@ const resolveAccountStatus = (
     .replace(/[\[\]\s]/g, '')
     .toUpperCase();
 
-  if (normalizedFlags.includes('D')) {
+  if (normalizedFlags.startsWith('D') || normalizedFlags.includes('DU')) {
     return 'disabled';
   }
 
