@@ -1,9 +1,17 @@
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
-import { MdDeleteOutline, MdLockOpen, MdLockReset } from 'react-icons/md';
+import {
+  MdDeleteOutline,
+  MdLockOpen,
+  MdLockOutline,
+  MdLockReset,
+} from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
-import type { SambaUserTableItem } from '../../@types/samba';
+import type {
+  SambaUserAccountStatus,
+  SambaUserTableItem,
+} from '../../@types/samba';
 import DataTable from '../DataTable';
 
 interface SambaUsersTableProps {
@@ -12,11 +20,13 @@ interface SambaUsersTableProps {
   error: Error | null;
   selectedUsers: string[];
   onToggleSelect: (user: SambaUserTableItem, checked: boolean) => void;
-  onEnable: (user: SambaUserTableItem) => void;
+  onToggleStatus: (user: SambaUserTableItem) => void;
   onEditPassword: (user: SambaUserTableItem) => void;
   onDelete: (user: SambaUserTableItem) => void;
-  pendingEnableUsername: string | null;
-  isEnabling: boolean;
+  statusByUsername: Record<string, SambaUserAccountStatus>;
+  isStatusLoading: boolean;
+  pendingStatusUsername: string | null;
+  isUpdatingStatus: boolean;
   pendingPasswordUsername: string | null;
   isUpdatingPassword: boolean;
   pendingDeleteUsername: string | null;
@@ -29,11 +39,13 @@ const SambaUsersTable = ({
   error,
   selectedUsers,
   onToggleSelect,
-  onEnable,
+  onToggleStatus,
   onEditPassword,
   onDelete,
-  pendingEnableUsername,
-  isEnabling,
+  statusByUsername,
+  isStatusLoading,
+  pendingStatusUsername,
+  isUpdatingStatus,
   pendingPasswordUsername,
   isUpdatingPassword,
   pendingDeleteUsername,
@@ -70,12 +82,32 @@ const SambaUsersTable = ({
         align: 'center',
         width: 168,
         renderCell: (user) => {
-          const isEnablePending =
-            isEnabling && pendingEnableUsername === user.username;
+          const status = statusByUsername[user.username] ?? 'unknown';
+          const toggleAction = status === 'enabled' ? 'disable' : 'enable';
+          const toggleTooltip =
+            status === 'enabled' ? 'غیرفعال‌سازی کاربر' : 'فعال‌سازی کاربر';
+          const isStatusPending =
+            isUpdatingStatus && pendingStatusUsername === user.username;
           const isPasswordPending =
             isUpdatingPassword && pendingPasswordUsername === user.username;
           const isDeletePending =
             isDeleting && pendingDeleteUsername === user.username;
+
+          const resolveToggleIcon = () => {
+            if (toggleAction === 'disable') {
+              return <MdLockOutline size={18} />;
+            }
+
+            return <MdLockOpen size={18} />;
+          };
+
+          const resolveToggleColor = () => {
+            if (toggleAction === 'disable') {
+              return 'var(--color-error)';
+            }
+
+            return 'var(--color-success)';
+          };
 
           return (
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
@@ -101,24 +133,24 @@ const SambaUsersTable = ({
                 </span>
               </Tooltip>
 
-              <Tooltip title="فعال‌سازی کاربر" arrow>
+              <Tooltip title={toggleTooltip} arrow>
                 <span>
                   <IconButton
                     size="small"
                     onClick={(event) => {
                       event.stopPropagation();
-                      onEnable(user);
+                      onToggleStatus(user);
                     }}
-                    disabled={isEnablePending}
+                    disabled={isStatusPending || isStatusLoading}
                     sx={{
-                      color: 'var(--color-success)',
+                      color: resolveToggleColor(),
                       '&.Mui-disabled': {
                         color: 'var(--color-secondary)',
                         opacity: 0.7,
                       },
                     }}
                   >
-                    <MdLockOpen size={18} />
+                    {resolveToggleIcon()}
                   </IconButton>
                 </span>
               </Tooltip>
@@ -151,14 +183,16 @@ const SambaUsersTable = ({
     ];
   }, [
     isDeleting,
-    isEnabling,
+    isStatusLoading,
+    isUpdatingStatus,
     isUpdatingPassword,
     onDelete,
     onEditPassword,
-    onEnable,
+    onToggleStatus,
     pendingDeleteUsername,
-    pendingEnableUsername,
+    pendingStatusUsername,
     pendingPasswordUsername,
+    statusByUsername,
   ]);
 
   const handleRowClick = useCallback(

@@ -30,10 +30,11 @@ import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
 import { useCreateShare } from '../hooks/useCreateShare';
 import { useDeleteSambaUser } from '../hooks/useDeleteSambaUser';
 import { useDeleteShare } from '../hooks/useDeleteShare';
-import { useEnableSambaUser } from '../hooks/useEnableSambaUser';
+import { useSambaUserAccountFlags } from '../hooks/useSambaUserAccountFlags';
 import { useSambaShares } from '../hooks/useSambaShares';
 import { useSambaUsers } from '../hooks/useSambaUsers';
 import { useServiceAction } from '../hooks/useServiceAction';
+import { useUpdateSambaUserStatus } from '../hooks/useUpdateSambaUserStatus';
 import { useUpdateSambaUserPassword } from '../hooks/useUpdateSambaUserPassword';
 import { normalizeSambaUsers } from '../utils/sambaUsers';
 
@@ -62,7 +63,7 @@ const Share = () => {
   const [passwordModalError, setPasswordModalError] = useState<string | null>(
     null
   );
-  const [pendingEnableUsername, setPendingEnableUsername] = useState<
+  const [pendingStatusUsername, setPendingStatusUsername] = useState<
     string | null
   >(null);
   const [pendingPasswordUsername, setPendingPasswordUsername] = useState<
@@ -233,6 +234,11 @@ const Share = () => {
     );
   }, [sambaUsers]);
 
+  const sambaUserAccountFlags = useSambaUserAccountFlags({
+    usernames: sambaUsers.map((user) => user.username),
+    enabled: activeTab === SHARE_TABS.sambaUsers,
+  });
+
   const createOsUser = useCreateOsUser({
     onSuccess: (username) => {
       toast.success(`کاربر ${username} با موفقیت ایجاد شد.`);
@@ -254,12 +260,14 @@ const Share = () => {
     },
   });
 
-  const enableSambaUser = useEnableSambaUser({
-    onSuccess: (username) => {
-      toast.success(`کاربر اشتراک فایل ${username} فعال شد.`);
+  const updateSambaUserStatus = useUpdateSambaUserStatus({
+    onSuccess: (username, action) => {
+      const actionLabel = action === 'enable' ? 'فعال شد' : 'غیرفعال شد';
+      toast.success(`کاربر اشتراک فایل ${username} ${actionLabel}.`);
     },
-    onError: (message) => {
-      toast.error(`فعال‌سازی کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
+    onError: (message, action) => {
+      const actionLabel = action === 'enable' ? 'فعال‌سازی' : 'غیرفعال‌سازی';
+      toast.error(`${actionLabel} کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
     },
   });
 
@@ -386,19 +394,23 @@ const Share = () => {
     setSelectedSambaUsers((prev) => prev.filter((item) => item !== username));
   }, []);
 
-  const handleEnableSambaUser = useCallback(
+  const handleToggleSambaUserStatus = useCallback(
     (user: { username: string }) => {
-      setPendingEnableUsername(user.username);
-      enableSambaUser.mutate(
-        { username: user.username },
+      const currentStatus =
+        sambaUserAccountFlags.statusByUsername[user.username] ?? 'unknown';
+      const nextAction = currentStatus === 'enabled' ? 'disable' : 'enable';
+
+      setPendingStatusUsername(user.username);
+      updateSambaUserStatus.mutate(
+        { username: user.username, action: nextAction },
         {
           onSettled: () => {
-            setPendingEnableUsername(null);
+            setPendingStatusUsername(null);
           },
         }
       );
     },
-    [enableSambaUser]
+    [sambaUserAccountFlags.statusByUsername, updateSambaUserStatus]
   );
 
   const handleOpenPasswordModal = useCallback(
@@ -607,11 +619,16 @@ const Share = () => {
                 error={sambaUsersQuery.error ?? null}
                 selectedUsers={selectedSambaUsers}
                 onToggleSelect={handleToggleSelectSambaUser}
-                onEnable={handleEnableSambaUser}
+                onToggleStatus={handleToggleSambaUserStatus}
                 onEditPassword={handleOpenPasswordModal}
                 onDelete={handleDeleteSambaUser}
-                pendingEnableUsername={pendingEnableUsername}
-                isEnabling={enableSambaUser.isPending}
+                statusByUsername={sambaUserAccountFlags.statusByUsername}
+                isStatusLoading={
+                  sambaUserAccountFlags.isLoading ||
+                  sambaUserAccountFlags.isFetching
+                }
+                pendingStatusUsername={pendingStatusUsername}
+                isUpdatingStatus={updateSambaUserStatus.isPending}
                 pendingPasswordUsername={pendingPasswordUsername}
                 isUpdatingPassword={updateSambaPassword.isPending}
                 pendingDeleteUsername={pendingDeleteUsername}

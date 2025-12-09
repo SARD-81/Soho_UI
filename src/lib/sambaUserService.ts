@@ -24,6 +24,50 @@ export const fetchSambaUsers = async ({
   return data;
 };
 
+export const fetchSambaUserAccountFlags = async (
+  username: string
+): Promise<string | null> => {
+  const encodedUsername = encodeURIComponent(username);
+
+  const { data } = await axiosInstance.get<{ data?: unknown }>(
+    `${SAMBA_USERS_BASE_URL}${encodedUsername}/`,
+    {
+      params: { property: 'Account Flags' },
+    }
+  );
+
+  const extractAccountFlags = (raw: unknown): string | null => {
+    if (typeof raw === 'string') {
+      return raw;
+    }
+
+    if (Array.isArray(raw)) {
+      const firstStringEntry = raw.find((entry) => typeof entry === 'string');
+      return typeof firstStringEntry === 'string' ? firstStringEntry : null;
+    }
+
+    if (raw && typeof raw === 'object') {
+      const objectValue = raw as Record<string, unknown>;
+
+      if (typeof objectValue['Account Flags'] === 'string') {
+        return objectValue['Account Flags'];
+      }
+
+      const firstStringValue = Object.values(objectValue).find(
+        (value) => typeof value === 'string'
+      );
+
+      if (typeof firstStringValue === 'string') {
+        return firstStringValue;
+      }
+    }
+
+    return null;
+  };
+
+  return extractAccountFlags(data?.data);
+};
+
 export const createSambaUser = async ({
   username,
   password,
@@ -70,6 +114,7 @@ export const sambaUserService = {
   createSambaUser,
   deleteSambaUser,
   updateSambaUser,
+  fetchSambaUserAccountFlags,
 };
 
 export default sambaUserService;
