@@ -1,28 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import type { SambaUsersResponse } from '../@types/samba';
-import axiosInstance from '../lib/axiosInstance';
+import { fetchSambaUsers as fetchSambaUsersRequest } from '../lib/sambaUserService';
 
 export const sambaUsersQueryKey = ['samba-users'] as const;
 
-const fetchSambaUsers = async ({
+const fetchSambaUsersQuery = async ({
   signal,
 }: {
   signal?: AbortSignal;
 }): Promise<SambaUsersResponse> => {
-  const { data } = await axiosInstance.get<SambaUsersResponse>(
-    '/api/samba/user/list/',
-    {
-      signal,
-    }
-  );
-
-  return data;
+  return fetchSambaUsersRequest({ signal });
 };
 
 export const useSambaUsers = ({ enabled = true } = {}) =>
   useQuery<SambaUsersResponse, Error>({
     queryKey: sambaUsersQueryKey,
-    queryFn: ({ signal }) => fetchSambaUsers({ signal }),
+    queryFn: ({ signal }) => fetchSambaUsersQuery({ signal }),
     enabled,
     staleTime: 15000,
   });

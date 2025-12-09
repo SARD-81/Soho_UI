@@ -69,13 +69,19 @@ export interface SambaUserTableItem {
 export interface CreateSambaUserPayload {
   username: string;
   password: string;
+  save_to_db?: boolean;
 }
 
-export interface EnableSambaUserPayload {
+export type SambaUserUpdateAction = 'enable' | 'disable' | 'change_password';
+
+export interface UpdateSambaUserPayload {
   username: string;
+  action: SambaUserUpdateAction;
+  new_password?: string;
+  save_to_db?: boolean;
 }
 
-export interface UpdateSambaUserPasswordPayload {
-  username: string;
-  new_password: string;
-}
+export type UpdateSambaUserPasswordPayload = Pick<
+  UpdateSambaUserPayload,
+  'username' | 'new_password'
+>;
