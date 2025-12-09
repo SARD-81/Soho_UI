@@ -1,13 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
-import type { EnableSambaUserPayload } from '../@types/samba';
-import axiosInstance from '../lib/axiosInstance';
+import { updateSambaUser } from '../lib/sambaUserService';
 import { extractApiErrorMessage } from '../utils/apiError';
 import { sambaUsersQueryKey } from './useSambaUsers';
-
-const enableSambaUserRequest = async (payload: EnableSambaUserPayload) => {
-  await axiosInstance.post('/api/samba/user/enable/', payload);
-};
 
 interface UseEnableSambaUserOptions {
   onSuccess?: (username: string) => void;
@@ -23,9 +18,10 @@ export const useEnableSambaUser = ({
   return useMutation<
     unknown,
     AxiosError,
-    EnableSambaUserPayload
+    { username: string }
   >({
-    mutationFn: enableSambaUserRequest,
+    mutationFn: ({ username }) =>
+      updateSambaUser({ username, action: 'enable', save_to_db: false }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sambaUsersQueryKey });
       onSuccess?.(variables.username);

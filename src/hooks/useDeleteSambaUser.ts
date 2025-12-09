@@ -1,16 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import axiosInstance from '../lib/axiosInstance';
+import { deleteSambaUser as deleteSambaUserRequest } from '../lib/sambaUserService';
 import { extractApiErrorMessage } from '../utils/apiError';
 import { osUsersBaseQueryKey } from './useOsUsers';
 import { sambaUsersQueryKey } from './useSambaUsers';
-
-const deleteSambaUserRequest = async (username: string) => {
-  const encodedUsername = encodeURIComponent(username);
-
-  await axiosInstance.delete(`/api/samba/user/delete/${encodedUsername}/`);
-  await axiosInstance.delete(`/api/os/user/delete/${encodedUsername}/`);
-};
 
 interface UseDeleteSambaUserOptions {
   onSuccess?: (username: string) => void;
@@ -28,7 +22,11 @@ export const useDeleteSambaUser = ({
   const queryClient = useQueryClient();
 
   return useMutation<unknown, AxiosError, string>({
-    mutationFn: deleteSambaUserRequest,
+    mutationFn: async (username) => {
+      await deleteSambaUserRequest(username);
+      const encodedUsername = encodeURIComponent(username);
+      await axiosInstance.delete(`/api/os/user/delete/${encodedUsername}/`);
+    },
     onSuccess: (_data, username) => {
       queryClient.invalidateQueries({ queryKey: sambaUsersQueryKey });
       queryClient.invalidateQueries({ queryKey: osUsersBaseQueryKey });
