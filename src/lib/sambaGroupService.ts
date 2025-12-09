@@ -1,4 +1,9 @@
-import type { SambaGroupEntry, SambaGroupsResponse } from '../@types/samba';
+import type {
+  SambaGroupEntry,
+  SambaGroupMembersListResponse,
+  SambaGroupMembersResponse,
+  SambaGroupsResponse,
+} from '../@types/samba';
 import axiosInstance from './axiosInstance';
 
 const SAMBA_GROUPS_BASE_URL = '/api/samba/groups/';
@@ -59,11 +64,44 @@ export const updateSambaGroupMember = async ({
   );
 };
 
+export const fetchSambaGroupMembers = async (
+  groupname: string,
+  { signal }: { signal?: AbortSignal } = {}
+): Promise<SambaGroupEntry | null> => {
+  const encodedGroupName = encodeURIComponent(groupname);
+
+  const { data } = await axiosInstance.get<SambaGroupMembersResponse>(
+    `${SAMBA_GROUPS_BASE_URL}${encodedGroupName}/`,
+    {
+      params: { property: 'members' },
+      signal,
+    }
+  );
+
+  return data?.data ?? null;
+};
+
+export const fetchSambaGroupsMembersList = async ({
+  signal,
+}: { signal?: AbortSignal } = {}): Promise<Pick<SambaGroupEntry, 'name' | 'members'>[]> => {
+  const { data } = await axiosInstance.get<SambaGroupMembersListResponse>(
+    SAMBA_GROUPS_BASE_URL,
+    {
+      params: { property: 'members', contain_system_groups: false },
+      signal,
+    }
+  );
+
+  return data?.data ?? [];
+};
+
 export const sambaGroupService = {
   fetchSambaGroups,
   createSambaGroup,
   deleteSambaGroup,
   updateSambaGroupMember,
+  fetchSambaGroupMembers,
+  fetchSambaGroupsMembersList,
 };
 
 export default sambaGroupService;

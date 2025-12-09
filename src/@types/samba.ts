@@ -98,3 +98,18 @@ export interface SambaGroupsResponse {
   data?: SambaGroupEntry[];
   [key: string]: unknown;
 }
+
+export interface SambaGroupMembersResponse {
+  data?: SambaGroupEntry;
+  [key: string]: unknown;
+}
+
+export interface SambaGroupMembersListResponse {
+  data?: Pick<SambaGroupEntry, 'name' | 'members'>[];
+  [key: string]: unknown;
+}
+
+export interface SambaUsernamesResponse {
+  data?: string[] | Record<string, string>;
+  [key: string]: unknown;
+}
