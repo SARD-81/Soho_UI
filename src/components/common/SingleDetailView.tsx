@@ -38,6 +38,7 @@ interface SingleDetailViewProps {
   emptyStateMessage: string;
   attributeOrder?: string[];
   attributeSort?: (a: string, b: string) => number;
+  attributeLabelResolver?: (key: string) => string;
 }
 
 const renderDiskTable = (
@@ -126,8 +127,10 @@ const SingleDetailView = ({
   emptyStateMessage,
   attributeOrder = [],
   attributeSort = (a: string, b: string) => a.localeCompare(b, 'fa-IR'),
+  attributeLabelResolver,
 }: SingleDetailViewProps) => {
   const theme = useTheme();
+  const resolveAttributeLabel = attributeLabelResolver ?? ((key: string) => key);
   const borderColor = alpha(theme.palette.divider, theme.palette.mode === 'dark' ? 0.4 : 0.25);
   const backgroundColor = alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.9 : 1);
   const headerGradient =
@@ -338,19 +341,19 @@ const SingleDetailView = ({
                           borderColor,
                           fontWeight: 700,
                           backgroundColor: alpha(theme.palette.background.default, 0.1),
-                          color: 'var(--color-secondary)',
-                          textAlign: 'left',
-                          direction: 'rtl',
-                          fontSize: '0.95rem',
-                          letterSpacing: 0.2,
-                          minHeight: 64,
-                        }}
-                      >
-                        {key}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+                      color: 'var(--color-secondary)',
+                      textAlign: 'left',
+                      direction: 'rtl',
+                      fontSize: '0.95rem',
+                      letterSpacing: 0.2,
+                      minHeight: 64,
+                    }}
+                  >
+                    {resolveAttributeLabel(key)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
               </Table>
             </Box>
           );

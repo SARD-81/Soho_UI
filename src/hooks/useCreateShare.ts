@@ -2,8 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { FormEvent } from 'react';
 import { useCallback, useState } from 'react';
-import type { CreateShareWithPermissionsPayload } from '../@types/samba';
-import { createShareWithDirectoryPermissions } from '../lib/shareService';
+import type { CreateSambaSharepointPayload } from '../@types/samba';
+import axiosInstance from '../lib/axiosInstance';
 import { sambaSharesQueryKey } from './useSambaShares';
 
 type PathValidationStatus = 'idle' | 'valid' | 'invalid';
@@ -47,11 +47,6 @@ const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
   return error.message;
 };
 
-const deriveShareDisplayName = (fullPath: string) => {
-  const segments = fullPath.split('/').filter(Boolean);
-  return segments[segments.length - 1] ?? fullPath;
-};
-
 interface UseCreateShareOptions {
   onSuccess?: (shareName: string) => void;
   onError?: (errorMessage: string) => void;
@@ -62,18 +57,26 @@ export const useCreateShare = ({
   onError,
 }: UseCreateShareOptions = {}) => {
   const queryClient = useQueryClient();
+  const [shareName, setShareName] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [fullPath, setFullPath] = useState('');
-  const [validUsers, setValidUsers] = useState('');
+  const [validUsers, setValidUsers] = useState<string[]>([]);
+  const [validGroups, setValidGroups] = useState<string[]>([]);
+  const [shareNameError, setShareNameError] = useState<string | null>(null);
   const [fullPathError, setFullPathError] = useState<string | null>(null);
   const [validUsersError, setValidUsersError] = useState<string | null>(null);
+  const [validGroupsError, setValidGroupsError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const resetForm = useCallback(() => {
+    setShareName('');
     setFullPath('');
-    setValidUsers('');
+    setValidUsers([]);
+    setValidGroups([]);
+    setShareNameError(null);
     setFullPathError(null);
     setValidUsersError(null);
+    setValidGroupsError(null);
     setApiError(null);
   }, []);
 
@@ -90,13 +93,15 @@ export const useCreateShare = ({
   const createShareMutation = useMutation<
     unknown,
     AxiosError<ApiErrorResponse>,
-    CreateShareWithPermissionsPayload
+    CreateSambaSharepointPayload
   >({
-    mutationFn: createShareWithDirectoryPermissions,
+    mutationFn: async (payload) => {
+      await axiosInstance.post('/api/samba/sharepoints/', payload);
+    },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sambaSharesQueryKey });
       handleClose();
-      onSuccess?.(deriveShareDisplayName(variables.full_path));
+      onSuccess?.(variables.sharepoint_name);
     },
     onError: (error) => {
       const message = extractApiMessage(error);
@@ -113,21 +118,33 @@ export const useCreateShare = ({
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      setShareNameError(null);
       setFullPathError(null);
       setValidUsersError(null);
+      setValidGroupsError(null);
       setApiError(null);
 
+      const trimmedShareName = shareName.trim();
       const trimmedPath = fullPath.trim();
-      const trimmedUsers = validUsers.trim();
       let hasError = false;
+
+      if (!trimmedShareName) {
+        setShareNameError('لطفاً نام اشتراک را وارد کنید.');
+        hasError = true;
+      }
 
       if (!trimmedPath) {
         setFullPathError('لطفاً مسیر کامل اشتراک را وارد کنید.');
         hasError = true;
       }
 
-      if (!trimmedUsers) {
+      if (!validUsers.length) {
         setValidUsersError('لطفاً کاربران مجاز را وارد کنید.');
+        hasError = true;
+      }
+
+      if (!validGroups.length) {
+        setValidGroupsError('لطفاً حداقل یک گروه مجاز انتخاب کنید.');
         hasError = true;
       }
 
@@ -136,19 +153,33 @@ export const useCreateShare = ({
       }
 
       createShareMutation.mutate({
-        full_path: trimmedPath,
-        valid_users: trimmedUsers,
+        sharepoint_name: trimmedShareName,
+        path: trimmedPath,
+        valid_users: validUsers,
+        valid_groups: validGroups,
+        available: true,
+        read_only: false,
+        guest_ok: true,
+        browseable: true,
+        max_connections: 10,
+        create_mask: '0644',
+        directory_mask: '0755',
+        inherit_permissions: false,
+        save_to_db: true,
       });
     },
-    [createShareMutation, fullPath, validUsers]
+    [createShareMutation, fullPath, shareName, validGroups, validUsers]
   );
 
   return {
     isOpen,
+    shareName,
     fullPath,
     validUsers,
+    shareNameError,
     fullPathError,
     validUsersError,
+    validGroupsError,
     apiError,
     isCreating: createShareMutation.isPending,
     pathValidationStatus: 'idle' as PathValidationStatus,
@@ -157,8 +188,11 @@ export const useCreateShare = ({
     isPathValid: false,
     openCreateModal: handleOpen,
     closeCreateModal,
+    setShareName,
     setFullPath,
     setValidUsers,
+    validGroups,
+    setValidGroups,
     handleSubmit,
   };
 };

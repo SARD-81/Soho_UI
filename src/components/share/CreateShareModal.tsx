@@ -9,16 +9,15 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
-import type { SambaSharesResponse } from '../../@types/samba';
+import type { SambaSharepointsResponse } from '../../@types/samba';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
 import { useFilesystemMountpoints } from '../../hooks/useFilesystemMountpoints';
-import { useSambaUsers } from '../../hooks/useSambaUsers';
+import { useSambaGroupNames } from '../../hooks/useSambaGroupNames';
+import { useSambaUsernamesList } from '../../hooks/useSambaUsernamesList';
 import { useZpool } from '../../hooks/useZpool';
 import axiosInstance from '../../lib/axiosInstance';
-import normalizeSambaUsers from '../../utils/sambaUsers';
-import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -63,14 +62,20 @@ const autocompletePaperSlotProps = {
 const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   const {
     isOpen,
+    shareName,
     closeCreateModal,
     handleSubmit,
+    shareNameError,
     fullPath,
     setFullPath,
+    setShareName,
     validUsers,
     setValidUsers,
+    validGroups,
+    setValidGroups,
     fullPathError,
     validUsersError,
+    validGroupsError,
     apiError,
     isCreating,
     pathValidationStatus,
@@ -78,63 +83,24 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     isPathChecking,
     isPathValid,
   } = controller;
-  const [hasPersianPathInput, setHasPersianPathInput] = useState(false);
-  const [hasPersianValidUsersInput, setHasPersianValidUsersInput] =
-    useState(false);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setHasPersianPathInput(false);
-      setHasPersianValidUsersInput(false);
-    }
-  }, [isOpen]);
+  const sambaUsernamesQuery = useSambaUsernamesList({ enabled: isOpen });
+  const sambaUsernames = useMemo(() => sambaUsernamesQuery.data ?? [], [
+    sambaUsernamesQuery.data,
+  ]);
 
-  useEffect(() => {
-    if (!hasPersianPathInput) {
-      return;
-    }
+  const sambaGroupNamesQuery = useSambaGroupNames({ enabled: isOpen });
+  const sambaGroupNames = useMemo(() => sambaGroupNamesQuery.data ?? [], [
+    sambaGroupNamesQuery.data,
+  ]);
 
-    const timeoutId = window.setTimeout(() => {
-      setHasPersianPathInput(false);
-    }, 3000);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [hasPersianPathInput]);
-
-  useEffect(() => {
-    if (!hasPersianValidUsersInput) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setHasPersianValidUsersInput(false);
-    }, 3000);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [hasPersianValidUsersInput]);
-
-  const sambaUsersQuery = useSambaUsers({ enabled: isOpen });
-  const sambaUsers = useMemo(
-    () => normalizeSambaUsers(sambaUsersQuery.data?.data),
-    [sambaUsersQuery.data?.data]
-  );
-  const sambaUsernames = useMemo(() => {
-    const usernames = sambaUsers.map((user) => user.username).filter(Boolean);
-
-    return usernames.sort((a, b) =>
-      a.localeCompare(b, undefined, { sensitivity: 'base' })
-    );
-  }, [sambaUsers]);
-
-  const existingSharesQuery = useQuery<SambaSharesResponse>({
+  const existingSharesQuery = useQuery<SambaSharepointsResponse>({
     queryKey: ['samba', 'shares', 'create-modal'],
     queryFn: async () => {
-      const { data } =
-        await axiosInstance.get<SambaSharesResponse>('/api/samba/');
+      const { data } = await axiosInstance.get<SambaSharepointsResponse>(
+        '/api/samba/sharepoints/',
+        { params: { property: 'all' } }
+      );
       return data;
     },
     enabled: isOpen,
@@ -151,17 +117,12 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   }, [isOpen, refetchExistingShares]);
 
   const existingSharePaths = useMemo(() => {
-    const shareDetails = existingSharesQuery.data?.data;
-
-    if (!shareDetails) {
-      return new Set<string>();
-    }
+    const shareDetails = existingSharesQuery.data?.data ?? [];
 
     const paths = new Set<string>();
 
-    Object.values(shareDetails).forEach((details) => {
-      const rawPath =
-        typeof details?.path === 'string' ? details.path : undefined;
+    shareDetails.forEach((details) => {
+      const rawPath = typeof details?.path === 'string' ? details.path : undefined;
 
       if (!rawPath) {
         return;
@@ -236,19 +197,12 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     [existingSharePaths, mountpointOptions, normalizedPoolNames]
   );
 
-  const hasPathError =
-    Boolean(fullPathError) ||
-    pathValidationStatus === 'invalid' ||
-    hasPersianPathInput;
-  const pathHelperText =
-    (hasPersianPathInput && 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
-    fullPathError ||
-    (pathValidationStatus === 'invalid' && pathValidationMessage);
+  const hasPathError = Boolean(fullPathError) || pathValidationStatus === 'invalid';
+  const pathHelperText = fullPathError || pathValidationMessage;
   const validUsersHelperText =
-    (hasPersianValidUsersInput &&
-      'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
     validUsersError ||
-    (sambaUsersQuery.isError ? 'دریافت فهرست کاربران با خطا مواجه شد.' : null);
+    (sambaUsernamesQuery.isError ? 'دریافت فهرست کاربران با خطا مواجه شد.' : null);
+
   const pathValidationAdornment = (() => {
     if (isPathChecking) {
       return (
@@ -312,20 +266,34 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
       <Box component="form" id="create-share-form" onSubmit={handleSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <InputLabel
+            htmlFor="share-name-input"
+            sx={{ color: 'var(--color-text)', fontSize: 14, fontWeight: 500 }}
+          >
+            نام اشتراک
+          </InputLabel>
+          <TextField
+            id="share-name-input"
+            value={shareName}
+            onChange={(event) => setShareName(event.target.value)}
+            placeholder="نام اشتراک را وارد کنید"
+            autoFocus
+            error={Boolean(shareNameError)}
+            helperText={shareNameError}
+            size="small"
+            InputProps={{ sx: inputBaseStyles }}
+          />
+
+          <InputLabel
             id="full-path-input"
             sx={{ color: 'var(--color-text)', fontSize: 14, fontWeight: 500 }}
           >
-            مسیر کامل
+            مسیر
           </InputLabel>
           <Autocomplete
-            // freeSolo
             options={filteredMountpointOptions}
             value={fullPath}
             onChange={(_event, newValue) => {
-              const originalValue = newValue ?? '';
-              const sanitizedValue = removePersianCharacters(originalValue);
-              setHasPersianPathInput(sanitizedValue !== originalValue);
-              setFullPath(sanitizedValue);
+              setFullPath(newValue ?? '');
             }}
             onInputChange={(_event, newInputValue, reason) => {
               if (
@@ -333,10 +301,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                 reason === 'clear' ||
                 reason === 'reset'
               ) {
-                const originalValue = newInputValue ?? '';
-                const sanitizedValue = removePersianCharacters(originalValue);
-                setHasPersianPathInput(sanitizedValue !== originalValue);
-                setFullPath(sanitizedValue);
+                setFullPath(newInputValue ?? '');
               }
             }}
             fullWidth
@@ -347,8 +312,6 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                // label="مسیر کامل"
-                autoFocus
                 id="full-path-input"
                 placeholder="مسیر فضای فایلی را انتخاب کنید"
                 error={hasPathError}
@@ -381,41 +344,56 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             کاربران مجاز
           </InputLabel>
           <Autocomplete
+            multiple
             options={sambaUsernames}
-            value={validUsers || null}
+            value={validUsers}
             onChange={(_event, newValue) => {
-              const originalValue = newValue ?? '';
-              const sanitizedValue = removePersianCharacters(originalValue);
-              setHasPersianValidUsersInput(sanitizedValue !== originalValue);
-              setValidUsers(sanitizedValue);
+              setValidUsers(newValue ?? []);
             }}
-            onInputChange={(_event, newInput, reason) => {
-              if (reason === 'input') {
-                const originalValue = newInput ?? '';
-                const sanitizedValue = removePersianCharacters(originalValue);
-                setHasPersianValidUsersInput(sanitizedValue !== originalValue);
-              }
-
-              if (reason === 'clear') {
-                setValidUsers('');
-                setHasPersianValidUsersInput(false);
-              }
-
-              if (reason === 'reset') {
-                setHasPersianValidUsersInput(false);
-              }
-            }}
-            loading={sambaUsersQuery.isLoading || sambaUsersQuery.isFetching}
+            loading={sambaUsernamesQuery.isLoading || sambaUsernamesQuery.isFetching}
             noOptionsText="کاربری یافت نشد"
-            disabled={sambaUsersQuery.isError}
+            disabled={sambaUsernamesQuery.isError}
             slotProps={autocompletePaperSlotProps}
             renderInput={(params) => (
               <TextField
                 {...params}
-                // label="کاربران مجاز"
                 placeholder="نام کاربر مجاز را انتخاب کنید"
-                error={Boolean(validUsersError) || hasPersianValidUsersInput}
+                error={Boolean(validUsersError)}
                 helperText={validUsersHelperText}
+                size="small"
+                InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
+                InputProps={{
+                  ...params.InputProps,
+                  sx: inputBaseStyles,
+                  endAdornment: params.InputProps?.endAdornment,
+                }}
+              />
+            )}
+          />
+
+          <InputLabel
+            id="valid-groups-input"
+            sx={{ color: 'var(--color-text)', fontSize: 14, fontWeight: 500 }}
+          >
+            گروه های مجاز
+          </InputLabel>
+          <Autocomplete
+            multiple
+            options={sambaGroupNames}
+            value={validGroups}
+            onChange={(_event, newValue) => {
+              setValidGroups(newValue ?? []);
+            }}
+            loading={sambaGroupNamesQuery.isLoading || sambaGroupNamesQuery.isFetching}
+            noOptionsText="گروهی یافت نشد"
+            disabled={sambaGroupNamesQuery.isError}
+            slotProps={autocompletePaperSlotProps}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="نام گروه مجاز را انتخاب کنید"
+                error={Boolean(validGroupsError)}
+                helperText={validGroupsError}
                 size="small"
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
                 InputProps={{
@@ -432,16 +410,6 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
               {apiError}
             </Alert>
           )}
-
-          {/*{!apiError && (*/}
-          {/*  <Typography*/}
-          {/*    variant="body2"*/}
-          {/*    sx={{ color: 'var(--color-secondary)' }}*/}
-          {/*  >*/}
-          {/*    پس از ایجاد اشتراک، اطلاعات به‌طور خودکار در جدول به‌روزرسانی*/}
-          {/*    می‌شود.*/}
-          {/*  </Typography>*/}
-          {/*)}*/}
         </Box>
       </Box>
     </BlurModal>
