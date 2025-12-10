@@ -2,8 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { FormEvent } from 'react';
 import { useCallback, useState } from 'react';
-import type { CreateShareWithPermissionsPayload } from '../@types/samba';
-import { createShareWithDirectoryPermissions } from '../lib/shareService';
+import type { CreateSambaSharepointPayload } from '../@types/samba';
+import axiosInstance from '../lib/axiosInstance';
 import { sambaSharesQueryKey } from './useSambaShares';
 
 type PathValidationStatus = 'idle' | 'valid' | 'invalid';
@@ -64,16 +64,20 @@ export const useCreateShare = ({
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [fullPath, setFullPath] = useState('');
-  const [validUsers, setValidUsers] = useState('');
+  const [validUsers, setValidUsers] = useState<string[]>([]);
+  const [validGroups, setValidGroups] = useState<string[]>([]);
   const [fullPathError, setFullPathError] = useState<string | null>(null);
   const [validUsersError, setValidUsersError] = useState<string | null>(null);
+  const [validGroupsError, setValidGroupsError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const resetForm = useCallback(() => {
     setFullPath('');
-    setValidUsers('');
+    setValidUsers([]);
+    setValidGroups([]);
     setFullPathError(null);
     setValidUsersError(null);
+    setValidGroupsError(null);
     setApiError(null);
   }, []);
 
@@ -90,13 +94,15 @@ export const useCreateShare = ({
   const createShareMutation = useMutation<
     unknown,
     AxiosError<ApiErrorResponse>,
-    CreateShareWithPermissionsPayload
+    CreateSambaSharepointPayload
   >({
-    mutationFn: createShareWithDirectoryPermissions,
+    mutationFn: async (payload) => {
+      await axiosInstance.post('/api/samba/sharepoints/', payload);
+    },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sambaSharesQueryKey });
       handleClose();
-      onSuccess?.(deriveShareDisplayName(variables.full_path));
+      onSuccess?.(variables.sharepoint_name);
     },
     onError: (error) => {
       const message = extractApiMessage(error);
@@ -115,10 +121,10 @@ export const useCreateShare = ({
       event.preventDefault();
       setFullPathError(null);
       setValidUsersError(null);
+      setValidGroupsError(null);
       setApiError(null);
 
       const trimmedPath = fullPath.trim();
-      const trimmedUsers = validUsers.trim();
       let hasError = false;
 
       if (!trimmedPath) {
@@ -126,8 +132,13 @@ export const useCreateShare = ({
         hasError = true;
       }
 
-      if (!trimmedUsers) {
+      if (!validUsers.length) {
         setValidUsersError('لطفاً کاربران مجاز را وارد کنید.');
+        hasError = true;
+      }
+
+      if (!validGroups.length) {
+        setValidGroupsError('لطفاً حداقل یک گروه مجاز انتخاب کنید.');
         hasError = true;
       }
 
@@ -135,12 +146,25 @@ export const useCreateShare = ({
         return;
       }
 
+      const sharepointName = deriveShareDisplayName(trimmedPath);
+
       createShareMutation.mutate({
-        full_path: trimmedPath,
-        valid_users: trimmedUsers,
+        sharepoint_name: sharepointName,
+        path: trimmedPath,
+        valid_users: validUsers,
+        valid_groups: validGroups,
+        available: true,
+        read_only: false,
+        guest_ok: true,
+        browseable: true,
+        max_connections: 10,
+        create_mask: '0644',
+        directory_mask: '0755',
+        inherit_permissions: false,
+        save_to_db: true,
       });
     },
-    [createShareMutation, fullPath, validUsers]
+    [createShareMutation, fullPath, validGroups, validUsers]
   );
 
   return {
@@ -149,6 +173,7 @@ export const useCreateShare = ({
     validUsers,
     fullPathError,
     validUsersError,
+    validGroupsError,
     apiError,
     isCreating: createShareMutation.isPending,
     pathValidationStatus: 'idle' as PathValidationStatus,
@@ -159,6 +184,8 @@ export const useCreateShare = ({
     closeCreateModal,
     setFullPath,
     setValidUsers,
+    validGroups,
+    setValidGroups,
     handleSubmit,
   };
 };

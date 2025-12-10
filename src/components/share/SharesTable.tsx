@@ -56,6 +56,17 @@ const SharesTable = ({
       return value ?? '-';
     };
 
+    const resolveValidGroups = (share: SambaShareEntry) => {
+      const { details } = share;
+      const value =
+        (typeof details.valid_groups === 'string' &&
+          details.valid_groups.trim()) ||
+        (typeof details['valid groups'] === 'string' &&
+          (details['valid groups'] as string).trim());
+
+      return value ?? '-';
+    };
+
     return [
       {
         id: 'index',
@@ -102,6 +113,16 @@ const SharesTable = ({
         renderCell: (share) => (
           <Typography sx={{ color: 'var(--color-text)' }}>
             {resolveValidUsers(share)}
+          </Typography>
+        ),
+      },
+      {
+        id: 'valid-groups',
+        header: 'گروه های مجاز',
+        align: 'center',
+        renderCell: (share) => (
+          <Typography sx={{ color: 'var(--color-text)' }}>
+            {resolveValidGroups(share)}
           </Typography>
         ),
       },
