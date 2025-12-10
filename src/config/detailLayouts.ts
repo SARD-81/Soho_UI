@@ -108,12 +108,50 @@ export const DISK_DETAIL_LAYOUT: DetailLayoutConfig = {
 };
 
 export const SHARE_DETAIL_LAYOUT: DetailLayoutConfig = {
-  comparisonPriority: ['path', 'full_path', 'valid_users', 'valid users'],
+  comparisonPriority: [
+    'path',
+    'full_path',
+    'valid_users',
+    'valid users',
+    'valid_groups',
+    'valid groups',
+    'available',
+    'read only',
+    'browseable',
+    'guest ok',
+    'inherit permissions',
+    'create mask',
+    'directory mask',
+    'max connections',
+    'is_custom',
+    'created_time',
+  ],
   sections: [
     {
       id: 'general',
       title: 'مشخصات کلی',
-      keys: ['path', 'full_path', 'valid_users', 'valid users'],
+      keys: ['path', 'full_path', 'is_custom', 'created_time'],
+    },
+    {
+      id: 'access',
+      title: 'دسترسی',
+      keys: [
+        'valid_users',
+        'valid users',
+        'valid_groups',
+        'valid groups',
+        'available',
+        'read only',
+        'guest ok',
+        'browseable',
+        'inherit permissions',
+      ],
+    },
+    {
+      id: 'limits',
+      title: 'محدودیت‌ها و ماسک‌ها',
+      keys: ['max connections', 'create mask', 'directory mask'],
+      optional: true,
     },
   ],
 };
