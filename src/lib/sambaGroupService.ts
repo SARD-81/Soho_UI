@@ -25,6 +25,36 @@ export const fetchSambaGroups = async ({
   return data.data ?? [];
 };
 
+export const fetchSambaGroupNames = async ({
+  signal,
+}: { signal?: AbortSignal } = {}): Promise<string[]> => {
+  const { data } = await axiosInstance.get<SambaGroupsResponse>(
+    SAMBA_GROUPS_BASE_URL,
+    {
+      params: { property: 'name', contain_system_groups: false },
+      signal,
+    }
+  );
+
+  const rawNames = data?.data ?? [];
+
+  return rawNames
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        return entry;
+      }
+
+      if (entry && typeof entry === 'object' && 'name' in entry) {
+        const nameValue = (entry as { name?: unknown }).name;
+        return typeof nameValue === 'string' ? nameValue : null;
+      }
+
+      return null;
+    })
+    .filter((name): name is string => Boolean(name))
+    .sort((a, b) => a.localeCompare(b, 'fa'));
+};
+
 export const createSambaGroup = async (groupname: string): Promise<void> => {
   await axiosInstance.post(SAMBA_GROUPS_BASE_URL, {
     groupname,
@@ -119,6 +149,7 @@ export const fetchSambaGroupsMembersList = async ({
 
 export const sambaGroupService = {
   fetchSambaGroups,
+  fetchSambaGroupNames,
   createSambaGroup,
   deleteSambaGroup,
   updateSambaGroupMember,

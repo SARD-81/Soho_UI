@@ -4,13 +4,10 @@ import type { SambaShareEntry } from '../@types/samba';
 import axiosInstance from '../lib/axiosInstance';
 import { sambaSharesQueryKey } from './useSambaShares';
 
-interface DeleteSharePayload {
-  share_name: string;
-}
-
-const deleteShareRequest = async ({ share_name }: DeleteSharePayload) => {
-  await axiosInstance.delete('/api/samba/config/remove/', {
-    data: { share_name },
+const deleteShareRequest = async (shareName: string) => {
+  const encodedName = encodeURIComponent(shareName);
+  await axiosInstance.delete(`/api/samba/sharepoints/${encodedName}/`, {
+    params: { save_to_db: true },
   });
 };
 
@@ -29,9 +26,7 @@ export const useDeleteShare = ({
   const [pendingShareName, setPendingShareName] = useState<string | null>(null);
 
   const deleteMutation = useMutation<unknown, Error, string>({
-    mutationFn: async (shareName) => {
-      await deleteShareRequest({ share_name: shareName });
-    },
+    mutationFn: async (shareName) => deleteShareRequest(shareName),
     onMutate: (shareName) => {
       setPendingShareName(shareName);
     },

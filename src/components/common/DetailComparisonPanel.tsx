@@ -24,6 +24,7 @@ interface DetailComparisonPanelProps {
   formatValue: (value: unknown) => ReactNode;
   emptyStateMessage: string;
   attributeSort?: (a: string, b: string) => number;
+  attributeLabelResolver?: (key: string) => string;
 }
 
 const DetailComparisonPanel = ({
@@ -33,8 +34,10 @@ const DetailComparisonPanel = ({
   formatValue,
   emptyStateMessage,
   attributeSort,
+  attributeLabelResolver,
 }: DetailComparisonPanelProps) => {
   const theme = useTheme();
+  const resolveAttributeLabel = attributeLabelResolver ?? ((key: string) => key);
 
   if (!columns.length) {
     return null;
@@ -67,7 +70,7 @@ const DetailComparisonPanel = ({
 
   if (hasAttributes) {
     attributeKeys.forEach((key) => {
-      rows.push({ type: 'attribute', key, label: key });
+      rows.push({ type: 'attribute', key, label: resolveAttributeLabel(key) });
     });
   }
 

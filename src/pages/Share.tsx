@@ -62,7 +62,7 @@ type ShareTabValue = (typeof SHARE_TABS)[keyof typeof SHARE_TABS];
 const MAX_COMPARISON_ITEMS = 4;
 
 const Share = () => {
-  const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.sambaUsers);
+  const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.shares);
   const [selectedShares, setSelectedShares] = useState<string[]>([]);
   const [isSambaCreateModalOpen, setIsSambaCreateModalOpen] = useState(false);
   const [sambaCreateError, setSambaCreateError] = useState<string | null>(null);
@@ -377,7 +377,7 @@ const Share = () => {
   const updateSambaGroupMember = useUpdateSambaGroupMember({
     onSuccess: (groupname, username, action) => {
       const actionLabel = action === 'add' ? 'به گروه افزوده شد' : 'از گروه حذف شد';
-      toast.success(`کاربر ${username} ${actionLabel}.`);
+      toast.success(`کاربر ${username} ${actionLabel} (${groupname}).`);
       setGroupMemberError(null);
       setRemoveMemberError(null);
       setAddMemberGroup(null);
