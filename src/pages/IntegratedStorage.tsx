@@ -29,6 +29,7 @@ import {
   localizeDetailEntries,
   translateDetailKey,
 } from '../utils/detailLabels';
+import { buildPoolDiskComparisonTable } from '../utils/poolDetailTables';
 
 const MAX_COMPARISON_ITEMS = 4;
 
@@ -46,6 +47,12 @@ const buildPoolDetailValues = (
   poolName: string
 ): Record<string, unknown> => {
   const localizedValues = localizeDetailEntries(detail);
+
+  const disksTable = buildPoolDiskComparisonTable(detail?.disks);
+
+  if (disksTable) {
+    localizedValues['دیسک‌ها'] = disksTable;
+  }
 
   INTERACTIVE_POOL_PROPERTIES.forEach((propertyKey) => {
     const label = translateDetailKey(propertyKey);

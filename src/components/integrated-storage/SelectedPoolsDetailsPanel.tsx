@@ -3,12 +3,15 @@ import DetailComparisonPanel, {
   type DetailComparisonColumn,
   type DetailComparisonStatus,
 } from '../common/DetailComparisonPanel';
+import TinyComparisonTable from '../common/TinyComparisonTable';
 import SingleDetailView from '../common/SingleDetailView';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import { omitNullishEntries } from '../../utils/detailValues';
 import { isValidElement, useMemo } from 'react';
 import { POOL_DETAIL_LAYOUT } from '../../config/detailLayouts';
+import { sortPoolDiskAttributes } from '../../utils/poolDetailTables';
+import { isNestedDetailTableData } from '../../@types/detailComparison';
 
 interface PoolDetailItem {
   poolName: string;
@@ -26,15 +29,6 @@ const SelectedPoolsDetailsPanel = ({
   items,
   onRemove,
 }: SelectedPoolsDetailsPanelProps) => {
-  const formatValue = useMemo(
-    () =>
-      (value: unknown) =>
-        isValidElement(value)
-          ? value
-          : formatDetailValue(value),
-    []
-  );
-
   const columns: DetailComparisonColumn[] = items.map(({
     poolName,
     detail,
@@ -72,6 +66,26 @@ const SelectedPoolsDetailsPanel = ({
         POOL_DETAIL_LAYOUT.comparisonPriority
       ),
     [columns]
+  );
+  const formatValue = useMemo(
+    () =>
+      (value: unknown) => {
+        if (isNestedDetailTableData(value)) {
+          return (
+            <TinyComparisonTable
+              data={value}
+              attributeSort={sortPoolDiskAttributes}
+            />
+          );
+        }
+
+        if (isValidElement(value)) {
+          return value;
+        }
+
+        return formatDetailValue(value);
+      },
+    []
   );
 
   return (

@@ -4,7 +4,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableRow,
   Typography,
   useTheme,
@@ -12,22 +11,11 @@ import {
 import { alpha } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import type { DetailLayoutConfig } from '../../config/detailLayouts';
+import TinyComparisonTable from './TinyComparisonTable';
+import { isNestedDetailTableData } from '../../@types/detailComparison';
+import { sortPoolDiskAttributes } from '../../utils/poolDetailTables';
 import { sortKeysWithPriority } from '../../utils/keySort';
 import type { DetailComparisonStatus } from './DetailComparisonPanel';
-
-type DiskValue = string | number | null | undefined;
-
-interface DiskRow extends Record<string, unknown> {
-  disk_name?: DiskValue;
-  status?: DiskValue;
-  vdev_type?: DiskValue;
-  type?: DiskValue;
-  full_path_name?: DiskValue;
-  full_disk_name?: DiskValue;
-  wwn?: DiskValue;
-  full_path_wwn?: DiskValue;
-  full_disk_wwn?: DiskValue;
-}
 
 interface SingleDetailViewProps {
   title: string;
@@ -40,89 +28,6 @@ interface SingleDetailViewProps {
   attributeSort?: (a: string, b: string) => number;
   attributeLabelResolver?: (key: string) => string;
 }
-
-const renderDiskTable = (
-  disks: DiskRow[],
-  headerGradient: string,
-  borderColor: string,
-  alternatingCellBg: string[],
-  selectedRowHover: string
-) => (
-  <Box sx={{ mt: 1 }}>
-    <Table
-      size="small"
-      sx={{ border: `1px solid ${borderColor}`, direction: 'rtl' }}
-    >
-      <TableHead>
-        <TableRow>
-          {['نام دیسک', 'وضعیت', 'نوع vdev', 'Device', 'WWN']
-            .slice()
-            .reverse()
-            .map((label) => (
-              <TableCell
-                key={label}
-                sx={{
-                  background: headerGradient,
-                  borderColor,
-                  fontWeight: 800,
-                  color: 'var(--color-primary)',
-                  textAlign: 'center',
-                }}
-              >
-                {label}
-              </TableCell>
-            ))}
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {disks.map((disk, index) => (
-          <TableRow
-            key={`${disk.disk_name ?? disk.full_path_name}-${index}`}
-            sx={{
-              backgroundColor: alternatingCellBg[index % 2],
-              '&:hover td': { backgroundColor: selectedRowHover },
-              '&:last-of-type td': { borderBottom: 'none' },
-            }}
-          >
-            <TableCell sx={{ borderColor, textAlign: 'center' }}>
-              {disk.wwn ?? disk.full_path_wwn ?? disk.full_disk_wwn ?? '-'}
-            </TableCell>
-            <TableCell sx={{ borderColor, textAlign: 'center' }}>
-              {disk.full_path_name ?? disk.full_disk_name ?? '-'}
-            </TableCell>
-            <TableCell
-              sx={{ borderColor, textAlign: 'center', fontWeight: 600 }}
-            >
-              {disk.vdev_type ?? disk.type ?? '-'}
-            </TableCell>
-            <TableCell
-              sx={{
-                borderColor,
-                color:
-                  String(disk.status ?? '').toUpperCase() === 'ONLINE'
-                    ? 'var(--color-success)'
-                    : 'var(--color-error)',
-                fontWeight: 700,
-                textAlign: 'center',
-              }}
-            >
-              {disk.status ?? '-'}
-            </TableCell>
-            <TableCell
-              sx={{ borderColor, fontWeight: 700, textAlign: 'center' }}
-            >
-              {disk.disk_name ?? '-'}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  </Box>
-);
-
-const isDiskRowArray = (value: unknown): value is DiskRow[] =>
-  Array.isArray(value) &&
-  value.every((item) => item !== null && typeof item === 'object');
 
 const SingleDetailView = ({
   title,
@@ -188,13 +93,12 @@ const SingleDetailView = ({
   });
 
   const renderFormattedValue = (value: unknown) => {
-    if (isDiskRowArray(value)) {
-      return renderDiskTable(
-        value,
-        headerGradient,
-        borderColor,
-        alternatingCellBg,
-        selectedRowHover
+    if (isNestedDetailTableData(value)) {
+      return (
+        <TinyComparisonTable
+          data={value}
+          attributeSort={sortPoolDiskAttributes}
+        />
       );
     }
 
