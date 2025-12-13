@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateSambaGroupMember } from '../lib/sambaGroupService';
-import { sambaAvailableUsersQueryKey } from './useSambaAvailableUsersWithoutGroup';
+import { sambaAvailableUsersByGroupQueryKey } from './useSambaAvailableUsersByGroup';
 import { sambaGroupMembersQueryKey } from './useSambaGroupMembers';
 import { sambaGroupsQueryKey } from './useSambaGroups';
 
@@ -36,7 +36,9 @@ export const useUpdateSambaGroupMember = ({
       queryClient.invalidateQueries({
         queryKey: sambaGroupMembersQueryKey(variables.groupname),
       });
-      queryClient.invalidateQueries({ queryKey: sambaAvailableUsersQueryKey });
+      queryClient.invalidateQueries({
+        queryKey: sambaAvailableUsersByGroupQueryKey(variables.groupname),
+      });
       onSuccess?.(variables.groupname, variables.username, variables.action);
     },
     onError: (error, variables) => {
