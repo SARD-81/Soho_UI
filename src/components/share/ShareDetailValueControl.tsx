@@ -1,15 +1,8 @@
-import {
-  Box,
-  IconButton,
-  Stack,
-  Switch,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, IconButton, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { FiCheck, FiEdit2, FiX } from 'react-icons/fi';
 import formatDetailValue from '../../utils/formatDetailValue';
+import ShareBooleanToggle from './ShareBooleanToggle';
 
 interface ShareDetailValueControlProps {
   attributeKey: string;
@@ -81,19 +74,13 @@ const ShareDetailValueControl = ({
 
   if (booleanValue !== null) {
     return (
-      <Stack spacing={0.5} alignItems="center">
-        <Switch
-          size="small"
-          checked={booleanValue}
-          onChange={(_event, checked) => handleToggle(checked)}
-          disabled={isUpdating}
-        />
-        {errorMessage && (
-          <Typography variant="caption" sx={{ color: 'var(--color-error)' }}>
-            {errorMessage}
-          </Typography>
-        )}
-      </Stack>
+      <ShareBooleanToggle
+        value={booleanValue}
+        onToggle={handleToggle}
+        disabled={isUpdating}
+        errorMessage={errorMessage}
+        id={`${attributeKey}-toggle`}
+      />
     );
   }
 
