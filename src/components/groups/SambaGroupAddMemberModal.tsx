@@ -1,7 +1,7 @@
 import { Box, Chip, CircularProgress, Stack, Typography } from '@mui/material';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
-import { useSambaAvailableUsersWithoutGroup } from '../../hooks/useSambaAvailableUsersWithoutGroup';
+import { useSambaAvailableUsersByGroup } from '../../hooks/useSambaAvailableUsersByGroup';
 
 interface SambaGroupAddMemberModalProps {
   open: boolean;
@@ -20,7 +20,7 @@ const SambaGroupAddMemberModal = ({
   isSubmitting = false,
   errorMessage = null,
 }: SambaGroupAddMemberModalProps) => {
-  const availableUsersQuery = useSambaAvailableUsersWithoutGroup({ enabled: open });
+  const availableUsersQuery = useSambaAvailableUsersByGroup(groupname, { enabled: open });
 
   const handleSelect = (username: string) => {
     if (isSubmitting) return;
@@ -69,7 +69,7 @@ const SambaGroupAddMemberModal = ({
           </Box>
         ) : (
           <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
-            هیچ کاربری خارج از گروه‌ها یافت نشد.
+            هیچ کاربری خارج از این گروه یافت نشد.
           </Typography>
         )}
 

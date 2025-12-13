@@ -97,14 +97,14 @@ export const updateSambaGroupMember = async ({
 
 export const fetchSambaGroupMembers = async (
   groupname: string,
-  { signal }: { signal?: AbortSignal } = {}
+  { signal, containSystemGroups = false }: { signal?: AbortSignal; containSystemGroups?: boolean } = {}
 ): Promise<SambaGroupEntry | null> => {
   const encodedGroupName = encodeURIComponent(groupname);
 
   const { data } = await axiosInstance.get<SambaGroupMembersResponse>(
     `${SAMBA_GROUPS_BASE_URL}${encodedGroupName}/`,
     {
-      params: { property: 'members' },
+      params: { property: 'members', contain_system_groups: containSystemGroups },
       signal,
     }
   );

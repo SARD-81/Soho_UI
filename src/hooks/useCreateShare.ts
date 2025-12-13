@@ -134,22 +134,22 @@ export const useCreateShare = ({
       let hasError = false;
 
       if (!trimmedShareName) {
-        setShareNameError('Please enter a share name.');
+        setShareNameError('لطفاً نام اشتراک را وارد کنید.');
         hasError = true;
       }
 
       if (!trimmedPath) {
-        setFullPathError('Please enter the full path to share.');
+        setFullPathError('لطفاً مسیر کامل اشتراک را وارد کنید.');
         hasError = true;
       }
 
       if (!validUsers.length) {
-        setValidUsersError('Select at least one allowed user.');
+        setValidUsersError('حداقل یک کاربر مجاز را انتخاب کنید.');
         hasError = true;
       }
 
       if (!validGroups.length) {
-        setValidGroupsError('Select at least one allowed group.');
+        setValidGroupsError('حداقل یک گروه مجاز را انتخاب کنید.');
         hasError = true;
       }
 
