@@ -6,7 +6,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
@@ -62,6 +62,8 @@ const membersProperty: Record<ManageShareMembersType, string> = {
 const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShareMembersModalProps) => {
   const propertyKey = membersProperty[type];
   const updateSharepoint = useUpdateSharepoint();
+
+  const [stagedMembers, setStagedMembers] = useState<string[]>([]);
 
   const membersQuery = useQuery<string[]>({
     queryKey: ['samba', 'sharepoints', shareName, propertyKey],
@@ -122,14 +124,29 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
 
   const availableCandidates = useMemo(() => {
     const available = availableQuery.data ?? [];
-    const members = membersQuery.data ?? [];
-    const memberSet = new Set(members);
+    const memberSet = new Set(stagedMembers);
 
     return available.filter((candidate) => !memberSet.has(candidate));
-  }, [availableQuery.data, membersQuery.data]);
+  }, [availableQuery.data, stagedMembers]);
+
+  useEffect(() => {
+    if (open && membersQuery.data) {
+      setStagedMembers(uniqueSortedList(membersQuery.data));
+    }
+  }, [membersQuery.data, open]);
 
   const isSubmitting = updateSharepoint.isPending;
-  const hasMembers = (membersQuery.data?.length ?? 0) > 0;
+  const hasMembers = stagedMembers.length > 0;
+
+  const hasChanges = useMemo(() => {
+    const currentMembers = membersQuery.data ?? [];
+    if (currentMembers.length !== stagedMembers.length) return true;
+
+    const currentSorted = [...currentMembers].sort();
+    const stagedSorted = [...stagedMembers].sort();
+
+    return currentSorted.some((value, index) => value !== stagedSorted[index]);
+  }, [membersQuery.data, stagedMembers]);
 
   const handleAddMember = (member: string) => {
     if (!shareName || isSubmitting) return;
@@ -137,28 +154,20 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
     const trimmed = member.trim();
     if (!trimmed) return;
 
-    const currentMembers = membersQuery.data ?? [];
-    const nextMembers = uniqueSortedList([...currentMembers, trimmed]);
-
-    updateSharepoint.mutate(
-      { shareName, updates: { [propertyKey]: nextMembers }, saveToDb: true },
-      {
-        onSuccess: () => {
-          membersQuery.refetch();
-          availableQuery.refetch();
-        },
-      }
-    );
+    setStagedMembers((prev) => uniqueSortedList([...prev, trimmed]));
   };
 
   const handleRemoveMember = (member: string) => {
     if (!shareName || isSubmitting) return;
 
-    const currentMembers = membersQuery.data ?? [];
-    const nextMembers = currentMembers.filter((item) => item !== member);
+    setStagedMembers((prev) => prev.filter((item) => item !== member));
+  };
+
+  const handleSubmit = () => {
+    if (!shareName || isSubmitting || !hasChanges) return;
 
     updateSharepoint.mutate(
-      { shareName, updates: { [propertyKey]: nextMembers }, saveToDb: true },
+      { shareName, updates: { [propertyKey]: stagedMembers }, saveToDb: true },
       {
         onSuccess: () => {
           membersQuery.refetch();
@@ -182,9 +191,10 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
       actions={
         <ModalActionButtons
           onCancel={onClose}
-          onConfirm={() => {}}
-          confirmLabel=""
-          hideConfirm
+          onConfirm={handleSubmit}
+          confirmLabel="ثبت تغییرات"
+          disabled={isSubmitting}
+          confirmProps={{ disabled: !hasChanges }}
         />
       }
     >
@@ -201,7 +211,16 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
           </Box>
         ) : (
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-            <Stack spacing={1} sx={{ flex: 1 }}>
+            <Stack
+              spacing={1}
+              sx={{
+                flex: 1,
+                border: '1px solid rgba(31, 182, 255, 0.24)',
+                borderRadius: 2,
+                p: 1.5,
+                backgroundColor: 'rgba(31, 182, 255, 0.05)',
+              }}
+            >
               <Typography sx={{ color: 'var(--color-text)', fontWeight: 700 }}>
                 {copy.addLabel}
               </Typography>
@@ -227,13 +246,22 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
 
             <Divider flexItem orientation="vertical" sx={{ display: { xs: 'none', md: 'block' } }} />
 
-            <Stack spacing={1} sx={{ flex: 1 }}>
-              <Typography sx={{ color: 'var(--color-text)', fontWeight: 700 }}>
+            <Stack
+              spacing={1}
+              sx={{
+                flex: 1,
+                border: '1px solid rgba(255, 99, 132, 0.28)',
+                borderRadius: 2,
+                p: 1.5,
+                backgroundColor: 'rgba(255, 99, 132, 0.05)',
+              }}
+            >
+              <Typography sx={{ color: 'var(--color-text)', fontWeight: 800 }}>
                 اعضای فعلی اشتراک
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {hasMembers ? (
-                  membersQuery.data?.map((member) => (
+                  stagedMembers.map((member) => (
                     <Chip
                       key={member}
                       label={member}
