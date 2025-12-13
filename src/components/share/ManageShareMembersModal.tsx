@@ -1,13 +1,18 @@
 import {
   Box,
+  Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Stack,
   Typography,
 } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 import axiosInstance from '../../lib/axiosInstance';
@@ -62,8 +67,10 @@ const membersProperty: Record<ManageShareMembersType, string> = {
 const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShareMembersModalProps) => {
   const propertyKey = membersProperty[type];
   const updateSharepoint = useUpdateSharepoint();
+  const queryClient = useQueryClient();
 
   const [stagedMembers, setStagedMembers] = useState<string[]>([]);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const membersQuery = useQuery<string[]>({
     queryKey: ['samba', 'sharepoints', shareName, propertyKey],
@@ -135,6 +142,12 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
     }
   }, [membersQuery.data, open]);
 
+  useEffect(() => {
+    if (!open) {
+      setIsConfirmOpen(false);
+    }
+  }, [open]);
+
   const isSubmitting = updateSharepoint.isPending;
   const hasMembers = stagedMembers.length > 0;
 
@@ -163,15 +176,34 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
     setStagedMembers((prev) => prev.filter((item) => item !== member));
   };
 
-  const handleSubmit = () => {
-    if (!shareName || isSubmitting || !hasChanges) return;
+  const handleRequestSubmit = () => {
+    if (isSubmitting || !hasChanges) return;
+    setIsConfirmOpen(true);
+  };
+
+  const handleCancelConfirmation = () => {
+    setIsConfirmOpen(false);
+    onClose();
+  };
+
+  const handleApplyChanges = () => {
+    if (!shareName || isSubmitting || !hasChanges) {
+      handleCancelConfirmation();
+      return;
+    }
 
     updateSharepoint.mutate(
       { shareName, updates: { [propertyKey]: stagedMembers }, saveToDb: true },
       {
         onSuccess: () => {
-          membersQuery.refetch();
-          availableQuery.refetch();
+          queryClient.invalidateQueries({ queryKey: ['samba', 'sharepoints', shareName, propertyKey] });
+          queryClient.invalidateQueries({
+            queryKey: ['samba', type === 'users' ? 'users' : 'groups', 'available', shareName],
+          });
+        },
+        onSettled: () => {
+          setIsConfirmOpen(false);
+          onClose();
         },
       }
     );
@@ -191,7 +223,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
       actions={
         <ModalActionButtons
           onCancel={onClose}
-          onConfirm={handleSubmit}
+          onConfirm={handleRequestSubmit}
           confirmLabel="ثبت تغییرات"
           disabled={isSubmitting}
           confirmProps={{ disabled: !hasChanges }}
@@ -250,13 +282,29 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
               spacing={1}
               sx={{
                 flex: 1,
-                border: '1px solid rgba(255, 99, 132, 0.28)',
+                border: '2px solid rgba(255, 99, 132, 0.45)',
                 borderRadius: 2,
-                p: 1.5,
-                backgroundColor: 'rgba(255, 99, 132, 0.05)',
+                p: 2,
+                background: 'linear-gradient(135deg, rgba(255, 238, 240, 0.35), rgba(255, 241, 243, 0.75))',
+                boxShadow: '0 8px 26px rgba(255, 99, 132, 0.18)',
+                position: 'relative',
               }}
             >
-              <Typography sx={{ color: 'var(--color-text)', fontWeight: 800 }}>
+              <Typography
+                sx={{
+                  color: 'var(--color-error)',
+                  fontWeight: 900,
+                  letterSpacing: 0.2,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                  boxShadow: '0 0 0 1px rgba(255, 99, 132, 0.3)',
+                }}
+              >
                 اعضای فعلی اشتراک
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -280,6 +328,29 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
           </Stack>
         )}
       </Stack>
+
+      <Dialog
+        open={isConfirmOpen}
+        onClose={handleCancelConfirmation}
+        aria-labelledby="manage-share-members-confirmation"
+      >
+        <DialogTitle id="manage-share-members-confirmation" sx={{ fontWeight: 800 }}>
+          آیا از اعمال تغییرات مطمئن هستید؟
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: 'var(--color-secondary)', lineHeight: 1.9 }}>
+            با تایید، تغییرات اعضا در اشتراک «{shareName}» ثبت می‌شود. در غیر این صورت بدون ذخیره‌سازی بسته خواهد شد.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={handleCancelConfirmation} color="inherit">
+            انصراف
+          </Button>
+          <Button variant="contained" onClick={handleApplyChanges} disabled={isSubmitting}>
+            تایید و اعمال
+          </Button>
+        </DialogActions>
+      </Dialog>
     </BlurModal>
   );
 };
