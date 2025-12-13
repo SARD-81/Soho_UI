@@ -14,6 +14,7 @@ import type {
 import PageContainer from '../components/PageContainer';
 import ConfirmDeleteShareModal from '../components/share/ConfirmDeleteShareModal';
 import CreateShareModal from '../components/share/CreateShareModal';
+import ManageShareMembersModal from '../components/share/ManageShareMembersModal';
 import SelectedSharesDetailsPanel from '../components/share/SelectedSharesDetailsPanel';
 import SharesTable from '../components/share/SharesTable';
 import TabPanel from '../components/TabPanel';
@@ -64,6 +65,8 @@ const MAX_COMPARISON_ITEMS = 4;
 const Share = () => {
   const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.shares);
   const [selectedShares, setSelectedShares] = useState<string[]>([]);
+  const [manageUsersShare, setManageUsersShare] = useState<string | null>(null);
+  const [manageGroupsShare, setManageGroupsShare] = useState<string | null>(null);
   const [isSambaCreateModalOpen, setIsSambaCreateModalOpen] = useState(false);
   const [sambaCreateError, setSambaCreateError] = useState<string | null>(null);
   const [sambaCreateInitialUsername, setSambaCreateInitialUsername] = useState<
@@ -141,6 +144,22 @@ const Share = () => {
       );
     },
   });
+
+  const handleOpenManageUsersModal = useCallback((share: SambaShareEntry) => {
+    setManageUsersShare(share.name);
+  }, []);
+
+  const handleCloseManageUsersModal = useCallback(() => {
+    setManageUsersShare(null);
+  }, []);
+
+  const handleOpenManageGroupsModal = useCallback((share: SambaShareEntry) => {
+    setManageGroupsShare(share.name);
+  }, []);
+
+  const handleCloseManageGroupsModal = useCallback(() => {
+    setManageGroupsShare(null);
+  }, []);
 
   const handleTabChange = useCallback(
     (_: SyntheticEvent, value: ShareTabValue) => {
@@ -888,6 +907,8 @@ const Share = () => {
                 selectedShares={selectedShares}
                 onToggleSelect={handleToggleSelect}
                 onDelete={handleDeleteShare}
+                onManageUsers={handleOpenManageUsersModal}
+                onManageGroups={handleOpenManageGroupsModal}
                 pendingShareName={shareDeletion.pendingShareName}
                 isDeleting={shareDeletion.isDeleting}
               />
@@ -1016,6 +1037,20 @@ const Share = () => {
         onConfirm={handleConfirmRemoveMember}
         isRemoving={updateSambaGroupMember.isPending}
         errorMessage={removeMemberError}
+      />
+
+      <ManageShareMembersModal
+        open={Boolean(manageUsersShare)}
+        shareName={manageUsersShare}
+        type="users"
+        onClose={handleCloseManageUsersModal}
+      />
+
+      <ManageShareMembersModal
+        open={Boolean(manageGroupsShare)}
+        shareName={manageGroupsShare}
+        type="groups"
+        onClose={handleCloseManageGroupsModal}
       />
 
       <ConfirmDeleteShareModal controller={shareDeletion} />
