@@ -201,7 +201,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   const pathHelperText = fullPathError || pathValidationMessage;
   const validUsersHelperText =
     validUsersError ||
-    (sambaUsernamesQuery.isError ? 'Unable to load Samba users.' : null);
+    (sambaUsernamesQuery.isError ? 'امکان دریافت کاربران سامبا وجود ندارد.' : null);
 
   const pathValidationAdornment = (() => {
     if (isPathChecking) {
@@ -244,12 +244,12 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     <BlurModal
       open={isOpen}
       onClose={closeCreateModal}
-      title="Create Samba Share"
+      title="ایجاد اشتراک سامبا"
       actions={
         <ModalActionButtons
           onCancel={closeCreateModal}
-          confirmLabel="Create"
-          loadingLabel="Creating..."
+          confirmLabel="ایجاد"
+          loadingLabel="در حال ایجاد..."
           isLoading={isCreating}
           disabled={isCreating}
           cancelProps={{
@@ -269,13 +269,13 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             htmlFor="share-name-input"
             sx={{ color: 'var(--color-text)', fontSize: 14, fontWeight: 500 }}
           >
-            Share name
+            نام اشتراک
           </InputLabel>
           <TextField
             id="share-name-input"
             value={shareName}
             onChange={(event) => setShareName(event.target.value)}
-            placeholder="Enter a share name"
+            placeholder="نام اشتراک را وارد کنید"
             autoFocus
             error={Boolean(shareNameError)}
             helperText={shareNameError}
@@ -287,7 +287,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             id="full-path-input"
             sx={{ color: 'var(--color-text)', fontSize: 14, fontWeight: 500 }}
           >
-            Full path
+            مسیر کامل
           </InputLabel>
           <Autocomplete
             options={filteredMountpointOptions}
@@ -307,13 +307,13 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             fullWidth
             size="small"
             loading={filesystemMountpointsQuery.isLoading}
-            noOptionsText="No mountpoints available"
+            noOptionsText="مسیر مونتی در دسترس نیست"
             slotProps={autocompletePaperSlotProps}
             renderInput={(params) => (
               <TextField
                 {...params}
                 id="full-path-input"
-                placeholder="Select or type the path to share"
+                placeholder="مسیر اشتراک را انتخاب یا تایپ کنید"
                 error={hasPathError}
                 helperText={pathHelperText}
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
@@ -337,11 +337,12 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
               />
             )}
           />
+
           <InputLabel
             id="valid-users-input"
             sx={{ color: 'var(--color-text)', fontSize: 14, fontWeight: 500 }}
           >
-            Allowed users
+            کاربران مجاز
           </InputLabel>
           <Autocomplete
             multiple
@@ -351,13 +352,13 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
               setValidUsers(newValue ?? []);
             }}
             loading={sambaUsernamesQuery.isLoading || sambaUsernamesQuery.isFetching}
-            noOptionsText="No users available"
+            noOptionsText="کاربری در دسترس نیست"
             disabled={sambaUsernamesQuery.isError}
             slotProps={autocompletePaperSlotProps}
             renderInput={(params) => (
               <TextField
                 {...params}
-                placeholder="Select users allowed to access this share"
+                placeholder="کاربران مجاز برای دسترسی را انتخاب کنید"
                 error={Boolean(validUsersError)}
                 helperText={validUsersHelperText}
                 size="small"
@@ -375,7 +376,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             id="valid-groups-input"
             sx={{ color: 'var(--color-text)', fontSize: 14, fontWeight: 500 }}
           >
-            Allowed groups
+            گروه‌های مجاز
           </InputLabel>
           <Autocomplete
             multiple
@@ -385,13 +386,13 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
               setValidGroups(newValue ?? []);
             }}
             loading={sambaGroupNamesQuery.isLoading || sambaGroupNamesQuery.isFetching}
-            noOptionsText="No groups available"
+            noOptionsText="گروهی در دسترس نیست"
             disabled={sambaGroupNamesQuery.isError}
             slotProps={autocompletePaperSlotProps}
             renderInput={(params) => (
               <TextField
                 {...params}
-                placeholder="Select groups allowed to access this share"
+                placeholder="گروه‌های مجاز برای دسترسی را انتخاب کنید"
                 error={Boolean(validGroupsError)}
                 helperText={validGroupsError}
                 size="small"

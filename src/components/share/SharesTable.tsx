@@ -38,6 +38,20 @@ const SharesTable = ({
   const theme = useTheme();
 
   const columns = useMemo<DataTableColumn<SambaShareEntry>[]>(() => {
+    const allowedUserChipSx = {
+      fontWeight: 700,
+      margin: 0.25,
+      backgroundColor: alpha(theme.palette.primary.main, 0.08),
+      color: 'var(--color-primary)',
+    } as const;
+
+    const allowedGroupChipSx = {
+      fontWeight: 700,
+      px: 0.75,
+      minWidth: 80,
+      color: 'var(--color-secondary)',
+    } as const;
+
     const resolvePath = (share: SambaShareEntry) => {
       const { details } = share;
       const rawPath =
@@ -137,7 +151,12 @@ const SharesTable = ({
           return (
             <Stack direction="row" spacing={0.5} justifyContent="center" flexWrap="wrap">
               {users.map((user) => (
-                <Chip key={user} label={user} size="small" sx={{ fontSize: 12 }} />
+                <Chip
+                  key={user}
+                  label={user}
+                  size="small"
+                  sx={allowedUserChipSx}
+                />
               ))}
             </Stack>
           );
@@ -157,7 +176,13 @@ const SharesTable = ({
           return (
             <Stack direction="row" spacing={0.5} justifyContent="center" flexWrap="wrap">
               {groups.map((group) => (
-                <Chip key={group} label={group} size="small" sx={{ fontSize: 12 }} />
+                <Chip
+                  key={group}
+                  label={group}
+                  size="small"
+                  variant="outlined"
+                  sx={allowedGroupChipSx}
+                />
               ))}
             </Stack>
           );
@@ -190,7 +215,7 @@ const SharesTable = ({
         },
       },
     ];
-  }, [isDeleting, onDelete, pendingShareName]);
+  }, [isDeleting, onDelete, pendingShareName, theme.palette.primary.main]);
 
   const handleRowClick = useCallback(
     (share: SambaShareEntry) => {
