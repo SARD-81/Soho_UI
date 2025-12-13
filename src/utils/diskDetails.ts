@@ -1,4 +1,5 @@
 import type { DiskInventoryItem } from '../@types/disk';
+import type { NestedDetailTableData } from '../@types/detailComparison';
 import { formatBytes } from './formatters';
 
 export const formatNullableString = (value: unknown) => {
@@ -37,20 +38,52 @@ export const formatBlockSize = (value: string | number | null | undefined) => {
   return normalized.length > 0 ? normalized : '-';
 };
 
-export const createPartitionLines = (partitions: DiskInventoryItem['partitions']) => {
+export const createPartitionsTable = (
+  partitions: DiskInventoryItem['partitions']
+): NestedDetailTableData | '-' => {
   if (!Array.isArray(partitions) || partitions.length === 0) {
     return '-';
   }
 
-  return partitions
-    .map((partition) => {
-      const name = formatNullableString(partition?.name);
-      const size = formatBytes(partition?.size_bytes, { fallback: '-' });
-      const mountPoint = formatNullableString(partition?.mount_point);
-      const filesystem = formatNullableString(partition?.filesystem);
-      return `${name} | ${size} | نقطه مونت: ${mountPoint} | فایل‌سیستم: ${filesystem}`;
-    })
-    .join('\n');
+  const rows: Array<{ key: keyof NonNullable<DiskInventoryItem['partitions']>[number]; label: string }> = [
+    { key: 'name', label: 'نام پارتیشن' },
+    { key: 'path', label: 'مسیر' },
+    { key: 'size_bytes', label: 'حجم' },
+    { key: 'mount_point', label: 'نقطه مونت' },
+    { key: 'filesystem', label: 'فایل‌سیستم' },
+    { key: 'wwn', label: 'شناسه WWN' },
+  ];
+
+  const columns = partitions.map((partition, index) => {
+    const values: Record<string, unknown> = {};
+
+    rows.forEach((row) => {
+      const rawValue = partition?.[row.key];
+
+      if (row.key === 'size_bytes') {
+        values[row.label] = formatBytes(rawValue, { fallback: '-' });
+        return;
+      }
+
+      values[row.label] = formatNullableString(rawValue);
+    });
+
+    const title = formatNullableString(partition?.name);
+    const path = formatNullableString(partition?.path);
+
+    return {
+      id: path === '-' ? `partition-${index}` : path,
+      title: title === '-' ? `پارتیشن ${index + 1}` : title,
+      values,
+    };
+  });
+
+  return {
+    type: 'nested-detail-table',
+    attributeLabel: 'ویژگی پارتیشن',
+    emptyStateMessage: 'پارتیشنی برای نمایش وجود ندارد.',
+    columns,
+  };
 };
 
 export const buildDiskDetailValues = (
@@ -101,7 +134,7 @@ export const buildDiskDetailValues = (
   assignValue('شماره اسلات', detail.slot_number, formatNullableString);
   assignValue('نوع دیسک', detail.type, formatNullableString);
   assignValue('دارای پارتیشن', detail.has_partition, formatBoolean);
-  assignValue('پارتیشن‌ها', detail.partitions, createPartitionLines);
+  assignValue('پارتیشن‌ها', detail.partitions, createPartitionsTable);
 
   return values;
 };
