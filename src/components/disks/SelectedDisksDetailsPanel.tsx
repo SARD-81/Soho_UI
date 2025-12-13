@@ -4,6 +4,8 @@ import DetailComparisonPanel, {
   type DetailComparisonStatus,
 } from '../common/DetailComparisonPanel';
 import SingleDetailView from '../common/SingleDetailView';
+import TinyComparisonTable from '../common/TinyComparisonTable';
+import { isNestedDetailTableData } from '../../@types/detailComparison';
 import type { DiskDetailItemState } from '../../hooks/useDiskInventory';
 import formatDetailValue from '../../utils/formatDetailValue';
 import { buildDiskDetailValues } from '../../utils/diskDetails';
@@ -17,6 +19,10 @@ interface SelectedDisksDetailsPanelProps {
 
 
 const formatDiskDetailValue = (value: unknown) => {
+  if (isNestedDetailTableData(value)) {
+    return <TinyComparisonTable data={value} />;
+  }
+
   const formatted = formatDetailValue(value);
 
   if (typeof formatted === 'string' && formatted.includes('\n')) {
