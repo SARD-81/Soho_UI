@@ -34,12 +34,13 @@ export const POOL_DETAIL_LAYOUT: DetailLayoutConfig = {
         'health',
         'vdev_type',
         'fragmentation',
+        'failmode'
       ],
     },
     {
       id: 'settings',
       title: 'تنظیمات',
-      keys: ['autoexpand', 'autoreplace', 'autotrim', 'multihost', 'failmode'],
+      keys: ['autoexpand', 'autoreplace', 'autotrim', 'multihost', "listsnapshots"],
       optional: true,
     },
     {

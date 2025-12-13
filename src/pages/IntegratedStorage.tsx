@@ -29,6 +29,7 @@ import {
   localizeDetailEntries,
   translateDetailKey,
 } from '../utils/detailLabels';
+import { createPoolDisksTable } from '../utils/poolDetails';
 
 const MAX_COMPARISON_ITEMS = 4;
 
@@ -36,7 +37,6 @@ const INTERACTIVE_POOL_PROPERTIES = [
   'autoexpand',
   'autoreplace',
   'autotrim',
-  'compatibility',
   'listsnapshots',
   'multihost',
 ] as const;
@@ -46,6 +46,8 @@ const buildPoolDetailValues = (
   poolName: string
 ): Record<string, unknown> => {
   const localizedValues = localizeDetailEntries(detail);
+
+  localizedValues[translateDetailKey('disks')] = createPoolDisksTable(detail?.disks);
 
   INTERACTIVE_POOL_PROPERTIES.forEach((propertyKey) => {
     const label = translateDetailKey(propertyKey);

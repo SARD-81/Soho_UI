@@ -4,11 +4,17 @@ import DetailComparisonPanel, {
   type DetailComparisonStatus,
 } from '../common/DetailComparisonPanel';
 import SingleDetailView from '../common/SingleDetailView';
+import TinyComparisonTable from '../common/TinyComparisonTable';
+import { isNestedDetailTableData } from '../../@types/detailComparison';
 import formatDetailValue from '../../utils/formatDetailValue';
+import {
+  POOL_DISK_ATTRIBUTE_SORT,
+  buildPoolDetailValues,
+} from '../../utils/poolDetails';
 import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
-import { omitNullishEntries } from '../../utils/detailValues';
 import { isValidElement, useMemo } from 'react';
 import { POOL_DETAIL_LAYOUT } from '../../config/detailLayouts';
+import { translateDetailKey } from '../../utils/detailLabels';
 
 interface PoolDetailItem {
   poolName: string;
@@ -28,10 +34,39 @@ const SelectedPoolsDetailsPanel = ({
 }: SelectedPoolsDetailsPanelProps) => {
   const formatValue = useMemo(
     () =>
-      (value: unknown) =>
-        isValidElement(value)
-          ? value
-          : formatDetailValue(value),
+      (value: unknown) => {
+        if (isNestedDetailTableData(value)) {
+          return <TinyComparisonTable data={value} attributeSort={POOL_DISK_ATTRIBUTE_SORT} />;
+        }
+
+        if (isValidElement(value)) {
+          return value;
+        }
+
+        const formatted = formatDetailValue(value);
+
+        if (typeof formatted === 'string' && formatted.includes('\n')) {
+          return formatted
+            .split('\n')
+            .map((line, index) => <span key={`${line}-${index}`}>{line}</span>);
+        }
+
+        return formatted;
+      },
+    []
+  );
+
+  const comparisonPriority = useMemo(
+    () => POOL_DETAIL_LAYOUT.comparisonPriority.map(translateDetailKey),
+    []
+  );
+
+  const sections = useMemo(
+    () =>
+      POOL_DETAIL_LAYOUT.sections.map((section) => ({
+        ...section,
+        keys: section.keys.map(translateDetailKey),
+      })),
     []
   );
 
@@ -58,7 +93,7 @@ const SelectedPoolsDetailsPanel = ({
       id: poolName,
       title: poolName,
       onRemove: () => onRemove(poolName),
-      values: omitNullishEntries(detail),
+      values: buildPoolDetailValues(detail),
       status,
     };
   });
@@ -69,21 +104,21 @@ const SelectedPoolsDetailsPanel = ({
       createPriorityAwareComparatorFromRecords(
         columns.map(({ values }) => values),
         'fa-IR',
-        POOL_DETAIL_LAYOUT.comparisonPriority
+        comparisonPriority
       ),
-    [columns]
+    [columns, comparisonPriority]
   );
 
   return (
     columns.length === 1 ? (
       <SingleDetailView
         title={title}
-        sections={POOL_DETAIL_LAYOUT.sections}
+        sections={sections}
         values={columns[0].values}
         status={columns[0].status}
         formatValue={formatValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-        attributeOrder={POOL_DETAIL_LAYOUT.comparisonPriority}
+        attributeOrder={comparisonPriority}
         attributeSort={attributeSort}
       />
     ) : (

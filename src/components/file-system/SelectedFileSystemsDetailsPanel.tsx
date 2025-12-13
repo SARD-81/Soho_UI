@@ -5,6 +5,7 @@ import formatDetailValue from '../../utils/formatDetailValue';
 import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import buildFilesystemDetailValues from '../../utils/filesystemDetails';
 import { FILESYSTEM_DETAIL_LAYOUT } from '../../config/detailLayouts';
+import { resolveFilesystemAttributeLabel } from '../../constants/filesystemAttributeLabels';
 
 interface SelectedFileSystemsDetailsPanelProps {
   items: FileSystemEntry[];
@@ -39,6 +40,7 @@ const SelectedFileSystemsDetailsPanel = ({
           'fa-IR',
           FILESYSTEM_DETAIL_LAYOUT.comparisonPriority
         )}
+        attributeLabelResolver={resolveFilesystemAttributeLabel}
       />
     ) : (
       <DetailComparisonPanel
@@ -52,6 +54,7 @@ const SelectedFileSystemsDetailsPanel = ({
           'fa-IR',
           FILESYSTEM_DETAIL_LAYOUT.comparisonPriority
         )}
+        attributeLabelResolver={resolveFilesystemAttributeLabel}
       />
     )
   );
