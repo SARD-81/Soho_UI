@@ -150,6 +150,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
 
   const isSubmitting = updateSharepoint.isPending;
   const hasMembers = stagedMembers.length > 0;
+  const hasRemovableMembers = stagedMembers.length > 1;
 
   const hasChanges = useMemo(() => {
     const currentMembers = membersQuery.data ?? [];
@@ -173,11 +174,15 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
   const handleRemoveMember = (member: string) => {
     if (!shareName || isSubmitting) return;
 
-    setStagedMembers((prev) => prev.filter((item) => item !== member));
+    setStagedMembers((prev) => {
+      if (prev.length <= 1) return prev;
+      const next = prev.filter((item) => item !== member);
+      return next.length === 0 ? prev : next;
+    });
   };
 
   const handleRequestSubmit = () => {
-    if (isSubmitting || !hasChanges) return;
+    if (isSubmitting || !hasChanges || !hasMembers) return;
     setIsConfirmOpen(true);
   };
 
@@ -187,7 +192,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
   };
 
   const handleApplyChanges = () => {
-    if (!shareName || isSubmitting || !hasChanges) {
+    if (!shareName || isSubmitting || !hasChanges || !hasMembers) {
       handleCancelConfirmation();
       return;
     }
@@ -211,6 +216,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
 
   const isLoading = membersQuery.isLoading || availableQuery.isLoading;
   const copy = modalCopy[type];
+  const isGroupList = type === 'groups';
 
   return (
     <BlurModal
@@ -226,7 +232,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
           onConfirm={handleRequestSubmit}
           confirmLabel="ثبت تغییرات"
           disabled={isSubmitting}
-          confirmProps={{ disabled: !hasChanges }}
+          confirmProps={{ disabled: !hasChanges || !hasMembers }}
         />
       }
     >
@@ -256,7 +262,15 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
               <Typography sx={{ color: 'var(--color-text)', fontWeight: 700 }}>
                 {copy.addLabel}
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: isGroupList ? 'nowrap' : 'wrap',
+                  flexDirection: isGroupList ? 'column' : 'row',
+                  gap: 1,
+                  alignItems: isGroupList ? 'stretch' : 'flex-start',
+                }}
+              >
                 {availableCandidates.length ? (
                   availableCandidates.map((candidate) => (
                     <Chip
@@ -265,7 +279,11 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                       clickable
                       onClick={() => handleAddMember(candidate)}
                       disabled={isSubmitting}
-                      sx={chipStyles.add}
+                      sx={{
+                        ...chipStyles.add,
+                        width: isGroupList ? '100%' : 'auto',
+                        justifyContent: 'flex-start',
+                      }}
                     />
                   ))
                 ) : (
@@ -363,7 +381,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                         key={member}
                         label={member}
                         onDelete={() => handleRemoveMember(member)}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !hasRemovableMembers}
                         sx={chipStyles.remove}
                       />
                     ))
