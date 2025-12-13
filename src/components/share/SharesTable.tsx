@@ -9,9 +9,10 @@ import {
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
-import { MdDeleteOutline } from 'react-icons/md';
+import { MdDeleteOutline, MdGroupAdd, MdGroups2 } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { SambaShareEntry } from '../../@types/samba';
+import { parseDelimitedList } from '../../utils/samba';
 import DataTable from '../DataTable';
 
 interface SharesTableProps {
@@ -21,6 +22,8 @@ interface SharesTableProps {
   selectedShares: string[];
   onToggleSelect: (share: SambaShareEntry, checked: boolean) => void;
   onDelete: (share: SambaShareEntry) => void;
+  onManageUsers: (share: SambaShareEntry) => void;
+  onManageGroups: (share: SambaShareEntry) => void;
   pendingShareName: string | null;
   isDeleting: boolean;
 }
@@ -32,6 +35,8 @@ const SharesTable = ({
   selectedShares,
   onToggleSelect,
   onDelete,
+  onManageUsers,
+  onManageGroups,
   pendingShareName,
   isDeleting,
 }: SharesTableProps) => {
@@ -47,21 +52,6 @@ const SharesTable = ({
       return rawPath ?? '-';
     };
 
-    const toList = (value: unknown) => {
-      if (Array.isArray(value)) {
-        return value.filter((item): item is string => Boolean(item)).map((item) => item.trim());
-      }
-
-      if (typeof value === 'string') {
-        return value
-          .split(/[,،]/)
-          .map((item) => item.trim())
-          .filter(Boolean);
-      }
-
-      return [] as string[];
-    };
-
     const resolveValidUsers = (share: SambaShareEntry) => {
       const { details } = share;
       const value =
@@ -70,7 +60,7 @@ const SharesTable = ({
         (typeof details['valid users'] === 'string' &&
           (details['valid users'] as string).trim());
 
-      return toList(value);
+      return parseDelimitedList(value);
     };
 
     const resolveValidGroups = (share: SambaShareEntry) => {
@@ -81,7 +71,7 @@ const SharesTable = ({
         (typeof details['valid groups'] === 'string' &&
           (details['valid groups'] as string).trim());
 
-      return toList(value);
+      return parseDelimitedList(value);
     };
 
     return [
@@ -131,13 +121,30 @@ const SharesTable = ({
           const users = resolveValidUsers(share);
 
           if (!users.length) {
-            return <Typography sx={{ color: 'var(--color-text)' }}>-</Typography>;
+            return (
+              <Typography sx={{ color: 'var(--color-text)' }}>-</Typography>
+            );
           }
 
           return (
-            <Stack direction="row" spacing={0.5} justifyContent="center" flexWrap="wrap">
+            <Stack
+              direction="row"
+              spacing={0.5}
+              justifyContent="center"
+              flexWrap="wrap"
+            >
               {users.map((user) => (
-                <Chip key={user} label={user} size="small" sx={{ fontSize: 12 }} />
+                <Chip
+                  key={user}
+                  label={user}
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    margin: 0.25,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                    color: 'var(--color-primary)',
+                  }}
+                />
               ))}
             </Stack>
           );
@@ -151,13 +158,25 @@ const SharesTable = ({
           const groups = resolveValidGroups(share);
 
           if (!groups.length) {
-            return <Typography sx={{ color: 'var(--color-text)' }}>-</Typography>;
+            return (
+              <Typography sx={{ color: 'var(--color-text)' }}>-</Typography>
+            );
           }
 
           return (
-            <Stack direction="row" spacing={0.5} justifyContent="center" flexWrap="wrap">
+            <Stack
+              direction="row"
+              spacing={0.5}
+              justifyContent="center"
+              flexWrap="wrap"
+            >
               {groups.map((group) => (
-                <Chip key={group} label={group} size="small" sx={{ fontSize: 12 }} />
+                <Chip
+                  key={group}
+                  label={group}
+                  size="small"
+                  sx={{ fontWeight: 700, px: 0.75, minWidth: 80 , backgroundColor: alpha(theme.palette.secondary.main, 0.08), color:"var(--color-secondary)" }}
+                />
               ))}
             </Stack>
           );
@@ -171,26 +190,60 @@ const SharesTable = ({
           const isShareDeleting = isDeleting && pendingShareName === share.name;
 
           return (
-            <Tooltip title="حذف اشتراک">
-              <span>
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onDelete(share);
-                  }}
-                  disabled={isShareDeleting}
-                >
-                  <MdDeleteOutline size={18} />
-                </IconButton>
-              </span>
-            </Tooltip>
+            <Stack direction="row" spacing={0.5} justifyContent="center">
+              <Tooltip title="مدیریت کاربران">
+                <span>
+                  <IconButton
+                    size="small"
+                    color="primary"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onManageUsers(share);
+                    }}
+                    disabled={isShareDeleting}
+                  >
+                    <MdGroupAdd size={18} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+
+              <Tooltip title="مدیریت گروه‌ها">
+                <span>
+                  <IconButton
+                    size="small"
+                    color="primary"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onManageGroups(share);
+                    }}
+                    disabled={isShareDeleting}
+                  >
+                    <MdGroups2 size={18} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+
+              <Tooltip title="حذف اشتراک">
+                <span>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(share);
+                    }}
+                    disabled={isShareDeleting}
+                  >
+                    <MdDeleteOutline size={18} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Stack>
           );
         },
       },
     ];
-  }, [isDeleting, onDelete, pendingShareName]);
+  }, [isDeleting, onDelete, onManageGroups, onManageUsers, pendingShareName]);
 
   const handleRowClick = useCallback(
     (share: SambaShareEntry) => {

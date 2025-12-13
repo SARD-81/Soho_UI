@@ -376,7 +376,7 @@ const SingleDetailView = ({
                           ),
                           color: 'var(--color-secondary)',
                           textAlign: 'left',
-                          direction: 'rtl',
+                          direction: 'ltr',
                           fontSize: '0.95rem',
                           letterSpacing: 0.2,
                           minHeight: 64,
