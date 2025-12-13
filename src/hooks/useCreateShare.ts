@@ -36,7 +36,7 @@ const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
 
   if (payload.errors) {
     if (Array.isArray(payload.errors)) {
-      return payload.errors.join('، ');
+      return payload.errors.join(' | ');
     }
 
     if (typeof payload.errors === 'string') {
@@ -63,18 +63,22 @@ export const useCreateShare = ({
 }: UseCreateShareOptions = {}) => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
+  const [shareName, setShareName] = useState('');
   const [fullPath, setFullPath] = useState('');
   const [validUsers, setValidUsers] = useState<string[]>([]);
   const [validGroups, setValidGroups] = useState<string[]>([]);
+  const [shareNameError, setShareNameError] = useState<string | null>(null);
   const [fullPathError, setFullPathError] = useState<string | null>(null);
   const [validUsersError, setValidUsersError] = useState<string | null>(null);
   const [validGroupsError, setValidGroupsError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const resetForm = useCallback(() => {
+    setShareName('');
     setFullPath('');
     setValidUsers([]);
     setValidGroups([]);
+    setShareNameError(null);
     setFullPathError(null);
     setValidUsersError(null);
     setValidGroupsError(null);
@@ -119,26 +123,33 @@ export const useCreateShare = ({
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      setShareNameError(null);
       setFullPathError(null);
       setValidUsersError(null);
       setValidGroupsError(null);
       setApiError(null);
 
+      const trimmedShareName = shareName.trim();
       const trimmedPath = fullPath.trim();
       let hasError = false;
 
+      if (!trimmedShareName) {
+        setShareNameError('Please enter a share name.');
+        hasError = true;
+      }
+
       if (!trimmedPath) {
-        setFullPathError('لطفاً مسیر کامل اشتراک را وارد کنید.');
+        setFullPathError('Please enter the full path to share.');
         hasError = true;
       }
 
       if (!validUsers.length) {
-        setValidUsersError('لطفاً کاربران مجاز را وارد کنید.');
+        setValidUsersError('Select at least one allowed user.');
         hasError = true;
       }
 
       if (!validGroups.length) {
-        setValidGroupsError('لطفاً حداقل یک گروه مجاز انتخاب کنید.');
+        setValidGroupsError('Select at least one allowed group.');
         hasError = true;
       }
 
@@ -146,7 +157,8 @@ export const useCreateShare = ({
         return;
       }
 
-      const sharepointName = deriveShareDisplayName(trimmedPath);
+      const sharepointName =
+        trimmedShareName || deriveShareDisplayName(trimmedPath);
 
       createShareMutation.mutate({
         sharepoint_name: sharepointName,
@@ -164,14 +176,16 @@ export const useCreateShare = ({
         save_to_db: true,
       });
     },
-    [createShareMutation, fullPath, validGroups, validUsers]
+    [createShareMutation, fullPath, shareName, validGroups, validUsers]
   );
 
   return {
     isOpen,
+    shareName,
     fullPath,
     validUsers,
     fullPathError,
+    shareNameError,
     validUsersError,
     validGroupsError,
     apiError,
@@ -182,6 +196,7 @@ export const useCreateShare = ({
     isPathValid: false,
     openCreateModal: handleOpen,
     closeCreateModal,
+    setShareName,
     setFullPath,
     setValidUsers,
     validGroups,

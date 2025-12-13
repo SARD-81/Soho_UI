@@ -11,9 +11,9 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import type { ReactNode } from 'react';
-import type { DetailComparisonStatus } from './DetailComparisonPanel';
 import type { DetailLayoutConfig } from '../../config/detailLayouts';
 import { sortKeysWithPriority } from '../../utils/keySort';
+import type { DetailComparisonStatus } from './DetailComparisonPanel';
 
 type DiskValue = string | number | null | undefined;
 
@@ -38,6 +38,7 @@ interface SingleDetailViewProps {
   emptyStateMessage: string;
   attributeOrder?: string[];
   attributeSort?: (a: string, b: string) => number;
+  attributeLabelResolver?: (key: string) => string;
 }
 
 const renderDiskTable = (
@@ -48,29 +49,29 @@ const renderDiskTable = (
   selectedRowHover: string
 ) => (
   <Box sx={{ mt: 1 }}>
-    <Table size="small" sx={{ border: `1px solid ${borderColor}`, direction: 'rtl' }}>
+    <Table
+      size="small"
+      sx={{ border: `1px solid ${borderColor}`, direction: 'rtl' }}
+    >
       <TableHead>
         <TableRow>
-          {[
-            'نام دیسک',
-            'وضعیت',
-            'نوع vdev',
-            'Device',
-            'WWN',
-          ].slice().reverse().map((label) => (
-            <TableCell
-              key={label}
-              sx={{
-                background: headerGradient,
-                borderColor,
-                fontWeight: 800,
-                color: 'var(--color-primary)',
-                textAlign: 'center',
-              }}
-            >
-              {label}
-            </TableCell>
-          ))}
+          {['نام دیسک', 'وضعیت', 'نوع vdev', 'Device', 'WWN']
+            .slice()
+            .reverse()
+            .map((label) => (
+              <TableCell
+                key={label}
+                sx={{
+                  background: headerGradient,
+                  borderColor,
+                  fontWeight: 800,
+                  color: 'var(--color-primary)',
+                  textAlign: 'center',
+                }}
+              >
+                {label}
+              </TableCell>
+            ))}
         </TableRow>
       </TableHead>
       <TableBody>
@@ -89,22 +90,27 @@ const renderDiskTable = (
             <TableCell sx={{ borderColor, textAlign: 'center' }}>
               {disk.full_path_name ?? disk.full_disk_name ?? '-'}
             </TableCell>
-            <TableCell sx={{ borderColor, textAlign: 'center', fontWeight: 600 }}>
+            <TableCell
+              sx={{ borderColor, textAlign: 'center', fontWeight: 600 }}
+            >
               {disk.vdev_type ?? disk.type ?? '-'}
             </TableCell>
             <TableCell
               sx={{
                 borderColor,
-                color: String(disk.status ?? '').toUpperCase() === 'ONLINE'
-                  ? 'var(--color-success)'
-                  : 'var(--color-error)',
+                color:
+                  String(disk.status ?? '').toUpperCase() === 'ONLINE'
+                    ? 'var(--color-success)'
+                    : 'var(--color-error)',
                 fontWeight: 700,
                 textAlign: 'center',
               }}
             >
               {disk.status ?? '-'}
             </TableCell>
-            <TableCell sx={{ borderColor, fontWeight: 700, textAlign: 'center' }}>
+            <TableCell
+              sx={{ borderColor, fontWeight: 700, textAlign: 'center' }}
+            >
               {disk.disk_name ?? '-'}
             </TableCell>
           </TableRow>
@@ -115,7 +121,8 @@ const renderDiskTable = (
 );
 
 const isDiskRowArray = (value: unknown): value is DiskRow[] =>
-  Array.isArray(value) && value.every((item) => item !== null && typeof item === 'object');
+  Array.isArray(value) &&
+  value.every((item) => item !== null && typeof item === 'object');
 
 const SingleDetailView = ({
   title,
@@ -126,10 +133,19 @@ const SingleDetailView = ({
   emptyStateMessage,
   attributeOrder = [],
   attributeSort = (a: string, b: string) => a.localeCompare(b, 'fa-IR'),
+  attributeLabelResolver,
 }: SingleDetailViewProps) => {
   const theme = useTheme();
-  const borderColor = alpha(theme.palette.divider, theme.palette.mode === 'dark' ? 0.4 : 0.25);
-  const backgroundColor = alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.9 : 1);
+  const resolveAttributeLabel =
+    attributeLabelResolver ?? ((key: string) => key);
+  const borderColor = alpha(
+    theme.palette.divider,
+    theme.palette.mode === 'dark' ? 0.4 : 0.25
+  );
+  const backgroundColor = alpha(
+    theme.palette.background.paper,
+    theme.palette.mode === 'dark' ? 0.9 : 1
+  );
   const headerGradient =
     theme.palette.mode === 'dark'
       ? `linear-gradient(135deg, ${alpha('#00c6a9', 0.3)} 0%, ${alpha('#1fb6ff', 0.2)} 100%)`
@@ -140,14 +156,23 @@ const SingleDetailView = ({
   ];
   const selectedRowHover = alpha(theme.palette.primary.main, 0.08);
 
-  const keys = sortKeysWithPriority(Object.keys(values ?? {}), attributeOrder, attributeSort);
+  const keys = sortKeysWithPriority(
+    Object.keys(values ?? {}),
+    attributeOrder,
+    attributeSort
+  );
   const sectionMap = new Map(
-    sections.map((section) => [section.id, { ...section, keys: [] as string[] }])
+    sections.map((section) => [
+      section.id,
+      { ...section, keys: [] as string[] },
+    ])
   );
   const defaultSection = sections[0]?.id;
 
   keys.forEach((key) => {
-    const targetSection = sections.find((section) => section.keys.includes(key))?.id;
+    const targetSection = sections.find((section) =>
+      section.keys.includes(key)
+    )?.id;
     const bucketKey = targetSection ?? defaultSection;
 
     if (!bucketKey) {
@@ -164,7 +189,13 @@ const SingleDetailView = ({
 
   const renderFormattedValue = (value: unknown) => {
     if (isDiskRowArray(value)) {
-      return renderDiskTable(value, headerGradient, borderColor, alternatingCellBg, selectedRowHover);
+      return renderDiskTable(
+        value,
+        headerGradient,
+        borderColor,
+        alternatingCellBg,
+        selectedRowHover
+      );
     }
 
     const renderedValue = formatValue(value);
@@ -176,10 +207,10 @@ const SingleDetailView = ({
             color: 'var(--color-text)',
             fontSize: '0.95rem',
             textAlign: 'center',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
+            // whiteSpace: 'pre-wrap',
+            // wordBreak: 'break-word',
             direction: 'rtl',
-            unicodeBidi: 'plaintext',
+            // unicodeBidi: 'plaintext',
           }}
         >
           {renderedValue}
@@ -210,7 +241,9 @@ const SingleDetailView = ({
       <Typography
         sx={{
           color:
-            status.type === 'error' ? 'var(--color-error)' : 'var(--color-secondary)',
+            status.type === 'error'
+              ? 'var(--color-error)'
+              : 'var(--color-secondary)',
           fontWeight: status.type === 'error' ? 700 : 500,
         }}
       >
@@ -236,7 +269,7 @@ const SingleDetailView = ({
             : '0 24px 55px -32px rgba(15, 73, 110, 0.45)',
         px: 3,
         py: 3,
-        width: 'fit-content',
+        minWidth: '550px',
       }}
     >
       <Typography
@@ -337,7 +370,10 @@ const SingleDetailView = ({
                           width: '35%',
                           borderColor,
                           fontWeight: 700,
-                          backgroundColor: alpha(theme.palette.background.default, 0.1),
+                          backgroundColor: alpha(
+                            theme.palette.background.default,
+                            0.1
+                          ),
                           color: 'var(--color-secondary)',
                           textAlign: 'left',
                           direction: 'rtl',
@@ -346,7 +382,7 @@ const SingleDetailView = ({
                           minHeight: 64,
                         }}
                       >
-                        {key}
+                        {resolveAttributeLabel(key)}
                       </TableCell>
                     </TableRow>
                   ))}

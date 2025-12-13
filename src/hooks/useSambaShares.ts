@@ -64,9 +64,9 @@ const mapShares = (
 
   return sharepoints
     .map((details, index) => {
-      const shareName = typeof details.name === 'string' ? details.name : `share-${index + 1}`;
       const normalizedDetails = normalizeShareDetails(details);
-      const { name: _omittedName, ...restDetails } = normalizedDetails;
+      const { name, ...restDetails } = normalizedDetails;
+      const shareName = typeof name === 'string' ? name : `share-${index + 1}`;
 
       return {
         name: shareName,

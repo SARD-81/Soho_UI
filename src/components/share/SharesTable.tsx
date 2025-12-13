@@ -1,7 +1,9 @@
 import {
   Box,
+  Chip,
   CircularProgress,
   IconButton,
+  Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -36,14 +38,29 @@ const SharesTable = ({
   const theme = useTheme();
 
   const columns = useMemo<DataTableColumn<SambaShareEntry>[]>(() => {
-    // const resolvePath = (share: SambaShareEntry) => {
-    //   const { details } = share;
-    //   const rawPath =
-    //     (typeof details.path === 'string' && details.path.trim()) ||
-    //     (typeof details.full_path === 'string' && details.full_path.trim());
-    //
-    //   return rawPath ?? '-';
-    // };
+    const resolvePath = (share: SambaShareEntry) => {
+      const { details } = share;
+      const rawPath =
+        (typeof details.path === 'string' && details.path.trim()) ||
+        (typeof details.full_path === 'string' && details.full_path.trim());
+
+      return rawPath ?? '-';
+    };
+
+    const toList = (value: unknown) => {
+      if (Array.isArray(value)) {
+        return value.filter((item): item is string => Boolean(item)).map((item) => item.trim());
+      }
+
+      if (typeof value === 'string') {
+        return value
+          .split(/[,،]/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      return [] as string[];
+    };
 
     const resolveValidUsers = (share: SambaShareEntry) => {
       const { details } = share;
@@ -53,7 +70,7 @@ const SharesTable = ({
         (typeof details['valid users'] === 'string' &&
           (details['valid users'] as string).trim());
 
-      return value ?? '-';
+      return toList(value);
     };
 
     const resolveValidGroups = (share: SambaShareEntry) => {
@@ -64,7 +81,7 @@ const SharesTable = ({
         (typeof details['valid groups'] === 'string' &&
           (details['valid groups'] as string).trim());
 
-      return value ?? '-';
+      return toList(value);
     };
 
     return [
@@ -89,42 +106,62 @@ const SharesTable = ({
           </Typography>
         ),
       },
-      // {
-      //   id: 'path',
-      //   header: 'مسیر',
-      //   align: 'left',
-      //   renderCell: (share) => (
-      //     <Typography
-      //       sx={{
-      //         color: 'var(--color-text)',
-      //         direction: 'ltr',
-      //         fontFamily: 'var(--font-vazir)',
-      //         wordBreak: 'break-all',
-      //       }}
-      //     >
-      //       {resolvePath(share)}
-      //     </Typography>
-      //   ),
-      // },
+      {
+        id: 'path',
+        header: 'مسیر',
+        align: 'center',
+        renderCell: (share) => (
+          <Typography
+            sx={{
+              color: 'var(--color-text)',
+              direction: 'ltr',
+              fontFamily: 'var(--font-vazir)',
+              wordBreak: 'break-all',
+            }}
+          >
+            {resolvePath(share)}
+          </Typography>
+        ),
+      },
       {
         id: 'valid-users',
         header: 'کاربران مجاز',
         align: 'center',
-        renderCell: (share) => (
-          <Typography sx={{ color: 'var(--color-text)' }}>
-            {resolveValidUsers(share)}
-          </Typography>
-        ),
+        renderCell: (share) => {
+          const users = resolveValidUsers(share);
+
+          if (!users.length) {
+            return <Typography sx={{ color: 'var(--color-text)' }}>-</Typography>;
+          }
+
+          return (
+            <Stack direction="row" spacing={0.5} justifyContent="center" flexWrap="wrap">
+              {users.map((user) => (
+                <Chip key={user} label={user} size="small" sx={{ fontSize: 12 }} />
+              ))}
+            </Stack>
+          );
+        },
       },
       {
         id: 'valid-groups',
         header: 'گروه های مجاز',
         align: 'center',
-        renderCell: (share) => (
-          <Typography sx={{ color: 'var(--color-text)' }}>
-            {resolveValidGroups(share)}
-          </Typography>
-        ),
+        renderCell: (share) => {
+          const groups = resolveValidGroups(share);
+
+          if (!groups.length) {
+            return <Typography sx={{ color: 'var(--color-text)' }}>-</Typography>;
+          }
+
+          return (
+            <Stack direction="row" spacing={0.5} justifyContent="center" flexWrap="wrap">
+              {groups.map((group) => (
+                <Chip key={group} label={group} size="small" sx={{ fontSize: 12 }} />
+              ))}
+            </Stack>
+          );
+        },
       },
       {
         id: 'actions',

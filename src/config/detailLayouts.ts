@@ -149,7 +149,7 @@ export const SHARE_DETAIL_LAYOUT: DetailLayoutConfig = {
     },
     {
       id: 'limits',
-      title: 'محدودیت‌ها و ماسک‌ها',
+      title: 'محدودیت‌ها',
       keys: ['max connections', 'create mask', 'directory mask'],
       optional: true,
     },

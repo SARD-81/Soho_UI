@@ -28,11 +28,31 @@ interface SelectedSharesDetailsPanelProps {
   onRemove: (shareName: string) => void;
 }
 
+const SHARE_ATTRIBUTE_LABELS: Record<string, string> = {
+  path: 'مسیر',
+  full_path: 'مسیر کامل',
+  valid_users: 'کاربران مجاز',
+  'valid users': 'کاربران مجاز',
+  valid_groups: 'گروه های مجاز',
+  'valid groups': 'گروه های مجاز',
+  available: 'فعال',
+  'read only': 'فقط خواندنی',
+  browseable: 'قابل مرور',
+  'guest ok': 'دسترسی مهمان',
+  'inherit permissions': 'ارث‌بری مجوزها',
+  'create mask': 'ماسک ایجاد',
+  'directory mask': 'ماسک پوشه',
+  'max connections': 'حداکثر اتصال',
+  is_custom: 'سفارشی',
+  created_time: 'زمان ایجاد',
+};
+
 const SelectedSharesDetailsPanel = ({
   items,
   onRemove,
 }: SelectedSharesDetailsPanelProps) => {
   const updateSharepoint = useUpdateSharepoint();
+  const resolveAttributeLabel = (key: string) => SHARE_ATTRIBUTE_LABELS[key] ?? key;
 
   const pendingKey = updateSharepoint.variables
     ? `${updateSharepoint.variables.shareName}-${Object.keys(updateSharepoint.variables.updates)[0]}`
@@ -112,6 +132,7 @@ const SelectedSharesDetailsPanel = ({
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={SHARE_DETAIL_LAYOUT.comparisonPriority}
         attributeSort={attributeSort}
+        attributeLabelResolver={resolveAttributeLabel}
       />
     ) : (
       <DetailComparisonPanel
@@ -121,6 +142,7 @@ const SelectedSharesDetailsPanel = ({
         formatValue={formatShareValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeSort={attributeSort}
+        attributeLabelResolver={resolveAttributeLabel}
       />
     )
   );

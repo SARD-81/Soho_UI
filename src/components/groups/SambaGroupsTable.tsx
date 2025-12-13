@@ -68,7 +68,7 @@ const SambaGroupsTable = ({
         header: 'اعضای گروه',
         align: 'center',
         renderCell: (group) => (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+          <Box>
             {group.members.length === 0 ? (
               <Typography sx={{ color: 'var(--color-secondary)' }}>—</Typography>
             ) : (
@@ -79,6 +79,7 @@ const SambaGroupsTable = ({
                   size="small"
                   sx={{
                     fontWeight: 700,
+                    margin: 0.25,
                     backgroundColor: alpha(theme.palette.primary.main, 0.08),
                     color: 'var(--color-primary)',
                   }}

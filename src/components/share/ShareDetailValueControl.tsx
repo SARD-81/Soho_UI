@@ -27,6 +27,12 @@ const BOOLEAN_FIELDS = new Set([
   'inherit permissions',
 ]);
 
+const EDITABLE_FIELDS = new Set([
+  'max connections',
+  'create mask',
+  'directory mask',
+]);
+
 const normalizeBooleanValue = (attributeKey: string, value: unknown) => {
   if (!BOOLEAN_FIELDS.has(attributeKey)) {
     return null;
@@ -56,6 +62,7 @@ const ShareDetailValueControl = ({
     () => normalizeBooleanValue(attributeKey, value),
     [attributeKey, value]
   );
+  const isEditableField = EDITABLE_FIELDS.has(attributeKey);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(() =>
     typeof value === 'string' || typeof value === 'number'
@@ -123,6 +130,21 @@ const ShareDetailValueControl = ({
             <FiX size={16} />
           </IconButton>
         </Tooltip>
+      </Stack>
+    );
+  }
+
+  if (!isEditableField) {
+    return (
+      <Stack spacing={0.5} alignItems="center">
+        <Typography sx={{ color: 'var(--color-text)' }}>
+          {formatDetailValue(value)}
+        </Typography>
+        {errorMessage && (
+          <Typography variant="caption" sx={{ color: 'var(--color-error)' }}>
+            {errorMessage}
+          </Typography>
+        )}
       </Stack>
     );
   }
