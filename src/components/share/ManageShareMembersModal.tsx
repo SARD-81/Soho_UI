@@ -278,53 +278,103 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
 
             <Divider flexItem orientation="vertical" sx={{ display: { xs: 'none', md: 'block' } }} />
 
-            <Stack
-              spacing={1}
+            <Box
               sx={{
                 flex: 1,
-                border: '2px solid rgba(255, 99, 132, 0.45)',
-                borderRadius: 2,
-                p: 2,
-                background: 'linear-gradient(135deg, rgba(255, 238, 240, 0.35), rgba(255, 241, 243, 0.75))',
-                boxShadow: '0 8px 26px rgba(255, 99, 132, 0.18)',
                 position: 'relative',
+                borderRadius: 3,
+                background: 'linear-gradient(130deg, rgba(255, 99, 132, 0.22), rgba(31, 182, 255, 0.18))',
+                p: 1.2,
+                boxShadow: '0 22px 46px rgba(255, 99, 132, 0.26)',
               }}
             >
-              <Typography
+              <Stack
+                spacing={1.5}
                 sx={{
-                  color: 'var(--color-error)',
-                  fontWeight: 900,
-                  letterSpacing: 0.2,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 1,
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  boxShadow: '0 0 0 1px rgba(255, 99, 132, 0.3)',
+                  position: 'relative',
+                  borderRadius: 2.5,
+                  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 245, 247, 0.96))',
+                  border: '1px solid rgba(255, 255, 255, 0.5)',
+                  boxShadow: '0 16px 34px rgba(255, 99, 132, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.65)',
+                  p: 2,
+                  overflow: 'hidden',
                 }}
               >
-                اعضای فعلی اشتراک
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {hasMembers ? (
-                  stagedMembers.map((member) => (
-                    <Chip
-                      key={member}
-                      label={member}
-                      onDelete={() => handleRemoveMember(member)}
-                      disabled={isSubmitting}
-                      sx={chipStyles.remove}
-                    />
-                  ))
-                ) : (
-                  <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
-                    {copy.empty}
-                  </Typography>
-                )}
-              </Box>
-            </Stack>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                    flexWrap: 'wrap',
+                    position: 'relative',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                    <Box
+                      sx={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: '50%',
+                        display: 'grid',
+                        placeItems: 'center',
+                        background: 'linear-gradient(145deg, rgba(255, 238, 240, 0.9), rgba(255, 217, 224, 0.95))',
+                        boxShadow: '0 6px 14px rgba(255, 99, 132, 0.28)',
+                        border: '1px solid rgba(255, 99, 132, 0.25)',
+                      }}
+                    >
+                      <Typography sx={{ color: 'var(--color-error)', fontWeight: 900, fontSize: 18 }}>
+                        ★
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography
+                        sx={{
+                          color: 'var(--color-error)',
+                          fontWeight: 900,
+                          letterSpacing: 0.5,
+                        }}
+                      >
+                        اعضای فعلی اشتراک
+                      </Typography>
+                      <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600, fontSize: 12 }}>
+                        اعضای تایید شده این اشتراک در این بخش نمایش داده می‌شوند.
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Chip
+                    label={`${stagedMembers.length} عضو`}
+                    size="small"
+                    sx={{
+                      fontWeight: 800,
+                      background: 'rgba(255, 99, 132, 0.12)',
+                      color: 'var(--color-error)',
+                      border: '1px solid rgba(255, 99, 132, 0.35)',
+                      borderRadius: '12px',
+                      px: 1,
+                    }}
+                  />
+                </Box>
+                <Divider sx={{ borderColor: 'rgba(255, 99, 132, 0.3)' }} />
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {hasMembers ? (
+                    stagedMembers.map((member) => (
+                      <Chip
+                        key={member}
+                        label={member}
+                        onDelete={() => handleRemoveMember(member)}
+                        disabled={isSubmitting}
+                        sx={chipStyles.remove}
+                      />
+                    ))
+                  ) : (
+                    <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
+                      {copy.empty}
+                    </Typography>
+                  )}
+                </Box>
+              </Stack>
+            </Box>
           </Stack>
         )}
       </Stack>
