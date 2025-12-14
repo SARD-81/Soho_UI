@@ -150,6 +150,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
 
   const isSubmitting = updateSharepoint.isPending;
   const hasMembers = stagedMembers.length > 0;
+  const hasRemovableMembers = stagedMembers.length > 1;
 
   const hasChanges = useMemo(() => {
     const currentMembers = membersQuery.data ?? [];
@@ -173,11 +174,15 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
   const handleRemoveMember = (member: string) => {
     if (!shareName || isSubmitting) return;
 
-    setStagedMembers((prev) => prev.filter((item) => item !== member));
+    setStagedMembers((prev) => {
+      if (prev.length <= 1) return prev;
+      const next = prev.filter((item) => item !== member);
+      return next.length === 0 ? prev : next;
+    });
   };
 
   const handleRequestSubmit = () => {
-    if (isSubmitting || !hasChanges) return;
+    if (isSubmitting || !hasChanges || !hasMembers) return;
     setIsConfirmOpen(true);
   };
 
@@ -187,7 +192,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
   };
 
   const handleApplyChanges = () => {
-    if (!shareName || isSubmitting || !hasChanges) {
+    if (!shareName || isSubmitting || !hasChanges || !hasMembers) {
       handleCancelConfirmation();
       return;
     }
@@ -226,7 +231,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
           onConfirm={handleRequestSubmit}
           confirmLabel="ثبت تغییرات"
           disabled={isSubmitting}
-          confirmProps={{ disabled: !hasChanges }}
+          confirmProps={{ disabled: !hasChanges || !hasMembers }}
         />
       }
     >
@@ -242,7 +247,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
             <CircularProgress size={28} />
           </Box>
         ) : (
-          <Stack direction={{ xs: 'row', md: 'row' }} spacing={2}>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
             <Stack
               spacing={1}
               sx={{
@@ -251,12 +256,22 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                 borderRadius: 2,
                 p: 1.5,
                 backgroundColor: 'rgba(31, 182, 255, 0.05)',
+                // width:"2px"
               }}
             >
               <Typography sx={{ color: 'var(--color-text)', fontWeight: 700 }}>
                 {copy.addLabel}
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'nowrap',
+                  flexDirection:'column',
+                  gap: 1,
+                  alignItems:'stretch',
+                  
+                }}
+              >
                 {availableCandidates.length ? (
                   availableCandidates.map((candidate) => (
                     <Chip
@@ -265,7 +280,11 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                       clickable
                       onClick={() => handleAddMember(candidate)}
                       disabled={isSubmitting}
-                      sx={chipStyles.add}
+                      sx={{
+                        ...chipStyles.add,
+                        width:'100%' ,
+                        justifyContent: 'flex-start',
+                      }}
                     />
                   ))
                 ) : (
@@ -295,7 +314,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                   borderRadius: 2.5,
                 //   background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 245, 247, 0.96))',
                   border: '1px solid rgba(255, 255, 255, 0.5)',
-                  boxShadow: '0 1px 14px rgba(255, 99, 132, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.65)',
+                  boxShadow: '0 10px 14px rgba(255, 99, 132, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.65)',
                   p: 2,
                   overflow: 'hidden',
                 }}
@@ -363,7 +382,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                         key={member}
                         label={member}
                         onDelete={() => handleRemoveMember(member)}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !hasRemovableMembers}
                         sx={chipStyles.remove}
                       />
                     ))

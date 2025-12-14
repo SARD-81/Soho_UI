@@ -9,7 +9,9 @@ import {
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
-import { MdDeleteOutline, MdGroupAdd, MdGroups2 } from 'react-icons/md';
+import { BiSolidUser } from 'react-icons/bi';
+import { FaUserGroup } from 'react-icons/fa6';
+import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { SambaShareEntry } from '../../@types/samba';
 import { parseDelimitedList } from '../../utils/samba';
@@ -175,7 +177,13 @@ const SharesTable = ({
                   key={group}
                   label={group}
                   size="small"
-                  sx={{ fontWeight: 700, px: 0.75, minWidth: 80 , backgroundColor: alpha(theme.palette.secondary.main, 0.08), color:"var(--color-secondary)" }}
+                  sx={{
+                    fontWeight: 700,
+                    px: 0.75,
+                    minWidth: 80,
+                    backgroundColor: alpha(theme.palette.secondary.main, 0.08),
+                    color: 'var(--color-secondary)',
+                  }}
                 />
               ))}
             </Stack>
@@ -191,6 +199,21 @@ const SharesTable = ({
 
           return (
             <Stack direction="row" spacing={0.5} justifyContent="center">
+              <Tooltip title="حذف اشتراک">
+                <span>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(share);
+                    }}
+                    disabled={isShareDeleting}
+                  >
+                    <MdDeleteOutline size={18} />
+                  </IconButton>
+                </span>
+              </Tooltip>
               <Tooltip title="مدیریت کاربران">
                 <span>
                   <IconButton
@@ -202,7 +225,7 @@ const SharesTable = ({
                     }}
                     disabled={isShareDeleting}
                   >
-                    <MdGroupAdd size={18} />
+                    <BiSolidUser size={18} />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -218,23 +241,7 @@ const SharesTable = ({
                     }}
                     disabled={isShareDeleting}
                   >
-                    <MdGroups2 size={18} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-
-              <Tooltip title="حذف اشتراک">
-                <span>
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onDelete(share);
-                    }}
-                    disabled={isShareDeleting}
-                  >
-                    <MdDeleteOutline size={18} />
+                    <FaUserGroup size={18} color='var(--color-secondary)' />
                   </IconButton>
                 </span>
               </Tooltip>
