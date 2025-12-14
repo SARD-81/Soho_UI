@@ -20,6 +20,7 @@ import { useZpool } from '../../hooks/useZpool';
 import axiosInstance from '../../lib/axiosInstance';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
+import GroupGuide from '../groups/GroupGuide';
 
 interface CreateShareModalProps {
   controller: UseCreateShareReturn;
@@ -411,6 +412,8 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
               {apiError}
             </Alert>
           )}
+
+          <GroupGuide compact />
         </Box>
       </Box>
     </BlurModal>

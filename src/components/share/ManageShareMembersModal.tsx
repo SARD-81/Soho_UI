@@ -18,6 +18,7 @@ import ModalActionButtons from '../common/ModalActionButtons';
 import axiosInstance from '../../lib/axiosInstance';
 import { parseDelimitedList, uniqueSortedList } from '../../utils/samba';
 import { useUpdateSharepoint } from '../../hooks/useUpdateSharepoint';
+import GroupGuide from '../groups/GroupGuide';
 
 type ManageShareMembersType = 'users' | 'groups';
 
@@ -378,6 +379,12 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
           </Stack>
         )}
       </Stack>
+
+      {type === 'groups' ? (
+        <Box sx={{ mt: 1 }}>
+          <GroupGuide compact />
+        </Box>
+      ) : null}
 
       <Dialog
         open={isConfirmOpen}

@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
+import GroupGuide from './GroupGuide';
 
 interface ConfirmDeleteSambaGroupModalProps {
   open: boolean;
@@ -53,6 +54,8 @@ const ConfirmDeleteSambaGroupModal = ({
             {errorMessage}
           </Typography>
         ) : null}
+
+        <GroupGuide compact />
       </Box>
     </BlurModal>
   );

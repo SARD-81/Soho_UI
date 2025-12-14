@@ -2,6 +2,7 @@ import { Box, Chip, CircularProgress, Stack, Typography } from '@mui/material';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 import { useSambaGroupMembers } from '../../hooks/useSambaGroupMembers';
+import GroupGuide from './GroupGuide';
 
 interface SambaGroupRemoveMemberModalProps {
   open: boolean;
@@ -72,6 +73,8 @@ const SambaGroupRemoveMemberModal = ({
             {errorMessage}
           </Typography>
         ) : null}
+
+        <GroupGuide compact />
       </Stack>
     </BlurModal>
   );

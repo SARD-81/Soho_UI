@@ -2,6 +2,7 @@ import { Box, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
+import GroupGuide from './GroupGuide';
 
 interface SambaGroupCreateModalProps {
   open: boolean;
@@ -69,6 +70,8 @@ const SambaGroupCreateModal = ({
             {errorMessage}
           </Typography>
         ) : null}
+
+        <GroupGuide compact />
       </Box>
     </BlurModal>
   );
