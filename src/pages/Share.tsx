@@ -51,6 +51,7 @@ import SambaGroupAddMemberModal from '../components/groups/SambaGroupAddMemberMo
 import SambaGroupRemoveMemberModal from '../components/groups/SambaGroupRemoveMemberModal';
 import ConfirmDeleteSambaGroupModal from '../components/groups/ConfirmDeleteSambaGroupModal';
 import ConfirmRemoveGroupMemberModal from '../components/groups/ConfirmRemoveGroupMemberModal';
+import GroupGuideAccordion from '../components/groups/GroupGuideAccordion';
 
 const SHARE_TABS = {
   shares: 'shares',
@@ -845,6 +846,8 @@ const Share = () => {
                   ایجاد گروه جدید
                 </Button>
               </Box>
+
+              <GroupGuideAccordion dense sx={{ mb: 2 }} />
 
               <SambaGroupsTable
                 groups={sambaGroups}

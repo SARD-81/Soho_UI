@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
+import GroupGuideAccordion from '../groups/GroupGuideAccordion';
 import axiosInstance from '../../lib/axiosInstance';
 import { parseDelimitedList, uniqueSortedList } from '../../utils/samba';
 import { useUpdateSharepoint } from '../../hooks/useUpdateSharepoint';
@@ -241,6 +242,8 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
             {updateSharepoint.error?.message}
           </Typography>
         ) : null}
+
+        {type === 'groups' ? <GroupGuideAccordion dense /> : null}
 
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>

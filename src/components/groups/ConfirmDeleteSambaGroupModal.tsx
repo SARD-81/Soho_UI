@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
+import GroupGuideAccordion from './GroupGuideAccordion';
 
 interface ConfirmDeleteSambaGroupModalProps {
   open: boolean;
@@ -47,6 +48,8 @@ const ConfirmDeleteSambaGroupModal = ({
           </Typography>{' '}
           مطمئن هستید؟ این عملیات قابل بازگشت نیست.
         </Typography>
+
+        <GroupGuideAccordion dense />
 
         {errorMessage ? (
           <Typography sx={{ color: 'var(--color-error)', fontWeight: 600 }}>
