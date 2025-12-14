@@ -51,6 +51,7 @@ import SambaGroupAddMemberModal from '../components/groups/SambaGroupAddMemberMo
 import SambaGroupRemoveMemberModal from '../components/groups/SambaGroupRemoveMemberModal';
 import ConfirmDeleteSambaGroupModal from '../components/groups/ConfirmDeleteSambaGroupModal';
 import ConfirmRemoveGroupMemberModal from '../components/groups/ConfirmRemoveGroupMemberModal';
+import HelpTooltip from '../components/common/HelpTooltip';
 
 const SHARE_TABS = {
   shares: 'shares',
@@ -844,6 +845,26 @@ const Share = () => {
                 >
                   ایجاد گروه جدید
                 </Button>
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 1,
+                  color: 'var(--color-secondary)',
+                  fontWeight: 600,
+                  mt: 1,
+                  mb: 0.5,
+                }}
+              >
+                <HelpTooltip
+                  placement="right"
+                  title="گروه اصلی مالک فایل‌های هر کاربر است و حذفش بدون جابه‌جایی کاربران به گروه دیگر ممکن نیست."
+                />
+                <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
+                  گروه اصلی کاربران هنگام ایجاد تعیین می‌شود؛ پیش از حذف این گروه‌ها باید گروه اصلی اعضا را تغییر دهید.
+                </Typography>
               </Box>
 
               <SambaGroupsTable

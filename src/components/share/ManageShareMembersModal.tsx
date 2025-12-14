@@ -216,7 +216,6 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
 
   const isLoading = membersQuery.isLoading || availableQuery.isLoading;
   const copy = modalCopy[type];
-  const isGroupList = type === 'groups';
 
   return (
     <BlurModal
@@ -257,7 +256,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                 borderRadius: 2,
                 p: 1.5,
                 backgroundColor: 'rgba(31, 182, 255, 0.05)',
-                
+                // width:"2px"
               }}
             >
               <Typography sx={{ color: 'var(--color-text)', fontWeight: 700 }}>
@@ -266,10 +265,11 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
               <Box
                 sx={{
                   display: 'flex',
-                  flexWrap: isGroupList ? 'nowrap' : 'wrap',
-                  flexDirection: isGroupList ? 'column' : 'row',
+                  flexWrap: 'nowrap',
+                  flexDirection:'column',
                   gap: 1,
-                  alignItems: isGroupList ? 'stretch' : 'flex-start',
+                  alignItems:'stretch',
+                  
                 }}
               >
                 {availableCandidates.length ? (
@@ -282,7 +282,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                       disabled={isSubmitting}
                       sx={{
                         ...chipStyles.add,
-                        width: isGroupList ? '100%' : 'auto',
+                        width:'100%' ,
                         justifyContent: 'flex-start',
                       }}
                     />
