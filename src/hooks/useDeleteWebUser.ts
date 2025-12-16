@@ -6,7 +6,7 @@ import { webUsersQueryKey } from './useWebUsers';
 
 const deleteWebUserRequest = async (username: string) => {
   const encodedUsername = encodeURIComponent(username);
-  await axiosInstance.delete(`/api/web/user/delete/${encodedUsername}/`);
+  await axiosInstance.delete(`/api/system/ui-user/${encodedUsername}/`);
 };
 
 interface UseDeleteWebUserOptions {

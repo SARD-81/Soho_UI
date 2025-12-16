@@ -49,7 +49,6 @@ const defaultValues: CreateWebUserFormValues = {
   username: '',
   email: '',
   password: '',
-  is_superuser: false,
   first_name: '',
   last_name: '',
 };
@@ -239,7 +238,8 @@ const WebUserCreateModal = ({
       username: values.username.trim(),
       email: values.email.trim(),
       password: values.password,
-      is_superuser: values.is_superuser,
+      is_superuser: true,
+      is_staff: true,
       first_name: values.first_name?.trim() ?? '',
       last_name: values.last_name?.trim() ?? '',
     };
@@ -455,32 +455,6 @@ const WebUserCreateModal = ({
             </Stack>
           </Box>
         ) : null}
-
-        {/* <Controller
-          name="is_superuser"
-          control={control}
-          render={({ field }) => (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  {...field}
-                  checked={field.value}
-                  sx={{
-                    color: 'var(--color-secondary)',
-                    '&.Mui-checked': { color: 'var(--color-primary)' },
-                  }}
-                />
-              }
-              label={
-                <Typography
-                  sx={{ color: 'var(--color-secondary)', fontWeight: 500 }}
-                >
-                  دسترسی مدیر سیستم (Superuser)
-                </Typography>
-              }
-            />
-          )}
-        /> */}
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <Controller

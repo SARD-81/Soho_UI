@@ -298,6 +298,7 @@ const SharesTable = ({
             gap: 2,
             alignItems: 'center',
             py: 4,
+            
           }}
         >
           <CircularProgress color="primary" size={32} />

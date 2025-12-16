@@ -39,7 +39,6 @@ const baseCreateWebUserSchema = z.object({
     .refine((value) => PASSWORD_SPECIAL_CHAR_PATTERN.test(value), {
       message: 'رمز عبور باید حداقل شامل یک کاراکتر خاص باشد.',
     }),
-  is_superuser: z.boolean(),
   first_name: z
     .string()
     .max(150, { message: 'نام نمی‌تواند بیشتر از ۱۵۰ کاراکتر باشد.' })
@@ -51,6 +50,14 @@ const baseCreateWebUserSchema = z.object({
 });
 
 export type CreateWebUserFormValues = z.infer<typeof baseCreateWebUserSchema>;
+
+export const updateWebUserSchema = z.object({
+  email: baseCreateWebUserSchema.shape.email,
+  first_name: baseCreateWebUserSchema.shape.first_name,
+  last_name: baseCreateWebUserSchema.shape.last_name,
+});
+
+export type UpdateWebUserFormValues = z.infer<typeof updateWebUserSchema>;
 
 interface CreateWebUserSchemaOptions {
   existingUsernames?: Iterable<string>;

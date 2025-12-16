@@ -2,14 +2,19 @@ import {
   Box,
   Button,
   IconButton,
+  Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { FiTrash2 } from 'react-icons/fi';
+import { FiEdit2, FiKey, FiTrash2 } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
-import type { CreateWebUserPayload } from '../../@types/users';
+import type {
+  CreateWebUserPayload,
+  UpdateWebUserPasswordPayload,
+  UpdateWebUserPayload,
+} from '../../@types/users';
 import DataTable from '../DataTable';
 import ConfirmDeleteWebUserModal from './ConfirmDeleteWebUserModal';
 import WebUserCreateModal from './WebUserCreateModal';
@@ -17,6 +22,10 @@ import { useWebUsers } from '../../hooks/useWebUsers';
 import { useCreateWebUser } from '../../hooks/useCreateWebUser';
 import { useDeleteWebUser } from '../../hooks/useDeleteWebUser';
 import { useCreateOsUser } from '../../hooks/useCreateOsUser';
+import { useUpdateWebUserPassword } from '../../hooks/useUpdateWebUserPassword';
+import { useUpdateWebUser } from '../../hooks/useUpdateWebUser';
+import WebUserPasswordModal from './WebUserPasswordModal';
+import WebUserUpdateModal from './WebUserUpdateModal';
 import { DEFAULT_LOGIN_SHELL } from '../../constants/users';
 import { formatUtcDateTimeToIran } from '../../utils/dateTime';
 
@@ -24,6 +33,8 @@ interface UserSettingsTableRow {
   id: number;
   username: string;
   email: string;
+  firstName: string;
+  lastName: string;
   dateJoined: string;
 }
 
@@ -49,6 +60,14 @@ const UserSettingsTable = () => {
     null
   );
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [passwordModalUsername, setPasswordModalUsername] = useState<string | null>(
+    null
+  );
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [updateTarget, setUpdateTarget] = useState<UserSettingsTableRow | null>(
+    null
+  );
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   const createOsUser = useCreateOsUser();
 
@@ -81,17 +100,41 @@ const UserSettingsTable = () => {
     },
   });
 
+  const updatePassword = useUpdateWebUserPassword({
+    onSuccess: (username) => {
+      toast.success(`گذرواژه کاربر ${username} بروزرسانی شد.`);
+      setPasswordModalUsername(null);
+      setPasswordError(null);
+    },
+    onError: (message, username) => {
+      setPasswordError(message);
+      toast.error(`تغییر گذرواژه ${username} با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const updateUser = useUpdateWebUser({
+    onSuccess: (username) => {
+      toast.success(`اطلاعات کاربر ${username} بروزرسانی شد.`);
+      setUpdateTarget(null);
+      setUpdateError(null);
+    },
+    onError: (message, username) => {
+      setUpdateError(message);
+      toast.error(`بروزرسانی ${username} با خطا مواجه شد: ${message}`);
+    },
+  });
+
   const rows = useMemo<UserSettingsTableRow[]>(() => {
     return (usersQuery.data ?? [])
       .map((user) => ({
         id: user.id,
         username: user.username,
         email: user.email,
+        firstName: user.first_name ?? '',
+        lastName: user.last_name ?? '',
         dateJoined: formatUtcDateTimeToIran(user.date_joined) ?? '—',
       }))
-      .sort((a, b) =>
-        a.username.localeCompare(b.username, 'en', { sensitivity: 'base' })
-      );
+      .sort((a, b) => a.id - b.id);
   }, [usersQuery.data]);
 
   const existingUsernames = useMemo(
@@ -149,6 +192,56 @@ const UserSettingsTable = () => {
     ? deleteUser.variables?.toLowerCase() ?? null
     : null;
 
+  const handleOpenPasswordModal = useCallback(
+    (username: string) => {
+      setPasswordError(null);
+      updatePassword.reset();
+      setPasswordModalUsername(username);
+    },
+    [updatePassword]
+  );
+
+  const handleClosePasswordModal = useCallback(() => {
+    setPasswordModalUsername(null);
+    setPasswordError(null);
+  }, []);
+
+  const handleSubmitPassword = useCallback(
+    (payload: UpdateWebUserPasswordPayload) => {
+      setPasswordError(null);
+      updatePassword.mutate(payload);
+    },
+    [updatePassword]
+  );
+
+  const handleOpenUpdateModal = useCallback((row: UserSettingsTableRow) => {
+    setUpdateError(null);
+    updateUser.reset();
+    setUpdateTarget(row);
+  }, [updateUser]);
+
+  const handleCloseUpdateModal = useCallback(() => {
+    setUpdateTarget(null);
+    setUpdateError(null);
+  }, []);
+
+  const handleSubmitUpdateUser = useCallback(
+    (payload: UpdateWebUserPayload) => {
+      setUpdateError(null);
+      updateUser.mutate(payload);
+    },
+    [updateUser]
+  );
+
+  const updateInitialValues = useMemo(
+    () => ({
+      email: updateTarget?.email ?? '',
+      first_name: updateTarget?.firstName ?? '',
+      last_name: updateTarget?.lastName ?? '',
+    }),
+    [updateTarget]
+  );
+
   const columns = useMemo<DataTableColumn<UserSettingsTableRow>[]>(
     () => [
       {
@@ -196,7 +289,7 @@ const UserSettingsTable = () => {
         id: 'actions',
         header: 'عملیات',
         align: 'center',
-        width: 120,
+        width: 180,
         renderCell: (row) => {
           const normalizedUsername = row.username.trim().toLowerCase();
           const isAdmin = normalizedUsername === ADMIN_USERNAME;
@@ -205,39 +298,87 @@ const UserSettingsTable = () => {
           const isDisabled = isAdmin || isDeleting;
 
           return (
-            <Tooltip
-              title={
-                isAdmin ? 'کاربر مدیر قابل حذف نیست.' : 'حذف کاربر'
-              }
-              placement="top"
-            >
-              <span>
-                <IconButton
-                  size="small"
-                  onClick={() => handleRequestDeleteUser(row)}
-                  disabled={isDisabled}
-                  sx={{
-                    color: 'var(--color-error)',
-                    opacity: isAdmin ? 0.4 : isDeleting ? 0.6 : 1,
-                    transition: 'opacity 0.2s ease',
-                    '&:hover': {
+            <Stack direction="row" spacing={1} justifyContent="center">
+              <Tooltip title="تغییر گذرواژه" placement="top">
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleOpenPasswordModal(row.username)}
+                    disabled={isDeleting}
+                    sx={{
+                      color: 'var(--color-primary)',
+                      opacity: isDeleting ? 0.6 : 1,
+                      '&:hover': {
+                        backgroundColor: 'rgba(31, 182, 255, 0.08)',
+                      },
+                      '&.Mui-disabled': { color: 'var(--color-secondary)' },
+                    }}
+                  >
+                    <FiKey size={18} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+
+              <Tooltip title="ویرایش اطلاعات" placement="top">
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleOpenUpdateModal(row)}
+                    disabled={isDeleting}
+                    sx={{
+                      color: 'var(--color-warning)',
+                      opacity: isDeleting ? 0.6 : 1,
+                      '&:hover': {
+                        backgroundColor: 'rgba(255, 193, 7, 0.12)',
+                      },
+                      '&.Mui-disabled': { color: 'var(--color-secondary)' },
+                    }}
+                  >
+                    <FiEdit2 size={18} color='var(--color-secondary)'/>
+                  </IconButton>
+                </span>
+              </Tooltip>
+
+              <Tooltip
+                title={
+                  isAdmin ? 'کاربر مدیر قابل حذف نیست.' : 'حذف کاربر'
+                }
+                placement="top"
+              >
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleRequestDeleteUser(row)}
+                    disabled={isDisabled}
+                    sx={{
                       color: 'var(--color-error)',
-                      backgroundColor: 'rgba(255, 0, 0, 0.08)',
-                    },
-                    '&.Mui-disabled': {
-                      color: 'var(--color-secondary)',
-                    },
-                  }}
-                >
-                  <FiTrash2 size={18} />
-                </IconButton>
-              </span>
-            </Tooltip>
+                      opacity: isAdmin ? 0.4 : isDeleting ? 0.6 : 1,
+                      transition: 'opacity 0.2s ease',
+                      '&:hover': {
+                        color: 'var(--color-error)',
+                        backgroundColor: 'rgba(255, 0, 0, 0.08)',
+                      },
+                      '&.Mui-disabled': {
+                        color: 'var(--color-secondary)',
+                      },
+                    }}
+                  >
+                    <FiTrash2 size={18} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Stack>
           );
         },
       },
     ],
-    [deleteUser.isPending, deletingUsername, handleRequestDeleteUser]
+    [
+      deleteUser.isPending,
+      deletingUsername,
+      handleOpenPasswordModal,
+      handleOpenUpdateModal,
+      handleRequestDeleteUser,
+    ]
   );
 
   return (
@@ -249,6 +390,7 @@ const UserSettingsTable = () => {
           justifyContent: 'space-between',
           gap: 2,
           flexWrap: 'wrap',
+          mb: -4,
         }}
       >
         <Typography sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>
@@ -289,6 +431,30 @@ const UserSettingsTable = () => {
         onConfirm={handleConfirmDeleteUser}
         isDeleting={deleteUser.isPending}
         errorMessage={deleteError}
+      />
+
+      <WebUserPasswordModal
+        open={Boolean(passwordModalUsername)}
+        username={passwordModalUsername}
+        onClose={handleClosePasswordModal}
+        onSubmit={handleSubmitPassword}
+        isSubmitting={updatePassword.isPending}
+        errorMessage={passwordError}
+      />
+
+      <WebUserUpdateModal
+        open={Boolean(updateTarget)}
+        username={updateTarget?.username ?? null}
+        initialValues={updateInitialValues}
+        onClose={handleCloseUpdateModal}
+        onSubmit={(payload) =>
+          handleSubmitUpdateUser({
+            ...payload,
+            username: updateTarget?.username ?? '',
+          })
+        }
+        isSubmitting={updateUser.isPending}
+        errorMessage={updateError}
       />
     </Box>
   );
