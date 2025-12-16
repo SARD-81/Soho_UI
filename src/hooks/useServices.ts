@@ -5,7 +5,9 @@ import axiosInstance from '../lib/axiosInstance';
 export const servicesQueryKey = ['services'] as const;
 
 const fetchServices = async () => {
-  const { data } = await axiosInstance.get<ServicesResponse>('/api/service/');
+  const { data } = await axiosInstance.get<ServicesResponse>(
+    '/api/system/service/'
+  );
   return data;
 };
 

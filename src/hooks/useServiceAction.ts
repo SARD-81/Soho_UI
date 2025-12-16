@@ -60,6 +60,9 @@ const extractErrorMessage = (error: AxiosError<ApiErrorResponse>) => {
   return error.message;
 };
 
+const buildServiceActionUrl = ({ action, service }: ServiceActionPayload) =>
+  `/api/system/service/${encodeURIComponent(service)}/control/?action=${encodeURIComponent(action)}`;
+
 export const useServiceAction = (options: UseServiceActionOptions = {}) => {
   const queryClient = useQueryClient();
 
@@ -69,9 +72,9 @@ export const useServiceAction = (options: UseServiceActionOptions = {}) => {
     ServiceActionPayload
   >({
     mutationFn: async (payload) => {
-      const { data } = await axiosInstance.post<ServicesResponse>(
-        '/api/service/',
-        payload
+      const { data } = await axiosInstance.put<ServicesResponse>(
+        buildServiceActionUrl(payload),
+        {}
       );
       return data;
     },

@@ -12,6 +12,11 @@ const actionLabels: Record<ServiceActionType, string> = {
   start: 'شروع',
   restart: 'راه‌اندازی مجدد',
   stop: 'توقف',
+  reload: 'بارگذاری مجدد',
+  enable: 'فعال‌سازی',
+  disable: 'غیرفعال‌سازی',
+  mask: 'ماسک کردن',
+  unmask: 'حذف ماسک',
 };
 
 const Services = () => {
@@ -32,7 +37,7 @@ const Services = () => {
 
   const services = useMemo(
     () =>
-      Object.entries(servicesQuery.data?.data ?? {}).map(([name, details]) => {
+      (servicesQuery.data?.data ?? []).map((details) => {
         const normalizedDetails: Record<string, ServiceValue> = {
           ...(details ?? {}),
         };
@@ -41,6 +46,8 @@ const Services = () => {
           typeof details?.description === 'string'
             ? details?.description
             : undefined;
+
+        const name = details.unit;
 
         return {
           name,
