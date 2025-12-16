@@ -1,30 +1,39 @@
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '../lib/axiosInstance';
 
-export interface CpuFrequency {
-  current?: number | null;
-  min?: number | null;
-  max?: number | null;
+export type CpuProperty =
+  | 'usage_percent_total'
+  | 'cpu_count_logical'
+  | 'cpu_count_physical'
+  | 'model_name';
+
+export interface CpuApiResponse {
+  ok?: boolean;
+  error?: string | null;
+  message?: string | null;
+  data?: Partial<Record<CpuProperty, number | string | null>>;
+  [key: string]: unknown;
 }
 
-export interface CpuCores {
-  physical?: number | null;
-  logical?: number | null;
-}
-
-export interface CpuResponse {
-  cpu_percent?: number | null;
-  cpu_frequency?: CpuFrequency;
-  cpu_cores?: CpuCores;
-}
+const CPU_PROPERTIES: CpuProperty[] = [
+  'usage_percent_total',
+  'cpu_count_logical',
+  'cpu_count_physical',
+  'model_name',
+];
 
 const fetchCpu = async () => {
-  const { data } = await axiosInstance.get<CpuResponse>('/api/cpu');
+  const { data } = await axiosInstance.get<CpuApiResponse>(
+    '/api/system/cpu/',
+    {
+      params: { property: CPU_PROPERTIES },
+    }
+  );
   return data;
 };
 
 export const useCpu = () => {
-  return useQuery<CpuResponse, Error>({
+  return useQuery<CpuApiResponse, Error>({
     queryKey: ['cpu'],
     queryFn: fetchCpu,
     refetchInterval: 2000,

@@ -146,13 +146,19 @@ const Memory = () => {
     );
   }
 
-  const totalValue = parseNumeric(data?.total);
-  const availableValue = parseNumeric(data?.available);
-  const percentValue = parseNumeric(data?.percent);
-  const usedValue = parseNumeric(data?.used);
-  const freeValue = parseNumeric(data?.free);
-  const buffersValue = parseNumeric(data?.buffers);
-  const cachedValue = parseNumeric(data?.cached);
+  const memoryData = data?.data ?? {};
+
+  const totalValue = parseNumeric(
+    memoryData.total_bytes ?? memoryData.total_online_memory_bytes
+  );
+  const availableValue = parseNumeric(memoryData.available_bytes);
+  const percentValue = parseNumeric(
+    memoryData.usage_percent ?? memoryData.psutil_usage_percent
+  );
+  const usedValue = parseNumeric(memoryData.used_bytes);
+  const freeValue = parseNumeric(memoryData.free_bytes);
+  const buffersValue = null;
+  const cachedValue = null;
 
   const computedTotal =
     totalValue ??

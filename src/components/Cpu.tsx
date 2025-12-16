@@ -51,7 +51,9 @@ const Cpu = () => {
     []
   );
 
-  const rawPercent = Number(data?.cpu_percent ?? 0);
+  const cpuData = data?.data ?? {};
+
+  const rawPercent = Number(cpuData.usage_percent_total ?? 0);
   const safePercent = Number.isFinite(rawPercent) ? rawPercent : 0;
   const cpuPercent = clampPercent(safePercent);
   const gaugeColor = useMemo(() => getGaugeColor(cpuPercent), [cpuPercent]);
@@ -65,12 +67,12 @@ const Cpu = () => {
   // const frequencyMax =
   //   data?.cpu_frequency?.max != null ? Number(data.cpu_frequency.max) : null;
 
-  const hasPhysical = data?.cpu_cores?.physical != null;
-  const hasLogical = data?.cpu_cores?.logical != null;
+  const hasPhysical = cpuData.cpu_count_physical != null;
+  const hasLogical = cpuData.cpu_count_logical != null;
   const totalCores =
     hasPhysical || hasLogical
-      ? Number(data?.cpu_cores?.physical ?? 0) +
-        Number(data?.cpu_cores?.logical ?? 0)
+      ? Number(cpuData.cpu_count_physical ?? 0) +
+        Number(cpuData.cpu_count_logical ?? 0)
       : null;
 
   // const formatFrequency = (value: number | null) =>
@@ -88,6 +90,10 @@ const Cpu = () => {
       : '—';
 
   const totalCoresText = formatInteger(totalCores);
+  const modelName =
+    typeof cpuData.model_name === 'string' && cpuData.model_name.trim().length > 0
+      ? cpuData.model_name
+      : '—';
   // const physicalCoresText = formatInteger(data?.cpu_cores?.physical);
   // const logicalCoresText = formatInteger(data?.cpu_cores?.logical);
 
@@ -113,6 +119,7 @@ const Cpu = () => {
     // { key: 'physical', label: 'هسته‌های فیزیکی', value: physicalCoresText },
     // { key: 'logical', label: 'هسته‌های منطقی', value: logicalCoresText },
     { key: 'total', label: 'مجموع هسته‌ها', value: totalCoresText },
+    { key: 'model', label: 'مدل پردازنده', value: modelName },
   ];
 
   if (isLoading) {
