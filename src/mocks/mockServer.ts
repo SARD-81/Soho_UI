@@ -663,19 +663,31 @@ const mockRoutes: MockRoute[] = [
   },
   {
     method: 'GET',
-    pattern: /^\/api\/service\/?$/,
+    pattern: /^\/api\/system\/service\/?$/,
     handler: ({ state }) => ({
       status: 200,
-      data: { data: state.services },
+      data: {
+        ok: true,
+        error: null,
+        message: 'لیست یونیت‌ها با موفقیت دریافت شد.',
+        data: state.services,
+        details: {},
+        meta: {
+          timestamp: new Date().toISOString(),
+          response_status_code: 200,
+          response_status_text: 'OK',
+        },
+        request_data: {},
+      },
     }),
   },
   {
-    method: 'POST',
-    pattern: /^\/api\/service\/?$/,
-    handler: ({ config, state }) => {
-      const body = parseRequestBody(config) ?? {};
-      const action = String(body.action ?? '').trim();
-      const serviceName = String(body.service ?? '').trim();
+    method: 'PUT',
+    pattern: /^\/api\/system\/service\/(.+)\/control\/?$/,
+    handler: ({ config, state, match, searchParams }) => {
+      const action = String(searchParams.get('action') ?? '').trim();
+      const encodedUnit = match[1];
+      const serviceName = decodeURIComponent(encodedUnit);
 
       if (!serviceName) {
         throw createAxiosError('نام سرویس ارسال نشده است.', config, 400, {
@@ -683,7 +695,7 @@ const mockRoutes: MockRoute[] = [
         });
       }
 
-      const service = state.services[serviceName];
+      const service = state.services.find(({ unit }) => unit === serviceName);
 
       if (!service) {
         throw createAxiosError('سرویس یافت نشد.', config, 404, {
@@ -691,22 +703,43 @@ const mockRoutes: MockRoute[] = [
         });
       }
 
+      if (!action) {
+        throw createAxiosError('عملیات نامعتبر است.', config, 400, {
+          detail: 'نوع عملیات پشتیبانی نمی‌شود.',
+        });
+      }
+
       if (action === 'stop') {
-        service.active_state = 'inactive';
-        service.sub_state = 'dead';
+        service.active = 'inactive';
+        service.sub = 'dead';
         service.status = 'stopped';
         service.last_action = 'stopped via mock service';
       } else if (action === 'start') {
-        service.active_state = 'active';
-        service.sub_state = 'running';
+        service.active = 'active';
+        service.sub = 'running';
         service.status = 'running';
         service.last_action = 'started via mock service';
       } else if (action === 'restart') {
-        service.active_state = 'active';
-        service.sub_state = 'running';
+        service.active = 'active';
+        service.sub = 'running';
         service.status = 'running';
         service.last_action = 'restarted via mock service';
         service.last_restart = new Date().toISOString();
+      } else if (action === 'reload') {
+        service.last_action = 'reloaded via mock service';
+      } else if (action === 'enable') {
+        service.enabled = true;
+        service.last_action = 'enabled via mock service';
+      } else if (action === 'disable') {
+        service.enabled = false;
+        service.last_action = 'disabled via mock service';
+      } else if (action === 'mask') {
+        service.masked = true;
+        service.enabled = false;
+        service.last_action = 'masked via mock service';
+      } else if (action === 'unmask') {
+        service.masked = false;
+        service.last_action = 'unmasked via mock service';
       } else {
         throw createAxiosError('عملیات نامعتبر است.', config, 400, {
           detail: 'نوع عملیات پشتیبانی نمی‌شود.',
@@ -715,7 +748,12 @@ const mockRoutes: MockRoute[] = [
 
       return {
         status: 200,
-        data: { data: state.services },
+        data: {
+          ok: true,
+          error: null,
+          message: 'وضعیت سرویس با موفقیت به‌روزرسانی شد.',
+          data: state.services,
+        },
       };
     },
   },

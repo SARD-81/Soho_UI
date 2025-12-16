@@ -1,6 +1,6 @@
 import type { DiskInventoryItem, DiskResponse } from '../@types/disk';
 import type { RawSambaUserDetails, SambaShareDetails } from '../@types/samba';
-import type { ServiceDetails } from '../@types/service';
+import type { ServiceEntry } from '../@types/service';
 import type { VolumeRawEntry } from '../@types/volume';
 import type { ZpoolCapacityPayload, ZpoolDetailEntry } from '../@types/zpool';
 import type { SystemInfoResponse } from '../@types/systemInfo';
@@ -63,7 +63,7 @@ export interface MockState {
   sambaUsers: Record<string, MockSambaUserEntry>;
   osUsers: MockOsUser[];
   webUsers: MockWebUser[];
-  services: Record<string, ServiceDetails>;
+  services: ServiceEntry[];
   network: NetworkData;
   memory: MemoryResponse;
   cpu: CpuResponse;
@@ -322,32 +322,44 @@ const baseState: MockState = {
       hasSambaUser: false,
     },
   ],
-  services: {
-    smbd: {
+  services: [
+    {
+      unit: 'networking.service',
+      description: 'Raise network interfaces',
+      load: 'loaded',
+      active: 'active',
+      sub: 'exited',
+      enabled: true,
+      status: 'running',
+    },
+    {
+      unit: 'nginx.service',
+      description: 'A high performance web server and a reverse proxy server',
+      load: 'loaded',
+      active: 'active',
+      sub: 'running',
+      enabled: true,
+      status: 'running',
+    },
+    {
       unit: 'smbd.service',
       description: 'Samba SMB Daemon',
-      active_state: 'active',
-      sub_state: 'running',
+      load: 'loaded',
+      active: 'active',
+      sub: 'running',
       enabled: true,
       status: 'running',
     },
-    nmbd: {
-      unit: 'nmbd.service',
-      description: 'Samba NMB Daemon',
-      active_state: 'active',
-      sub_state: 'running',
+    {
+      unit: 'ssh.service',
+      description: 'OpenBSD Secure Shell server',
+      load: 'loaded',
+      active: 'active',
+      sub: 'running',
       enabled: true,
       status: 'running',
     },
-    sshd: {
-      unit: 'sshd.service',
-      description: 'OpenSSH server daemon',
-      active_state: 'active',
-      sub_state: 'running',
-      enabled: true,
-      status: 'running',
-    },
-  },
+  ],
   network: {
     interfaces: {
       enp0s31f6: {
