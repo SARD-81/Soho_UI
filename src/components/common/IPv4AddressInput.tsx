@@ -132,7 +132,13 @@ const IPv4AddressInput = ({
       </InputLabel>
       <Box
         id={inputId}
-        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          direction: 'ltr',
+          flexWrap: 'wrap',
+        }}
         role="group"
         aria-label={label}
       >
