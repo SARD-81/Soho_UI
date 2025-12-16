@@ -26,8 +26,10 @@ import {
 import { HiDotsVertical } from 'react-icons/hi';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { ServiceActionType, ServiceValue } from '../../@types/service';
+import BlurModal from '../BlurModal';
 import DataTable from '../DataTable';
 import HelpTooltip from '../common/HelpTooltip';
+import ModalActionButtons from '../common/ModalActionButtons';
 
 interface ServiceTableRow {
   name: string;
@@ -655,63 +657,37 @@ const ServicesTable = ({
       />
 
       {confirmState ? (
-        <Box
-          sx={{
-            position: 'fixed',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(0,0,0,0.32)',
-            zIndex: 1300,
-          }}
-        >
-          <Box
-            role="dialog"
-            aria-modal
-            sx={{
-              backgroundColor: '#fff',
-              borderRadius: 2,
-              boxShadow: '0 12px 40px rgba(0,0,0,0.16)',
-              minWidth: 360,
-              p: 3,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-            }}
-          >
+        <BlurModal
+          open
+          onClose={() => setConfirmState(null)}
+          title={
             <Typography variant="h6" sx={{ fontWeight: 800 }}>
               {confirmState.action === 'stop'
                 ? 'توقف سرویس؟'
                 : 'راه‌اندازی مجدد سرویس؟'}
             </Typography>
-            <Typography sx={{ color: 'var(--color-secondary)', lineHeight: 1.7 }}>
-              این عملیات ممکن است باعث اختلال در دسترسی کاربران شود. آیا مطمئن هستید؟
-            </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-              <Button
-                variant="outlined"
-                onClick={() => setConfirmState(null)}
-                sx={{ minWidth: 100 }}
-              >
-                انصراف
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={() => {
-                  if (confirmState) {
-                    onAction(confirmState.service, confirmState.action);
-                  }
-                  setConfirmState(null);
-                }}
-                sx={{ minWidth: 100 }}
-              >
-                {confirmState.action === 'stop' ? 'توقف' : 'راه‌اندازی مجدد'}
-              </Button>
-            </Box>
-          </Box>
-        </Box>
+          }
+          actions={
+            <ModalActionButtons
+              onCancel={() => setConfirmState(null)}
+              onConfirm={() => {
+                onAction(confirmState.service, confirmState.action);
+                setConfirmState(null);
+              }}
+              confirmLabel={
+                confirmState.action === 'stop' ? 'توقف سرویس' : 'راه‌اندازی مجدد'
+              }
+              cancelLabel="انصراف"
+              confirmProps={{ color: 'error', disableElevation: true }}
+              disableConfirmGradient
+            />
+          }
+          minWidth={420}
+        >
+          <Typography sx={{ color: 'var(--color-secondary)', lineHeight: 1.7 }}>
+            این عملیات ممکن است باعث اختلال در دسترسی کاربران شود. آیا مطمئن هستید؟
+          </Typography>
+        </BlurModal>
       ) : null}
     </>
   );
