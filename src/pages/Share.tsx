@@ -11,6 +11,12 @@ import type {
   SambaShareEntry,
   UpdateSambaUserPasswordPayload,
 } from '../@types/samba';
+import ConfirmDeleteSambaGroupModal from '../components/groups/ConfirmDeleteSambaGroupModal';
+import ConfirmRemoveGroupMemberModal from '../components/groups/ConfirmRemoveGroupMemberModal';
+import SambaGroupAddMemberModal from '../components/groups/SambaGroupAddMemberModal';
+import SambaGroupCreateModal from '../components/groups/SambaGroupCreateModal';
+import SambaGroupRemoveMemberModal from '../components/groups/SambaGroupRemoveMemberModal';
+import SambaGroupsTable from '../components/groups/SambaGroupsTable';
 import PageContainer from '../components/PageContainer';
 import ConfirmDeleteShareModal from '../components/share/ConfirmDeleteShareModal';
 import CreateShareModal from '../components/share/CreateShareModal';
@@ -18,40 +24,33 @@ import ManageShareMembersModal from '../components/share/ManageShareMembersModal
 import SelectedSharesDetailsPanel from '../components/share/SelectedSharesDetailsPanel';
 import SharesTable from '../components/share/SharesTable';
 import TabPanel from '../components/TabPanel';
-import ConfirmDeleteSambaUserModal from '../components/users/ConfirmDeleteSambaUserModal';
-import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
-import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
-import SambaUsersTable from '../components/users/SambaUsersTable';
-import SelectedSambaUsersDetailsPanel from '../components/users/SelectedSambaUsersDetailsPanel';
 import {
   tabContainerSx,
   tabListSx,
   tabPanelSx,
 } from '../components/tabs/styles';
+import ConfirmDeleteSambaUserModal from '../components/users/ConfirmDeleteSambaUserModal';
+import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
+import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
+import SambaUsersTable from '../components/users/SambaUsersTable';
+import SelectedSambaUsersDetailsPanel from '../components/users/SelectedSambaUsersDetailsPanel';
 import { DEFAULT_LOGIN_SHELL } from '../constants/users';
 import { useCreateOsUser } from '../hooks/useCreateOsUser';
+import { useCreateSambaGroup } from '../hooks/useCreateSambaGroup';
 import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
 import { useCreateShare } from '../hooks/useCreateShare';
-import { useCreateSambaGroup } from '../hooks/useCreateSambaGroup';
+import { useDeleteSambaGroup } from '../hooks/useDeleteSambaGroup';
 import { useDeleteSambaUser } from '../hooks/useDeleteSambaUser';
 import { useDeleteShare } from '../hooks/useDeleteShare';
-import { useDeleteSambaGroup } from '../hooks/useDeleteSambaGroup';
 import { useSambaGroups } from '../hooks/useSambaGroups';
-import { useSambaUserAccountFlags } from '../hooks/useSambaUserAccountFlags';
 import { useSambaShares } from '../hooks/useSambaShares';
+import { useSambaUserAccountFlags } from '../hooks/useSambaUserAccountFlags';
 import { useSambaUsers } from '../hooks/useSambaUsers';
 import { useServiceAction } from '../hooks/useServiceAction';
 import { useUpdateSambaGroupMember } from '../hooks/useUpdateSambaGroupMember';
-import { useUpdateSambaUserStatus } from '../hooks/useUpdateSambaUserStatus';
 import { useUpdateSambaUserPassword } from '../hooks/useUpdateSambaUserPassword';
+import { useUpdateSambaUserStatus } from '../hooks/useUpdateSambaUserStatus';
 import { normalizeSambaUsers } from '../utils/sambaUsers';
-import SambaGroupCreateModal from '../components/groups/SambaGroupCreateModal';
-import SambaGroupsTable from '../components/groups/SambaGroupsTable';
-import SambaGroupAddMemberModal from '../components/groups/SambaGroupAddMemberModal';
-import SambaGroupRemoveMemberModal from '../components/groups/SambaGroupRemoveMemberModal';
-import ConfirmDeleteSambaGroupModal from '../components/groups/ConfirmDeleteSambaGroupModal';
-import ConfirmRemoveGroupMemberModal from '../components/groups/ConfirmRemoveGroupMemberModal';
-import HelpTooltip from '../components/common/HelpTooltip';
 
 const SHARE_TABS = {
   shares: 'shares',
@@ -67,7 +66,9 @@ const Share = () => {
   const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.shares);
   const [selectedShares, setSelectedShares] = useState<string[]>([]);
   const [manageUsersShare, setManageUsersShare] = useState<string | null>(null);
-  const [manageGroupsShare, setManageGroupsShare] = useState<string | null>(null);
+  const [manageGroupsShare, setManageGroupsShare] = useState<string | null>(
+    null
+  );
   const [isSambaCreateModalOpen, setIsSambaCreateModalOpen] = useState(false);
   const [sambaCreateError, setSambaCreateError] = useState<string | null>(null);
   const [sambaCreateInitialUsername, setSambaCreateInitialUsername] = useState<
@@ -109,7 +110,9 @@ const Share = () => {
   const [deleteGroupName, setDeleteGroupName] = useState<string | null>(null);
   const [deleteGroupError, setDeleteGroupError] = useState<string | null>(null);
   const [groupMemberError, setGroupMemberError] = useState<string | null>(null);
-  const [removeMemberError, setRemoveMemberError] = useState<string | null>(null);
+  const [removeMemberError, setRemoveMemberError] = useState<string | null>(
+    null
+  );
   const [removeMemberTarget, setRemoveMemberTarget] = useState<{
     groupname: string | null;
     username: string | null;
@@ -299,9 +302,11 @@ const Share = () => {
 
   const sambaGroups = useMemo(
     () =>
-      (sambaGroupsQuery.data ?? []).slice().sort((a, b) =>
-        a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })
-      ),
+      (sambaGroupsQuery.data ?? [])
+        .slice()
+        .sort((a, b) =>
+          a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })
+        ),
     [sambaGroupsQuery.data]
   );
 
@@ -333,7 +338,9 @@ const Share = () => {
     },
     onError: (message, action) => {
       const actionLabel = action === 'enable' ? 'فعال‌سازی' : 'غیرفعال‌سازی';
-      toast.error(`${actionLabel} کاربر اشتراک فایل با خطا مواجه شد: ${message}`);
+      toast.error(
+        `${actionLabel} کاربر اشتراک فایل با خطا مواجه شد: ${message}`
+      );
     },
   });
 
@@ -344,10 +351,7 @@ const Share = () => {
     },
     onError: (message, error, username) => {
       setDeleteSambaError(message);
-      if (
-        error.response?.status === 400
-        
-      ) {
+      if (error.response?.status === 400) {
         toast.error(
           `کاربر اشتراک فایل ${username} در اشتراک‌های فعال استفاده شده است. لطفاً ابتدا اشتراک‌های مرتبط را حذف کنید.`
         );
@@ -396,7 +400,8 @@ const Share = () => {
 
   const updateSambaGroupMember = useUpdateSambaGroupMember({
     onSuccess: (groupname, username, action) => {
-      const actionLabel = action === 'add' ? 'به گروه افزوده شد' : 'از گروه حذف شد';
+      const actionLabel =
+        action === 'add' ? 'به گروه افزوده شد' : 'از گروه حذف شد';
       toast.success(`کاربر ${username} ${actionLabel} (${groupname}).`);
       setGroupMemberError(null);
       setRemoveMemberError(null);
@@ -696,13 +701,10 @@ const Share = () => {
     );
   }, [removeMemberTarget, updateSambaGroupMember]);
 
-  const handleDeleteSambaGroup = useCallback(
-    (group: { name: string }) => {
-      setDeleteGroupError(null);
-      setDeleteGroupName(group.name);
-    },
-    []
-  );
+  const handleDeleteSambaGroup = useCallback((group: { name: string }) => {
+    setDeleteGroupError(null);
+    setDeleteGroupName(group.name);
+  }, []);
 
   const handleCloseDeleteGroupModal = useCallback(() => {
     if (deleteSambaGroup.isPending) {
@@ -819,6 +821,7 @@ const Share = () => {
                   justifyContent: 'space-between',
                   gap: 2,
                   flexWrap: 'wrap',
+                  mb: -3,
                 }}
               >
                 <Typography
@@ -858,18 +861,20 @@ const Share = () => {
                   mb: 0.5,
                 }}
               >
-                <HelpTooltip
+                {/* <HelpTooltip
                   placement="right"
                   title="گروه اصلی مالک فایل‌های هر کاربر است و حذفش بدون جابه‌جایی کاربران به گروه دیگر ممکن نیست."
-                />
-                <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
+                /> */}
+                {/* <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
                   گروه اصلی کاربران هنگام ایجاد تعیین می‌شود؛ پیش از حذف این گروه‌ها باید گروه اصلی اعضا را تغییر دهید.
-                </Typography>
+                </Typography> */}
               </Box>
 
               <SambaGroupsTable
                 groups={sambaGroups}
-                isLoading={sambaGroupsQuery.isLoading || sambaGroupsQuery.isFetching}
+                isLoading={
+                  sambaGroupsQuery.isLoading || sambaGroupsQuery.isFetching
+                }
                 error={sambaGroupsQuery.error ?? null}
                 pendingDeleteGroup={pendingGroupDelete}
                 pendingMemberGroup={pendingGroupMember}
@@ -893,6 +898,7 @@ const Share = () => {
                   justifyContent: 'space-between',
                   gap: 2,
                   flexWrap: 'wrap',
+                  mb: -2,
                 }}
               >
                 <Typography
@@ -954,6 +960,7 @@ const Share = () => {
                   justifyContent: 'space-between',
                   gap: 2,
                   flexWrap: 'wrap',
+                  mb: -2,
                 }}
               >
                 <Typography
@@ -984,7 +991,9 @@ const Share = () => {
 
               <SambaUsersTable
                 users={sambaUsers}
-                isLoading={sambaUsersQuery.isLoading || sambaUsersQuery.isFetching}
+                isLoading={
+                  sambaUsersQuery.isLoading || sambaUsersQuery.isFetching
+                }
                 error={sambaUsersQuery.error ?? null}
                 selectedUsers={selectedSambaUsers}
                 onToggleSelect={handleToggleSelectSambaUser}
@@ -1051,7 +1060,9 @@ const Share = () => {
       />
 
       <ConfirmRemoveGroupMemberModal
-        open={Boolean(removeMemberTarget.groupname && removeMemberTarget.username)}
+        open={Boolean(
+          removeMemberTarget.groupname && removeMemberTarget.username
+        )}
         groupname={removeMemberTarget.groupname}
         username={removeMemberTarget.username}
         onClose={handleCloseConfirmRemoveMember}

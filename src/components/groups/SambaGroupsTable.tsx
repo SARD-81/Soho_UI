@@ -1,11 +1,14 @@
 import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
-import { MdDeleteOutline, MdPersonAddAlt1, MdPersonRemove } from 'react-icons/md';
+import {
+  MdDeleteOutline,
+  MdPersonAddAlt1,
+  MdPersonRemove,
+} from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { SambaGroupEntry } from '../../@types/samba';
 import DataTable from '../DataTable';
-import HelpTooltip from '../common/HelpTooltip';
 
 interface SambaGroupsTableProps {
   groups: SambaGroupEntry[];
@@ -71,7 +74,9 @@ const SambaGroupsTable = ({
         renderCell: (group) => (
           <Box>
             {group.members.length === 0 ? (
-              <Typography sx={{ color: 'var(--color-secondary)' }}>—</Typography>
+              <Typography sx={{ color: 'var(--color-secondary)' }}>
+                —
+              </Typography>
             ) : (
               group.members.map((member) => (
                 <Chip
@@ -101,10 +106,10 @@ const SambaGroupsTable = ({
 
           return (
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-              <HelpTooltip
+              {/* <HelpTooltip
                 placement="top"
                 title="حذف گروه فقط زمانی مجاز است که گروه اصلی هیچ کاربری نباشد، در اشتراک‌ها استفاده نشود و عضوی نداشته باشد."
-              />
+              /> */}
 
               <Tooltip title="حذف گروه" arrow>
                 <span>

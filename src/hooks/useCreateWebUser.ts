@@ -6,7 +6,7 @@ import { extractApiErrorMessage } from '../utils/apiError';
 import { webUsersQueryKey } from './useWebUsers';
 
 const createWebUserRequest = async (payload: CreateWebUserPayload) => {
-  await axiosInstance.post('/api/web/user/create/', payload);
+  await axiosInstance.post('/api/system/ui-user/', payload);
 };
 
 interface UseCreateWebUserOptions {

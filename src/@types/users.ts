@@ -41,6 +41,38 @@ export interface CreateWebUserPayload {
   email: string;
   password: string;
   is_superuser: boolean;
+  is_staff: boolean;
   first_name?: string;
   last_name?: string;
 }
+
+export interface UpdateWebUserPayload {
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_active: boolean;
+  is_staff: boolean;
+  is_superuser: boolean;
+}
+
+export interface UpdateWebUserPasswordPayload {
+  username: string;
+  new_password: string;
+}
+
+export interface ApiResponseEnvelope<T> {
+  ok: boolean;
+  error: string | null;
+  message: string | null;
+  data: T;
+  details?: Record<string, unknown>;
+  meta?: {
+    timestamp: string;
+    response_status_code: number;
+    response_status_text: string;
+  };
+  request_data?: unknown;
+}
+
+export type WebUsersResponse = ApiResponseEnvelope<WebUser[]>;
