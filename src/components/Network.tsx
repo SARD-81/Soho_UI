@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { History } from '../@types/network';
 import { useNetwork } from '../hooks/useNetwork';
 import { extractIPv4Info, formatInterfaceSpeed } from '../utils/networkDetails';
+import { formatBytes } from '../utils/formatters';
 import { createCardSx } from './cardStyles.ts';
 import AppLineChart from './charts/AppLineChart';
 import ResponsiveChartContainer from './charts/ResponsiveChartContainer';
@@ -248,6 +249,10 @@ const Network = () => {
                         tickSize: 18, // ⬅ increase gap between numbers and the y-axis line
                         width: 56, // ⬅ reserve room so labels don’t get clipped
                         tickLabelStyle: { fill: 'var(--color-text)' },
+                        valueFormatter: (value) =>
+                          formatBytes(Math.max(value ?? 0, 0), {
+                            maximumFractionDigits: 1,
+                          }),
                       },
                     ]}
                     series={[
@@ -255,14 +260,20 @@ const Network = () => {
                         dataKey: 'download',
                         label: `دانلود (${unit})`,
                         color: '#00bcd4',
-                        valueFormatter: (value) => `${value} ${unit}`,
+                        valueFormatter: (value) =>
+                          formatBytes(Math.max(value ?? 0, 0), {
+                            maximumFractionDigits: 1,
+                          }),
                         showMark: false,
                       },
                       {
                         dataKey: 'upload',
                         label: `آپلود (${unit})`,
                         color: '#ff4d94',
-                        valueFormatter: (value) => `${value} ${unit}`,
+                        valueFormatter: (value) =>
+                          formatBytes(Math.max(value ?? 0, 0), {
+                            maximumFractionDigits: 1,
+                          }),
                         showMark: false,
                       },
                     ]}
