@@ -45,7 +45,7 @@ const paperStyles = {
 } as const;
 
 const getPowerIconColor = (action: PowerAction) =>
-  action === 'restart' ? 'var(--color-primary)' : 'var(--color-secondary)';
+  action === 'reboot' ? 'var(--color-primary)' : 'var(--color-secondary)';
 
 const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
   onPowerActionRequest,
@@ -70,9 +70,9 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
 
   const powerIcons = useMemo(
     () => ({
-      restart: <MdRestartAlt size={22} color={getPowerIconColor('restart')} />,
-      shutdown: (
-        <MdPowerOff size={22} color={getPowerIconColor('shutdown')} />
+      reboot: <MdRestartAlt size={22} color={getPowerIconColor('reboot')} />,
+      poweroff: (
+        <MdPowerOff size={22} color={getPowerIconColor('poweroff')} />
       ),
     }),
     []
@@ -131,22 +131,22 @@ const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
         PaperProps={{ sx: paperStyles }}
       >
         <MenuItem
-          onClick={() => handlePowerAction('restart')}
+          onClick={() => handlePowerAction('reboot')}
           disabled={isPowerActionDisabled}
           sx={menuItemStyles}
         >
           <ListItemIcon sx={{ minWidth: 36 }}>
-            {renderPowerIcon('restart')}
+            {renderPowerIcon('reboot')}
           </ListItemIcon>
           <ListItemText primary="راه‌اندازی مجدد سیستم" />
         </MenuItem>
         <MenuItem
-          onClick={() => handlePowerAction('shutdown')}
+          onClick={() => handlePowerAction('poweroff')}
           disabled={isPowerActionDisabled}
           sx={menuItemStyles}
         >
           <ListItemIcon sx={{ minWidth: 36 }}>
-            {renderPowerIcon('shutdown')}
+            {renderPowerIcon('poweroff')}
           </ListItemIcon>
           <ListItemText primary="خاموش کردن سیستم" />
         </MenuItem>

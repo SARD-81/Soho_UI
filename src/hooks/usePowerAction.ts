@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import axiosInstance from '../lib/axiosInstance';
 
-export type PowerAction = 'restart' | 'shutdown';
+export type PowerAction = 'reboot' | 'poweroff';
 
 export interface PowerActionResponse {
   detail?: string;
@@ -21,7 +21,8 @@ interface UsePowerActionOptions {
   onSettled?: () => void;
 }
 
-const getEndpoint = (action: PowerAction) => `/api/os/power/${action}`;
+const getEndpoint = (action: PowerAction) =>
+  `/api/system/power/execute/?action=${action}`;
 
 const extractErrorMessage = (error: AxiosError<ApiErrorResponse>) => {
   const payload = error.response?.data;

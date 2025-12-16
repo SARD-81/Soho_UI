@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { History } from '../@types/network';
 import { useNetwork } from '../hooks/useNetwork';
 import { extractIPv4Info, formatInterfaceSpeed } from '../utils/networkDetails';
+import { formatBytes } from '../utils/formatters';
 import { createCardSx } from './cardStyles.ts';
 import AppLineChart from './charts/AppLineChart';
 import ResponsiveChartContainer from './charts/ResponsiveChartContainer';
@@ -25,6 +26,8 @@ const Network = () => {
 
   const [history, setHistory] = useState<History>({});
   const startTimeRef = useRef<number>(Date.now());
+  const formatBandwidthValue = (value: number | null | undefined) =>
+    formatBytes(Math.max(value ?? 0, 0), { maximumFractionDigits: 1 });
 
   useEffect(() => {
     if (!data?.interfaces) return;
@@ -245,9 +248,11 @@ const Network = () => {
                         label: unit,
                         max: maxCombinedValue || 15,
                         position: 'left',
-                        tickSize: 18, // ⬅ increase gap between numbers and the y-axis line
-                        width: 56, // ⬅ reserve room so labels don’t get clipped
+                        tickSize: 48, // ⬅ increase gap between numbers and the y-axis line
+                        width: 126, // ⬅ reserve room so labels don’t get clipped
                         tickLabelStyle: { fill: 'var(--color-text)' },
+                        valueFormatter: (value: number | null | undefined) =>
+                          formatBandwidthValue(value),
                       },
                     ]}
                     series={[
@@ -255,14 +260,16 @@ const Network = () => {
                         dataKey: 'download',
                         label: `دانلود (${unit})`,
                         color: '#00bcd4',
-                        valueFormatter: (value) => `${value} ${unit}`,
+                        valueFormatter: (value: number | null | undefined) =>
+                          formatBandwidthValue(value),
                         showMark: false,
                       },
                       {
                         dataKey: 'upload',
                         label: `آپلود (${unit})`,
                         color: '#ff4d94',
-                        valueFormatter: (value) => `${value} ${unit}`,
+                        valueFormatter: (value: number | null | undefined) =>
+                          formatBandwidthValue(value),
                         showMark: false,
                       },
                     ]}

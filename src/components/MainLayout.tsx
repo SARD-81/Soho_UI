@@ -61,7 +61,7 @@ const MainLayout: React.FC = () => {
     usePowerAction({
       onSuccess: (_data, action) => {
         const successMessage =
-          action === 'restart'
+          action === 'reboot'
             ? 'سیستم در حال راه‌اندازی مجدد است.'
             : 'سیستم در حال خاموش شدن است.';
         toast.success(successMessage);
@@ -69,7 +69,7 @@ const MainLayout: React.FC = () => {
       },
       onError: (message, action) => {
         const actionLabel =
-          action === 'restart' ? 'راه‌اندازی مجدد' : 'خاموش کردن';
+          action === 'reboot' ? 'راه‌اندازی مجدد' : 'خاموش کردن';
         toast.error(`${actionLabel} سیستم با خطا مواجه شد: ${message}`);
       },
       onSettled: () => {

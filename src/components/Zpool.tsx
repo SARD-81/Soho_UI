@@ -254,7 +254,7 @@ const Zpool = () => {
                   value: formatBytes(boundedUsed),
                 },
                 { key: 'free', label: 'آزاد', value: formatBytes(boundedFree) },
-                { key: 'total', label: 'کل', value: formatBytes(safeTotal) },
+                // { key: 'total', label: 'کل', value: formatBytes(safeTotal) },
               ];
 
             if (pool.health) {

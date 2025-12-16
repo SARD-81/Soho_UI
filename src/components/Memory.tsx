@@ -146,13 +146,19 @@ const Memory = () => {
     );
   }
 
-  const totalValue = parseNumeric(data?.total);
-  const availableValue = parseNumeric(data?.available);
-  const percentValue = parseNumeric(data?.percent);
-  const usedValue = parseNumeric(data?.used);
-  const freeValue = parseNumeric(data?.free);
-  const buffersValue = parseNumeric(data?.buffers);
-  const cachedValue = parseNumeric(data?.cached);
+  const memoryData = data?.data ?? {};
+
+  const totalValue = parseNumeric(
+    memoryData.total_bytes ?? memoryData.total_online_memory_bytes
+  );
+  const availableValue = parseNumeric(memoryData.available_bytes);
+  const percentValue = parseNumeric(
+    memoryData.usage_percent ?? memoryData.psutil_usage_percent
+  );
+  const usedValue = parseNumeric(memoryData.used_bytes);
+  const freeValue = parseNumeric(memoryData.free_bytes);
+  // const buffersValue = null;
+  // const cachedValue = null;
 
   const computedTotal =
     totalValue ??
@@ -240,11 +246,11 @@ const Memory = () => {
     //   value: formatBytesForDisplay(safeAvailable),
     // },
     // { key: 'percent', label: 'درصد استفاده', value: percentDisplay },
-    // {
-    //   key: 'used',
-    //   label: 'استفاده‌شده',
-    //   value: formatBytesForDisplay(safeUsed),
-    // },
+    {
+      key: 'used',
+      label: 'استفاده‌شده',
+      value: formatBytesForDisplay(safeUsed),
+    },
     // { key: 'free', label: 'آزاد', value: formatBytesForDisplay(safeFree) },
     // {
     //   key: 'buffers',
@@ -354,8 +360,8 @@ const Memory = () => {
                     `${formatBytesForDisplay(safeAvailable)} : در دسترس `,
                     `${formatBytesForDisplay(safeFree)} : آزاد `,
                     `${percentDisplay} : درصد استفاده `,
-                    `${formatBytesForDisplay(cachedValue)} : کش `,
-                    `${formatBytesForDisplay(buffersValue)} : بافر `,
+                    // `${formatBytesForDisplay(cachedValue)} : کش `,
+                    // `${formatBytesForDisplay(buffersValue)} : بافر `,
                   ];
                   return lines.join('\n');
                 }
@@ -417,7 +423,7 @@ const Memory = () => {
           bgcolor: statsBackground,
           borderRadius: '5px',
           px: 2,
-          py: 2,
+          py: 1,
           border: `1px solid ${statsDividerColor}`,
           display: 'flex',
           flexDirection: 'column',
