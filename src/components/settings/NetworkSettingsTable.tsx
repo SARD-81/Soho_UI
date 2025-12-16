@@ -3,15 +3,15 @@ import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { FiEdit3 } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
-import type { IPv4Info } from '../../@types/network';
+import type { IPv4Info, NetworkMode } from '../../@types/network';
+import { useConfigureNetwork } from '../../hooks/useConfigureNetwork';
 import { useNetwork, type NetworkData } from '../../hooks/useNetwork';
-import { useUpdateInterfaceIp } from '../../hooks/useUpdateInterfaceIp';
 import {
   extractIPv4Info,
   formatInterfaceSpeed,
 } from '../../utils/networkDetails';
 import DataTable from '../DataTable';
-import NetworkInterfaceIpEditModal from './NetworkInterfaceIpEditModal';
+import NetworkInterfaceConfigurationModal from './NetworkInterfaceConfigurationModal';
 
 type NetworkSettingsTableRow = {
   id: string;
@@ -54,6 +54,7 @@ const NetworkSettingsTable = () => {
     interfaceName: string;
     ip: string;
     netmask: string;
+    mode: NetworkMode;
   } | null>(null);
 
   const speedFormatter = useMemo(createSpeedFormatter, []);
@@ -63,16 +64,16 @@ const NetworkSettingsTable = () => {
     [data?.interfaces, speedFormatter]
   );
 
-  const updateInterfaceIp = useUpdateInterfaceIp({
+  const configureNetwork = useConfigureNetwork({
     onSuccess: (interfaceName) => {
-      toast.success(`آدرس IP رابط ${interfaceName} با موفقیت بروزرسانی شد.`);
+      toast.success(`Network settings for ${interfaceName} updated.`);
       setIsEditModalOpen(false);
       setEditModalData(null);
       setEditModalError(null);
     },
     onError: (message) => {
       setEditModalError(message);
-      toast.error(`بروزرسانی آدرس IP با خطا مواجه شد: ${message}`);
+      toast.error(`بروزرسانی تنظیمات شبکه با خطا مواجه شد: ${message}`);
     },
   });
 
@@ -83,6 +84,7 @@ const NetworkSettingsTable = () => {
       interfaceName: row.interfaceName,
       ip: primaryEntry?.address ?? '',
       netmask: primaryEntry?.netmask ?? '',
+      mode: primaryEntry?.address ? 'static' : 'dhcp',
     });
     setEditModalError(null);
     setIsEditModalOpen(true);
@@ -92,29 +94,18 @@ const NetworkSettingsTable = () => {
     setIsEditModalOpen(false);
     setEditModalData(null);
     setEditModalError(null);
-    updateInterfaceIp.reset();
-  }, [updateInterfaceIp]);
+    configureNetwork.reset();
+  }, [configureNetwork]);
 
   const handleSubmitEditModal = useCallback(
-    ({ ip, netmask }: { ip: string; netmask: string }) => {
+    (payload: Parameters<typeof configureNetwork.mutate>[0]) => {
       if (!editModalData) {
         return;
       }
 
-      const trimmedIp = ip.trim();
-      const trimmedNetmask = netmask.trim();
-
-      if (!trimmedIp || !trimmedNetmask) {
-        return;
-      }
-
-      updateInterfaceIp.mutate({
-        interfaceName: editModalData.interfaceName,
-        ip: trimmedIp,
-        netmask: trimmedNetmask,
-      });
+      configureNetwork.mutate(payload);
     },
-    [editModalData, updateInterfaceIp]
+    [configureNetwork, editModalData]
   );
 
   const columns = useMemo<DataTableColumn<NetworkSettingsTableRow>[]>(() => {
@@ -225,7 +216,7 @@ const NetworkSettingsTable = () => {
             <IconButton
               size="small"
               onClick={() => handleOpenEditModal(row)}
-              disabled={updateInterfaceIp.isPending}
+              disabled={configureNetwork.isPending}
               sx={{
                 color: 'var(--color-primary)',
                 '&.Mui-disabled': {
@@ -249,7 +240,7 @@ const NetworkSettingsTable = () => {
       netmaskColumn,
       actionColumn,
     ];
-  }, [handleOpenEditModal, updateInterfaceIp.isPending]);
+  }, [configureNetwork.isPending, handleOpenEditModal]);
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -261,14 +252,15 @@ const NetworkSettingsTable = () => {
         error={error ?? null}
       />
 
-      <NetworkInterfaceIpEditModal
+      <NetworkInterfaceConfigurationModal
         open={isEditModalOpen}
         interfaceName={editModalData?.interfaceName ?? null}
         initialIp={editModalData?.ip ?? ''}
         initialNetmask={editModalData?.netmask ?? ''}
+        initialMtu={editModalData?.mode === 'static' ? 1500 : 1400}
         onClose={handleCloseEditModal}
         onSubmit={handleSubmitEditModal}
-        isSubmitting={updateInterfaceIp.isPending}
+        isSubmitting={configureNetwork.isPending}
         errorMessage={editModalError}
       />
     </Box>
