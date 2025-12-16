@@ -4,14 +4,14 @@ import { toast } from 'react-hot-toast';
 import { FiEdit3 } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { IPv4Info } from '../../@types/network';
+import { useConfigureNetworkInterface } from '../../hooks/useConfigureNetworkInterface';
 import { useNetwork, type NetworkData } from '../../hooks/useNetwork';
-import { useUpdateInterfaceIp } from '../../hooks/useUpdateInterfaceIp';
 import {
   extractIPv4Info,
   formatInterfaceSpeed,
 } from '../../utils/networkDetails';
 import DataTable from '../DataTable';
-import NetworkInterfaceIpEditModal from './NetworkInterfaceIpEditModal';
+import NetworkInterfaceConfigModal from './NetworkInterfaceConfigModal';
 
 type NetworkSettingsTableRow = {
   id: string;
@@ -63,16 +63,16 @@ const NetworkSettingsTable = () => {
     [data?.interfaces, speedFormatter]
   );
 
-  const updateInterfaceIp = useUpdateInterfaceIp({
+  const configureInterface = useConfigureNetworkInterface({
     onSuccess: (interfaceName) => {
-      toast.success(`آدرس IP رابط ${interfaceName} با موفقیت بروزرسانی شد.`);
+      toast.success(`پیکربندی رابط ${interfaceName} با موفقیت بروزرسانی شد.`);
       setIsEditModalOpen(false);
       setEditModalData(null);
       setEditModalError(null);
     },
     onError: (message) => {
       setEditModalError(message);
-      toast.error(`بروزرسانی آدرس IP با خطا مواجه شد: ${message}`);
+      toast.error(`به‌روزرسانی پیکربندی شبکه با خطا مواجه شد: ${message}`);
     },
   });
 
@@ -92,29 +92,37 @@ const NetworkSettingsTable = () => {
     setIsEditModalOpen(false);
     setEditModalData(null);
     setEditModalError(null);
-    updateInterfaceIp.reset();
-  }, [updateInterfaceIp]);
+    configureInterface.reset();
+  }, [configureInterface]);
 
   const handleSubmitEditModal = useCallback(
-    ({ ip, netmask }: { ip: string; netmask: string }) => {
+    (
+      payload:
+        | { mode: 'dhcp' }
+        | { mode: 'static'; ip: string; netmask: string; gateway: string; dns: string[] }
+    ) => {
       if (!editModalData) {
         return;
       }
 
-      const trimmedIp = ip.trim();
-      const trimmedNetmask = netmask.trim();
-
-      if (!trimmedIp || !trimmedNetmask) {
+      if (payload.mode === 'dhcp') {
+        configureInterface.mutate({
+          interfaceName: editModalData.interfaceName,
+          mode: 'dhcp',
+        });
         return;
       }
 
-      updateInterfaceIp.mutate({
+      configureInterface.mutate({
         interfaceName: editModalData.interfaceName,
-        ip: trimmedIp,
-        netmask: trimmedNetmask,
+        mode: 'static',
+        ip: payload.ip,
+        netmask: payload.netmask,
+        gateway: payload.gateway,
+        dns: payload.dns,
       });
     },
-    [editModalData, updateInterfaceIp]
+    [configureInterface, editModalData]
   );
 
   const columns = useMemo<DataTableColumn<NetworkSettingsTableRow>[]>(() => {
@@ -225,7 +233,7 @@ const NetworkSettingsTable = () => {
             <IconButton
               size="small"
               onClick={() => handleOpenEditModal(row)}
-              disabled={updateInterfaceIp.isPending}
+              disabled={configureInterface.isPending}
               sx={{
                 color: 'var(--color-primary)',
                 '&.Mui-disabled': {
@@ -249,7 +257,7 @@ const NetworkSettingsTable = () => {
       netmaskColumn,
       actionColumn,
     ];
-  }, [handleOpenEditModal, updateInterfaceIp.isPending]);
+  }, [configureInterface.isPending, handleOpenEditModal]);
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -261,14 +269,14 @@ const NetworkSettingsTable = () => {
         error={error ?? null}
       />
 
-      <NetworkInterfaceIpEditModal
+      <NetworkInterfaceConfigModal
         open={isEditModalOpen}
         interfaceName={editModalData?.interfaceName ?? null}
         initialIp={editModalData?.ip ?? ''}
         initialNetmask={editModalData?.netmask ?? ''}
         onClose={handleCloseEditModal}
         onSubmit={handleSubmitEditModal}
-        isSubmitting={updateInterfaceIp.isPending}
+        isSubmitting={configureInterface.isPending}
         errorMessage={editModalError}
       />
     </Box>

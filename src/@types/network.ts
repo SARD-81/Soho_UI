@@ -11,8 +11,34 @@ export type IPv4Info = {
   netmask: string | null;
 };
 
-export type UpdateInterfaceIpPayload = {
-  interfaceName: string;
-  ip: string;
-  netmask: string;
-};
+export type ConfigureInterfaceMode = 'dhcp' | 'static';
+
+export type ConfigureInterfacePayload =
+  | {
+      interfaceName: string;
+      mode: 'dhcp';
+    }
+  | {
+      interfaceName: string;
+      mode: 'static';
+      ip: string;
+      netmask: string;
+      gateway: string;
+      dns: string[];
+    };
+
+export type ConfigureNetworkRequestBody =
+  | {
+      mode: 'dhcp';
+      mtu: 1400;
+      save_to_db: false;
+    }
+  | {
+      mode: 'static';
+      ip: string;
+      netmask: string;
+      gateway: string;
+      dns: string[];
+      mtu: 1500;
+      save_to_db: false;
+    };
