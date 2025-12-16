@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
+import HelpTooltip from '../common/HelpTooltip';
 
 interface ConfirmDeleteSambaGroupModalProps {
   open: boolean;
@@ -47,6 +48,16 @@ const ConfirmDeleteSambaGroupModal = ({
           </Typography>{' '}
           مطمئن هستید؟ این عملیات قابل بازگشت نیست.
         </Typography>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <HelpTooltip
+            placement="right"
+            title="گروه اصلی یک کاربر قابل حذف نیست؛ برای حذف، ابتدا گروه اصلی او را به گروه دیگری تغییر دهید."
+          />
+          <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
+            اگر گروه اصلی کاربری باشد، باید پیش از حذف گروه، گروه اصلی او را تغییر دهید.
+          </Typography>
+        </Box>
 
         {errorMessage ? (
           <Typography sx={{ color: 'var(--color-error)', fontWeight: 600 }}>

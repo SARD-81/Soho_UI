@@ -3,6 +3,7 @@ import { refreshAccessToken } from './authApi';
 import { emitSessionCleared, emitTokenRefreshed } from './authEvents';
 import tokenStorage from './tokenStorage';
 import { setupAxiosMockAdapter } from '../mocks/setupMocks';
+import { logApiErrorDetails } from '../utils/apiError';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -72,6 +73,8 @@ const processQueue = (error: unknown, token: string | null) => {
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    logApiErrorDetails(error);
+
     const status = error.response?.status;
     const originalRequest = error.config as (AxiosRequestConfig & {
       _retry?: boolean;

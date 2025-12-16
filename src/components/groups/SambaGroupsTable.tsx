@@ -5,6 +5,7 @@ import { MdDeleteOutline, MdPersonAddAlt1, MdPersonRemove } from 'react-icons/md
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { SambaGroupEntry } from '../../@types/samba';
 import DataTable from '../DataTable';
+import HelpTooltip from '../common/HelpTooltip';
 
 interface SambaGroupsTableProps {
   groups: SambaGroupEntry[];
@@ -100,6 +101,11 @@ const SambaGroupsTable = ({
 
           return (
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+              <HelpTooltip
+                placement="top"
+                title="حذف گروه فقط زمانی مجاز است که گروه اصلی هیچ کاربری نباشد، در اشتراک‌ها استفاده نشود و عضوی نداشته باشد."
+              />
+
               <Tooltip title="حذف گروه" arrow>
                 <span>
                   <IconButton
