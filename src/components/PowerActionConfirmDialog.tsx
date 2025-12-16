@@ -18,12 +18,12 @@ interface PowerActionConfirmDialogProps {
 }
 
 const actionLabels: Record<PowerAction, { title: string; description: string }> = {
-  restart: {
+  reboot: {
     title: 'آیا از راه‌اندازی مجدد سیستم مطمئن هستید؟',
     description:
       'با تایید این پیام سیستم در عرض چند ثانیه راه‌اندازی مجدد می‌شود و ممکن است تمام تغییرات ذخیره‌نشده از بین بروند.',
   },
-  shutdown: {
+  poweroff: {
     title: 'آیا از خاموش کردن سیستم مطمئن هستید؟',
     description:
       'با تایید این پیام سیستم خاموش می‌شود و برای ادامه کار باید آن را دوباره روشن کنید. لطفاً از ذخیره اطلاعات مهم اطمینان حاصل کنید.',

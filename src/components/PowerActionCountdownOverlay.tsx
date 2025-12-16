@@ -31,11 +31,11 @@ const pulseAnimation = keyframes`
 `;
 
 const actionDetails: Record<PowerAction, { label: string; icon: ReactElement }> = {
-  restart: {
+  reboot: {
     label: 'راه‌اندازی مجدد در حال آماده‌سازی است',
     icon: <MdRestartAlt size={36} color="#f1f5f9" />,
   },
-  shutdown: {
+  poweroff: {
     label: 'خاموش کردن سیستم در حال آماده‌سازی است',
     icon: <MdPowerSettingsNew size={36} color="#f1f5f9" />,
   },
