@@ -258,7 +258,7 @@ const Network = () => {
                     series={[
                       {
                         dataKey: 'download',
-                        label: `دانلود (${unit})`,
+                        label: `دانلود `,
                         color: '#00bcd4',
                         valueFormatter: (value: number | null | undefined) =>
                           formatBandwidthValue(value),
@@ -266,7 +266,7 @@ const Network = () => {
                       },
                       {
                         dataKey: 'upload',
-                        label: `آپلود (${unit})`,
+                        label: `آپلود `,
                         color: '#ff4d94',
                         valueFormatter: (value: number | null | undefined) =>
                           formatBandwidthValue(value),

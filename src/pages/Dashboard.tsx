@@ -118,7 +118,7 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
     title: 'وضعیت پردازنده',
     description: 'نمودار زنده مصرف CPU و جزئیات هسته‌ها',
     component: Cpu,
-    columns: { xs: 12, md: 6, xl: 5 },
+    columns: { xs: 12, md: 8, xl: 6 },
     layoutOptions: [
       {
         id: 'cpu-short',
@@ -145,7 +145,7 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
     title: 'مصرف حافظه',
     description: 'تفکیک حافظه مصرفی و آزاد به صورت لحظه‌ای',
     component: Memory,
-    columns: { xs: 12, md: 6, xl: 5 },
+    columns: { xs: 12, md: 8, xl: 6 },
     layoutOptions: [
       {
         id: 'memory-short',
