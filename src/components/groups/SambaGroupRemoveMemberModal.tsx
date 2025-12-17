@@ -1,13 +1,14 @@
 import { Box, Chip, CircularProgress, Stack, Typography } from '@mui/material';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSambaGroupMembers } from '../../hooks/useSambaGroupMembers';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
-import { useSambaGroupMembers } from '../../hooks/useSambaGroupMembers';
 
 interface SambaGroupRemoveMemberModalProps {
   open: boolean;
   groupname: string | null;
   onClose: () => void;
-  onRemove: (username: string) => void;
+  onRemove: (usernames: string[]) => void;
   isSubmitting?: boolean;
   errorMessage?: string | null;
 }
@@ -21,7 +22,43 @@ const SambaGroupRemoveMemberModal = ({
   errorMessage = null,
 }: SambaGroupRemoveMemberModalProps) => {
   const membersQuery = useSambaGroupMembers(groupname, { enabled: open });
-  const hasMembers = (membersQuery.data?.members?.length ?? 0) > 0;
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelectedMembers([]);
+  }, [open, groupname]);
+
+  const hasMembers = useMemo(
+    () => (membersQuery.data?.members?.length ?? 0) > 0,
+    [membersQuery.data?.members?.length]
+  );
+
+  const toggleSelection = useCallback(
+    (username: string) => {
+      if (isSubmitting) return;
+
+      setSelectedMembers((prev) =>
+        prev.includes(username)
+          ? prev.filter((item) => item !== username)
+          : [...prev, username]
+      );
+    },
+    [isSubmitting]
+  );
+
+  const handleSubmit = useCallback(() => {
+    if (isSubmitting) return;
+
+    const trimmedMembers = selectedMembers
+      .map((user) => user.trim())
+      .filter(Boolean);
+
+    if (!trimmedMembers.length) return;
+
+    onRemove(trimmedMembers);
+  }, [isSubmitting, onRemove, selectedMembers]);
+
+  const isConfirmDisabled = isSubmitting || selectedMembers.length === 0;
 
   return (
     <BlurModal
@@ -31,9 +68,11 @@ const SambaGroupRemoveMemberModal = ({
       actions={
         <ModalActionButtons
           onCancel={onClose}
-          onConfirm={() => {}}
-          hideConfirm
-          confirmLabel=""
+          onConfirm={handleSubmit}
+          confirmLabel="حذف"
+          loadingLabel="در حال حذف…"
+          isLoading={isSubmitting}
+          confirmProps={{ color: 'error', disabled: isConfirmDisabled }}
         />
       }
     >
@@ -44,22 +83,35 @@ const SambaGroupRemoveMemberModal = ({
           </Box>
         ) : hasMembers ? (
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {membersQuery.data?.members?.map((member) => (
-              <Chip
-                key={member}
-                label={member}
-                onDelete={() => onRemove(member)}
-                disabled={isSubmitting}
-                sx={{
-                  fontWeight: 700,
-                  backgroundColor: 'rgba(255, 99, 132, 0.08)',
-                  color: 'var(--color-error)',
-                  border: '1px solid rgba(255, 99, 132, 0.2)',
-                  '& .MuiChip-deleteIcon': { color: 'var(--color-error)' },
-                  '&:hover': { backgroundColor: 'rgba(255, 99, 132, 0.15)' },
-                }}
-              />
-            ))}
+            {membersQuery.data?.members?.map((member) => {
+              const isSelected = selectedMembers.includes(member);
+
+              return (
+                <Chip
+                  key={member}
+                  label={member}
+                  onClick={() => toggleSelection(member)}
+                  disabled={isSubmitting}
+                  clickable
+                  variant={isSelected ? 'filled' : 'outlined'}
+                  // icon={isSelected ? <MdDoneOutline /> : undefined}
+                  sx={{
+                    fontWeight: 700,
+                    backgroundColor: isSelected
+                      ? 'rgba(255, 99, 132, 0.22)'
+                      : 'rgba(255, 99, 132, 0.08)',
+                    color: 'var(--color-error)',
+                    border: isSelected
+                      ? '2px solid rgba(255, 99, 132, 0.55)'
+                      : '1px solid rgba(255, 99, 132, 0.2)',
+                    boxShadow: isSelected
+                      ? '0 0 0 2px rgba(255, 99, 132, 0.15)'
+                      : 'none',
+                    '&:hover': { backgroundColor: 'rgba(255, 99, 132, 0.22)' },
+                  }}
+                />
+              );
+            })}
           </Box>
         ) : (
           <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>

@@ -12,7 +12,6 @@ import type {
   UpdateSambaUserPasswordPayload,
 } from '../@types/samba';
 import ConfirmDeleteSambaGroupModal from '../components/groups/ConfirmDeleteSambaGroupModal';
-import ConfirmRemoveGroupMemberModal from '../components/groups/ConfirmRemoveGroupMemberModal';
 import SambaGroupAddMemberModal from '../components/groups/SambaGroupAddMemberModal';
 import SambaGroupCreateModal from '../components/groups/SambaGroupCreateModal';
 import SambaGroupRemoveMemberModal from '../components/groups/SambaGroupRemoveMemberModal';
@@ -114,10 +113,6 @@ const Share = () => {
   const [removeMemberError, setRemoveMemberError] = useState<string | null>(
     null
   );
-  const [removeMemberTarget, setRemoveMemberTarget] = useState<{
-    groupname: string | null;
-    username: string | null;
-  }>({ groupname: null, username: null });
 
   const { data: rawShares = [], isLoading, error } = useSambaShares();
 
@@ -400,26 +395,27 @@ const Share = () => {
   });
 
   const updateSambaGroupMember = useUpdateSambaGroupMember({
-    onSuccess: (groupname, username, action) => {
+    onSuccess: (groupname, usernames, action) => {
       const actionLabel =
-        action === 'add' ? 'به گروه افزوده شد' : 'از گروه حذف شد';
-      toast.success(`کاربر ${username} ${actionLabel} (${groupname}).`);
+        action === 'add' ? 'به گروه افزوده شدند' : 'از گروه حذف شدند';
+      const joinedUsers = usernames.join(', ');
+      toast.success(`کاربران ${joinedUsers} ${actionLabel} (${groupname}).`);
       setGroupMemberError(null);
       setRemoveMemberError(null);
       setAddMemberGroup(null);
       setRemoveMemberGroup(null);
-      setRemoveMemberTarget({ groupname: null, username: null });
       setPendingGroupMember(null);
     },
-    onError: (message, groupname, username, action) => {
+    onError: (message, groupname, usernames, action) => {
       const actionLabel = action === 'add' ? 'افزودن' : 'حذف';
+      const joinedUsers = usernames.join(', ');
       if (action === 'add') {
         setGroupMemberError(message);
       } else {
         setRemoveMemberError(message);
       }
       toast.error(
-        `${actionLabel} کاربر ${username} در گروه ${groupname} با خطا مواجه شد: ${message}`
+        `${actionLabel} کاربران ${joinedUsers} در گروه ${groupname} با خطا مواجه شد: ${message}`
       );
       setPendingGroupMember(null);
     },
@@ -607,13 +603,16 @@ const Share = () => {
   }, [updateSambaGroupMember.isPending]);
 
   const handleSubmitAddMember = useCallback(
-    (username: string) => {
+    (usernames: string[]) => {
       if (!addMemberGroup) {
         return;
       }
 
-      const trimmedUsername = username.trim();
-      if (!trimmedUsername) {
+      const trimmedUsernames = usernames
+        .map((username) => username.trim())
+        .filter(Boolean);
+
+      if (!trimmedUsernames.length) {
         return;
       }
 
@@ -623,7 +622,7 @@ const Share = () => {
       updateSambaGroupMember.mutate(
         {
           groupname: addMemberGroup,
-          username: trimmedUsername,
+          usernames: trimmedUsernames,
           action: 'add',
         },
         {
@@ -639,7 +638,6 @@ const Share = () => {
   const handleOpenRemoveGroupMemberModal = useCallback(
     (group: { name: string }) => {
       setRemoveMemberError(null);
-      setRemoveMemberTarget({ groupname: null, username: null });
       updateSambaGroupMember.reset();
       setRemoveMemberGroup(group.name);
     },
@@ -653,54 +651,40 @@ const Share = () => {
 
     setRemoveMemberGroup(null);
     setRemoveMemberError(null);
-    setRemoveMemberTarget({ groupname: null, username: null });
   }, [updateSambaGroupMember.isPending]);
 
-  const handleRequestRemoveMember = useCallback(
-    (username: string) => {
+  const handleSubmitRemoveMembers = useCallback(
+    (usernames: string[]) => {
       if (!removeMemberGroup) {
         return;
       }
 
-      setRemoveMemberError(null);
-      setRemoveMemberTarget({ groupname: removeMemberGroup, username });
-    },
-    [removeMemberGroup]
-  );
+      const trimmedMembers = usernames
+        .map((username) => username.trim())
+        .filter(Boolean);
 
-  const handleCloseConfirmRemoveMember = useCallback(() => {
-    if (updateSambaGroupMember.isPending) {
-      return;
-    }
-
-    setRemoveMemberTarget({ groupname: null, username: null });
-    setRemoveMemberError(null);
-  }, [updateSambaGroupMember.isPending]);
-
-  const handleConfirmRemoveMember = useCallback(() => {
-    if (!removeMemberTarget.groupname || !removeMemberTarget.username) {
-      return;
-    }
-
-    const targetGroup = removeMemberTarget.groupname;
-    const targetUser = removeMemberTarget.username;
-    setPendingGroupMember(targetGroup);
-    setRemoveMemberError(null);
-
-    updateSambaGroupMember.mutate(
-      {
-        groupname: targetGroup,
-        username: targetUser,
-        action: 'remove',
-      },
-      {
-        onSettled: () => {
-          setPendingGroupMember(null);
-          setRemoveMemberTarget({ groupname: null, username: null });
-        },
+      if (!trimmedMembers.length) {
+        return;
       }
-    );
-  }, [removeMemberTarget, updateSambaGroupMember]);
+
+      setPendingGroupMember(removeMemberGroup);
+      setRemoveMemberError(null);
+
+      updateSambaGroupMember.mutate(
+        {
+          groupname: removeMemberGroup,
+          usernames: trimmedMembers,
+          action: 'remove',
+        },
+        {
+          onSettled: () => {
+            setPendingGroupMember(null);
+          },
+        }
+      );
+    },
+    [removeMemberGroup, updateSambaGroupMember]
+  );
 
   const handleDeleteSambaGroup = useCallback((group: { name: string }) => {
     setDeleteGroupError(null);
@@ -1049,20 +1033,8 @@ const Share = () => {
         open={Boolean(removeMemberGroup)}
         groupname={removeMemberGroup}
         onClose={handleCloseRemoveGroupMemberModal}
-        onRemove={handleRequestRemoveMember}
+        onRemove={handleSubmitRemoveMembers}
         isSubmitting={updateSambaGroupMember.isPending}
-        errorMessage={removeMemberError}
-      />
-
-      <ConfirmRemoveGroupMemberModal
-        open={Boolean(
-          removeMemberTarget.groupname && removeMemberTarget.username
-        )}
-        groupname={removeMemberTarget.groupname}
-        username={removeMemberTarget.username}
-        onClose={handleCloseConfirmRemoveMember}
-        onConfirm={handleConfirmRemoveMember}
-        isRemoving={updateSambaGroupMember.isPending}
         errorMessage={removeMemberError}
       />
 

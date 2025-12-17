@@ -11,6 +11,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import BlurModal from '../BlurModal';
@@ -18,6 +19,12 @@ import ModalActionButtons from '../common/ModalActionButtons';
 import axiosInstance from '../../lib/axiosInstance';
 import { parseDelimitedList, uniqueSortedList } from '../../utils/samba';
 import { useUpdateSharepoint } from '../../hooks/useUpdateSharepoint';
+
+type DragSource = 'available' | 'members';
+type DragPayload = {
+  member: string;
+  source: DragSource;
+};
 
 type ManageShareMembersType = 'users' | 'groups';
 
@@ -181,6 +188,45 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
     });
   };
 
+  const handleDragStart = (event: React.DragEvent, payload: DragPayload) => {
+    event.dataTransfer.setData('text/plain', JSON.stringify(payload));
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  const parseDragPayload = (event: React.DragEvent): DragPayload | null => {
+    const rawData = event.dataTransfer.getData('text/plain');
+    if (!rawData) return null;
+
+    try {
+      const data = JSON.parse(rawData) as DragPayload;
+      return data;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleDropToMembers = (event: React.DragEvent) => {
+    event.preventDefault();
+    const payload = parseDragPayload(event);
+    if (!payload) return;
+
+    const { member, source } = payload;
+    if (source === 'available') {
+      handleAddMember(member);
+    }
+  };
+
+  const handleDropToAvailable = (event: React.DragEvent) => {
+    event.preventDefault();
+    const payload = parseDragPayload(event);
+    if (!payload) return;
+
+    const { member, source } = payload;
+    if (source === 'members') {
+      handleRemoveMember(member);
+    }
+  };
+
   const handleRequestSubmit = () => {
     if (isSubmitting || !hasChanges || !hasMembers) return;
     setIsConfirmOpen(true);
@@ -252,10 +298,12 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
               spacing={1}
               sx={{
                 flex: 1,
-                border: '1px solid rgba(31, 182, 255, 0.24)',
+                border: '1px solid rgba(255, 255, 255, 0.5)',
                 borderRadius: 2,
                 p: 1.5,
-                backgroundColor: 'rgba(31, 182, 255, 0.05)',
+                width:'100px',
+                
+                // backgroundColor: 'rgba(31, 182, 255, 0.05)',
                 // width:"2px"
               }}
             >
@@ -269,8 +317,10 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                   flexDirection:'column',
                   gap: 1,
                   alignItems:'stretch',
-                  
+
                 }}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={handleDropToAvailable}
               >
                 {availableCandidates.length ? (
                   availableCandidates.map((candidate) => (
@@ -285,6 +335,10 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                         width:'100%' ,
                         justifyContent: 'flex-start',
                       }}
+                      draggable
+                      onDragStart={(event) =>
+                        handleDragStart(event, { member: candidate, source: 'available' })
+                      }
                     />
                   ))
                 ) : (
@@ -302,9 +356,11 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                 flex: 1,
                 position: 'relative',
                 borderRadius: 3,
-                background: 'linear-gradient(130deg, rgba(255, 99, 132, 0.22), rgba(31, 182, 255, 0.18))',
+                backgroundColor: 'rgba(31, 182, 255, 0.05)',
                 p: 1.2,
-                boxShadow: '0 22px 46px rgba(255, 99, 132, 0.26)',
+                
+                border: '1px solid rgba(131, 182, 255, 0.24)'
+                // boxShadow: '0 22px 46px rgba(255, 99, 132, 0.26)',
               }}
             >
               <Stack
@@ -313,11 +369,13 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                   position: 'relative',
                   borderRadius: 2.5,
                 //   background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 245, 247, 0.96))',
-                  border: '1px solid rgba(255, 255, 255, 0.5)',
-                  boxShadow: '0 10px 14px rgba(255, 99, 132, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.65)',
+                  
+                  // boxShadow: '0 10px 14px rgba(255, 99, 132, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.65)',
                   p: 2,
                   overflow: 'hidden',
                 }}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={handleDropToMembers}
               >
                 <Box
                   sx={{
@@ -354,14 +412,14 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                           letterSpacing: 0.5,
                         }}
                       >
-                        اعضای فعلی اشتراک
+                         اعضای فعلی اشتراک ({stagedMembers.length} عضو)
                       </Typography>
                       <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600, fontSize: 12 }}>
                         اعضای تایید شده این اشتراک در این بخش نمایش داده می‌شوند.
                       </Typography>
                     </Box>
                   </Box>
-                  <Chip
+                  {/* <Chip
                     label={`${stagedMembers.length} عضو`}
                     size="small"
                     sx={{
@@ -372,7 +430,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                       borderRadius: '12px',
                       px: 1,
                     }}
-                  />
+                  /> */}
                 </Box>
                 <Divider sx={{ borderColor: 'rgba(255, 99, 132, 0.3)' }} />
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -384,6 +442,10 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                         onDelete={() => handleRemoveMember(member)}
                         disabled={isSubmitting || !hasRemovableMembers}
                         sx={chipStyles.remove}
+                        draggable
+                        onDragStart={(event) =>
+                          handleDragStart(event, { member, source: 'members' })
+                        }
                       />
                     ))
                   ) : (
