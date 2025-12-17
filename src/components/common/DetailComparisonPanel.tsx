@@ -1,4 +1,13 @@
-import { Box, CircularProgress, IconButton, Typography, useTheme } from '@mui/material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  FormControlLabel,
+  IconButton,
+  Switch,
+  Typography,
+  useTheme,
+} from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { MdClose } from 'react-icons/md';
 import { isValidElement, type ReactNode } from 'react';
@@ -25,6 +34,9 @@ interface DetailComparisonPanelProps {
   emptyStateMessage: string;
   attributeSort?: (a: string, b: string) => number;
   attributeLabelResolver?: (key: string) => string;
+  onlyDifferences?: boolean;
+  onToggleOnlyDifferences?: (value: boolean) => void;
+  onBack?: () => void;
 }
 
 const DetailComparisonPanel = ({
@@ -35,6 +47,9 @@ const DetailComparisonPanel = ({
   emptyStateMessage,
   attributeSort,
   attributeLabelResolver,
+  onlyDifferences = false,
+  onToggleOnlyDifferences,
+  onBack,
 }: DetailComparisonPanelProps) => {
   const theme = useTheme();
   const resolveAttributeLabel = attributeLabelResolver ?? ((key: string) => key);
@@ -73,6 +88,26 @@ const DetailComparisonPanel = ({
       rows.push({ type: 'attribute', key, label: resolveAttributeLabel(key) });
     });
   }
+
+  const isUniformRow = (rowKey: string, rowType: 'status' | 'attribute') => {
+    if (rowType === 'status') {
+      const serialized = visibleColumns.map((column) => column.status?.type ?? 'none');
+      return serialized.every((value) => value === serialized[0]);
+    }
+
+    const serialized = visibleColumns.map((column) => {
+      const value = column.values[rowKey];
+      if (value === null || value === undefined) {
+        return '∅';
+      }
+      if (typeof value === 'object') {
+        return JSON.stringify(value);
+      }
+      return String(value);
+    });
+
+    return serialized.every((value) => value === serialized[0]);
+  };
 
   const gridColumns = `max-content repeat(${visibleColumns.length}, minmax(200px, 1fr))`;
   const totalColumns = visibleColumns.length + 1;
@@ -116,35 +151,69 @@ const DetailComparisonPanel = ({
 
       <Box
         sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 1.5,
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 2,
+        }}
+      >
+        <FormControlLabel
+          control={
+            <Switch
+              color="primary"
+              checked={onlyDifferences}
+              onChange={(event) => onToggleOnlyDifferences?.(event.target.checked)}
+            />
+          }
+          label="فقط تفاوت‌ها"
+          sx={{ direction: 'rtl' }}
+        />
+
+        {onBack && (
+          <Button variant="outlined" onClick={onBack}>
+            بازگشت به لیست
+          </Button>
+        )}
+      </Box>
+
+      <Box
+        sx={{
           borderRadius: 2,
           overflow: 'hidden',
           border: `1px solid ${borderColor}`,
         }}
       >
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: gridColumns,
-            gridAutoRows: 'minmax(64px, auto)',
-            alignItems: 'stretch',
-            '& > .comparison-cell': {
-              borderLeft: `1px solid ${borderColor}`,
-              borderRight: `1px solid ${borderColor}`,
-              alignSelf: 'stretch',
-              height: '100%',
-            },
-            [`& > .comparison-cell:nth-of-type(${totalColumns}n + 1)`]: {
-              borderLeft: 'none',
-            },
-            [`& > .comparison-cell:nth-of-type(${totalColumns}n)`]: {
-              borderRight: 'none',
-            },
-            '& > .header-cell': {
-              background: headerGradient,
-              borderBottom: `1px solid ${borderColor}`,
-            },
-          }}
-        >
+        <Box sx={{ overflowX: 'auto' }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: gridColumns,
+              gridAutoRows: 'minmax(64px, auto)',
+              alignItems: 'stretch',
+              minWidth: '100%',
+              '& > .comparison-cell': {
+                borderLeft: `1px solid ${borderColor}`,
+                borderRight: `1px solid ${borderColor}`,
+                alignSelf: 'stretch',
+                height: '100%',
+              },
+              [`& > .comparison-cell:nth-of-type(${totalColumns}n + 1)`]: {
+                borderLeft: 'none',
+              },
+              [`& > .comparison-cell:nth-of-type(${totalColumns}n)`]: {
+                borderRight: 'none',
+              },
+              '& > .header-cell': {
+                background: headerGradient,
+                borderBottom: `1px solid ${borderColor}`,
+                position: 'sticky',
+                top: 0,
+                zIndex: 2,
+              },
+            }}
+          >
           <Box
             className="comparison-cell header-cell"
             sx={{
@@ -237,8 +306,12 @@ const DetailComparisonPanel = ({
               </Typography>
             </Box>
           ) : (
-            rows.map((row, rowIndex) => {
-              const isLastRow = rowIndex === rows.length - 1;
+            rows
+              .filter((row) =>
+                onlyDifferences ? !isUniformRow(row.key, row.type) : true
+              )
+              .map((row, rowIndex, filtered) => {
+              const isLastRow = rowIndex === filtered.length - 1;
 
               return (
                 <Box key={row.key} sx={{ display: 'contents' }}>
@@ -362,6 +435,7 @@ const DetailComparisonPanel = ({
               );
             })
           )}
+          </Box>
         </Box>
       </Box>
     </Box>

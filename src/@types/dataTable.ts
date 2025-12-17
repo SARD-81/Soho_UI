@@ -20,10 +20,19 @@ export interface DataTableColumn<T> {
   renderCell: (row: T, index: number) => ReactNode;
 }
 
+export interface DataTablePinningConfig<T> {
+  pinnedIds: Set<string> | string[];
+  onTogglePin: (row: T, rowId: string, nextPinned: boolean) => void;
+  getPinLabel?: (row: T) => string;
+  maxPinned?: number;
+  pinColumnLabel?: ReactNode;
+}
+
 export interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   data: T[];
   getRowId: (row: T, index: number) => string;
+  activeRowId?: string | null;
   isLoading?: boolean;
   error?: Error | null;
   renderLoadingState?: () => ReactNode;
@@ -34,6 +43,7 @@ export interface DataTableProps<T> {
   headRowSx?: SxProps<Theme>;
   bodyRowSx?: SxProps<Theme> | ((row: T, index: number) => SxProps<Theme>);
   onRowClick?: (row: T, index: number) => void;
+  pinning?: DataTablePinningConfig<T>;
   containerProps?: TableContainerProps;
   tableProps?: TableProps;
   pagination?: {

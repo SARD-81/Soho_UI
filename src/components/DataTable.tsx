@@ -1,5 +1,6 @@
 import {
   Box,
+  Checkbox,
   CircularProgress,
   Paper,
   Table,
@@ -72,6 +73,7 @@ const DataTable = <T,>({
   columns,
   data,
   getRowId,
+  activeRowId,
   isLoading = false,
   error = null,
   renderLoadingState,
@@ -82,13 +84,23 @@ const DataTable = <T,>({
   headRowSx,
   bodyRowSx,
   onRowClick,
+  pinning,
   containerProps,
   tableProps,
   pagination,
 }: DataTableProps<T>) => {
+  const pinnedIds = pinning?.pinnedIds
+    ? new Set(pinning.pinnedIds)
+    : undefined;
+  const showPinning = Boolean(pinning);
+
   const renderStateRow = (content: ReactNode) => (
     <TableRow>
-      <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
+      <TableCell
+        colSpan={columns.length + (showPinning ? 1 : 0)}
+        align="center"
+        sx={{ py: 6 }}
+      >
         {content}
       </TableCell>
     </TableRow>
@@ -111,6 +123,14 @@ const DataTable = <T,>({
       >
         <TableHead>
           <TableRow sx={mergeSx(defaultHeadRowSx, headRowSx)}>
+            {showPinning && (
+              <TableCell
+                padding="checkbox"
+                sx={{ width: 52, textAlign: 'center' }}
+              >
+                {pinning?.pinColumnLabel}
+              </TableCell>
+            )}
             {columns.map((column) => {
               const headerProps = column.headerProps ?? {};
               const {
@@ -179,6 +199,21 @@ const DataTable = <T,>({
             const clickableRowSx = onRowClick
               ? ({ cursor: 'pointer' } as SxProps<Theme>)
               : undefined;
+            const isActive = activeRowId != null && activeRowId === rowId;
+            const isPinned = pinnedIds?.has(rowId);
+            const interactiveRowSx: SxProps<Theme> = {
+              ...(isActive
+                ? {
+                    outline: '2px solid var(--color-primary)',
+                    outlineOffset: -2,
+                  }
+                : {}),
+              ...(isPinned
+                ? {
+                    backgroundColor: 'rgba(0, 198, 169, 0.08)',
+                  }
+                : {}),
+            };
 
             return (
               <TableRow
@@ -191,8 +226,27 @@ const DataTable = <T,>({
                       }
                     : undefined
                 }
-                sx={mergeSx(defaultBodyRowSx, resolvedRowSx, clickableRowSx)}
+                sx={mergeSx(
+                  defaultBodyRowSx,
+                  resolvedRowSx,
+                  interactiveRowSx,
+                  clickableRowSx
+                )}
               >
+                {showPinning && (
+                  <TableCell padding="checkbox" sx={{ textAlign: 'center' }}>
+                    <Checkbox
+                      color="primary"
+                      checked={isPinned}
+                      onChange={(event) => {
+                        event.stopPropagation();
+                        const nextPinned = event.target.checked;
+                        pinning?.onTogglePin(row, rowId, nextPinned);
+                      }}
+                      inputProps={{ 'aria-label': 'افزودن به مقایسه' }}
+                    />
+                  </TableCell>
+                )}
                 {columns.map((column) => {
                   const cellProps = column.getCellProps?.(row, index) ?? {};
                   const {
@@ -227,7 +281,7 @@ const DataTable = <T,>({
         {pagination ? (
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={columns.length} sx={{ py: 2 }}>
+              <TableCell colSpan={columns.length + (showPinning ? 1 : 0)} sx={{ py: 2 }}>
                 <Box
                   sx={{
                     display: 'flex',

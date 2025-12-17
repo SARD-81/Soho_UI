@@ -27,6 +27,7 @@ import NavigationDrawer from './NavigationDrawer';
 import PowerActionConfirmDialog from './PowerActionConfirmDialog';
 import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';
 import QuickActionsMenu from './QuickActionsMenu';
+import PinnedCompareTray from './common/PinnedCompareTray';
 
 
 const MainLayout: React.FC = () => {
@@ -388,6 +389,7 @@ const MainLayout: React.FC = () => {
       >
         <Toolbar />
         <Outlet />
+        <PinnedCompareTray />
       </Box>
       <PowerActionConfirmDialog
         open={isConfirmationOpen}

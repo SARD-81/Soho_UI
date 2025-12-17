@@ -1,6 +1,8 @@
 import {
   Box,
+  Button,
   CircularProgress,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -39,6 +41,11 @@ interface SingleDetailViewProps {
   attributeOrder?: string[];
   attributeSort?: (a: string, b: string) => number;
   attributeLabelResolver?: (key: string) => string;
+  entityId?: string;
+  isPinned?: boolean;
+  onTogglePin?: (id: string) => void;
+  pinnedCount?: number;
+  onCompare?: () => void;
 }
 
 const renderDiskTable = (
@@ -134,6 +141,11 @@ const SingleDetailView = ({
   attributeOrder = [],
   attributeSort = (a: string, b: string) => a.localeCompare(b, 'fa-IR'),
   attributeLabelResolver,
+  entityId,
+  isPinned = false,
+  onTogglePin,
+  pinnedCount = 0,
+  onCompare,
 }: SingleDetailViewProps) => {
   const theme = useTheme();
   const resolveAttributeLabel =
@@ -283,6 +295,35 @@ const SingleDetailView = ({
       >
         {title}
       </Typography>
+
+      {entityId && onTogglePin && (
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          sx={{ mb: 2 }}
+        >
+          <Button
+            variant={isPinned ? 'outlined' : 'contained'}
+            color="primary"
+            onClick={() => onTogglePin(entityId)}
+            sx={{ fontWeight: 700 }}
+          >
+            {isPinned ? 'برداشتن سنجاق' : '📌 افزودن به مقایسه'}
+          </Button>
+
+          {pinnedCount >= 2 && onCompare && (
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={onCompare}
+              sx={{ fontWeight: 700 }}
+            >
+              مقایسه ({pinnedCount})
+            </Button>
+          )}
+        </Stack>
+      )}
 
       {!hasContent ? (
         <Box
