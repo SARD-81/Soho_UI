@@ -11,6 +11,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import BlurModal from '../BlurModal';
@@ -18,6 +19,12 @@ import ModalActionButtons from '../common/ModalActionButtons';
 import axiosInstance from '../../lib/axiosInstance';
 import { parseDelimitedList, uniqueSortedList } from '../../utils/samba';
 import { useUpdateSharepoint } from '../../hooks/useUpdateSharepoint';
+
+type DragSource = 'available' | 'members';
+type DragPayload = {
+  member: string;
+  source: DragSource;
+};
 
 type ManageShareMembersType = 'users' | 'groups';
 
@@ -181,6 +188,45 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
     });
   };
 
+  const handleDragStart = (event: React.DragEvent, payload: DragPayload) => {
+    event.dataTransfer.setData('text/plain', JSON.stringify(payload));
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  const parseDragPayload = (event: React.DragEvent): DragPayload | null => {
+    const rawData = event.dataTransfer.getData('text/plain');
+    if (!rawData) return null;
+
+    try {
+      const data = JSON.parse(rawData) as DragPayload;
+      return data;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleDropToMembers = (event: React.DragEvent) => {
+    event.preventDefault();
+    const payload = parseDragPayload(event);
+    if (!payload) return;
+
+    const { member, source } = payload;
+    if (source === 'available') {
+      handleAddMember(member);
+    }
+  };
+
+  const handleDropToAvailable = (event: React.DragEvent) => {
+    event.preventDefault();
+    const payload = parseDragPayload(event);
+    if (!payload) return;
+
+    const { member, source } = payload;
+    if (source === 'members') {
+      handleRemoveMember(member);
+    }
+  };
+
   const handleRequestSubmit = () => {
     if (isSubmitting || !hasChanges || !hasMembers) return;
     setIsConfirmOpen(true);
@@ -273,8 +319,10 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                   gap: 1,
                   alignItems:'stretch',
                   width:'fit-content',
-                  
+
                 }}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={handleDropToAvailable}
               >
                 {availableCandidates.length ? (
                   availableCandidates.map((candidate) => (
@@ -289,6 +337,10 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                         width:'100%' ,
                         justifyContent: 'flex-start',
                       }}
+                      draggable
+                      onDragStart={(event) =>
+                        handleDragStart(event, { member: candidate, source: 'available' })
+                      }
                     />
                   ))
                 ) : (
@@ -324,6 +376,8 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                   p: 2,
                   overflow: 'hidden',
                 }}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={handleDropToMembers}
               >
                 <Box
                   sx={{
@@ -390,6 +444,10 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                         onDelete={() => handleRemoveMember(member)}
                         disabled={isSubmitting || !hasRemovableMembers}
                         sx={chipStyles.remove}
+                        draggable
+                        onDragStart={(event) =>
+                          handleDragStart(event, { member, source: 'members' })
+                        }
                       />
                     ))
                   ) : (
