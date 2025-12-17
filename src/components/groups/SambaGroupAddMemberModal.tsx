@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Chip, CircularProgress, Stack, Typography } from '@mui/material';
+import DoneIcon from '@mui/icons-material/Done';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 import { useSambaAvailableUsersByGroup } from '../../hooks/useSambaAvailableUsersByGroup';
@@ -83,25 +84,35 @@ const SambaGroupAddMemberModal = ({
           </Box>
         ) : hasUsers ? (
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {availableUsersQuery.data?.map((user) => (
-              <Chip
-                key={user}
-                label={user}
-                onClick={() => toggleSelect(user)}
-                disabled={isSubmitting}
-                clickable
-                variant={selectedUsers.includes(user) ? 'filled' : 'outlined'}
-                sx={{
-                  fontWeight: 700,
-                  backgroundColor: selectedUsers.includes(user)
-                    ? 'rgba(31, 182, 255, 0.16)'
-                    : 'rgba(31, 182, 255, 0.08)',
-                  color: 'var(--color-primary)',
-                  border: '1px solid rgba(31, 182, 255, 0.18)',
-                  '&:hover': { backgroundColor: 'rgba(31, 182, 255, 0.16)' },
-                }}
-              />
-            ))}
+            {availableUsersQuery.data?.map((user) => {
+              const isSelected = selectedUsers.includes(user);
+
+              return (
+                <Chip
+                  key={user}
+                  label={user}
+                  onClick={() => toggleSelect(user)}
+                  disabled={isSubmitting}
+                  clickable
+                  variant={isSelected ? 'filled' : 'outlined'}
+                  icon={isSelected ? <DoneIcon fontSize="small" /> : undefined}
+                  sx={{
+                    fontWeight: 700,
+                    backgroundColor: isSelected
+                      ? 'rgba(31, 182, 255, 0.25)'
+                      : 'rgba(31, 182, 255, 0.08)',
+                    color: 'var(--color-primary)',
+                    border: isSelected
+                      ? '2px solid rgba(31, 182, 255, 0.65)'
+                      : '1px solid rgba(31, 182, 255, 0.18)',
+                    boxShadow: isSelected
+                      ? '0 0 0 2px rgba(31, 182, 255, 0.15)'
+                      : 'none',
+                    '&:hover': { backgroundColor: 'rgba(31, 182, 255, 0.25)' },
+                  }}
+                />
+              );
+            })}
           </Box>
         ) : (
           <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
