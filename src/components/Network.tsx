@@ -248,8 +248,8 @@ const Network = () => {
                         label: unit,
                         max: maxCombinedValue || 15,
                         position: 'left',
-                        tickSize: 48, // ⬅ increase gap between numbers and the y-axis line
-                        width: 126, // ⬅ reserve room so labels don’t get clipped
+                        tickSize: 76, // ⬅ increase gap between numbers and the y-axis line
+                        width: 156, // ⬅ reserve room so labels don’t get clipped
                         tickLabelStyle: { fill: 'var(--color-text)' },
                         valueFormatter: (value: number | null | undefined) =>
                           formatBandwidthValue(value),

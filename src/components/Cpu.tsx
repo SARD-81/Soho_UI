@@ -118,8 +118,8 @@ const Cpu = () => {
     // { key: 'freq-max', label: 'بیشینه فرکانس', value: frequencyMaxText },
     // { key: 'physical', label: 'هسته‌های فیزیکی', value: physicalCoresText },
     // { key: 'logical', label: 'هسته‌های منطقی', value: logicalCoresText },
-    { key: 'total', label: 'مجموع هسته‌ها', value: totalCoresText },
     { key: 'model', label: 'مدل پردازنده', value: modelName },
+    { key: 'total', label: 'مجموع هسته‌ها', value: totalCoresText },
   ];
 
   if (isLoading) {

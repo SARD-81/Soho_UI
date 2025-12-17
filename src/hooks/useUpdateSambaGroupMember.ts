@@ -8,16 +8,16 @@ type SambaGroupMemberAction = 'add' | 'remove';
 
 interface UpdateSambaGroupMemberPayload {
   groupname: string;
-  username: string;
+  usernames: string[];
   action: SambaGroupMemberAction;
 }
 
 interface UseUpdateSambaGroupMemberOptions {
-  onSuccess?: (groupname: string, username: string, action: SambaGroupMemberAction) => void;
+  onSuccess?: (groupname: string, usernames: string[], action: SambaGroupMemberAction) => void;
   onError?: (
     message: string,
     groupname: string,
-    username: string,
+    usernames: string[],
     action: SambaGroupMemberAction
   ) => void;
 }
@@ -29,8 +29,8 @@ export const useUpdateSambaGroupMember = ({
   const queryClient = useQueryClient();
 
   return useMutation<unknown, Error, UpdateSambaGroupMemberPayload>({
-    mutationFn: ({ groupname, username, action }) =>
-      updateSambaGroupMember({ groupname, username, action }),
+    mutationFn: ({ groupname, usernames, action }) =>
+      updateSambaGroupMember({ groupname, usernames, action }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sambaGroupsQueryKey });
       queryClient.invalidateQueries({
@@ -39,13 +39,13 @@ export const useUpdateSambaGroupMember = ({
       queryClient.invalidateQueries({
         queryKey: sambaAvailableUsersByGroupQueryKey(variables.groupname),
       });
-      onSuccess?.(variables.groupname, variables.username, variables.action);
+      onSuccess?.(variables.groupname, variables.usernames, variables.action);
     },
     onError: (error, variables) => {
       onError?.(
         error.message,
         variables.groupname,
-        variables.username,
+        variables.usernames,
         variables.action
       );
     },
