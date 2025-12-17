@@ -442,7 +442,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                         key={member}
                         label={member}
                         onDelete={() => handleRemoveMember(member)}
-                        disabled={isSubmitting || !hasRemovableMembers}
+                        disabled={isSubmitting}
                         sx={chipStyles.remove}
                         draggable
                         onDragStart={(event) =>
