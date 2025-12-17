@@ -199,12 +199,14 @@ export const useNetwork = (enabled = true) => {
     enabled,
   });
 
+  const interfaceNames = Object.keys(detailsQuery.data?.interfaces ?? {});
+
   const bandwidthQuery = useQuery<Record<string, Bandwidth>, Error>({
-    queryKey: [...networkQueryKey, 'bandwidth'],
-    queryFn: () =>
-      fetchNetworkBandwidth(Object.keys(detailsQuery.data?.interfaces ?? {})),
+    queryKey: [...networkQueryKey, 'bandwidth', interfaceNames],
+    queryFn: () => fetchNetworkBandwidth(interfaceNames),
     enabled: enabled && Boolean(detailsQuery.data),
     refetchInterval: 2000,
+    refetchIntervalInBackground: true,
   });
 
   const mergedData = useMemo<NetworkData | undefined>(() => {
