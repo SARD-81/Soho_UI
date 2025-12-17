@@ -72,11 +72,11 @@ export const deleteSambaGroup = async (groupname: string): Promise<void> => {
 
 export const updateSambaGroupMember = async ({
   groupname,
-  username,
+  usernames,
   action,
 }: {
   groupname: string;
-  username: string;
+  usernames: string[];
   action: 'add' | 'remove';
 }): Promise<void> => {
   const encodedGroupName = encodeURIComponent(groupname);
@@ -84,11 +84,10 @@ export const updateSambaGroupMember = async ({
 
   await axiosInstance.put(
     `${SAMBA_GROUPS_BASE_URL}${encodedGroupName}/update/`,
-    undefined,
+    { usernames },
     {
       params: {
         action: actionParam,
-        username,
         save_to_db: true,
       },
     }

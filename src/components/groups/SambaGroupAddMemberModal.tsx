@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Chip, CircularProgress, Stack, Typography } from '@mui/material';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
@@ -7,7 +8,7 @@ interface SambaGroupAddMemberModalProps {
   open: boolean;
   groupname: string | null;
   onClose: () => void;
-  onSubmit: (username: string) => void;
+  onSubmit: (usernames: string[]) => void;
   isSubmitting?: boolean;
   errorMessage?: string | null;
 }
@@ -21,13 +22,43 @@ const SambaGroupAddMemberModal = ({
   errorMessage = null,
 }: SambaGroupAddMemberModalProps) => {
   const availableUsersQuery = useSambaAvailableUsersByGroup(groupname, { enabled: open });
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  const handleSelect = (username: string) => {
+  useEffect(() => {
+    setSelectedUsers([]);
+  }, [open, groupname]);
+
+  const hasUsers = useMemo(
+    () => (availableUsersQuery.data?.length ?? 0) > 0,
+    [availableUsersQuery.data?.length]
+  );
+
+  const toggleSelect = useCallback(
+    (username: string) => {
+      if (isSubmitting) return;
+
+      setSelectedUsers((prev) =>
+        prev.includes(username)
+          ? prev.filter((item) => item !== username)
+          : [...prev, username]
+      );
+    },
+    [isSubmitting]
+  );
+
+  const handleSubmit = useCallback(() => {
     if (isSubmitting) return;
-    onSubmit(username);
-  };
 
-  const hasUsers = (availableUsersQuery.data?.length ?? 0) > 0;
+    const trimmedUsers = selectedUsers
+      .map((user) => user.trim())
+      .filter(Boolean);
+
+    if (!trimmedUsers.length) return;
+
+    onSubmit(trimmedUsers);
+  }, [isSubmitting, onSubmit, selectedUsers]);
+
+  const isConfirmDisabled = isSubmitting || selectedUsers.length === 0;
 
   return (
     <BlurModal
@@ -37,9 +68,11 @@ const SambaGroupAddMemberModal = ({
       actions={
         <ModalActionButtons
           onCancel={onClose}
-          onConfirm={() => {}}
-          confirmLabel=""
-          hideConfirm
+          onConfirm={handleSubmit}
+          confirmLabel="ثبت"
+          loadingLabel="در حال ثبت…"
+          isLoading={isSubmitting}
+          confirmProps={{ disabled: isConfirmDisabled }}
         />
       }
     >
@@ -54,12 +87,15 @@ const SambaGroupAddMemberModal = ({
               <Chip
                 key={user}
                 label={user}
-                onClick={() => handleSelect(user)}
+                onClick={() => toggleSelect(user)}
                 disabled={isSubmitting}
                 clickable
+                variant={selectedUsers.includes(user) ? 'filled' : 'outlined'}
                 sx={{
                   fontWeight: 700,
-                  backgroundColor: 'rgba(31, 182, 255, 0.08)',
+                  backgroundColor: selectedUsers.includes(user)
+                    ? 'rgba(31, 182, 255, 0.16)'
+                    : 'rgba(31, 182, 255, 0.08)',
                   color: 'var(--color-primary)',
                   border: '1px solid rgba(31, 182, 255, 0.18)',
                   '&:hover': { backgroundColor: 'rgba(31, 182, 255, 0.16)' },
