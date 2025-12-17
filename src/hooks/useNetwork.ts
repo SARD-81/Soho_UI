@@ -116,12 +116,16 @@ const mapAddresses = (
   });
 };
 
+type BandwidthPayload = { upload_bytes?: number; download_bytes?: number } | null;
+
 const mapBandwidth = (payload?: NetworkDetailsResponse['data']): Bandwidth => {
-  const bandwidth = payload?.bandwidth ?? {};
+  const bandwidth: BandwidthPayload = (payload && 'bandwidth' in payload
+    ? payload.bandwidth
+    : payload) ?? { upload_bytes: 0, download_bytes: 0 };
 
   return {
-    download: bandwidth.download_bytes ?? 0,
-    upload: bandwidth.upload_bytes ?? 0,
+    download: bandwidth?.download_bytes ?? 0,
+    upload: bandwidth?.upload_bytes ?? 0,
     unit: 'bytes',
   };
 };
