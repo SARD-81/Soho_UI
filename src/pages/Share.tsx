@@ -12,10 +12,10 @@ import type {
   UpdateSambaUserPasswordPayload,
 } from '../@types/samba';
 import ConfirmDeleteSambaGroupModal from '../components/groups/ConfirmDeleteSambaGroupModal';
+import GroupsGuidanceAccordion from '../components/groups/GroupsGuidanceAccordion';
 import SambaGroupAddMemberModal from '../components/groups/SambaGroupAddMemberModal';
 import SambaGroupCreateModal from '../components/groups/SambaGroupCreateModal';
 import SambaGroupRemoveMemberModal from '../components/groups/SambaGroupRemoveMemberModal';
-import GroupsGuidanceAccordion from '../components/groups/GroupsGuidanceAccordion';
 import SambaGroupsTable from '../components/groups/SambaGroupsTable';
 import PageContainer from '../components/PageContainer';
 import ConfirmDeleteShareModal from '../components/share/ConfirmDeleteShareModal';
@@ -63,7 +63,9 @@ type ShareTabValue = (typeof SHARE_TABS)[keyof typeof SHARE_TABS];
 const MAX_COMPARISON_ITEMS = 4;
 
 const Share = () => {
-  const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.shares);
+  const [activeTab, setActiveTab] = useState<ShareTabValue>(
+    SHARE_TABS.sambaUsers
+  );
   const [selectedShares, setSelectedShares] = useState<string[]>([]);
   const [manageUsersShare, setManageUsersShare] = useState<string | null>(null);
   const [manageGroupsShare, setManageGroupsShare] = useState<string | null>(
@@ -787,9 +789,9 @@ const Share = () => {
       </Typography>
       <Box sx={tabContainerSx}>
         <Tabs value={activeTab} onChange={handleTabChange} sx={tabListSx}>
-          <Tab label="اشتراک‌ها" value={SHARE_TABS.shares} />
           <Tab label="کاربران اشتراک فایل" value={SHARE_TABS.sambaUsers} />
           <Tab label="گروه‌های اشتراک فایل" value={SHARE_TABS.sambaGroups} />
+          <Tab label="اشتراک‌ها" value={SHARE_TABS.shares} />
         </Tabs>
 
         <Box sx={tabPanelSx}>

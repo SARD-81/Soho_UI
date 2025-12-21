@@ -116,7 +116,9 @@ const buildPoolSlotEntry = async (
   };
 };
 
-const fetchPoolDeviceSlots = async (poolNames: string[]): Promise<PoolDeviceSlotsResult> => {
+const fetchPoolDeviceSlots = async (
+  poolNames: string[]
+): Promise<PoolDeviceSlotsResult> => {
   const uniquePoolNames = Array.from(
     new Set(poolNames.map((pool) => pool.trim()).filter(Boolean))
   );
@@ -138,8 +140,8 @@ const fetchPoolDeviceSlots = async (poolNames: string[]): Promise<PoolDeviceSlot
 
         const slots = await Promise.all(diskDevices.map(buildPoolSlotEntry));
 
-        slotsByPool[poolName] = slots.filter(
-          (slot): slot is PoolDiskSlot => Boolean(slot)
+        slotsByPool[poolName] = slots.filter((slot): slot is PoolDiskSlot =>
+          Boolean(slot)
         );
       } catch (error) {
         const message =
@@ -165,9 +167,11 @@ export const usePoolDeviceSlots = (
   options?: UsePoolDeviceSlotsOptions
 ) =>
   useQuery<PoolDeviceSlotsResult, Error>({
-    queryKey: ['zpool', 'devices', 'slots', ...poolNames],
+    queryKey: ['zpool', 'devices', 'slots', poolNames.join(',')], // کلید ثابت‌تر برای جلوگیری از ری‌رندر
     queryFn: () => fetchPoolDeviceSlots(poolNames),
     enabled: (options?.enabled ?? true) && poolNames.length > 0,
-    refetchInterval: options?.refetchInterval ?? 15000,
+    refetchInterval: options?.refetchInterval ?? 30000, // افزایش به ۳۰ ثانیه
+    staleTime: 20000, // داده‌ها تا ۲۰ ثانیه معتبر بمانند و Fetch مجدد نشوند
+    gcTime: 60000,
     refetchOnWindowFocus: false,
   });
