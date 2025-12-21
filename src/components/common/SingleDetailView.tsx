@@ -1,6 +1,8 @@
 import {
   Box,
+  Button,
   CircularProgress,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -39,6 +41,10 @@ interface SingleDetailViewProps {
   attributeOrder?: string[];
   attributeSort?: (a: string, b: string) => number;
   attributeLabelResolver?: (key: string) => string;
+  isPinned?: boolean;
+  pinnedCount?: number;
+  onTogglePin?: () => void;
+  onEnterCompare?: () => void;
 }
 
 const renderDiskTable = (
@@ -134,6 +140,10 @@ const SingleDetailView = ({
   attributeOrder = [],
   attributeSort = (a: string, b: string) => a.localeCompare(b, 'fa-IR'),
   attributeLabelResolver,
+  isPinned = false,
+  pinnedCount = 0,
+  onTogglePin,
+  onEnterCompare,
 }: SingleDetailViewProps) => {
   const theme = useTheme();
   const resolveAttributeLabel =
@@ -275,7 +285,7 @@ const SingleDetailView = ({
       <Typography
         variant="h6"
         sx={{
-          mb: 2.5,
+          mb: 2,
           fontWeight: 800,
           color: 'var(--color-primary)',
           letterSpacing: 0.5,
@@ -283,6 +293,42 @@ const SingleDetailView = ({
       >
         {title}
       </Typography>
+
+      {(onTogglePin || onEnterCompare) && (
+        <Stack
+          direction="row"
+          spacing={1.5}
+          sx={{ mb: 2, justifyContent: 'flex-end' }}
+        >
+          {onTogglePin && (
+            <Button
+              variant={isPinned ? 'outlined' : 'contained'}
+              color={isPinned ? 'secondary' : 'primary'}
+              onClick={(event) => {
+                event.stopPropagation();
+                onTogglePin?.();
+              }}
+              sx={{ fontWeight: 700 }}
+            >
+              {isPinned ? 'حذف از مقایسه' : 'افزودن به مقایسه'}
+            </Button>
+          )}
+
+          {onEnterCompare && pinnedCount >= 2 && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={(event) => {
+                event.stopPropagation();
+                onEnterCompare?.();
+              }}
+              sx={{ fontWeight: 800 }}
+            >
+              {`مقایسه (${pinnedCount})`}
+            </Button>
+          )}
+        </Stack>
+      )}
 
       {!hasContent ? (
         <Box

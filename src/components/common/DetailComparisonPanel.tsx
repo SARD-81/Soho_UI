@@ -1,7 +1,16 @@
-import { Box, CircularProgress, IconButton, Typography, useTheme } from '@mui/material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  FormControlLabel,
+  IconButton,
+  Switch,
+  Typography,
+  useTheme,
+} from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { MdClose } from 'react-icons/md';
-import { isValidElement, type ReactNode } from 'react';
+import { MdArrowBack, MdClose } from 'react-icons/md';
+import { isValidElement, type ReactNode, useMemo } from 'react';
 
 export type DetailComparisonStatus =
   | { type: 'loading'; message?: string }
@@ -25,6 +34,9 @@ interface DetailComparisonPanelProps {
   emptyStateMessage: string;
   attributeSort?: (a: string, b: string) => number;
   attributeLabelResolver?: (key: string) => string;
+  onlyDifferences?: boolean;
+  onOnlyDifferencesChange?: (next: boolean) => void;
+  onBack?: () => void;
 }
 
 const DetailComparisonPanel = ({
@@ -35,6 +47,9 @@ const DetailComparisonPanel = ({
   emptyStateMessage,
   attributeSort,
   attributeLabelResolver,
+  onlyDifferences = false,
+  onOnlyDifferencesChange,
+  onBack,
 }: DetailComparisonPanelProps) => {
   const theme = useTheme();
   const resolveAttributeLabel = attributeLabelResolver ?? ((key: string) => key);
@@ -46,18 +61,22 @@ const DetailComparisonPanel = ({
   const visibleColumns =
     columns.length > 4 ? columns.slice(-4) : columns;
 
-  const attributeKeys = Array.from(
-    visibleColumns.reduce((acc, column) => {
-      Object.keys(column.values ?? {}).forEach((key) => acc.add(key));
-      return acc;
-    }, new Set<string>())
-  ).sort((a, b) => {
-    if (attributeSort) {
-      return attributeSort(a, b);
-    }
+  const attributeKeys = useMemo(
+    () =>
+      Array.from(
+        visibleColumns.reduce((acc, column) => {
+          Object.keys(column.values ?? {}).forEach((key) => acc.add(key));
+          return acc;
+        }, new Set<string>())
+      ).sort((a, b) => {
+        if (attributeSort) {
+          return attributeSort(a, b);
+        }
 
-    return a.localeCompare(b, 'fa-IR');
-  });
+        return a.localeCompare(b, 'fa-IR');
+      }),
+    [attributeSort, visibleColumns]
+  );
 
   const hasStatuses = visibleColumns.some((column) => column.status);
   const hasAttributes = attributeKeys.length > 0;
@@ -73,6 +92,21 @@ const DetailComparisonPanel = ({
       rows.push({ type: 'attribute', key, label: resolveAttributeLabel(key) });
     });
   }
+
+  const filteredRows = useMemo(() => {
+    if (!onlyDifferences) {
+      return rows;
+    }
+
+    return rows.filter((row) => {
+      if (row.type === 'status') {
+        return true;
+      }
+
+      const values = visibleColumns.map((column) => column.values[row.key]);
+      return values.some((value, index) => value !== values[0] && index > 0);
+    });
+  }, [onlyDifferences, rows, visibleColumns]);
 
   const gridColumns = `max-content repeat(${visibleColumns.length}, minmax(200px, 1fr))`;
   const totalColumns = visibleColumns.length + 1;
@@ -102,23 +136,60 @@ const DetailComparisonPanel = ({
         width: 'fit-content',
       }}
     >
-      <Typography
-        variant="h6"
+      <Box
         sx={{
-          mb: 2.5,
-          fontWeight: 800,
-          color: 'var(--color-primary)',
-          letterSpacing: 0.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          mb: 2,
+          flexWrap: 'wrap',
         }}
       >
-        {title}
-      </Typography>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 800,
+            color: 'var(--color-primary)',
+            letterSpacing: 0.5,
+          }}
+        >
+          {title}
+        </Typography>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={onlyDifferences}
+                onChange={(event) =>
+                  onOnlyDifferencesChange?.(event.target.checked)
+                }
+              />
+            }
+            label="فقط موارد متفاوت"
+          />
+
+          {onBack && (
+            <Button
+              variant="text"
+              color="secondary"
+              startIcon={<MdArrowBack />}
+              onClick={onBack}
+              sx={{ fontWeight: 700 }}
+            >
+              بازگشت
+            </Button>
+          )}
+        </Box>
+      </Box>
 
       <Box
         sx={{
           borderRadius: 2,
-          overflow: 'hidden',
+          overflow: 'auto',
           border: `1px solid ${borderColor}`,
+          position: 'relative',
         }}
       >
         <Box
@@ -142,6 +213,9 @@ const DetailComparisonPanel = ({
             '& > .header-cell': {
               background: headerGradient,
               borderBottom: `1px solid ${borderColor}`,
+              position: 'sticky',
+              top: 0,
+              zIndex: 2,
             },
           }}
         >
@@ -219,7 +293,7 @@ const DetailComparisonPanel = ({
             </Box>
           ))}
 
-          {rows.length === 0 ? (
+          {filteredRows.length === 0 ? (
             <Box
               className="comparison-cell"
               sx={{
@@ -237,8 +311,8 @@ const DetailComparisonPanel = ({
               </Typography>
             </Box>
           ) : (
-            rows.map((row, rowIndex) => {
-              const isLastRow = rowIndex === rows.length - 1;
+            filteredRows.map((row, rowIndex) => {
+              const isLastRow = rowIndex === filteredRows.length - 1;
 
               return (
                 <Box key={row.key} sx={{ display: 'contents' }}>

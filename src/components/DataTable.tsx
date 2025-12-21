@@ -82,6 +82,9 @@ const DataTable = <T,>({
   headRowSx,
   bodyRowSx,
   onRowClick,
+  // Controlled selection state is intentionally kept outside of row clicks; use
+  // explicit controls (e.g., checkboxes) in the consuming component to prevent
+  // implicit compare toggling on row click.
   containerProps,
   tableProps,
   pagination,
