@@ -10,11 +10,17 @@ import { resolveFilesystemAttributeLabel } from '../../constants/filesystemAttri
 interface SelectedFileSystemsDetailsPanelProps {
   items: FileSystemEntry[];
   onRemove: (filesystemId: string) => void;
+  pinnedId?: string | null;
+  onPin?: (filesystemId: string) => void;
+  onUnpin?: () => void;
 }
 
 const SelectedFileSystemsDetailsPanel = ({
   items,
   onRemove,
+  pinnedId,
+  onPin,
+  onUnpin,
 }: SelectedFileSystemsDetailsPanelProps) => {
   const columns: DetailComparisonColumn[] = items.map((filesystem) => ({
     id: filesystem.id,
@@ -41,6 +47,9 @@ const SelectedFileSystemsDetailsPanel = ({
           FILESYSTEM_DETAIL_LAYOUT.comparisonPriority
         )}
         attributeLabelResolver={resolveFilesystemAttributeLabel}
+        isPinned={columns[0].id === pinnedId}
+        onPin={onPin ? () => onPin(columns[0].id) : undefined}
+        onUnpin={columns[0].id === pinnedId ? onUnpin : undefined}
       />
     ) : (
       <DetailComparisonPanel

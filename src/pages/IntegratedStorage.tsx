@@ -30,8 +30,7 @@ import {
   translateDetailKey,
 } from '../utils/detailLabels';
 import { createPoolDisksTable } from '../utils/poolDetails';
-
-const MAX_COMPARISON_ITEMS = 4;
+import usePinnedSelection from '../hooks/usePinnedSelection';
 
 const INTERACTIVE_POOL_PROPERTIES = [
   'autoexpand',
@@ -187,16 +186,22 @@ const IntegratedStorage = () => {
     [pools]
   );
 
-  const [selectedPools, setSelectedPools] = useState<string[]>([]);
+  const {
+    selectedIds: selectedPools,
+    pinnedId: pinnedPool,
+    select: selectPool,
+    remove: removePool,
+    pin: pinPool,
+    unpin: unpinPool,
+    prune,
+  } = usePinnedSelection();
   const [selectedSlot, setSelectedSlot] = useState<
     { poolName: string; slot: PoolDiskSlot } | null
   >(null);
 
   useEffect(() => {
-    setSelectedPools((prev) =>
-      prev.filter((poolName) => pools.some((pool) => pool.name === poolName))
-    );
-  }, [pools]);
+    prune(pools.map((pool) => pool.name));
+  }, [pools, prune]);
 
   const {
     data: poolDevices,
@@ -290,23 +295,14 @@ const IntegratedStorage = () => {
 
   const handleToggleSelect = useCallback(
     (pool: ZpoolCapacityEntry, checked: boolean) => {
-      setSelectedPools((prev) => {
-        if (checked) {
-          if (prev.includes(pool.name)) {
-            return prev;
-          }
+      if (checked) {
+        selectPool(pool.name);
+        return;
+      }
 
-          if (prev.length >= MAX_COMPARISON_ITEMS) {
-            return [...prev.slice(0, MAX_COMPARISON_ITEMS - 1), pool.name];
-          }
-
-          return [...prev, pool.name];
-        }
-
-        return prev.filter((poolName) => poolName !== pool.name);
-      });
+      removePool(pool.name);
     },
-    []
+    [removePool, selectPool]
   );
 
   const handleSlotClick = useCallback((poolName: string, slot: PoolDiskSlot) => {
@@ -368,9 +364,12 @@ const IntegratedStorage = () => {
     [poolByName, selectedPoolDetails, selectedPools]
   );
 
-  const handleRemoveSelected = useCallback((poolName: string) => {
-    setSelectedPools((prev) => prev.filter((name) => name !== poolName));
-  }, []);
+  const handleRemoveSelected = useCallback(
+    (poolName: string) => {
+      removePool(poolName);
+    },
+    [removePool]
+  );
 
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
@@ -478,6 +477,9 @@ const IntegratedStorage = () => {
         <SelectedPoolsDetailsPanel
           items={selectedPoolDetailItems}
           onRemove={handleRemoveSelected}
+          pinnedId={pinnedPool}
+          onPin={pinPool}
+          onUnpin={unpinPool}
         />
       )}
 

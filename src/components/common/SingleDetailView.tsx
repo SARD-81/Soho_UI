@@ -1,11 +1,13 @@
 import {
   Box,
   CircularProgress,
+  IconButton,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -14,6 +16,7 @@ import type { ReactNode } from 'react';
 import type { DetailLayoutConfig } from '../../config/detailLayouts';
 import { sortKeysWithPriority } from '../../utils/keySort';
 import type { DetailComparisonStatus } from './DetailComparisonPanel';
+import { MdPushPin } from 'react-icons/md';
 
 type DiskValue = string | number | null | undefined;
 
@@ -39,6 +42,9 @@ interface SingleDetailViewProps {
   attributeOrder?: string[];
   attributeSort?: (a: string, b: string) => number;
   attributeLabelResolver?: (key: string) => string;
+  isPinned?: boolean;
+  onPin?: () => void;
+  onUnpin?: () => void;
 }
 
 const renderDiskTable = (
@@ -134,6 +140,9 @@ const SingleDetailView = ({
   attributeOrder = [],
   attributeSort = (a: string, b: string) => a.localeCompare(b, 'fa-IR'),
   attributeLabelResolver,
+  isPinned = false,
+  onPin,
+  onUnpin,
 }: SingleDetailViewProps) => {
   const theme = useTheme();
   const resolveAttributeLabel =
@@ -272,17 +281,58 @@ const SingleDetailView = ({
         minWidth: '550px',
       }}
     >
-      <Typography
-        variant="h6"
+      <Box
         sx={{
           mb: 2.5,
-          fontWeight: 800,
-          color: 'var(--color-primary)',
-          letterSpacing: 0.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1.5,
         }}
       >
-        {title}
-      </Typography>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 800,
+            color: 'var(--color-primary)',
+            letterSpacing: 0.5,
+          }}
+        >
+          {title}
+        </Typography>
+
+        {(onPin || onUnpin) && (
+          <Tooltip
+            title={isPinned ? 'برداشتن پین' : 'پین کردن برای مقایسه'}
+            placement="top"
+          >
+            <IconButton
+              onClick={() => {
+                if (isPinned) {
+                  onUnpin?.();
+                  return;
+                }
+
+                onPin?.();
+              }}
+              size="small"
+              sx={{
+                color: isPinned ? 'var(--color-primary)' : 'var(--color-secondary)',
+                border: `1px solid ${borderColor}`,
+                backgroundColor: isPinned
+                  ? alpha(theme.palette.primary.main, 0.15)
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                },
+              }}
+              aria-label={isPinned ? 'برداشتن پین جزئیات' : 'پین کردن جزئیات'}
+            >
+              <MdPushPin />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Box>
 
       {!hasContent ? (
         <Box

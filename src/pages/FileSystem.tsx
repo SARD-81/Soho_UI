@@ -1,5 +1,5 @@
 import { Box, Button, Typography } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import type { FileSystemAttributeEntry, FileSystemEntry } from '../@types/filesystem';
 import PageContainer from '../components/PageContainer';
@@ -7,6 +7,7 @@ import ConfirmDeleteFileSystemModal from '../components/file-system/ConfirmDelet
 import CreateFileSystemModal from '../components/file-system/CreateFileSystemModal';
 import FileSystemsTable from '../components/file-system/FileSystemsTable';
 import SelectedFileSystemsDetailsPanel from '../components/file-system/SelectedFileSystemsDetailsPanel';
+import usePinnedSelection from '../hooks/usePinnedSelection';
 import { useCreateFileSystem } from '../hooks/useCreateFileSystem';
 import { useDeleteFileSystem } from '../hooks/useDeleteFileSystem';
 import { useFileSystems } from '../hooks/useFileSystems';
@@ -42,7 +43,15 @@ const FileSystem = () => {
 
   const { data, isLoading, error } = useFileSystems();
   const { data: poolData } = useZpool();
-  const [selectedFilesystems, setSelectedFilesystems] = useState<string[]>([]);
+  const {
+    selectedIds: selectedFilesystems,
+    pinnedId: pinnedFilesystem,
+    select: selectFilesystem,
+    remove: removeFilesystem,
+    pin: pinFilesystem,
+    unpin: unpinFilesystem,
+    prune,
+  } = usePinnedSelection();
 
   const poolOptions = useMemo(
     () =>
@@ -81,12 +90,8 @@ const FileSystem = () => {
   }, [filesystems]);
 
   useEffect(() => {
-    setSelectedFilesystems((prev) =>
-      prev.filter((filesystemId) =>
-        filesystems.some((filesystem) => filesystem.id === filesystemId)
-      )
-    );
-  }, [filesystems]);
+    prune(filesystems.map((filesystem) => filesystem.id));
+  }, [filesystems, prune]);
 
   const handleOpenCreate = useCallback(() => {
     createFileSystem.openCreateModal();
@@ -101,24 +106,22 @@ const FileSystem = () => {
 
   const handleToggleSelect = useCallback(
     (filesystem: FileSystemEntry, checked: boolean) => {
-      setSelectedFilesystems((prev) => {
-        if (checked) {
-          if (prev.includes(filesystem.id)) {
-            return prev;
-          }
+      if (checked) {
+        selectFilesystem(filesystem.id);
+        return;
+      }
 
-          return [...prev, filesystem.id];
-        }
-
-        return prev.filter((id) => id !== filesystem.id);
-      });
+      removeFilesystem(filesystem.id);
     },
-    []
+    [removeFilesystem, selectFilesystem]
   );
 
-  const handleRemoveSelected = useCallback((filesystemId: string) => {
-    setSelectedFilesystems((prev) => prev.filter((id) => id !== filesystemId));
-  }, []);
+  const handleRemoveSelected = useCallback(
+    (filesystemId: string) => {
+      removeFilesystem(filesystemId);
+    },
+    [removeFilesystem]
+  );
 
   const selectedFilesystemDetails = useMemo(() => {
     const lookup = new Map(filesystems.map((filesystem) => [filesystem.id, filesystem]));
@@ -188,6 +191,9 @@ const FileSystem = () => {
         <SelectedFileSystemsDetailsPanel
           items={selectedFilesystemDetails}
           onRemove={handleRemoveSelected}
+          pinnedId={pinnedFilesystem}
+          onPin={pinFilesystem}
+          onUnpin={unpinFilesystem}
         />
       </Box>
 

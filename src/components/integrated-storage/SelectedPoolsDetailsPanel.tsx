@@ -26,11 +26,17 @@ interface PoolDetailItem {
 interface SelectedPoolsDetailsPanelProps {
   items: PoolDetailItem[];
   onRemove: (poolName: string) => void;
+  pinnedId?: string | null;
+  onPin?: (poolName: string) => void;
+  onUnpin?: () => void;
 }
 
 const SelectedPoolsDetailsPanel = ({
   items,
   onRemove,
+  pinnedId,
+  onPin,
+  onUnpin,
 }: SelectedPoolsDetailsPanelProps) => {
   const formatValue = useMemo(
     () =>
@@ -120,6 +126,9 @@ const SelectedPoolsDetailsPanel = ({
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={comparisonPriority}
         attributeSort={attributeSort}
+        isPinned={columns[0].id === pinnedId}
+        onPin={onPin ? () => onPin(columns[0].id) : undefined}
+        onUnpin={columns[0].id === pinnedId ? onUnpin : undefined}
       />
     ) : (
       <DetailComparisonPanel

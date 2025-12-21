@@ -51,6 +51,7 @@ import { useUpdateSambaGroupMember } from '../hooks/useUpdateSambaGroupMember';
 import { useUpdateSambaUserPassword } from '../hooks/useUpdateSambaUserPassword';
 import { useUpdateSambaUserStatus } from '../hooks/useUpdateSambaUserStatus';
 import { normalizeSambaUsers } from '../utils/sambaUsers';
+import usePinnedSelection from '../hooks/usePinnedSelection';
 
 const SHARE_TABS = {
   shares: 'shares',
@@ -60,11 +61,17 @@ const SHARE_TABS = {
 
 type ShareTabValue = (typeof SHARE_TABS)[keyof typeof SHARE_TABS];
 
-const MAX_COMPARISON_ITEMS = 4;
-
 const Share = () => {
   const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.shares);
-  const [selectedShares, setSelectedShares] = useState<string[]>([]);
+  const {
+    selectedIds: selectedShares,
+    pinnedId: pinnedShare,
+    select: selectShare,
+    remove: removeShare,
+    pin: pinShare,
+    unpin: unpinShare,
+    prune: pruneShares,
+  } = usePinnedSelection();
   const [manageUsersShare, setManageUsersShare] = useState<string | null>(null);
   const [manageGroupsShare, setManageGroupsShare] = useState<string | null>(
     null
@@ -74,7 +81,15 @@ const Share = () => {
   const [sambaCreateInitialUsername, setSambaCreateInitialUsername] = useState<
     string | undefined
   >(undefined);
-  const [selectedSambaUsers, setSelectedSambaUsers] = useState<string[]>([]);
+  const {
+    selectedIds: selectedSambaUsers,
+    pinnedId: pinnedSambaUser,
+    select: selectSambaUser,
+    remove: removeSambaUser,
+    pin: pinSambaUser,
+    unpin: unpinSambaUser,
+    prune: pruneSambaUsers,
+  } = usePinnedSelection();
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordModalUsername, setPasswordModalUsername] = useState<
     string | null
@@ -200,37 +215,24 @@ const Share = () => {
   }, [serviceAction]);
 
   useEffect(() => {
-    setSelectedShares((prev) =>
-      prev.filter((shareName) =>
-        shares.some((share) => share.name === shareName)
-      )
-    );
-  }, [shares]);
+    pruneShares(shares.map((share) => share.name));
+  }, [pruneShares, shares]);
 
   const handleToggleSelect = useCallback(
     (share: SambaShareEntry, checked: boolean) => {
-      setSelectedShares((prev) => {
-        if (checked) {
-          if (prev.includes(share.name)) {
-            return prev;
-          }
+      if (checked) {
+        selectShare(share.name);
+        return;
+      }
 
-          if (prev.length >= MAX_COMPARISON_ITEMS) {
-            return [...prev.slice(0, MAX_COMPARISON_ITEMS - 1), share.name];
-          }
-
-          return [...prev, share.name];
-        }
-
-        return prev.filter((name) => name !== share.name);
-      });
+      removeShare(share.name);
     },
-    []
+    [removeShare, selectShare]
   );
 
   const handleRemoveSelected = useCallback((shareName: string) => {
-    setSelectedShares((prev) => prev.filter((name) => name !== shareName));
-  }, []);
+    removeShare(shareName);
+  }, [removeShare]);
 
   const handleDeleteShare = useCallback(
     (share: SambaShareEntry) => {
@@ -485,28 +487,19 @@ const Share = () => {
 
   const handleToggleSelectSambaUser = useCallback(
     (user: { username: string }, checked: boolean) => {
-      setSelectedSambaUsers((prev) => {
-        if (checked) {
-          if (prev.includes(user.username)) {
-            return prev;
-          }
+      if (checked) {
+        selectSambaUser(user.username);
+        return;
+      }
 
-          if (prev.length >= MAX_COMPARISON_ITEMS) {
-            return [...prev.slice(0, MAX_COMPARISON_ITEMS - 1), user.username];
-          }
-
-          return [...prev, user.username];
-        }
-
-        return prev.filter((username) => username !== user.username);
-      });
+      removeSambaUser(user.username);
     },
-    []
+    [removeSambaUser, selectSambaUser]
   );
 
   const handleRemoveSelectedSambaUser = useCallback((username: string) => {
-    setSelectedSambaUsers((prev) => prev.filter((item) => item !== username));
-  }, []);
+    removeSambaUser(username);
+  }, [removeSambaUser]);
 
   const handleToggleSambaUserStatus = useCallback(
     (user: { username: string }) => {
@@ -760,12 +753,8 @@ const Share = () => {
   }, [deleteModalUsername, deleteSambaUser]);
 
   useEffect(() => {
-    setSelectedSambaUsers((prev) =>
-      prev.filter((username) =>
-        sambaUsers.some((user) => user.username === username)
-      )
-    );
-  }, [sambaUsers]);
+    pruneSambaUsers(sambaUsers.map((user) => user.username));
+  }, [pruneSambaUsers, sambaUsers]);
 
   const selectedSambaUserItems = useMemo(
     () =>
@@ -922,6 +911,9 @@ const Share = () => {
               <SelectedSharesDetailsPanel
                 items={comparisonItems}
                 onRemove={handleRemoveSelected}
+                pinnedId={pinnedShare}
+                onPin={pinShare}
+                onUnpin={unpinShare}
               />
             </Box>
           </TabPanel>
@@ -995,6 +987,9 @@ const Share = () => {
               <SelectedSambaUsersDetailsPanel
                 items={selectedSambaUserItems}
                 onRemove={handleRemoveSelectedSambaUser}
+                pinnedId={pinnedSambaUser}
+                onPin={pinSambaUser}
+                onUnpin={unpinSambaUser}
               />
             </Box>
           </TabPanel>

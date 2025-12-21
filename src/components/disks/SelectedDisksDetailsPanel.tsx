@@ -15,6 +15,9 @@ import { DISK_DETAIL_LAYOUT } from '../../config/detailLayouts';
 interface SelectedDisksDetailsPanelProps {
   items: DiskDetailItemState[];
   onRemove: (diskName: string) => void;
+  pinnedId?: string | null;
+  onPin?: (diskName: string) => void;
+  onUnpin?: () => void;
 }
 
 
@@ -40,7 +43,13 @@ const formatDiskDetailValue = (value: unknown) => {
   return formatted;
 };
 
-const SelectedDisksDetailsPanel = ({ items, onRemove }: SelectedDisksDetailsPanelProps) => {
+const SelectedDisksDetailsPanel = ({
+  items,
+  onRemove,
+  pinnedId,
+  onPin,
+  onUnpin,
+}: SelectedDisksDetailsPanelProps) => {
   const columns: DetailComparisonColumn[] = items.map((item) => {
     let status: DetailComparisonStatus | undefined;
 
@@ -80,6 +89,9 @@ const SelectedDisksDetailsPanel = ({ items, onRemove }: SelectedDisksDetailsPane
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={DISK_DETAIL_LAYOUT.comparisonPriority}
         attributeSort={attributeSort}
+        isPinned={columns[0].id === pinnedId}
+        onPin={onPin ? () => onPin(columns[0].id) : undefined}
+        onUnpin={columns[0].id === pinnedId ? onUnpin : undefined}
       />
     ) : (
       <DetailComparisonPanel

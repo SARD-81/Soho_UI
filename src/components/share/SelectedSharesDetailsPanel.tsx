@@ -26,6 +26,9 @@ interface EditableShareValue {
 interface SelectedSharesDetailsPanelProps {
   items: ShareDetailItem[];
   onRemove: (shareName: string) => void;
+  pinnedId?: string | null;
+  onPin?: (shareName: string) => void;
+  onUnpin?: () => void;
 }
 
 const SHARE_ATTRIBUTE_LABELS: Record<string, string> = {
@@ -50,6 +53,9 @@ const SHARE_ATTRIBUTE_LABELS: Record<string, string> = {
 const SelectedSharesDetailsPanel = ({
   items,
   onRemove,
+  pinnedId,
+  onPin,
+  onUnpin,
 }: SelectedSharesDetailsPanelProps) => {
   const updateSharepoint = useUpdateSharepoint();
   const resolveAttributeLabel = (key: string) => SHARE_ATTRIBUTE_LABELS[key] ?? key;
@@ -133,6 +139,9 @@ const SelectedSharesDetailsPanel = ({
         attributeOrder={SHARE_DETAIL_LAYOUT.comparisonPriority}
         attributeSort={attributeSort}
         attributeLabelResolver={resolveAttributeLabel}
+        isPinned={columns[0].id === pinnedId}
+        onPin={onPin ? () => onPin(columns[0].id) : undefined}
+        onUnpin={columns[0].id === pinnedId ? onUnpin : undefined}
       />
     ) : (
       <DetailComparisonPanel
