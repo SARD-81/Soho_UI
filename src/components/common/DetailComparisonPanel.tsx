@@ -2,6 +2,7 @@ import { Box, CircularProgress, IconButton, Typography, useTheme } from '@mui/ma
 import { alpha } from '@mui/material/styles';
 import { MdClose } from 'react-icons/md';
 import { isValidElement, type ReactNode } from 'react';
+import useDetailSelectionStore from '../../stores/useDetailSelectionStore';
 
 export type DetailComparisonStatus =
   | { type: 'loading'; message?: string }
@@ -21,6 +22,7 @@ interface DetailComparisonPanelProps {
   title: string;
   attributeLabel: string;
   columns: DetailComparisonColumn[];
+  itemIds?: string[];
   formatValue: (value: unknown) => ReactNode;
   emptyStateMessage: string;
   attributeSort?: (a: string, b: string) => number;
@@ -31,6 +33,7 @@ const DetailComparisonPanel = ({
   title,
   attributeLabel,
   columns,
+  itemIds,
   formatValue,
   emptyStateMessage,
   attributeSort,
@@ -38,13 +41,26 @@ const DetailComparisonPanel = ({
 }: DetailComparisonPanelProps) => {
   const theme = useTheme();
   const resolveAttributeLabel = attributeLabelResolver ?? ((key: string) => key);
+  const { unpin, isPinned, getItemsByIds } = useDetailSelectionStore((state) => ({
+    unpin: state.unpin,
+    isPinned: state.isPinned,
+    getItemsByIds: state.getItemsByIds,
+  }));
 
-  if (!columns.length) {
+  const resolvedColumns = (itemIds?.length ? getItemsByIds(itemIds) : columns).map(
+    (column) => ({
+      ...column,
+      onRemove: column.onRemove ?? (isPinned(column.id) ? () => unpin(column.id) : undefined),
+    })
+  );
+
+  if (!resolvedColumns.length) {
     return null;
   }
 
-  const visibleColumns =
-    columns.length > 4 ? columns.slice(-4) : columns;
+  const visibleColumns = resolvedColumns.slice(
+    resolvedColumns.length > 4 ? -4 : 0
+  );
 
   const attributeKeys = Array.from(
     visibleColumns.reduce((acc, column) => {

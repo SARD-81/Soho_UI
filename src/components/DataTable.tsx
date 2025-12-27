@@ -15,6 +15,7 @@ import {
 import type { SxProps, Theme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import type { DataTableProps } from '../@types/dataTable.ts';
+import useDetailSelectionStore from '../stores/useDetailSelectionStore';
 import {
   baseTableSx,
   defaultBodyCellSx,
@@ -86,6 +87,8 @@ const DataTable = <T,>({
   tableProps,
   pagination,
 }: DataTableProps<T>) => {
+  const setActiveItemId = useDetailSelectionStore((state) => state.setActiveItemId);
+
   const renderStateRow = (content: ReactNode) => (
     <TableRow>
       <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
@@ -187,6 +190,7 @@ const DataTable = <T,>({
                 onClick={
                   onRowClick
                     ? () => {
+                        setActiveItemId(rowId);
                         onRowClick(row, index);
                       }
                     : undefined

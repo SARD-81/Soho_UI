@@ -1,6 +1,7 @@
 import {
   Box,
   CircularProgress,
+  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -10,10 +11,12 @@ import {
   useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import type { DetailLayoutConfig } from '../../config/detailLayouts';
 import { sortKeysWithPriority } from '../../utils/keySort';
-import type { DetailComparisonStatus } from './DetailComparisonPanel';
+import DetailComparisonPanel, { type DetailComparisonStatus } from './DetailComparisonPanel';
+import { MdPushPin, MdPushPinOff } from 'react-icons/md';
+import useDetailSelectionStore from '../../stores/useDetailSelectionStore';
 
 type DiskValue = string | number | null | undefined;
 
@@ -31,6 +34,7 @@ interface DiskRow extends Record<string, unknown> {
 
 interface SingleDetailViewProps {
   title: string;
+  itemId?: string;
   values: Record<string, unknown>;
   status?: DetailComparisonStatus;
   sections: DetailLayoutConfig['sections'];
@@ -136,6 +140,13 @@ const SingleDetailView = ({
   attributeLabelResolver,
 }: SingleDetailViewProps) => {
   const theme = useTheme();
+  const { togglePin, isPinned, registerItem } = useDetailSelectionStore((state) => ({
+    togglePin: state.togglePin,
+    isPinned: state.isPinned,
+    registerItem: state.registerItem,
+  }));
+  const pinnedItemIds = useDetailSelectionStore((state) => state.pinnedItemIds);
+  const getItemsByIds = useDetailSelectionStore((state) => state.getItemsByIds);
   const resolveAttributeLabel =
     attributeLabelResolver ?? ((key: string) => key);
   const borderColor = alpha(
@@ -253,6 +264,58 @@ const SingleDetailView = ({
   };
 
   const hasContent = keys.length > 0;
+  const isItemPinned = itemId ? isPinned(itemId) : false;
+  const pinnedColumns =
+    pinnedItemIds.length > 0
+      ? getItemsByIds(pinnedItemIds).map((item) => ({
+          ...item,
+          onRemove: () => togglePin(item.id),
+        }))
+      : [];
+
+  useEffect(() => {
+    if (!itemId) {
+      return;
+    }
+
+    registerItem({
+      id: itemId,
+      title,
+      values,
+      status,
+    });
+  }, [itemId, registerItem, status, title, values]);
+
+  if (itemId && pinnedColumns.length > 0) {
+    return (
+      <DetailComparisonPanel
+        title={title}
+        attributeLabel="ویژگی"
+        columns={pinnedColumns}
+        itemIds={pinnedItemIds}
+        formatValue={formatValue}
+        emptyStateMessage={emptyStateMessage}
+        attributeSort={attributeSort}
+        attributeLabelResolver={resolveAttributeLabel}
+      />
+    );
+  }
+  const renderPinAction = () => {
+    if (!itemId) {
+      return null;
+    }
+
+    return (
+      <IconButton
+        size="small"
+        onClick={() => togglePin(itemId)}
+        aria-label={isItemPinned ? 'حذف از موارد سنجاق شده' : 'سنجاق کردن مورد'}
+        sx={{ color: isItemPinned ? 'var(--color-primary)' : 'var(--color-secondary)' }}
+      >
+        {isItemPinned ? <MdPushPinOff size={18} /> : <MdPushPin size={18} />}
+      </IconButton>
+    );
+  };
 
   return (
     <Box
@@ -272,17 +335,27 @@ const SingleDetailView = ({
         minWidth: '550px',
       }}
     >
-      <Typography
-        variant="h6"
+      <Box
         sx={{
           mb: 2.5,
-          fontWeight: 800,
-          color: 'var(--color-primary)',
-          letterSpacing: 0.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1,
         }}
       >
-        {title}
-      </Typography>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 800,
+            color: 'var(--color-primary)',
+            letterSpacing: 0.5,
+          }}
+        >
+          {title}
+        </Typography>
+        {renderPinAction()}
+      </Box>
 
       {!hasContent ? (
         <Box
