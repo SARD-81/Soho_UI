@@ -24,6 +24,7 @@ export interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   data: T[];
   getRowId: (row: T, index: number) => string;
+  activeRowId?: string | null;
   isLoading?: boolean;
   error?: Error | null;
   renderLoadingState?: () => ReactNode;
@@ -34,6 +35,13 @@ export interface DataTableProps<T> {
   headRowSx?: SxProps<Theme>;
   bodyRowSx?: SxProps<Theme> | ((row: T, index: number) => SxProps<Theme>);
   onRowClick?: (row: T, index: number) => void;
+  /**
+   * Enables pushing row clicks into the shared detail selection store to power
+   * the split-view monitoring layout.
+   * Defaults to true so existing tables automatically light up the detail pane
+   * when rows are clicked.
+   */
+  enableRowActivation?: boolean;
   containerProps?: TableContainerProps;
   tableProps?: TableProps;
   pagination?: {

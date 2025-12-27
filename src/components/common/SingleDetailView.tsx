@@ -1,19 +1,27 @@
 import {
   Box,
   CircularProgress,
+  IconButton,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import type { ReactNode } from 'react';
+import { useMemo } from 'react';
+import { MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import type { DetailLayoutConfig } from '../../config/detailLayouts';
 import { sortKeysWithPriority } from '../../utils/keySort';
 import type { DetailComparisonStatus } from './DetailComparisonPanel';
+import {
+  selectTogglePin,
+  useDetailSelectionStore,
+} from '../../hooks/useDetailSelectionStore';
 
 type DiskValue = string | number | null | undefined;
 
@@ -39,6 +47,8 @@ interface SingleDetailViewProps {
   attributeOrder?: string[];
   attributeSort?: (a: string, b: string) => number;
   attributeLabelResolver?: (key: string) => string;
+  itemId?: string;
+  allowPinning?: boolean;
 }
 
 const renderDiskTable = (
@@ -134,6 +144,8 @@ const SingleDetailView = ({
   attributeOrder = [],
   attributeSort = (a: string, b: string) => a.localeCompare(b, 'fa-IR'),
   attributeLabelResolver,
+  itemId,
+  allowPinning = true,
 }: SingleDetailViewProps) => {
   const theme = useTheme();
   const resolveAttributeLabel =
@@ -155,6 +167,17 @@ const SingleDetailView = ({
     'rgba(0, 198, 169, 0.18)',
   ];
   const selectedRowHover = alpha(theme.palette.primary.main, 0.08);
+  const togglePin = useDetailSelectionStore(selectTogglePin);
+  const effectiveItemId = itemId ?? title;
+  const isPinned = useDetailSelectionStore(
+    useMemo(
+      () =>
+        effectiveItemId
+          ? (state) => state.pinnedItemIds.includes(effectiveItemId)
+          : () => false,
+      [effectiveItemId]
+    )
+  );
 
   const keys = sortKeysWithPriority(
     Object.keys(values ?? {}),
@@ -272,17 +295,54 @@ const SingleDetailView = ({
         minWidth: '550px',
       }}
     >
-      <Typography
-        variant="h6"
+      <Box
         sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1.5,
           mb: 2.5,
-          fontWeight: 800,
-          color: 'var(--color-primary)',
-          letterSpacing: 0.5,
         }}
       >
-        {title}
-      </Typography>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 800,
+            color: 'var(--color-primary)',
+            letterSpacing: 0.5,
+          }}
+        >
+          {title}
+        </Typography>
+
+        {allowPinning && effectiveItemId && (
+          <Tooltip title={isPinned ? 'حذف پین' : 'پین کردن'} placement="left">
+            <Box
+              sx={{
+                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                borderRadius: 2,
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.35)}`,
+              }}
+            >
+              <IconButton
+                size="small"
+                onClick={() => togglePin(effectiveItemId)}
+                sx={{
+                  color: isPinned ? 'var(--color-primary)' : 'var(--color-secondary)',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    color: 'var(--color-primary)',
+                    transform: 'translateY(-1px)',
+                  },
+                }}
+                aria-label={isPinned ? 'حذف از موارد پین شده' : 'پین کردن مورد'}
+              >
+                {isPinned ? <MdPushPin size={20} /> : <MdOutlinePushPin size={20} />}
+              </IconButton>
+            </Box>
+          </Tooltip>
+        )}
+      </Box>
 
       {!hasContent ? (
         <Box

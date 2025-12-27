@@ -16,6 +16,11 @@ import type { SxProps, Theme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import type { DataTableProps } from '../@types/dataTable.ts';
 import {
+  selectActiveItemId,
+  selectSetActiveItemId,
+  useDetailSelectionStore,
+} from '../hooks/useDetailSelectionStore';
+import {
   baseTableSx,
   defaultBodyCellSx,
   defaultBodyRowSx,
@@ -85,7 +90,11 @@ const DataTable = <T,>({
   containerProps,
   tableProps,
   pagination,
+  activeRowId,
+  enableRowActivation = true,
 }: DataTableProps<T>) => {
+  const storeActiveRowId = useDetailSelectionStore(selectActiveItemId);
+  const setActiveItemId = useDetailSelectionStore(selectSetActiveItemId);
   const renderStateRow = (content: ReactNode) => (
     <TableRow>
       <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
@@ -168,31 +177,44 @@ const DataTable = <T,>({
             )}
 
           {data.map((row, index) => {
-            const resolvedRowSx =
-              typeof bodyRowSx === 'function'
-                ? (bodyRowSx as (row: T, index: number) => SxProps<Theme>)(
-                    row,
-                    index
-                  )
-                : bodyRowSx;
-            const rowId = getRowId(row, index);
-            const clickableRowSx = onRowClick
-              ? ({ cursor: 'pointer' } as SxProps<Theme>)
-              : undefined;
+          const resolvedRowSx =
+            typeof bodyRowSx === 'function'
+              ? (bodyRowSx as (row: T, index: number) => SxProps<Theme>)(
+                  row,
+                  index
+                )
+              : bodyRowSx;
+          const rowId = getRowId(row, index);
+            const clickableRowSx =
+              onRowClick || enableRowActivation
+                ? ({ cursor: 'pointer' } as SxProps<Theme>)
+                : undefined;
+          const isActiveRow = (activeRowId ?? storeActiveRowId) === rowId;
+          const activeRowSx: SxProps<Theme> | undefined = isActiveRow
+            ? {
+                backgroundColor: 'rgba(0, 198, 169, 0.12)',
+                '&:hover': { backgroundColor: 'rgba(0, 198, 169, 0.18)' },
+              }
+            : undefined;
 
             return (
               <TableRow
                 key={rowId}
-                hover={Boolean(onRowClick)}
-                onClick={
-                  onRowClick
-                    ? () => {
-                        onRowClick(row, index);
-                      }
-                    : undefined
-                }
-                sx={mergeSx(defaultBodyRowSx, resolvedRowSx, clickableRowSx)}
-              >
+                hover={Boolean(onRowClick || enableRowActivation)}
+                onClick={() => {
+                  if (enableRowActivation) {
+                    setActiveItemId(rowId);
+                  }
+
+                  onRowClick?.(row, index);
+                }}
+                sx={mergeSx(
+                  defaultBodyRowSx,
+                resolvedRowSx,
+                clickableRowSx,
+                activeRowSx
+              )}
+            >
                 {columns.map((column) => {
                   const cellProps = column.getCellProps?.(row, index) ?? {};
                   const {
