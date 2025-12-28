@@ -11,13 +11,19 @@ import usePoolDeviceNames from '../hooks/usePoolDeviceNames';
 import { useDiskPartitionCounts } from '../hooks/useDiskPartitionCounts';
 import { cleanupDisk } from '../lib/diskMaintenance';
 import extractApiErrorMessage from '../utils/apiError';
-import { useDetailSplitViewStore } from '../store/detailSplitViewStore';
+import { selectDetailViewState, useDetailSplitViewStore } from '../store/detailSplitViewStore';
+
+const DISK_DETAIL_VIEW_ID = 'disks';
 
 const Disks = () => {
   const [wipingDisks, setWipingDisks] = useState<Record<string, boolean>>({});
   const queryClient = useQueryClient();
   const { data: disks = [], isLoading, error } = useDiskInventory();
-  const { activeItemId, pinnedItemIds, setActiveItemId, unpinItem } = useDetailSplitViewStore();
+  const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
+    selectDetailViewState(DISK_DETAIL_VIEW_ID)
+  );
+  const setActiveItemId = useDetailSplitViewStore((state) => state.setActiveItemId);
+  const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
   const detailIds = useMemo(() => {
     const ids = new Set<string>();
 
@@ -63,12 +69,12 @@ const Disks = () => {
     });
 
     if (!activeItemId && disks.length > 0) {
-      setActiveItemId(disks[0].disk);
+      setActiveItemId(DISK_DETAIL_VIEW_ID, disks[0].disk);
       return;
     }
 
     if (activeItemId && !validDisks.has(activeItemId)) {
-      setActiveItemId(disks[0]?.disk ?? null);
+      setActiveItemId(DISK_DETAIL_VIEW_ID, disks[0]?.disk ?? null);
     }
   }, [activeItemId, disks, pinnedItemIds, setActiveItemId, unpinItem]);
 
@@ -122,6 +128,7 @@ const Disks = () => {
       <Stack direction="column" spacing={3} alignItems="flex-start">
         <Box sx={{ flex: 1, width: '100%' }}>
           <DisksTable
+            detailViewId={DISK_DETAIL_VIEW_ID}
             disks={disks}
             isLoading={isLoading}
             error={error ?? null}
@@ -138,7 +145,8 @@ const Disks = () => {
             items={detailItems}
             activeItemId={activeItemId}
             pinnedItemIds={pinnedItemIds}
-            onUnpin={unpinItem}
+            onUnpin={(diskName) => unpinItem(DISK_DETAIL_VIEW_ID, diskName)}
+            viewId={DISK_DETAIL_VIEW_ID}
           />
         </Box>
       </Stack>

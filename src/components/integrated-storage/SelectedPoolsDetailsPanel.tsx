@@ -15,6 +15,7 @@ import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import { isValidElement, useMemo } from 'react';
 import { POOL_DETAIL_LAYOUT } from '../../config/detailLayouts';
 import { translateDetailKey } from '../../utils/detailLabels';
+import { selectDetailViewState, useDetailSplitViewStore } from '../../store/detailSplitViewStore';
 
 interface PoolDetailItem {
   poolName: string;
@@ -26,11 +27,13 @@ interface PoolDetailItem {
 interface SelectedPoolsDetailsPanelProps {
   items: PoolDetailItem[];
   onRemove: (poolName: string) => void;
+  viewId: string;
 }
 
 const SelectedPoolsDetailsPanel = ({
   items,
   onRemove,
+  viewId,
 }: SelectedPoolsDetailsPanelProps) => {
   const formatValue = useMemo(
     () =>
@@ -70,12 +73,17 @@ const SelectedPoolsDetailsPanel = ({
     []
   );
 
-  const columns: DetailComparisonColumn[] = items.map(({
-    poolName,
-    detail,
-    isLoading,
-    error,
-  }) => {
+  const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
+    selectDetailViewState(viewId)
+  );
+  const togglePinnedItem = useDetailSplitViewStore((state) => state.togglePinnedItem);
+  const itemLookup = useMemo(
+    () => new Map(items.map((item) => [item.poolName, item])),
+    [items]
+  );
+
+  const buildColumn = (item: PoolDetailItem, isPinned: boolean) => {
+    const { poolName, detail, isLoading, error } = item;
     let status: DetailComparisonStatus | undefined;
 
     if (isLoading) {
@@ -92,45 +100,79 @@ const SelectedPoolsDetailsPanel = ({
     return {
       id: poolName,
       title: poolName,
-      onRemove: () => onRemove(poolName),
+      onRemove: isPinned ? () => onRemove(poolName) : undefined,
       values: buildPoolDetailValues(detail),
       status,
-    };
-  });
+      pinToggle: {
+        isPinned,
+        onToggle: () => togglePinnedItem(viewId, poolName),
+      },
+    } satisfies DetailComparisonColumn;
+  };
+
+  const pinnedColumns: DetailComparisonColumn[] = pinnedItemIds
+    .map((poolName) => itemLookup.get(poolName))
+    .filter((item): item is PoolDetailItem => Boolean(item))
+    .map((item) => buildColumn(item, true));
+
+  const shouldShowSingle = pinnedColumns.length === 0;
+  const activeItem = activeItemId ? itemLookup.get(activeItemId) : null;
+  const comparisonColumns: DetailComparisonColumn[] = [];
+
+  if (!shouldShowSingle && activeItem && !pinnedItemIds.includes(activeItem.poolName)) {
+    comparisonColumns.push(buildColumn(activeItem, false));
+  }
+
+  comparisonColumns.push(...pinnedColumns);
+
   const title =
-    columns.length > 1 ? 'مقایسه جزئیات فضاهای یکپارچه' : 'جزئیات فضاهای یکپارچه';
+    pinnedColumns.length > 1 ? 'مقایسه جزئیات فضاهای یکپارچه' : 'جزئیات فضاهای یکپارچه';
+
+  const comparisonValues =
+    shouldShowSingle && activeItem
+      ? [buildPoolDetailValues(activeItem.detail)]
+      : comparisonColumns.map(({ values }) => values);
+
   const attributeSort = useMemo(
     () =>
       createPriorityAwareComparatorFromRecords(
-        columns.map(({ values }) => values),
+        comparisonValues,
         'fa-IR',
         comparisonPriority
       ),
-    [columns, comparisonPriority]
+    [comparisonPriority, comparisonValues]
   );
 
-  return (
-    columns.length === 1 ? (
+  if (shouldShowSingle && activeItem) {
+    return (
       <SingleDetailView
         title={title}
         sections={sections}
-        values={columns[0].values}
-        status={columns[0].status}
+        values={buildPoolDetailValues(activeItem.detail)}
+        status={buildColumn(activeItem, false).status}
         formatValue={formatValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={comparisonPriority}
         attributeSort={attributeSort}
+        viewId={viewId}
+        itemId={activeItem.poolName}
       />
-    ) : (
-      <DetailComparisonPanel
-        title="مقایسه جزئیات فضاهای یکپارچه"
-        attributeLabel="ویژگی"
-        columns={columns}
-        formatValue={formatValue}
-        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-        attributeSort={attributeSort}
-      />
-    )
+    );
+  }
+
+  if (comparisonColumns.length === 0) {
+    return null;
+  }
+
+  return (
+    <DetailComparisonPanel
+      title="مقایسه جزئیات فضاهای یکپارچه"
+      attributeLabel="ویژگی"
+      columns={comparisonColumns}
+      formatValue={formatValue}
+      emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+      attributeSort={attributeSort}
+    />
   );
 };
 

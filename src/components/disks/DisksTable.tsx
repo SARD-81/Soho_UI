@@ -8,6 +8,7 @@ import { PiBroomFill } from 'react-icons/pi';
 import { useDetailSplitViewStore } from '../../store/detailSplitViewStore';
 
 interface DisksTableProps {
+  detailViewId: string;
   disks: DiskInventoryItem[];
   isLoading: boolean;
   error: Error | null;
@@ -49,6 +50,7 @@ const resolveStateColor = (
 };
 
 const DisksTable = ({
+  detailViewId,
   disks,
   isLoading,
   error,
@@ -269,10 +271,11 @@ const DisksTable = ({
   ]);
 
   return (
-    <DataTable<DiskInventoryItem>
-      columns={columns}
-      data={disks}
-      getRowId={(disk) => disk.disk}
+      <DataTable<DiskInventoryItem>
+        detailViewId={detailViewId}
+        columns={columns}
+        data={disks}
+        getRowId={(disk) => disk.disk}
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}

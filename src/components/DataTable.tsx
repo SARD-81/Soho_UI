@@ -23,7 +23,11 @@ import {
   defaultHeaderCellSx,
   defaultHeadRowSx,
 } from '../constants/dataTable.ts';
-import { useDetailSplitViewStore } from '../store/detailSplitViewStore';
+import {
+  DEFAULT_DETAIL_VIEW_ID,
+  selectDetailViewState,
+  useDetailSplitViewStore,
+} from '../store/detailSplitViewStore';
 
 const mergeSx = (...styles: (SxProps<Theme> | undefined)[]): SxProps<Theme> => {
   const filtered = styles.filter((style): style is SxProps<Theme> =>
@@ -75,6 +79,7 @@ const DataTable = <T,>({
   getRowId,
   isLoading = false,
   error = null,
+  detailViewId,
   renderLoadingState,
   renderErrorState,
   renderEmptyState,
@@ -89,11 +94,11 @@ const DataTable = <T,>({
   tableProps,
   pagination,
 }: DataTableProps<T>) => {
-  const {
-    activeItemId: storeActiveItemId,
-    pinnedItemIds,
-    setActiveItemId,
-  } = useDetailSplitViewStore();
+  const resolvedDetailViewId = detailViewId ?? DEFAULT_DETAIL_VIEW_ID;
+  const { activeItemId: storeActiveItemId, pinnedItemIds } = useDetailSplitViewStore(
+    selectDetailViewState(resolvedDetailViewId)
+  );
+  const setActiveItemId = useDetailSplitViewStore((state) => state.setActiveItemId);
   const renderStateRow = (content: ReactNode) => (
     <TableRow>
       <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
@@ -214,7 +219,7 @@ const DataTable = <T,>({
                 onClick={
                   onRowClick
                     ? () => {
-                        setActiveItemId(rowId);
+                        setActiveItemId(resolvedDetailViewId, rowId);
                         onRowClick(row, index, rowId);
                       }
                     : undefined

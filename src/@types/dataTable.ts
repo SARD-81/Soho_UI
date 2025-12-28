@@ -26,6 +26,7 @@ export interface DataTableProps<T> {
   getRowId: (row: T, index: number) => string;
   isLoading?: boolean;
   error?: Error | null;
+  detailViewId?: string;
   activeRowId?: string | null;
   pinnedRowIds?: string[];
   renderLoadingState?: () => ReactNode;

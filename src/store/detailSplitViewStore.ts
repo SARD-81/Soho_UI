@@ -1,33 +1,59 @@
 import { create } from 'zustand';
 
-interface DetailSplitViewState {
-  activeItemId: string | null;
-  pinnedItemIds: string[];
-  setActiveItemId: (itemId: string | null) => void;
-  togglePinnedItem: (itemId: string) => void;
-  unpinItem: (itemId: string) => void;
-  clearPinnedItems: () => void;
+export interface DetailSplitViewState {
+  views: Record<string, { activeItemId: string | null; pinnedItemIds: string[] }>;
+  setActiveItemId: (viewId: string, itemId: string | null) => void;
+  togglePinnedItem: (viewId: string, itemId: string) => void;
+  unpinItem: (viewId: string, itemId: string) => void;
+  clearPinnedItems: (viewId: string) => void;
 }
 
+export const DEFAULT_DETAIL_VIEW_ID = 'default';
+
+const ensureView = (
+  views: DetailSplitViewState['views'],
+  viewId: string
+): { activeItemId: string | null; pinnedItemIds: string[] } =>
+  views[viewId] ?? { activeItemId: null, pinnedItemIds: [] };
+
+const upsertView = (
+  views: DetailSplitViewState['views'],
+  viewId: string,
+  partial: Partial<{ activeItemId: string | null; pinnedItemIds: string[] }>
+) => {
+  const nextView = { ...ensureView(views, viewId), ...partial };
+
+  return {
+    ...views,
+    [viewId]: nextView,
+  } satisfies DetailSplitViewState['views'];
+};
+
+export const selectDetailViewState = (viewId: string = DEFAULT_DETAIL_VIEW_ID) =>
+  (state: DetailSplitViewState) => ensureView(state.views, viewId);
+
 export const useDetailSplitViewStore = create<DetailSplitViewState>((set) => ({
-  activeItemId: null,
-  pinnedItemIds: [],
-  setActiveItemId: (itemId) => set({ activeItemId: itemId }),
-  togglePinnedItem: (itemId) =>
+  views: {},
+  setActiveItemId: (viewId, itemId) =>
+    set((state) => ({ views: upsertView(state.views, viewId, { activeItemId: itemId }) })),
+  togglePinnedItem: (viewId, itemId) =>
     set((state) => {
-      const isPinned = state.pinnedItemIds.includes(itemId);
+      const { pinnedItemIds } = ensureView(state.views, viewId);
+      const isPinned = pinnedItemIds.includes(itemId);
+      const nextPinned = isPinned
+        ? pinnedItemIds.filter((id) => id !== itemId)
+        : [...pinnedItemIds, itemId];
 
-      if (isPinned) {
-        return {
-          pinnedItemIds: state.pinnedItemIds.filter((id) => id !== itemId),
-        };
-      }
-
-      return { pinnedItemIds: [...state.pinnedItemIds, itemId] };
+      return { views: upsertView(state.views, viewId, { pinnedItemIds: nextPinned }) };
     }),
-  unpinItem: (itemId) =>
+  unpinItem: (viewId, itemId) =>
     set((state) => ({
-      pinnedItemIds: state.pinnedItemIds.filter((id) => id !== itemId),
+      views: upsertView(state.views, viewId, {
+        pinnedItemIds: ensureView(state.views, viewId).pinnedItemIds.filter(
+          (id) => id !== itemId
+        ),
+      }),
     })),
-  clearPinnedItems: () => set({ pinnedItemIds: [] }),
+  clearPinnedItems: (viewId) =>
+    set((state) => ({ views: upsertView(state.views, viewId, { pinnedItemIds: [] }) })),
 }));

@@ -18,6 +18,7 @@ interface SelectedDisksDetailsPanelProps {
   activeItemId: string | null;
   pinnedItemIds: string[];
   onUnpin: (diskName: string) => void;
+  viewId: string;
 }
 
 
@@ -48,8 +49,9 @@ const SelectedDisksDetailsPanel = ({
   activeItemId,
   pinnedItemIds,
   onUnpin,
+  viewId,
 }: SelectedDisksDetailsPanelProps) => {
-  const { togglePinnedItem } = useDetailSplitViewStore();
+  const togglePinnedItem = useDetailSplitViewStore((state) => state.togglePinnedItem);
   const activeItem = items.find((item) => item.diskName === activeItemId);
   const buildColumn = (item: DiskDetailItemState, isPinned: boolean) => {
     let status: DetailComparisonStatus | undefined;
@@ -70,7 +72,7 @@ const SelectedDisksDetailsPanel = ({
       status,
       pinToggle: {
         isPinned,
-        onToggle: () => togglePinnedItem(item.diskName),
+        onToggle: () => togglePinnedItem(viewId, item.diskName),
       },
     } satisfies DetailComparisonColumn;
   };
@@ -111,6 +113,7 @@ const SelectedDisksDetailsPanel = ({
         attributeOrder={DISK_DETAIL_LAYOUT.comparisonPriority}
         attributeSort={attributeSort}
         itemId={activeItem.diskName}
+        viewId={viewId}
       />
     ) : null;
 

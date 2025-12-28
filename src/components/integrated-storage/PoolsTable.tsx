@@ -26,6 +26,7 @@ import {
 } from './status';
 
 interface PoolsTableProps {
+  detailViewId: string;
   pools: ZpoolCapacityEntry[];
   isLoading: boolean;
   error: Error | null;
@@ -35,8 +36,6 @@ interface PoolsTableProps {
   onAddDevices: (pool: ZpoolCapacityEntry) => void;
   onExport: (pool: ZpoolCapacityEntry) => void;
   isDeleteDisabled: boolean;
-  selectedPools: string[];
-  onToggleSelect: (pool: ZpoolCapacityEntry, checked: boolean) => void;
   slotMap?: PoolSlotMap;
   slotErrors?: Record<string, string>;
   isSlotLoading?: boolean;
@@ -60,6 +59,7 @@ const STATUS_COLOR_MAP = {
 } as const;
 
 const PoolsTable = ({
+  detailViewId,
   pools,
   isLoading,
   error,
@@ -69,8 +69,6 @@ const PoolsTable = ({
   onAddDevices,
   onExport,
   isDeleteDisabled,
-  selectedPools,
-  onToggleSelect,
   slotMap = {},
   slotErrors = {},
   isSlotLoading = false,
@@ -79,29 +77,13 @@ const PoolsTable = ({
   const theme = useTheme();
 
   const handleRowClick = useCallback(
-    (pool: ZpoolCapacityEntry) => {
-      const isSelected = selectedPools.includes(pool.name);
-      onToggleSelect(pool, !isSelected);
-    },
-    [onToggleSelect, selectedPools]
+    () => {},
+    []
   );
 
   const resolveRowSx = useCallback(
-    (pool: ZpoolCapacityEntry) => {
-      const isSelected = selectedPools.includes(pool.name);
-
-      if (!isSelected) {
-        return {};
-      }
-
-      return {
-        backgroundColor: alpha(theme.palette.primary.main, 0.08),
-        '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.14),
-        },
-      };
-    },
-    [selectedPools, theme]
+    () => ({}),
+    [theme]
   );
 
   const columns: DataTableColumn<ZpoolCapacityEntry>[] = useMemo(
@@ -379,6 +361,7 @@ const PoolsTable = ({
 
   return (
     <DataTable<ZpoolCapacityEntry>
+      detailViewId={detailViewId}
       columns={columns}
       data={pools}
       getRowId={(pool) => pool.name}

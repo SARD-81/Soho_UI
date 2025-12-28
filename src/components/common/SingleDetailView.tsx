@@ -16,7 +16,11 @@ import type { DetailLayoutConfig } from '../../config/detailLayouts';
 import { sortKeysWithPriority } from '../../utils/keySort';
 import type { DetailComparisonStatus } from './DetailComparisonPanel';
 import { MdOutlinePushPin, MdPushPin } from 'react-icons/md';
-import { useDetailSplitViewStore } from '../../store/detailSplitViewStore';
+import {
+  DEFAULT_DETAIL_VIEW_ID,
+  selectDetailViewState,
+  useDetailSplitViewStore,
+} from '../../store/detailSplitViewStore';
 
 type DiskValue = string | number | null | undefined;
 
@@ -43,6 +47,7 @@ interface SingleDetailViewProps {
   attributeSort?: (a: string, b: string) => number;
   attributeLabelResolver?: (key: string) => string;
   itemId?: string;
+  viewId?: string;
 }
 
 const renderDiskTable = (
@@ -139,9 +144,13 @@ const SingleDetailView = ({
   attributeSort = (a: string, b: string) => a.localeCompare(b, 'fa-IR'),
   attributeLabelResolver,
   itemId,
+  viewId = DEFAULT_DETAIL_VIEW_ID,
 }: SingleDetailViewProps) => {
   const theme = useTheme();
-  const { pinnedItemIds, togglePinnedItem } = useDetailSplitViewStore();
+  const { pinnedItemIds } = useDetailSplitViewStore(
+    selectDetailViewState(viewId)
+  );
+  const togglePinnedItem = useDetailSplitViewStore((state) => state.togglePinnedItem);
   const resolveAttributeLabel =
     attributeLabelResolver ?? ((key: string) => key);
   const borderColor = alpha(
@@ -293,7 +302,7 @@ const SingleDetailView = ({
           {itemId ? (
             <IconButton
               size="small"
-              onClick={() => togglePinnedItem(itemId)}
+              onClick={() => togglePinnedItem(viewId, itemId)}
               aria-label={isPinned ? 'حذف از پین' : 'پین کردن مورد'}
               sx={{
                 color: isPinned ? 'var(--color-primary)' : 'var(--color-secondary)',
