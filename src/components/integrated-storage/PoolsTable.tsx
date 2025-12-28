@@ -6,26 +6,22 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
+import { BiExport } from 'react-icons/bi';
 import {
   MdAddCircleOutline,
   MdDeleteOutline,
   MdSwapHoriz,
 } from 'react-icons/md';
-import { BiExport } from "react-icons/bi";
 import type { DataTableColumn } from '../../@types/dataTable.ts';
 import type { ZpoolCapacityEntry } from '../../@types/zpool';
 import type { PoolDiskSlot, PoolSlotMap } from '../../hooks/usePoolDeviceSlots';
 import { formatBytes } from '../../utils/formatters.ts';
 import DataTable from '../DataTable';
-import {
-  clampPercent,
-  formatCapacity,
-  resolveStatus,
-} from './status';
+import { clampPercent, formatCapacity, resolveStatus } from './status';
 
 interface PoolsTableProps {
+  detailViewId: string;
   pools: ZpoolCapacityEntry[];
   isLoading: boolean;
   error: Error | null;
@@ -35,8 +31,6 @@ interface PoolsTableProps {
   onAddDevices: (pool: ZpoolCapacityEntry) => void;
   onExport: (pool: ZpoolCapacityEntry) => void;
   isDeleteDisabled: boolean;
-  selectedPools: string[];
-  onToggleSelect: (pool: ZpoolCapacityEntry, checked: boolean) => void;
   slotMap?: PoolSlotMap;
   slotErrors?: Record<string, string>;
   isSlotLoading?: boolean;
@@ -60,6 +54,7 @@ const STATUS_COLOR_MAP = {
 } as const;
 
 const PoolsTable = ({
+  detailViewId,
   pools,
   isLoading,
   error,
@@ -69,39 +64,16 @@ const PoolsTable = ({
   onAddDevices,
   onExport,
   isDeleteDisabled,
-  selectedPools,
-  onToggleSelect,
   slotMap = {},
   slotErrors = {},
   isSlotLoading = false,
   onSlotClick,
 }: PoolsTableProps) => {
-  const theme = useTheme();
-
   const handleRowClick = useCallback(
     (pool: ZpoolCapacityEntry) => {
-      const isSelected = selectedPools.includes(pool.name);
-      onToggleSelect(pool, !isSelected);
+      onEdit(pool);
     },
-    [onToggleSelect, selectedPools]
-  );
-
-  const resolveRowSx = useCallback(
-    (pool: ZpoolCapacityEntry) => {
-      const isSelected = selectedPools.includes(pool.name);
-
-      if (!isSelected) {
-        return {};
-      }
-
-      return {
-        backgroundColor: alpha(theme.palette.primary.main, 0.08),
-        '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.14),
-        },
-      };
-    },
-    [selectedPools, theme]
+    [onEdit]
   );
 
   const columns: DataTableColumn<ZpoolCapacityEntry>[] = useMemo(
@@ -184,7 +156,12 @@ const PoolsTable = ({
             label={pool.vdevLabel || '-'}
             variant="outlined"
             size="small"
-            sx={{ fontWeight: 700, px: 0.75, minWidth: 80 , color:"var(--color-secondary)" }}
+            sx={{
+              fontWeight: 700,
+              px: 0.75,
+              minWidth: 80,
+              color: 'var(--color-secondary)',
+            }}
           />
         ),
       },
@@ -203,7 +180,13 @@ const PoolsTable = ({
 
           if (poolError) {
             return (
-              <Typography sx={{ color: 'var(--color-error)', fontWeight: 700, fontSize: '0.9rem' }}>
+              <Typography
+                sx={{
+                  color: 'var(--color-error)',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                }}
+              >
                 {poolError}
               </Typography>
             );
@@ -233,29 +216,51 @@ const PoolsTable = ({
             if (a.slotNumber == null) return 1;
             if (b.slotNumber == null) return -1;
 
-            return String(b.slotNumber).localeCompare(String(a.slotNumber), undefined, {
-              numeric: true,
-              sensitivity: 'base',
-            });
+            return String(b.slotNumber).localeCompare(
+              String(a.slotNumber),
+              undefined,
+              {
+                numeric: true,
+                sensitivity: 'base',
+              }
+            );
           });
 
           return (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 1,
+                justifyContent: 'center',
+              }}
+            >
               {sortedSlots.map((slot) => {
                 const slotLabel = slot.slotNumber ?? 'نامشخص';
                 const tooltipContent = (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
+                  >
                     <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>
                       دیسک: {slot.diskName}
                     </Typography>
-                    <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.9)' }}>
+                    <Typography
+                      sx={{
+                        fontSize: '0.82rem',
+                        color: 'rgba(255,255,255,0.9)',
+                      }}
+                    >
                       {slot.wwn ? `WWN: ${slot.wwn}` : 'WWN نامشخص'}
                     </Typography>
                   </Box>
                 );
 
                 return (
-                  <Tooltip key={`${pool.name}-${slot.diskName}-${slotLabel}`} title={tooltipContent} arrow>
+                  <Tooltip
+                    key={`${pool.name}-${slot.diskName}-${slotLabel}`}
+                    title={tooltipContent}
+                    arrow
+                  >
                     <Chip
                       label={`اسلات ${slotLabel}`}
                       onClick={(event) => {
@@ -299,7 +304,12 @@ const PoolsTable = ({
               color={color}
               variant="outlined"
               size="small"
-              sx={{ fontWeight: 700, px: 0.75, minWidth: 88, justifyContent: 'center' }}
+              sx={{
+                fontWeight: 700,
+                px: 0.75,
+                minWidth: 88,
+                justifyContent: 'center',
+              }}
             />
           );
         },
@@ -379,14 +389,14 @@ const PoolsTable = ({
 
   return (
     <DataTable<ZpoolCapacityEntry>
+      detailViewId={detailViewId}
       columns={columns}
       data={pools}
       getRowId={(pool) => pool.name}
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}
-      bodyRowSx={(pool: ZpoolCapacityEntry) => ({
-        ...resolveRowSx(pool),
+      bodyRowSx={() => ({
         transition: 'background-color 0.2s ease',
       })}
       renderLoadingState={() => (

@@ -1,39 +1,29 @@
-import {
-  Box,
-  CircularProgress,
-  IconButton,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
-import { useCallback, useMemo } from 'react';
+import { Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
+import { useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { FileSystemEntry } from '../../@types/filesystem';
 import DataTable from '../DataTable';
 
 interface FileSystemsTableProps {
+  detailViewId: string;
   filesystems: FileSystemEntry[];
   attributeKeys: string[];
   isLoading: boolean;
   error: Error | null;
   onDeleteFilesystem: (filesystem: FileSystemEntry) => void;
   isDeleteDisabled: boolean;
-  selectedFilesystems: string[];
-  onToggleSelect: (filesystem: FileSystemEntry, checked: boolean) => void;
 }
 
 const FileSystemsTable = ({
+  detailViewId,
   filesystems,
   attributeKeys,
   isLoading,
   error,
   onDeleteFilesystem,
   isDeleteDisabled,
-  selectedFilesystems,
-  onToggleSelect,
 }: FileSystemsTableProps) => {
-  const theme = useTheme();
 
   const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
     const getAttributeValue = (filesystem: FileSystemEntry, key: string) => {
@@ -167,41 +157,15 @@ const FileSystemsTable = ({
     return [...baseColumns, actionColumn];
   }, [attributeKeys, isDeleteDisabled, onDeleteFilesystem]);
 
-  const handleRowClick = useCallback(
-    (filesystem: FileSystemEntry) => {
-      const isSelected = selectedFilesystems.includes(filesystem.id);
-      onToggleSelect(filesystem, !isSelected);
-    },
-    [onToggleSelect, selectedFilesystems]
-  );
-
-  const resolveRowSx = useCallback(
-    (filesystem: FileSystemEntry) => {
-      const isSelected = selectedFilesystems.includes(filesystem.id);
-
-      if (!isSelected) {
-        return {};
-      }
-
-      return {
-        backgroundColor: alpha(theme.palette.primary.main, 0.12),
-        '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.18),
-        },
-      };
-    },
-    [selectedFilesystems, theme]
-  );
-
   return (
     <DataTable<FileSystemEntry>
+      detailViewId={detailViewId}
       columns={columns}
       data={filesystems}
       getRowId={(filesystem) => filesystem.id}
       isLoading={isLoading}
       error={error}
-      onRowClick={handleRowClick}
-      bodyRowSx={resolveRowSx}
+      onRowClick={() => {}}
       renderLoadingState={() => (
         <Box
           sx={{
