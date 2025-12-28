@@ -10,11 +10,13 @@ export interface DetailSplitViewState {
 
 export const DEFAULT_DETAIL_VIEW_ID = 'default';
 
+const DEFAULT_VIEW_STATE = { activeItemId: null, pinnedItemIds: [] } as const;
+
 const ensureView = (
   views: DetailSplitViewState['views'],
   viewId: string
 ): { activeItemId: string | null; pinnedItemIds: string[] } =>
-  views[viewId] ?? { activeItemId: null, pinnedItemIds: [] };
+  views[viewId] ?? DEFAULT_VIEW_STATE;
 
 const upsertView = (
   views: DetailSplitViewState['views'],
