@@ -43,11 +43,10 @@ const DetailComparisonPanel = ({
     return null;
   }
 
-  const visibleColumns =
-    columns.length > 4 ? columns.slice(-4) : columns;
+  const visibleColumns = columns;
 
   const attributeKeys = Array.from(
-    visibleColumns.reduce((acc, column) => {
+    columns.reduce((acc, column) => {
       Object.keys(column.values ?? {}).forEach((key) => acc.add(key));
       return acc;
     }, new Set<string>())
