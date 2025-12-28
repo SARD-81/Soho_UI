@@ -5,7 +5,6 @@ import type { DiskInventoryItem } from '../../@types/disk';
 import { formatBytes } from '../../utils/formatters';
 import DataTable from '../DataTable';
 import { PiBroomFill } from 'react-icons/pi';
-import { useDetailSplitViewStore } from '../../store/detailSplitViewStore';
 
 interface DisksTableProps {
   detailViewId: string;
@@ -60,8 +59,6 @@ const DisksTable = ({
   areActionsLoading = false,
   partitionStatus = {},
 }: DisksTableProps) => {
-  const { setActiveItemId } = useDetailSplitViewStore();
-
   const disabledDisks = useMemo(
     () => new Set(disabledDiskNames.map((name) => name.trim()).filter(Boolean)),
     [disabledDiskNames]
@@ -91,12 +88,11 @@ const DisksTable = ({
     []
   );
 
-  const handleRowClick = useCallback(
-    (disk: DiskInventoryItem) => {
-      setActiveItemId(disk.disk);
-    },
-    [setActiveItemId]
-  );
+  const handleRowClick = useCallback((disk: DiskInventoryItem) => {
+    // DataTable will manage the active selection; this callback simply
+    // preserves row click behavior without mutating shared state.
+    return disk;
+  }, []);
 
   const columns = useMemo<DataTableColumn<DiskInventoryItem>[]>(() => {
     return [

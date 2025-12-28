@@ -64,7 +64,7 @@ const Disks = () => {
 
     pinnedItemIds.forEach((diskName) => {
       if (!validDisks.has(diskName)) {
-        unpinItem(diskName);
+        unpinItem(DISK_DETAIL_VIEW_ID, diskName);
       }
     });
 

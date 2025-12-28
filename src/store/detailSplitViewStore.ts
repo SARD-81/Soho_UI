@@ -35,7 +35,15 @@ export const selectDetailViewState = (viewId: string = DEFAULT_DETAIL_VIEW_ID) =
 export const useDetailSplitViewStore = create<DetailSplitViewState>((set) => ({
   views: {},
   setActiveItemId: (viewId, itemId) =>
-    set((state) => ({ views: upsertView(state.views, viewId, { activeItemId: itemId }) })),
+    set((state) => {
+      const existing = ensureView(state.views, viewId);
+
+      if (existing.activeItemId === itemId) {
+        return state;
+      }
+
+      return { views: upsertView(state.views, viewId, { activeItemId: itemId }) };
+    }),
   togglePinnedItem: (viewId, itemId) =>
     set((state) => {
       const { pinnedItemIds } = ensureView(state.views, viewId);
