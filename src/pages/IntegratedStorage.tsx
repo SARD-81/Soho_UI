@@ -30,8 +30,10 @@ import {
   translateDetailKey,
 } from '../utils/detailLabels';
 import { createPoolDisksTable } from '../utils/poolDetails';
+import { selectDetailViewState, useDetailSplitViewStore } from '../store/detailSplitViewStore';
 
 const MAX_COMPARISON_ITEMS = 4;
+const POOL_DETAIL_VIEW_ID = 'pools';
 
 const INTERACTIVE_POOL_PROPERTIES = [
   'autoexpand',
@@ -187,16 +189,33 @@ const IntegratedStorage = () => {
     [pools]
   );
 
-  const [selectedPools, setSelectedPools] = useState<string[]>([]);
+  const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
+    selectDetailViewState(POOL_DETAIL_VIEW_ID)
+  );
+  const setActiveItemId = useDetailSplitViewStore((state) => state.setActiveItemId);
+  const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
   const [selectedSlot, setSelectedSlot] = useState<
     { poolName: string; slot: PoolDiskSlot } | null
   >(null);
 
   useEffect(() => {
-    setSelectedPools((prev) =>
-      prev.filter((poolName) => pools.some((pool) => pool.name === poolName))
-    );
-  }, [pools]);
+    const validPools = new Set(pools.map((pool) => pool.name));
+
+    pinnedItemIds.forEach((poolName) => {
+      if (!validPools.has(poolName)) {
+        unpinItem(POOL_DETAIL_VIEW_ID, poolName);
+      }
+    });
+
+    if (!activeItemId && pools.length > 0) {
+      setActiveItemId(POOL_DETAIL_VIEW_ID, pools[0].name);
+      return;
+    }
+
+    if (activeItemId && !validPools.has(activeItemId)) {
+      setActiveItemId(POOL_DETAIL_VIEW_ID, pools[0]?.name ?? null);
+    }
+  }, [activeItemId, pinnedItemIds, pools, setActiveItemId, unpinItem]);
 
   const {
     data: poolDevices,
@@ -288,27 +307,6 @@ const IntegratedStorage = () => {
     [addPoolDevices]
   );
 
-  const handleToggleSelect = useCallback(
-    (pool: ZpoolCapacityEntry, checked: boolean) => {
-      setSelectedPools((prev) => {
-        if (checked) {
-          if (prev.includes(pool.name)) {
-            return prev;
-          }
-
-          if (prev.length >= MAX_COMPARISON_ITEMS) {
-            return [...prev.slice(0, MAX_COMPARISON_ITEMS - 1), pool.name];
-          }
-
-          return [...prev, pool.name];
-        }
-
-        return prev.filter((poolName) => poolName !== pool.name);
-      });
-    },
-    []
-  );
-
   const handleSlotClick = useCallback((poolName: string, slot: PoolDiskSlot) => {
     setSelectedSlot({ poolName, slot });
   }, []);
@@ -341,20 +339,31 @@ const IntegratedStorage = () => {
   const selectedPoolSlotError = replacePoolName
     ? poolDevices?.errorsByPool[replacePoolName] ?? null
     : null;
+  const poolDetailIds = useMemo(() => {
+    const ids = new Set<string>();
 
-  const selectedPoolDetails = useQueries({
-    queries: selectedPools.map((poolName) => ({
+    pinnedItemIds.forEach((poolName) => ids.add(poolName));
+
+    if (activeItemId) {
+      ids.add(activeItemId);
+    }
+
+    return Array.from(ids).slice(0, MAX_COMPARISON_ITEMS);
+  }, [activeItemId, pinnedItemIds]);
+
+  const poolDetailQueries = useQueries({
+    queries: poolDetailIds.map((poolName) => ({
       queryKey: zpoolDetailQueryKey(poolName),
       queryFn: () => fetchZpoolDetails(poolName),
-      enabled: selectedPools.length > 0,
+      enabled: poolDetailIds.length > 0,
       refetchInterval: 10000,
     })),
   });
 
   const selectedPoolDetailItems = useMemo(
     () =>
-      selectedPools.map((poolName, index) => {
-        const query = selectedPoolDetails[index];
+      poolDetailIds.map((poolName, index) => {
+        const query = poolDetailQueries[index];
         const rawDetail = query?.data ?? poolByName[poolName]?.raw ?? null;
         const enhancedDetail = buildPoolDetailValues(rawDetail, poolName);
 
@@ -365,12 +374,8 @@ const IntegratedStorage = () => {
           error: (query?.error as Error) ?? null,
         };
       }),
-    [poolByName, selectedPoolDetails, selectedPools]
+    [poolByName, poolDetailIds, poolDetailQueries]
   );
-
-  const handleRemoveSelected = useCallback((poolName: string) => {
-    setSelectedPools((prev) => prev.filter((name) => name !== poolName));
-  }, []);
 
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
@@ -437,6 +442,7 @@ const IntegratedStorage = () => {
       />
 
       <PoolsTable
+        detailViewId={POOL_DETAIL_VIEW_ID}
         pools={pools}
         isLoading={isPoolsLoading}
         error={zpoolError ?? null}
@@ -446,8 +452,6 @@ const IntegratedStorage = () => {
         onAddDevices={handleOpenAddDevices}
         onExport={poolExport.requestExport}
         isDeleteDisabled={poolDeletion.isDeleting}
-        selectedPools={selectedPools}
-        onToggleSelect={handleToggleSelect}
         slotMap={poolDevices?.slotsByPool}
         slotErrors={poolDevices?.errorsByPool}
         isSlotLoading={isSlotLoading}
@@ -474,10 +478,11 @@ const IntegratedStorage = () => {
         apiError={replaceDisk.error?.message ?? null}
       />
 
-      {selectedPools.length > 0 && (
+      {selectedPoolDetailItems.length > 0 && (
         <SelectedPoolsDetailsPanel
           items={selectedPoolDetailItems}
-          onRemove={handleRemoveSelected}
+          onRemove={(poolName) => unpinItem(POOL_DETAIL_VIEW_ID, poolName)}
+          viewId={POOL_DETAIL_VIEW_ID}
         />
       )}
 

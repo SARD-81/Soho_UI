@@ -1,5 +1,4 @@
 import { Box, Chip, Tooltip, Typography } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { DiskInventoryItem } from '../../@types/disk';
@@ -8,11 +7,10 @@ import DataTable from '../DataTable';
 import { PiBroomFill } from 'react-icons/pi';
 
 interface DisksTableProps {
+  detailViewId: string;
   disks: DiskInventoryItem[];
   isLoading: boolean;
   error: Error | null;
-  selectedDiskNames: string[];
-  onToggleSelect: (disk: DiskInventoryItem, checked: boolean) => void;
   onWipe?: (disk: DiskInventoryItem) => void;
   disabledDiskNames?: string[];
   wipingDiskNames?: string[];
@@ -51,19 +49,16 @@ const resolveStateColor = (
 };
 
 const DisksTable = ({
+  detailViewId,
   disks,
   isLoading,
   error,
-  selectedDiskNames,
-  onToggleSelect,
   onWipe,
   disabledDiskNames = [],
   wipingDiskNames = [],
   areActionsLoading = false,
   partitionStatus = {},
 }: DisksTableProps) => {
-  const theme = useTheme();
-
   const disabledDisks = useMemo(
     () => new Set(disabledDiskNames.map((name) => name.trim()).filter(Boolean)),
     [disabledDiskNames]
@@ -93,31 +88,11 @@ const DisksTable = ({
     []
   );
 
-  const handleRowClick = useCallback(
-    (disk: DiskInventoryItem) => {
-      const isSelected = selectedDiskNames.includes(disk.disk);
-      onToggleSelect(disk, !isSelected);
-    },
-    [onToggleSelect, selectedDiskNames]
-  );
-
-  const resolveRowSx = useCallback(
-    (disk: DiskInventoryItem) => {
-      const isSelected = selectedDiskNames.includes(disk.disk);
-
-      if (!isSelected) {
-        return {};
-      }
-
-      return {
-        backgroundColor: alpha(theme.palette.primary.main, 0.12),
-        '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.18),
-        },
-      };
-    },
-    [selectedDiskNames, theme]
-  );
+  const handleRowClick = useCallback((disk: DiskInventoryItem) => {
+    // DataTable will manage the active selection; this callback simply
+    // preserves row click behavior without mutating shared state.
+    return disk;
+  }, []);
 
   const columns = useMemo<DataTableColumn<DiskInventoryItem>[]>(() => {
     return [
@@ -292,17 +267,14 @@ const DisksTable = ({
   ]);
 
   return (
-    <DataTable<DiskInventoryItem>
-      columns={columns}
-      data={disks}
-      getRowId={(disk) => disk.disk}
+      <DataTable<DiskInventoryItem>
+        detailViewId={detailViewId}
+        columns={columns}
+        data={disks}
+        getRowId={(disk) => disk.disk}
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}
-      bodyRowSx={(disk: DiskInventoryItem) => ({
-        ...resolveRowSx(disk),
-        transition: 'background-color 0.2s ease',
-      })}
       renderEmptyState={() => (
         <Box sx={{ color: 'var(--color-secondary)' }}>
           دیسکی برای نمایش وجود ندارد.
