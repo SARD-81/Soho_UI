@@ -14,7 +14,9 @@ import { DISK_DETAIL_LAYOUT } from '../../config/detailLayouts';
 
 interface SelectedDisksDetailsPanelProps {
   items: DiskDetailItemState[];
-  onRemove: (diskName: string) => void;
+  activeItemId: string | null;
+  pinnedItemIds: string[];
+  onUnpin: (diskName: string) => void;
 }
 
 
@@ -40,57 +42,83 @@ const formatDiskDetailValue = (value: unknown) => {
   return formatted;
 };
 
-const SelectedDisksDetailsPanel = ({ items, onRemove }: SelectedDisksDetailsPanelProps) => {
-  const columns: DetailComparisonColumn[] = items.map((item) => {
-    let status: DetailComparisonStatus | undefined;
+const SelectedDisksDetailsPanel = ({
+  items,
+  activeItemId,
+  pinnedItemIds,
+  onUnpin,
+}: SelectedDisksDetailsPanelProps) => {
+  const activeItem = items.find((item) => item.diskName === activeItemId);
+  const pinnedColumns: DetailComparisonColumn[] = pinnedItemIds
+    .map((diskName) => items.find((item) => item.diskName === diskName))
+    .filter((item): item is DiskDetailItemState => Boolean(item))
+    .map((item) => {
+      let status: DetailComparisonStatus | undefined;
 
-    if (item.isLoading || item.isFetching) {
-      status = { type: 'loading', message: 'در حال دریافت جزئیات...' };
-    } else if (item.error) {
-      status = { type: 'error', message: item.error.message };
-    } else if (!item.detail) {
-      status = { type: 'info', message: 'اطلاعاتی در دسترس نیست.' };
-    }
+      if (item.isLoading || item.isFetching) {
+        status = { type: 'loading', message: 'در حال دریافت جزئیات...' };
+      } else if (item.error) {
+        status = { type: 'error', message: item.error.message };
+      } else if (!item.detail) {
+        status = { type: 'info', message: 'اطلاعاتی در دسترس نیست.' };
+      }
 
-    return {
-      id: item.diskName,
-      title: item.diskName,
-      onRemove: () => onRemove(item.diskName),
-      values: buildDiskDetailValues(item.detail),
-      status,
-    };
-  });
+      return {
+        id: item.diskName,
+        title: item.diskName,
+        onRemove: () => onUnpin(item.diskName),
+        values: buildDiskDetailValues(item.detail),
+        status,
+      };
+    });
 
   const title =
-    columns.length > 1 ? 'مقایسه جزئیات دیسک‌ها' : 'جزئیات دیسک‌ها';
+    pinnedColumns.length > 1 ? 'مقایسه جزئیات دیسک‌ها' : 'جزئیات دیسک‌ها';
   const attributeSort = createPriorityAwareComparatorFromRecords(
-    columns.map(({ values }) => values),
+    pinnedColumns.map(({ values }) => values),
     'fa-IR',
     DISK_DETAIL_LAYOUT.comparisonPriority
   );
 
-  return (
-    columns.length === 1 ? (
+  if (pinnedColumns.length === 0) {
+    if (!activeItemId || !activeItem) {
+      return null;
+    }
+
+    let status: DetailComparisonStatus | undefined;
+
+    if (activeItem.isLoading || activeItem.isFetching) {
+      status = { type: 'loading', message: 'در حال دریافت جزئیات...' };
+    } else if (activeItem.error) {
+      status = { type: 'error', message: activeItem.error.message };
+    } else if (!activeItem.detail) {
+      status = { type: 'info', message: 'اطلاعاتی در دسترس نیست.' };
+    }
+
+    return (
       <SingleDetailView
         title={title}
         sections={DISK_DETAIL_LAYOUT.sections}
-        values={columns[0].values}
-        status={columns[0].status}
+        values={buildDiskDetailValues(activeItem.detail)}
+        status={status}
         formatValue={formatDiskDetailValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={DISK_DETAIL_LAYOUT.comparisonPriority}
         attributeSort={attributeSort}
+        itemId={activeItem.diskName}
       />
-    ) : (
-      <DetailComparisonPanel
-        title={title}
-        attributeLabel="ویژگی"
-        columns={columns}
-        formatValue={formatDiskDetailValue}
-        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-        attributeSort={attributeSort}
-      />
-    )
+    );
+  }
+
+  return (
+    <DetailComparisonPanel
+      title={title}
+      attributeLabel="ویژگی"
+      columns={pinnedColumns}
+      formatValue={formatDiskDetailValue}
+      emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+      attributeSort={attributeSort}
+    />
   );
 };
 

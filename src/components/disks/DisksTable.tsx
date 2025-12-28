@@ -1,18 +1,16 @@
 import { Box, Chip, Tooltip, Typography } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { DiskInventoryItem } from '../../@types/disk';
 import { formatBytes } from '../../utils/formatters';
 import DataTable from '../DataTable';
 import { PiBroomFill } from 'react-icons/pi';
+import { useDetailSplitViewStore } from '../../store/detailSplitViewStore';
 
 interface DisksTableProps {
   disks: DiskInventoryItem[];
   isLoading: boolean;
   error: Error | null;
-  selectedDiskNames: string[];
-  onToggleSelect: (disk: DiskInventoryItem, checked: boolean) => void;
   onWipe?: (disk: DiskInventoryItem) => void;
   disabledDiskNames?: string[];
   wipingDiskNames?: string[];
@@ -54,15 +52,13 @@ const DisksTable = ({
   disks,
   isLoading,
   error,
-  selectedDiskNames,
-  onToggleSelect,
   onWipe,
   disabledDiskNames = [],
   wipingDiskNames = [],
   areActionsLoading = false,
   partitionStatus = {},
 }: DisksTableProps) => {
-  const theme = useTheme();
+  const { setActiveItemId } = useDetailSplitViewStore();
 
   const disabledDisks = useMemo(
     () => new Set(disabledDiskNames.map((name) => name.trim()).filter(Boolean)),
@@ -95,28 +91,9 @@ const DisksTable = ({
 
   const handleRowClick = useCallback(
     (disk: DiskInventoryItem) => {
-      const isSelected = selectedDiskNames.includes(disk.disk);
-      onToggleSelect(disk, !isSelected);
+      setActiveItemId(disk.disk);
     },
-    [onToggleSelect, selectedDiskNames]
-  );
-
-  const resolveRowSx = useCallback(
-    (disk: DiskInventoryItem) => {
-      const isSelected = selectedDiskNames.includes(disk.disk);
-
-      if (!isSelected) {
-        return {};
-      }
-
-      return {
-        backgroundColor: alpha(theme.palette.primary.main, 0.12),
-        '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.18),
-        },
-      };
-    },
-    [selectedDiskNames, theme]
+    [setActiveItemId]
   );
 
   const columns = useMemo<DataTableColumn<DiskInventoryItem>[]>(() => {
@@ -299,10 +276,6 @@ const DisksTable = ({
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}
-      bodyRowSx={(disk: DiskInventoryItem) => ({
-        ...resolveRowSx(disk),
-        transition: 'background-color 0.2s ease',
-      })}
       renderEmptyState={() => (
         <Box sx={{ color: 'var(--color-secondary)' }}>
           دیسکی برای نمایش وجود ندارد.

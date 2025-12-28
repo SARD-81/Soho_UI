@@ -1,6 +1,5 @@
 import { Box, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import type { DiskInventoryItem } from '../@types/disk';
@@ -12,35 +11,18 @@ import usePoolDeviceNames from '../hooks/usePoolDeviceNames';
 import { useDiskPartitionCounts } from '../hooks/useDiskPartitionCounts';
 import { cleanupDisk } from '../lib/diskMaintenance';
 import extractApiErrorMessage from '../utils/apiError';
-
-const MAX_SELECTED_DISKS = 4;
-
-const normalizeSelection = (values: string[]) => {
-  const seen = new Set<string>();
-
-  return values
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0)
-    .filter((value) => {
-      if (seen.has(value)) {
-        return false;
-      }
-
-      seen.add(value);
-      return true;
-    });
-};
-
-const areSelectionsEqual = (first: string[], second: string[]) =>
-  first.length === second.length && first.every((value, index) => value === second[index]);
+import { useDetailSplitViewStore } from '../store/detailSplitViewStore';
 
 const Disks = () => {
-  const [selectedDisks, setSelectedDisks] = useState<string[]>([]);
   const [wipingDisks, setWipingDisks] = useState<Record<string, boolean>>({});
   const queryClient = useQueryClient();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { data: disks = [], isLoading, error } = useDiskInventory();
-  const detailItems = useDiskDetails(selectedDisks);
+  const { activeItemId, pinnedItemIds, setActiveItemId, unpinItem } = useDetailSplitViewStore();
+  const detailIds = useMemo(
+    () => (pinnedItemIds.length > 0 ? pinnedItemIds : activeItemId ? [activeItemId] : []),
+    [activeItemId, pinnedItemIds]
+  );
+  const detailItems = useDiskDetails(detailIds);
   const diskNames = useMemo(() => disks.map((disk) => disk.disk), [disks]);
   const {
     data: poolDeviceNames = [],
@@ -58,97 +40,30 @@ const Disks = () => {
     return lookup;
   }, [partitionCounts]);
 
-  const syncSelectionToQuery = useCallback(
-    (next: string[]) => {
-      setSearchParams((prevParams) => {
-        const params = new URLSearchParams(prevParams);
-
-        if (next.length > 0) {
-          params.set('selected', next.join(','));
-        } else {
-          params.delete('selected');
-        }
-
-        return params;
-      });
-    },
-    [setSearchParams]
-  );
-
-  useEffect(() => {
-    const parsed = normalizeSelection((searchParams.get('selected') ?? '').split(','));
-    const limited = parsed.slice(-MAX_SELECTED_DISKS);
-
-    if (!areSelectionsEqual(limited, selectedDisks)) {
-      setSelectedDisks(limited);
-    }
-  }, [searchParams, selectedDisks]);
-
-  useEffect(() => {
-    setSelectedDisks((prev) => {
-      const filtered = prev
-        .filter((diskName) => disks.some((disk) => disk.disk === diskName))
-        .slice(-MAX_SELECTED_DISKS);
-
-      if (areSelectionsEqual(filtered, prev)) {
-        return prev;
-      }
-
-      syncSelectionToQuery(filtered);
-      return filtered;
-    });
-  }, [disks, syncSelectionToQuery]);
-
-  const updateSelection = useCallback(
-    (updater: (prev: string[]) => string[]) => {
-      setSelectedDisks((prev) => {
-        const next = normalizeSelection(updater(prev)).slice(-MAX_SELECTED_DISKS);
-
-        if (!areSelectionsEqual(prev, next)) {
-          syncSelectionToQuery(next);
-        }
-
-        return next;
-      });
-    },
-    [syncSelectionToQuery]
-  );
-
-  const handleToggleSelect = useCallback(
-    (disk: DiskInventoryItem, checked: boolean) => {
-      updateSelection((prev) => {
-        if (checked) {
-          if (prev.includes(disk.disk)) {
-            return prev;
-          }
-
-          const next = [...prev, disk.disk];
-
-          if (next.length > MAX_SELECTED_DISKS) {
-            return next.slice(next.length - MAX_SELECTED_DISKS);
-          }
-
-          return next;
-        }
-
-        return prev.filter((name) => name !== disk.disk);
-      });
-    },
-    [updateSelection]
-  );
-
-  const handleRemoveSelected = useCallback(
-    (diskName: string) => {
-      updateSelection((prev) => prev.filter((name) => name !== diskName));
-    },
-    [updateSelection]
-  );
-
   useEffect(() => {
     if (poolDevicesError) {
       toast.error(poolDevicesError.message);
     }
   }, [poolDevicesError]);
+
+  useEffect(() => {
+    const validDisks = new Set(disks.map((disk) => disk.disk));
+
+    pinnedItemIds.forEach((diskName) => {
+      if (!validDisks.has(diskName)) {
+        unpinItem(diskName);
+      }
+    });
+
+    if (!activeItemId && disks.length > 0) {
+      setActiveItemId(disks[0].disk);
+      return;
+    }
+
+    if (activeItemId && !validDisks.has(activeItemId)) {
+      setActiveItemId(disks[0]?.disk ?? null);
+    }
+  }, [activeItemId, disks, pinnedItemIds, setActiveItemId, unpinItem]);
 
   const handleWipeDisk = useCallback(
     async (disk: DiskInventoryItem) => {
@@ -203,8 +118,6 @@ const Disks = () => {
             disks={disks}
             isLoading={isLoading}
             error={error ?? null}
-            selectedDiskNames={selectedDisks}
-            onToggleSelect={handleToggleSelect}
             onWipe={handleWipeDisk}
             disabledDiskNames={poolDeviceNames}
             wipingDiskNames={activeWipingDisks}
@@ -216,7 +129,9 @@ const Disks = () => {
         <Box sx={{ width: { xs: '100%', xl: 'auto' } }}>
           <SelectedDisksDetailsPanel
             items={detailItems}
-            onRemove={handleRemoveSelected}
+            activeItemId={activeItemId}
+            pinnedItemIds={pinnedItemIds}
+            onUnpin={unpinItem}
           />
         </Box>
       </Stack>
