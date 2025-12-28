@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import DetailComparisonPanel, {
   type DetailComparisonColumn,
   type DetailComparisonStatus,
@@ -80,22 +80,18 @@ const SelectedDisksDetailsPanel = ({
     DISK_DETAIL_LAYOUT.comparisonPriority
   );
 
-  if (pinnedColumns.length === 0) {
-    if (!activeItemId || !activeItem) {
-      return null;
-    }
+  let status: DetailComparisonStatus | undefined;
 
-    let status: DetailComparisonStatus | undefined;
+  if (activeItem?.isLoading || activeItem?.isFetching) {
+    status = { type: 'loading', message: 'در حال دریافت جزئیات...' };
+  } else if (activeItem?.error) {
+    status = { type: 'error', message: activeItem.error.message };
+  } else if (activeItemId && activeItem && !activeItem.detail) {
+    status = { type: 'info', message: 'اطلاعاتی در دسترس نیست.' };
+  }
 
-    if (activeItem.isLoading || activeItem.isFetching) {
-      status = { type: 'loading', message: 'در حال دریافت جزئیات...' };
-    } else if (activeItem.error) {
-      status = { type: 'error', message: activeItem.error.message };
-    } else if (!activeItem.detail) {
-      status = { type: 'info', message: 'اطلاعاتی در دسترس نیست.' };
-    }
-
-    return (
+  const activeDetail =
+    activeItemId && activeItem ? (
       <SingleDetailView
         title={title}
         sections={DISK_DETAIL_LAYOUT.sections}
@@ -107,18 +103,27 @@ const SelectedDisksDetailsPanel = ({
         attributeSort={attributeSort}
         itemId={activeItem.diskName}
       />
-    );
+    ) : null;
+
+  if (!activeDetail && pinnedColumns.length === 0) {
+    return null;
   }
 
   return (
-    <DetailComparisonPanel
-      title={title}
-      attributeLabel="ویژگی"
-      columns={pinnedColumns}
-      formatValue={formatDiskDetailValue}
-      emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-      attributeSort={attributeSort}
-    />
+    <Stack spacing={2.5} alignItems="flex-start">
+      {activeDetail}
+
+      {pinnedColumns.length > 0 && (
+        <DetailComparisonPanel
+          title={title}
+          attributeLabel="ویژگی"
+          columns={pinnedColumns}
+          formatValue={formatDiskDetailValue}
+          emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+          attributeSort={attributeSort}
+        />
+      )}
+    </Stack>
   );
 };
 

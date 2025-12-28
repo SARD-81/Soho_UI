@@ -18,10 +18,17 @@ const Disks = () => {
   const queryClient = useQueryClient();
   const { data: disks = [], isLoading, error } = useDiskInventory();
   const { activeItemId, pinnedItemIds, setActiveItemId, unpinItem } = useDetailSplitViewStore();
-  const detailIds = useMemo(
-    () => (pinnedItemIds.length > 0 ? pinnedItemIds : activeItemId ? [activeItemId] : []),
-    [activeItemId, pinnedItemIds]
-  );
+  const detailIds = useMemo(() => {
+    const ids = new Set<string>();
+
+    pinnedItemIds.forEach((id) => ids.add(id));
+
+    if (activeItemId) {
+      ids.add(activeItemId);
+    }
+
+    return Array.from(ids);
+  }, [activeItemId, pinnedItemIds]);
   const detailItems = useDiskDetails(detailIds);
   const diskNames = useMemo(() => disks.map((disk) => disk.disk), [disks]);
   const {
