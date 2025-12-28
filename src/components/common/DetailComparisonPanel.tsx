@@ -1,6 +1,6 @@
 import { Box, CircularProgress, IconButton, Typography, useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { MdClose } from 'react-icons/md';
+import { MdClose, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import { isValidElement, type ReactNode } from 'react';
 
 export type DetailComparisonStatus =
@@ -15,6 +15,10 @@ export interface DetailComparisonColumn {
   onRemove?: () => void;
   values: Record<string, unknown>;
   status?: DetailComparisonStatus;
+  pinToggle?: {
+    isPinned: boolean;
+    onToggle: () => void;
+  };
 }
 
 interface DetailComparisonPanelProps {
@@ -172,6 +176,7 @@ const DetailComparisonPanel = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                gap: 0.5,
                 position: 'relative',
                 pl: column.onRemove ? 4 : 0,
                 minHeight: 64,
@@ -181,6 +186,39 @@ const DetailComparisonPanel = ({
                     : alpha(theme.palette.background.paper, 0.65),
               }}
             >
+              {column.pinToggle ? (
+                <IconButton
+                  size="small"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    column.pinToggle?.onToggle();
+                  }}
+                  aria-label={
+                    column.pinToggle.isPinned
+                      ? `${column.title} را از پین خارج کنید`
+                      : `${column.title} را پین کنید`
+                  }
+                  sx={{
+                    color: column.pinToggle.isPinned
+                      ? 'var(--color-primary)'
+                      : 'var(--color-secondary)',
+                    border: `1px solid ${borderColor}`,
+                    backgroundColor: column.pinToggle.isPinned
+                      ? alpha(theme.palette.primary.main, 0.12)
+                      : 'transparent',
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.18),
+                    },
+                  }}
+                >
+                  {column.pinToggle.isPinned ? (
+                    <MdPushPin size={18} />
+                  ) : (
+                    <MdOutlinePushPin size={18} />
+                  )}
+                </IconButton>
+              ) : null}
+
               <Typography
                 component="p"
                 sx={{
