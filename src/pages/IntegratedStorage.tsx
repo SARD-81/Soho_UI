@@ -1,5 +1,4 @@
 import { Box, Button, Typography } from '@mui/material';
-import { useQueries } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
@@ -24,7 +23,7 @@ import { type ReplaceDevicePayload, useReplacePoolDisk } from '../hooks/useRepla
 import { useZpool } from '../hooks/useZpool';
 import { useExportPool } from '../hooks/useExportPool';
 import { useImportPool } from '../hooks/useImportPool';
-import { fetchZpoolDetails, zpoolDetailQueryKey } from '../hooks/useZpoolDetails';
+import { usePoolDetailQueries } from '../hooks/usePoolDetailQueries';
 import {
   localizeDetailEntries,
   translateDetailKey,
@@ -351,14 +350,7 @@ const IntegratedStorage = () => {
     return Array.from(ids).slice(0, MAX_COMPARISON_ITEMS);
   }, [activeItemId, pinnedItemIds]);
 
-  const poolDetailQueries = useQueries({
-    queries: poolDetailIds.map((poolName) => ({
-      queryKey: zpoolDetailQueryKey(poolName),
-      queryFn: () => fetchZpoolDetails(poolName),
-      enabled: poolDetailIds.length > 0,
-      refetchInterval: 10000,
-    })),
-  });
+  const poolDetailQueries = usePoolDetailQueries(poolDetailIds);
 
   const selectedPoolDetailItems = useMemo(
     () =>
