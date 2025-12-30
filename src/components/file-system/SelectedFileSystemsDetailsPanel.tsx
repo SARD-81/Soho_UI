@@ -7,6 +7,7 @@ import buildFilesystemDetailValues from '../../utils/filesystemDetails';
 import { FILESYSTEM_DETAIL_LAYOUT } from '../../config/detailLayouts';
 import { resolveFilesystemAttributeLabel } from '../../constants/filesystemAttributeLabels';
 import { selectDetailViewState, useDetailSplitViewStore } from '../../store/detailSplitViewStore';
+import { filterDetailValuesByLayout } from '../../utils/detailLayouts';
 
 interface SelectedFileSystemsDetailsPanelProps {
   items: FileSystemEntry[];
@@ -28,7 +29,10 @@ const SelectedFileSystemsDetailsPanel = ({
     id: filesystem.id,
     title: filesystem.filesystemName,
     onRemove: isPinned ? () => unpinItem(viewId, filesystem.id) : undefined,
-    values: buildFilesystemDetailValues(filesystem),
+    values: filterDetailValuesByLayout(
+      buildFilesystemDetailValues(filesystem),
+      FILESYSTEM_DETAIL_LAYOUT
+    ),
     pinToggle: {
       isPinned,
       onToggle: () => togglePinnedItem(viewId, filesystem.id),
@@ -54,7 +58,10 @@ const SelectedFileSystemsDetailsPanel = ({
   comparisonColumns.push(...pinnedColumns);
 
   if (shouldShowSingle && activeItem) {
-    const singleColumnValues = buildFilesystemDetailValues(activeItem);
+    const singleColumnValues = filterDetailValuesByLayout(
+      buildFilesystemDetailValues(activeItem),
+      FILESYSTEM_DETAIL_LAYOUT
+    );
     const attributeSort = createPriorityAwareComparatorFromRecords(
       [singleColumnValues],
       'fa-IR',

@@ -8,6 +8,7 @@ import formatDetailValue from '../../utils/formatDetailValue';
 import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import { omitNullishEntries } from '../../utils/detailValues';
 import { SHARE_DETAIL_LAYOUT } from '../../config/detailLayouts';
+import { filterDetailValuesByLayout } from '../../utils/detailLayouts';
 import ShareDetailValueControl from './ShareDetailValueControl';
 import { useUpdateSharepoint } from '../../hooks/useUpdateSharepoint';
 
@@ -76,7 +77,7 @@ const SelectedSharesDetailsPanel = ({
       id: shareName,
       title: shareName,
       onRemove: () => onRemove(shareName),
-      values: editableValues,
+      values: filterDetailValuesByLayout(editableValues, SHARE_DETAIL_LAYOUT),
     };
   });
 

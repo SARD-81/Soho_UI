@@ -5,6 +5,7 @@ import formatDetailValue from '../../utils/formatDetailValue';
 import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import { omitNullishEntries } from '../../utils/detailValues';
 import { SAMBA_USER_DETAIL_LAYOUT } from '../../config/detailLayouts';
+import { filterDetailValuesByLayout } from '../../utils/detailLayouts';
 
 interface SelectedSambaUsersDetailsPanelProps {
   items: SambaUserTableItem[];
@@ -19,7 +20,10 @@ const SelectedSambaUsersDetailsPanel = ({
     id: item.username,
     title: item.username,
     onRemove: () => onRemove(item.username),
-    values: omitNullishEntries(item.details),
+    values: filterDetailValuesByLayout(
+      omitNullishEntries(item.details),
+      SAMBA_USER_DETAIL_LAYOUT
+    ),
   }));
 
   const title =

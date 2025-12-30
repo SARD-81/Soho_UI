@@ -12,6 +12,7 @@ import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import { DISK_DETAIL_LAYOUT } from '../../config/detailLayouts';
 import SingleDetailView from '../common/SingleDetailView';
 import { useDetailSplitViewStore } from '../../store/detailSplitViewStore';
+import { filterDetailValuesByLayout } from '../../utils/detailLayouts';
 
 interface SelectedDisksDetailsPanelProps {
   items: DiskDetailItemState[];
@@ -68,7 +69,10 @@ const SelectedDisksDetailsPanel = ({
       id: item.diskName,
       title: item.diskName,
       onRemove: isPinned ? () => onUnpin(item.diskName) : undefined,
-      values: buildDiskDetailValues(item.detail),
+      values: filterDetailValuesByLayout(
+        buildDiskDetailValues(item.detail),
+        DISK_DETAIL_LAYOUT
+      ),
       status,
       pinToggle: {
         isPinned,
@@ -106,7 +110,10 @@ const SelectedDisksDetailsPanel = ({
       <SingleDetailView
         title={title}
         sections={DISK_DETAIL_LAYOUT.sections}
-        values={buildDiskDetailValues(activeItem.detail)}
+        values={filterDetailValuesByLayout(
+          buildDiskDetailValues(activeItem.detail),
+          DISK_DETAIL_LAYOUT
+        )}
         status={status}
         formatValue={formatDiskDetailValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
