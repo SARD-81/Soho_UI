@@ -5,54 +5,95 @@ import formatDetailValue from '../../utils/formatDetailValue';
 import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import { omitNullishEntries } from '../../utils/detailValues';
 import { SAMBA_USER_DETAIL_LAYOUT } from '../../config/detailLayouts';
+import { selectDetailViewState, useDetailSplitViewStore } from '../../stores/detailSplitViewStore';
 
 interface SelectedSambaUsersDetailsPanelProps {
   items: SambaUserTableItem[];
-  onRemove: (username: string) => void;
+  viewId: string;
 }
 
 const SelectedSambaUsersDetailsPanel = ({
   items,
-  onRemove,
+  viewId,
 }: SelectedSambaUsersDetailsPanelProps) => {
-  const columns: DetailComparisonColumn[] = items.map((item) => ({
+  const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
+    selectDetailViewState(viewId)
+  );
+  const togglePinnedItem = useDetailSplitViewStore((state) => state.togglePinnedItem);
+  const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
+  const itemLookup = new Map(items.map((item) => [item.username, item]));
+
+  const buildColumn = (item: SambaUserTableItem, isPinned: boolean) => ({
     id: item.username,
     title: item.username,
-    onRemove: () => onRemove(item.username),
+    onRemove: isPinned ? () => unpinItem(viewId, item.username) : undefined,
     values: omitNullishEntries(item.details),
-  }));
+    pinToggle: {
+      isPinned,
+      onToggle: () => togglePinnedItem(viewId, item.username),
+    },
+  });
+
+  const pinnedColumns: DetailComparisonColumn[] = pinnedItemIds
+    .map((username) => itemLookup.get(username))
+    .filter((item): item is SambaUserTableItem => Boolean(item))
+    .map((item) => buildColumn(item, true));
+
+  const shouldShowSingle = pinnedColumns.length === 0;
+  const activeItem = activeItemId ? itemLookup.get(activeItemId) : null;
+  const comparisonColumns: DetailComparisonColumn[] = [];
+
+  if (!shouldShowSingle && activeItem && !pinnedItemIds.includes(activeItem.username)) {
+    comparisonColumns.push(buildColumn(activeItem, false));
+  }
+
+  comparisonColumns.push(...pinnedColumns);
 
   const title =
-    columns.length > 1
+    comparisonColumns.length > 1
       ? 'مقایسه جزئیات کاربران اشتراک فایل'
       : 'جزئیات کاربران اشتراک فایل';
-  const attributeSort = createPriorityAwareComparatorFromRecords(
-    columns.map(({ values }) => values),
-    'fa-IR',
-    SAMBA_USER_DETAIL_LAYOUT.comparisonPriority
-  );
 
-  return (
-    columns.length === 1 ? (
+  if (shouldShowSingle && activeItem) {
+    const singleValues = buildColumn(activeItem, false).values;
+    const attributeSort = createPriorityAwareComparatorFromRecords(
+      [singleValues],
+      'fa-IR',
+      SAMBA_USER_DETAIL_LAYOUT.comparisonPriority
+    );
+
+    return (
       <SingleDetailView
         title={title}
         sections={SAMBA_USER_DETAIL_LAYOUT.sections}
-        values={columns[0].values}
+        values={singleValues}
         formatValue={formatDetailValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={SAMBA_USER_DETAIL_LAYOUT.comparisonPriority}
         attributeSort={attributeSort}
+        itemId={activeItem.username}
+        viewId={viewId}
       />
-    ) : (
-      <DetailComparisonPanel
-        title={title}
-        attributeLabel="ویژگی"
-        columns={columns}
-        formatValue={formatDetailValue}
-        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-        attributeSort={attributeSort}
-      />
-    )
+    );
+  }
+
+  if (comparisonColumns.length === 0) {
+    return null;
+  }
+
+  return (
+    <DetailComparisonPanel
+      title={title}
+      attributeLabel="ویژگی"
+      columns={comparisonColumns}
+      formatValue={formatDetailValue}
+      emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+      attributeSort={createPriorityAwareComparatorFromRecords(
+        comparisonColumns.map(({ values }) => values),
+        'fa-IR',
+        SAMBA_USER_DETAIL_LAYOUT.comparisonPriority
+      )}
+    />
   );
 };
 
