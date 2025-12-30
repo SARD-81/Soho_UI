@@ -18,11 +18,10 @@ import { parseDelimitedList } from '../../utils/samba';
 import DataTable from '../DataTable';
 
 interface SharesTableProps {
+  detailViewId: string;
   shares: SambaShareEntry[];
   isLoading: boolean;
   error: Error | null;
-  selectedShares: string[];
-  onToggleSelect: (share: SambaShareEntry, checked: boolean) => void;
   onDelete: (share: SambaShareEntry) => void;
   onManageUsers: (share: SambaShareEntry) => void;
   onManageGroups: (share: SambaShareEntry) => void;
@@ -31,11 +30,10 @@ interface SharesTableProps {
 }
 
 const SharesTable = ({
+  detailViewId,
   shares,
   isLoading,
   error,
-  selectedShares,
-  onToggleSelect,
   onDelete,
   onManageUsers,
   onManageGroups,
@@ -252,44 +250,20 @@ const SharesTable = ({
     ];
   }, [isDeleting, onDelete, onManageGroups, onManageUsers, pendingShareName]);
 
-  const handleRowClick = useCallback(
-    (share: SambaShareEntry) => {
-      const isSelected = selectedShares.includes(share.name);
-      onToggleSelect(share, !isSelected);
-    },
-    [onToggleSelect, selectedShares]
-  );
-
-  const resolveRowSx = useCallback(
-    (share: SambaShareEntry) => {
-      const isSelected = selectedShares.includes(share.name);
-
-      if (!isSelected) {
-        return {};
-      }
-
-      return {
-        backgroundColor: alpha(theme.palette.primary.main, 0.12),
-        '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.18),
-        },
-      };
-    },
-    [selectedShares, theme]
-  );
+  const handleRowClick = useCallback((share: SambaShareEntry) => share, []);
 
   return (
     <DataTable<SambaShareEntry>
+      detailViewId={detailViewId}
       columns={columns}
       data={shares}
       getRowId={(share) => share.name}
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}
-      bodyRowSx={(share: SambaShareEntry) => ({
-        ...resolveRowSx(share),
+      bodyRowSx={{
         transition: 'background-color 0.2s ease',
-      })}
+      }}
       renderLoadingState={() => (
         <Box
           sx={{

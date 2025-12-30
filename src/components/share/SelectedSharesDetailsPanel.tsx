@@ -10,6 +10,7 @@ import { omitNullishEntries } from '../../utils/detailValues';
 import { SHARE_DETAIL_LAYOUT } from '../../config/detailLayouts';
 import ShareDetailValueControl from './ShareDetailValueControl';
 import { useUpdateSharepoint } from '../../hooks/useUpdateSharepoint';
+import { selectDetailViewState, useDetailSplitViewStore } from '../../store/detailSplitViewStore';
 
 interface ShareDetailItem {
   shareName: string;
@@ -25,7 +26,7 @@ interface EditableShareValue {
 
 interface SelectedSharesDetailsPanelProps {
   items: ShareDetailItem[];
-  onRemove: (shareName: string) => void;
+  viewId: string;
 }
 
 const SHARE_ATTRIBUTE_LABELS: Record<string, string> = {
@@ -49,8 +50,13 @@ const SHARE_ATTRIBUTE_LABELS: Record<string, string> = {
 
 const SelectedSharesDetailsPanel = ({
   items,
-  onRemove,
+  viewId,
 }: SelectedSharesDetailsPanelProps) => {
+  const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
+    selectDetailViewState(viewId)
+  );
+  const togglePinnedItem = useDetailSplitViewStore((state) => state.togglePinnedItem);
+  const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
   const updateSharepoint = useUpdateSharepoint();
   const resolveAttributeLabel = (key: string) => SHARE_ATTRIBUTE_LABELS[key] ?? key;
 
@@ -58,14 +64,16 @@ const SelectedSharesDetailsPanel = ({
     ? `${updateSharepoint.variables.shareName}-${Object.keys(updateSharepoint.variables.updates)[0]}`
     : null;
 
-  const columns: DetailComparisonColumn[] = items.map(({ shareName, detail }) => {
-    const cleanedValues = omitNullishEntries(detail);
+  const itemLookup = new Map(items.map((item) => [item.shareName, item]));
+
+  const buildColumn = (item: ShareDetailItem, isPinned: boolean) => {
+    const cleanedValues = omitNullishEntries(item.detail);
     const editableValues = Object.fromEntries(
       Object.entries(cleanedValues).map(([key, value]) => [
         key,
         {
           __type: 'share-editable-value',
-          shareName,
+          shareName: item.shareName,
           attributeKey: key,
           value,
         } satisfies EditableShareValue,
@@ -73,20 +81,34 @@ const SelectedSharesDetailsPanel = ({
     );
 
     return {
-      id: shareName,
-      title: shareName,
-      onRemove: () => onRemove(shareName),
+      id: item.shareName,
+      title: item.shareName,
+      onRemove: isPinned ? () => unpinItem(viewId, item.shareName) : undefined,
       values: editableValues,
-    };
-  });
+      pinToggle: {
+        isPinned,
+        onToggle: () => togglePinnedItem(viewId, item.shareName),
+      },
+    } satisfies DetailComparisonColumn;
+  };
+
+  const pinnedColumns: DetailComparisonColumn[] = pinnedItemIds
+    .map((shareName) => itemLookup.get(shareName))
+    .filter((item): item is ShareDetailItem => Boolean(item))
+    .map((item) => buildColumn(item, true));
+
+  const shouldShowSingle = pinnedColumns.length === 0;
+  const activeItem = activeItemId ? itemLookup.get(activeItemId) : null;
+  const comparisonColumns: DetailComparisonColumn[] = [];
+
+  if (!shouldShowSingle && activeItem && !pinnedItemIds.includes(activeItem.shareName)) {
+    comparisonColumns.push(buildColumn(activeItem, false));
+  }
+
+  comparisonColumns.push(...pinnedColumns);
 
   const title =
-    columns.length > 1 ? 'مقایسه جزئیات اشتراک‌ها' : 'جزئیات اشتراک‌ها';
-  const attributeSort = createPriorityAwareComparatorFromRecords(
-    columns.map(({ values }) => values),
-    'fa-IR',
-    SHARE_DETAIL_LAYOUT.comparisonPriority
-  );
+    comparisonColumns.length > 1 ? 'مقایسه جزئیات اشتراک‌ها' : 'جزئیات اشتراک‌ها';
 
   const formatShareValue = (value: unknown): ReactNode => {
     if (
@@ -121,30 +143,49 @@ const SelectedSharesDetailsPanel = ({
     return formatDetailValue(value);
   };
 
-  return (
-    columns.length === 1 ? (
+  if (shouldShowSingle && activeItem) {
+    const singleValues = comparisonColumns[0]?.values ?? buildColumn(activeItem, false).values;
+    const attributeSort = createPriorityAwareComparatorFromRecords(
+      [singleValues],
+      'fa-IR',
+      SHARE_DETAIL_LAYOUT.comparisonPriority
+    );
+
+    return (
       <SingleDetailView
         title={title}
         sections={SHARE_DETAIL_LAYOUT.sections}
-        values={columns[0].values}
-        status={columns[0].status}
+        values={singleValues}
+        status={comparisonColumns[0]?.status}
         formatValue={formatShareValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={SHARE_DETAIL_LAYOUT.comparisonPriority}
         attributeSort={attributeSort}
         attributeLabelResolver={resolveAttributeLabel}
+        itemId={activeItem.shareName}
+        viewId={viewId}
       />
-    ) : (
-      <DetailComparisonPanel
-        title={title}
-        attributeLabel="ویژگی"
-        columns={columns}
-        formatValue={formatShareValue}
-        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-        attributeSort={attributeSort}
-        attributeLabelResolver={resolveAttributeLabel}
-      />
-    )
+    );
+  }
+
+  if (comparisonColumns.length === 0) {
+    return null;
+  }
+
+  return (
+    <DetailComparisonPanel
+      title={title}
+      attributeLabel="ویژگی"
+      columns={comparisonColumns}
+      formatValue={formatShareValue}
+      emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+      attributeSort={createPriorityAwareComparatorFromRecords(
+        comparisonColumns.map(({ values }) => values),
+        'fa-IR',
+        SHARE_DETAIL_LAYOUT.comparisonPriority
+      )}
+      attributeLabelResolver={resolveAttributeLabel}
+    />
   );
 };
 

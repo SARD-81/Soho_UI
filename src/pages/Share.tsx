@@ -51,6 +51,7 @@ import { useUpdateSambaGroupMember } from '../hooks/useUpdateSambaGroupMember';
 import { useUpdateSambaUserPassword } from '../hooks/useUpdateSambaUserPassword';
 import { useUpdateSambaUserStatus } from '../hooks/useUpdateSambaUserStatus';
 import { normalizeSambaUsers } from '../utils/sambaUsers';
+import { selectDetailViewState, useDetailSplitViewStore } from '../store/detailSplitViewStore';
 
 const SHARE_TABS = {
   shares: 'shares',
@@ -59,12 +60,11 @@ const SHARE_TABS = {
 } as const;
 
 type ShareTabValue = (typeof SHARE_TABS)[keyof typeof SHARE_TABS];
-
-const MAX_COMPARISON_ITEMS = 4;
+const SHARE_DETAIL_VIEW_ID = 'samba-shares';
+const SAMBA_USER_DETAIL_VIEW_ID = 'samba-users';
 
 const Share = () => {
   const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.shares);
-  const [selectedShares, setSelectedShares] = useState<string[]>([]);
   const [manageUsersShare, setManageUsersShare] = useState<string | null>(null);
   const [manageGroupsShare, setManageGroupsShare] = useState<string | null>(
     null
@@ -74,7 +74,6 @@ const Share = () => {
   const [sambaCreateInitialUsername, setSambaCreateInitialUsername] = useState<
     string | undefined
   >(undefined);
-  const [selectedSambaUsers, setSelectedSambaUsers] = useState<string[]>([]);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordModalUsername, setPasswordModalUsername] = useState<
     string | null
@@ -115,6 +114,16 @@ const Share = () => {
   );
 
   const { data: rawShares = [], isLoading, error } = useSambaShares();
+  const {
+    activeItemId: activeShareName,
+    pinnedItemIds: pinnedShareNames,
+  } = useDetailSplitViewStore(selectDetailViewState(SHARE_DETAIL_VIEW_ID));
+  const {
+    activeItemId: activeSambaUser,
+    pinnedItemIds: pinnedSambaUsers,
+  } = useDetailSplitViewStore(selectDetailViewState(SAMBA_USER_DETAIL_VIEW_ID));
+  const setActiveItemId = useDetailSplitViewStore((state) => state.setActiveItemId);
+  const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
 
   const shares = useMemo(
     () =>
@@ -200,37 +209,29 @@ const Share = () => {
   }, [serviceAction]);
 
   useEffect(() => {
-    setSelectedShares((prev) =>
-      prev.filter((shareName) =>
-        shares.some((share) => share.name === shareName)
-      )
-    );
-  }, [shares]);
+    const validShares = new Set(shares.map((share) => share.name));
 
-  const handleToggleSelect = useCallback(
-    (share: SambaShareEntry, checked: boolean) => {
-      setSelectedShares((prev) => {
-        if (checked) {
-          if (prev.includes(share.name)) {
-            return prev;
-          }
+    pinnedShareNames.forEach((shareName) => {
+      if (!validShares.has(shareName)) {
+        unpinItem(SHARE_DETAIL_VIEW_ID, shareName);
+      }
+    });
 
-          if (prev.length >= MAX_COMPARISON_ITEMS) {
-            return [...prev.slice(0, MAX_COMPARISON_ITEMS - 1), share.name];
-          }
+    if (!activeShareName && shares.length > 0) {
+      setActiveItemId(SHARE_DETAIL_VIEW_ID, shares[0].name);
+      return;
+    }
 
-          return [...prev, share.name];
-        }
-
-        return prev.filter((name) => name !== share.name);
-      });
-    },
-    []
-  );
-
-  const handleRemoveSelected = useCallback((shareName: string) => {
-    setSelectedShares((prev) => prev.filter((name) => name !== shareName));
-  }, []);
+    if (activeShareName && !validShares.has(activeShareName)) {
+      setActiveItemId(SHARE_DETAIL_VIEW_ID, shares[0]?.name ?? null);
+    }
+  }, [
+    activeShareName,
+    pinnedShareNames,
+    setActiveItemId,
+    shares,
+    unpinItem,
+  ]);
 
   const handleDeleteShare = useCallback(
     (share: SambaShareEntry) => {
@@ -239,31 +240,25 @@ const Share = () => {
     [shareDeletion]
   );
 
-  const comparisonItems = useMemo(
-    () =>
-      selectedShares
-        .map((shareName) => {
-          const targetShare = shares.find((share) => share.name === shareName);
+  const comparisonItems = useMemo(() => {
+    const lookup = new Map(shares.map((share) => [share.name, share]));
+    const detailIds = new Set<string>();
 
-          if (!targetShare) {
-            return null;
-          }
+    pinnedShareNames.forEach((name) => {
+      if (lookup.has(name)) {
+        detailIds.add(name);
+      }
+    });
 
-          return {
-            shareName: targetShare.name,
-            detail: targetShare.details,
-          };
-        })
-        .filter(
-          (
-            item
-          ): item is {
-            shareName: string;
-            detail: SambaShareEntry['details'];
-          } => item !== null
-        ),
-    [selectedShares, shares]
-  );
+    if (activeShareName && lookup.has(activeShareName)) {
+      detailIds.add(activeShareName);
+    }
+
+    return Array.from(detailIds)
+      .map((shareName) => lookup.get(shareName))
+      .filter((share): share is SambaShareEntry => Boolean(share))
+      .map((share) => ({ shareName: share.name, detail: share.details }));
+  }, [activeShareName, pinnedShareNames, shares]);
 
   const sambaUsersQuery = useSambaUsers({
     enabled: activeTab === SHARE_TABS.sambaUsers,
@@ -483,30 +478,30 @@ const Share = () => {
     [createOsUser, createSambaUser, normalizedSambaUsernames]
   );
 
-  const handleToggleSelectSambaUser = useCallback(
-    (user: { username: string }, checked: boolean) => {
-      setSelectedSambaUsers((prev) => {
-        if (checked) {
-          if (prev.includes(user.username)) {
-            return prev;
-          }
+  useEffect(() => {
+    const validUsers = new Set(sambaUsers.map((user) => user.username));
 
-          if (prev.length >= MAX_COMPARISON_ITEMS) {
-            return [...prev.slice(0, MAX_COMPARISON_ITEMS - 1), user.username];
-          }
+    pinnedSambaUsers.forEach((username) => {
+      if (!validUsers.has(username)) {
+        unpinItem(SAMBA_USER_DETAIL_VIEW_ID, username);
+      }
+    });
 
-          return [...prev, user.username];
-        }
+    if (!activeSambaUser && sambaUsers.length > 0) {
+      setActiveItemId(SAMBA_USER_DETAIL_VIEW_ID, sambaUsers[0].username);
+      return;
+    }
 
-        return prev.filter((username) => username !== user.username);
-      });
-    },
-    []
-  );
-
-  const handleRemoveSelectedSambaUser = useCallback((username: string) => {
-    setSelectedSambaUsers((prev) => prev.filter((item) => item !== username));
-  }, []);
+    if (activeSambaUser && !validUsers.has(activeSambaUser)) {
+      setActiveItemId(SAMBA_USER_DETAIL_VIEW_ID, sambaUsers[0]?.username ?? null);
+    }
+  }, [
+    activeSambaUser,
+    pinnedSambaUsers,
+    sambaUsers,
+    setActiveItemId,
+    unpinItem,
+  ]);
 
   const handleToggleSambaUserStatus = useCallback(
     (user: { username: string }) => {
@@ -759,23 +754,24 @@ const Share = () => {
     });
   }, [deleteModalUsername, deleteSambaUser]);
 
-  useEffect(() => {
-    setSelectedSambaUsers((prev) =>
-      prev.filter((username) =>
-        sambaUsers.some((user) => user.username === username)
-      )
-    );
-  }, [sambaUsers]);
+  const selectedSambaUserItems = useMemo(() => {
+    const lookup = new Map(sambaUsers.map((user) => [user.username, user]));
+    const detailIds = new Set<string>();
 
-  const selectedSambaUserItems = useMemo(
-    () =>
-      selectedSambaUsers
-        .map((username) =>
-          sambaUsers.find((user) => user.username === username)
-        )
-        .filter((user): user is (typeof sambaUsers)[number] => Boolean(user)),
-    [sambaUsers, selectedSambaUsers]
-  );
+    pinnedSambaUsers.forEach((username) => {
+      if (lookup.has(username)) {
+        detailIds.add(username);
+      }
+    });
+
+    if (activeSambaUser && lookup.has(activeSambaUser)) {
+      detailIds.add(activeSambaUser);
+    }
+
+    return Array.from(detailIds)
+      .map((username) => lookup.get(username))
+      .filter((user): user is (typeof sambaUsers)[number] => Boolean(user));
+  }, [activeSambaUser, pinnedSambaUsers, sambaUsers]);
 
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
@@ -907,11 +903,10 @@ const Share = () => {
               </Box>
 
               <SharesTable
+                detailViewId={SHARE_DETAIL_VIEW_ID}
                 shares={shares}
                 isLoading={isLoading}
                 error={error}
-                selectedShares={selectedShares}
-                onToggleSelect={handleToggleSelect}
                 onDelete={handleDeleteShare}
                 onManageUsers={handleOpenManageUsersModal}
                 onManageGroups={handleOpenManageGroupsModal}
@@ -921,7 +916,7 @@ const Share = () => {
 
               <SelectedSharesDetailsPanel
                 items={comparisonItems}
-                onRemove={handleRemoveSelected}
+                viewId={SHARE_DETAIL_VIEW_ID}
               />
             </Box>
           </TabPanel>
@@ -969,13 +964,12 @@ const Share = () => {
               </Box>
 
               <SambaUsersTable
+                detailViewId={SAMBA_USER_DETAIL_VIEW_ID}
                 users={sambaUsers}
                 isLoading={
                   sambaUsersQuery.isLoading || sambaUsersQuery.isFetching
                 }
                 error={sambaUsersQuery.error ?? null}
-                selectedUsers={selectedSambaUsers}
-                onToggleSelect={handleToggleSelectSambaUser}
                 onToggleStatus={handleToggleSambaUserStatus}
                 onEditPassword={handleOpenPasswordModal}
                 onDelete={handleDeleteSambaUser}
@@ -994,7 +988,7 @@ const Share = () => {
 
               <SelectedSambaUsersDetailsPanel
                 items={selectedSambaUserItems}
-                onRemove={handleRemoveSelectedSambaUser}
+                viewId={SAMBA_USER_DETAIL_VIEW_ID}
               />
             </Box>
           </TabPanel>
