@@ -1,5 +1,4 @@
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
 import {
   MdDeleteOutline,
@@ -15,11 +14,10 @@ import type {
 import DataTable from '../DataTable';
 
 interface SambaUsersTableProps {
+  detailViewId: string;
   users: SambaUserTableItem[];
   isLoading: boolean;
   error: Error | null;
-  selectedUsers: string[];
-  onToggleSelect: (user: SambaUserTableItem, checked: boolean) => void;
   onToggleStatus: (user: SambaUserTableItem) => void;
   onEditPassword: (user: SambaUserTableItem) => void;
   onDelete: (user: SambaUserTableItem) => void;
@@ -34,11 +32,10 @@ interface SambaUsersTableProps {
 }
 
 const SambaUsersTable = ({
+  detailViewId,
   users,
   isLoading,
   error,
-  selectedUsers,
-  onToggleSelect,
   onToggleStatus,
   onEditPassword,
   onDelete,
@@ -51,8 +48,6 @@ const SambaUsersTable = ({
   pendingDeleteUsername,
   isDeleting,
 }: SambaUsersTableProps) => {
-  const theme = useTheme();
-
   const columns = useMemo<DataTableColumn<SambaUserTableItem>[]>(() => {
     return [
       {
@@ -195,44 +190,20 @@ const SambaUsersTable = ({
     statusByUsername,
   ]);
 
-  const handleRowClick = useCallback(
-    (user: SambaUserTableItem) => {
-      const isSelected = selectedUsers.includes(user.username);
-      onToggleSelect(user, !isSelected);
-    },
-    [onToggleSelect, selectedUsers]
-  );
-
-  const resolveRowSx = useCallback(
-    (user: SambaUserTableItem) => {
-      const isSelected = selectedUsers.includes(user.username);
-
-      if (!isSelected) {
-        return {};
-      }
-
-      return {
-        backgroundColor: alpha(theme.palette.primary.main, 0.12),
-        '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.18),
-        },
-      };
-    },
-    [selectedUsers, theme]
-  );
+  const handleRowClick = useCallback((user: SambaUserTableItem) => user, []);
 
   return (
     <DataTable<SambaUserTableItem>
+      detailViewId={detailViewId}
       columns={columns}
       data={users}
       getRowId={(user) => user.username}
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}
-      bodyRowSx={(user: SambaUserTableItem) => ({
-        ...resolveRowSx(user),
+      bodyRowSx={{
         transition: 'background-color 0.2s ease',
-      })}
+      }}
     />
   );
 };

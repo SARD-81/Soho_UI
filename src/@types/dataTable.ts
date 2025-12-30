@@ -26,6 +26,9 @@ export interface DataTableProps<T> {
   getRowId: (row: T, index: number) => string;
   isLoading?: boolean;
   error?: Error | null;
+  detailViewId?: string;
+  activeRowId?: string | null;
+  pinnedRowIds?: string[];
   renderLoadingState?: () => ReactNode;
   renderErrorState?: (error: Error) => ReactNode;
   renderEmptyState?: () => ReactNode;
@@ -33,7 +36,7 @@ export interface DataTableProps<T> {
   tableSx?: SxProps<Theme>;
   headRowSx?: SxProps<Theme>;
   bodyRowSx?: SxProps<Theme> | ((row: T, index: number) => SxProps<Theme>);
-  onRowClick?: (row: T, index: number) => void;
+  onRowClick?: (row: T, index: number, rowId?: string) => void;
   containerProps?: TableContainerProps;
   tableProps?: TableProps;
   pagination?: {

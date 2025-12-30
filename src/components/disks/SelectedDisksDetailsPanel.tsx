@@ -1,9 +1,8 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import DetailComparisonPanel, {
   type DetailComparisonColumn,
   type DetailComparisonStatus,
 } from '../common/DetailComparisonPanel';
-import SingleDetailView from '../common/SingleDetailView';
 import TinyComparisonTable from '../common/TinyComparisonTable';
 import { isNestedDetailTableData } from '../../@types/detailComparison';
 import type { DiskDetailItemState } from '../../hooks/useDiskInventory';
@@ -11,10 +10,15 @@ import formatDetailValue from '../../utils/formatDetailValue';
 import { buildDiskDetailValues } from '../../utils/diskDetails';
 import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import { DISK_DETAIL_LAYOUT } from '../../config/detailLayouts';
+import SingleDetailView from '../common/SingleDetailView';
+import { useDetailSplitViewStore } from '../../stores/detailSplitViewStore';
 
 interface SelectedDisksDetailsPanelProps {
   items: DiskDetailItemState[];
-  onRemove: (diskName: string) => void;
+  activeItemId: string | null;
+  pinnedItemIds: string[];
+  onUnpin: (diskName: string) => void;
+  viewId: string;
 }
 
 
@@ -40,8 +44,16 @@ const formatDiskDetailValue = (value: unknown) => {
   return formatted;
 };
 
-const SelectedDisksDetailsPanel = ({ items, onRemove }: SelectedDisksDetailsPanelProps) => {
-  const columns: DetailComparisonColumn[] = items.map((item) => {
+const SelectedDisksDetailsPanel = ({
+  items,
+  activeItemId,
+  pinnedItemIds,
+  onUnpin,
+  viewId,
+}: SelectedDisksDetailsPanelProps) => {
+  const togglePinnedItem = useDetailSplitViewStore((state) => state.togglePinnedItem);
+  const activeItem = items.find((item) => item.diskName === activeItemId);
+  const buildColumn = (item: DiskDetailItemState, isPinned: boolean) => {
     let status: DetailComparisonStatus | undefined;
 
     if (item.isLoading || item.isFetching) {
@@ -55,42 +67,91 @@ const SelectedDisksDetailsPanel = ({ items, onRemove }: SelectedDisksDetailsPane
     return {
       id: item.diskName,
       title: item.diskName,
-      onRemove: () => onRemove(item.diskName),
+      onRemove: isPinned ? () => onUnpin(item.diskName) : undefined,
       values: buildDiskDetailValues(item.detail),
       status,
-    };
-  });
+      pinToggle: {
+        isPinned,
+        onToggle: () => togglePinnedItem(viewId, item.diskName),
+      },
+    } satisfies DetailComparisonColumn;
+  };
+
+  const pinnedColumns: DetailComparisonColumn[] = pinnedItemIds
+    .map((diskName) => items.find((item) => item.diskName === diskName))
+    .filter((item): item is DiskDetailItemState => Boolean(item))
+    .map((item) => buildColumn(item, true));
 
   const title =
-    columns.length > 1 ? 'مقایسه جزئیات دیسک‌ها' : 'جزئیات دیسک‌ها';
+    pinnedColumns.length > 1 ? 'مقایسه جزئیات دیسک‌ها' : 'جزئیات دیسک‌ها';
   const attributeSort = createPriorityAwareComparatorFromRecords(
-    columns.map(({ values }) => values),
+    pinnedColumns.map(({ values }) => values),
     'fa-IR',
     DISK_DETAIL_LAYOUT.comparisonPriority
   );
 
-  return (
-    columns.length === 1 ? (
+  let status: DetailComparisonStatus | undefined;
+
+  if (activeItem?.isLoading || activeItem?.isFetching) {
+    status = { type: 'loading', message: 'در حال دریافت جزئیات...' };
+  } else if (activeItem?.error) {
+    status = { type: 'error', message: activeItem.error.message };
+  } else if (activeItemId && activeItem && !activeItem.detail) {
+    status = { type: 'info', message: 'اطلاعاتی در دسترس نیست.' };
+  }
+
+  const shouldShowSingleDetail = pinnedColumns.length === 0;
+  const activeDetail =
+    shouldShowSingleDetail && activeItemId && activeItem ? (
       <SingleDetailView
         title={title}
         sections={DISK_DETAIL_LAYOUT.sections}
-        values={columns[0].values}
-        status={columns[0].status}
+        values={buildDiskDetailValues(activeItem.detail)}
+        status={status}
         formatValue={formatDiskDetailValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={DISK_DETAIL_LAYOUT.comparisonPriority}
         attributeSort={attributeSort}
+        itemId={activeItem.diskName}
+        viewId={viewId}
       />
-    ) : (
-      <DetailComparisonPanel
-        title={title}
-        attributeLabel="ویژگی"
-        columns={columns}
-        formatValue={formatDiskDetailValue}
-        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-        attributeSort={attributeSort}
-      />
-    )
+    ) : null;
+
+  const comparisonColumns: DetailComparisonColumn[] = [];
+
+  if (!shouldShowSingleDetail && activeItemId && activeItem) {
+    const activeIsPinned = pinnedItemIds.includes(activeItem.diskName);
+
+    if (!activeIsPinned) {
+      comparisonColumns.push(buildColumn(activeItem, false));
+    }
+  }
+
+  comparisonColumns.push(...pinnedColumns);
+
+  if (!activeDetail && comparisonColumns.length === 0) {
+    return null;
+  }
+
+  return (
+    <Stack spacing={2.5} alignItems="flex-start">
+      {activeDetail}
+
+      {!shouldShowSingleDetail && comparisonColumns.length > 0 && (
+        <DetailComparisonPanel
+          title={title}
+          attributeLabel="ویژگی"
+          columns={comparisonColumns}
+          formatValue={formatDiskDetailValue}
+          emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+          attributeSort={createPriorityAwareComparatorFromRecords(
+            comparisonColumns.map(({ values }) => values),
+            'fa-IR',
+            DISK_DETAIL_LAYOUT.comparisonPriority
+          )}
+        />
+      )}
+    </Stack>
   );
 };
 

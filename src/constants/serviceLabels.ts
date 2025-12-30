@@ -4,6 +4,7 @@ export const SERVICE_LABELS: Record<string, string> = {
   "smbd.service": 'سرویس اشتراک فایلی',
   "soho_core_api.service": 'سرویس هسته سوهو',
   "ssh.service": 'دسترسی ریموت',
+  "snmpd.service" : 'سرویس SNMP',
 };
 
 export const getServiceLabel = (

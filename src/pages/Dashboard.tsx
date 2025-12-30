@@ -5,7 +5,7 @@ import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortab
 import { MdAdd, MdAutoAwesome, MdClose, MdOutlineDashboardCustomize, MdOutlineSave } from 'react-icons/md';
 import type { ComponentType } from 'react';
 import Cpu from '../components/Cpu';
-import Disk from '../components/Disk';
+// import Disk from '../components/Disk';
 import Memory from '../components/Memory';
 import Network from '../components/Network';
 // import SystemInfo from '../components/SystemInfo';
@@ -194,21 +194,21 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
       },
     ],
   },
-  {
-    id: 'disk',
-    title: 'سلامت دیسک‌ها',
-    description: 'بررسی وضعیت درایوها و ظرفیت استفاده‌شده',
-    component: Disk,
-    columns: { xs: 12 },
-    layoutOptions: [
-      {
-        id: 'disk-half',
-        label: 'نمای ستونی',
-        description: 'نمایش در کنار سایر ویجت‌ها',
-        columns: { xs: 12, md: 6, xl: 6 },
-      },
-    ],
-  },
+  // {
+  //   id: 'disk',
+  //   title: 'سلامت دیسک‌ها',
+  //   description: 'بررسی وضعیت درایوها و ظرفیت استفاده‌شده',
+  //   component: Disk,
+  //   columns: { xs: 12 },
+  //   layoutOptions: [
+  //     {
+  //       id: 'disk-half',
+  //       label: 'نمای ستونی',
+  //       description: 'نمایش در کنار سایر ویجت‌ها',
+  //       columns: { xs: 12, md: 6, xl: 6 },
+  //     },
+  //   ],
+  // },
   {
     id: 'network',
     title: 'ترافیک شبکه',

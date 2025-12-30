@@ -52,6 +52,7 @@ export const useZpoolDetails = (
     queryKey: zpoolDetailQueryKey(poolName),
     queryFn: () => fetchZpoolDetails(poolName),
     enabled: options?.enabled ?? true,
-    refetchInterval: options?.enabled ? 1000 : undefined,
+    // تغییر از ۱ ثانیه به ۱۰ ثانیه برای جلوگیری از قفل شدن مرورگر
+    refetchInterval: options?.enabled ? 10000 : undefined,
   });
 };

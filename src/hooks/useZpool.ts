@@ -5,8 +5,8 @@ import type {
   ZpoolListResponse,
   ZpoolQueryResult,
 } from '../@types/zpool';
-import axiosInstance from '../lib/axiosInstance';
 import { normalizeVdevType, resolveVdevLabel } from '../constants/vdev';
+import axiosInstance from '../lib/axiosInstance';
 
 const ZPOOL_LIST_ENDPOINT = '/api/zpool/';
 export const zpoolQueryKey = ['zpool'] as const;
@@ -284,7 +284,7 @@ export const useZpool = (options?: UseZpoolOptions) => {
     queryKey: zpoolQueryKey,
     queryFn: fetchZpools,
     enabled: options?.enabled ?? true,
-    refetchInterval: 5000,
+    refetchInterval: options?.refetchInterval ?? 5000,
     // refetchIntervalInBackground: Boolean(options?.refetchInterval),
   });
 };

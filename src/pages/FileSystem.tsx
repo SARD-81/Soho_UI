@@ -1,7 +1,10 @@
 import { Box, Button, Typography } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
-import type { FileSystemAttributeEntry, FileSystemEntry } from '../@types/filesystem';
+import type {
+  FileSystemAttributeEntry,
+  FileSystemEntry,
+} from '../@types/filesystem';
 import PageContainer from '../components/PageContainer';
 import ConfirmDeleteFileSystemModal from '../components/file-system/ConfirmDeleteFileSystemModal';
 import CreateFileSystemModal from '../components/file-system/CreateFileSystemModal';
@@ -11,6 +14,12 @@ import { useCreateFileSystem } from '../hooks/useCreateFileSystem';
 import { useDeleteFileSystem } from '../hooks/useDeleteFileSystem';
 import { useFileSystems } from '../hooks/useFileSystems';
 import { useZpool } from '../hooks/useZpool';
+import {
+  selectDetailViewState,
+  useDetailSplitViewStore,
+} from '../stores/detailSplitViewStore';
+
+const FILESYSTEM_DETAIL_VIEW_ID = 'filesystems';
 
 const FileSystem = () => {
   const createFileSystem = useCreateFileSystem({
@@ -42,8 +51,6 @@ const FileSystem = () => {
 
   const { data, isLoading, error } = useFileSystems();
   const { data: poolData } = useZpool();
-  const [selectedFilesystems, setSelectedFilesystems] = useState<string[]>([]);
-
   const poolOptions = useMemo(
     () =>
       (poolData?.pools ?? [])
@@ -80,13 +87,32 @@ const FileSystem = () => {
     );
   }, [filesystems]);
 
+  const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
+    selectDetailViewState(FILESYSTEM_DETAIL_VIEW_ID)
+  );
+  const setActiveItemId = useDetailSplitViewStore(
+    (state) => state.setActiveItemId
+  );
+  const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
+
   useEffect(() => {
-    setSelectedFilesystems((prev) =>
-      prev.filter((filesystemId) =>
-        filesystems.some((filesystem) => filesystem.id === filesystemId)
-      )
-    );
-  }, [filesystems]);
+    const validIds = new Set(filesystems.map((filesystem) => filesystem.id));
+
+    pinnedItemIds.forEach((filesystemId) => {
+      if (!validIds.has(filesystemId)) {
+        unpinItem(FILESYSTEM_DETAIL_VIEW_ID, filesystemId);
+      }
+    });
+
+    if (!activeItemId && filesystems.length > 0) {
+      setActiveItemId(FILESYSTEM_DETAIL_VIEW_ID, filesystems[0].id);
+    } else if (activeItemId && !validIds.has(activeItemId)) {
+      setActiveItemId(
+        FILESYSTEM_DETAIL_VIEW_ID,
+        filesystems.length > 0 ? filesystems[0].id : null
+      );
+    }
+  }, [activeItemId, filesystems, pinnedItemIds, setActiveItemId, unpinItem]);
 
   const handleOpenCreate = useCallback(() => {
     createFileSystem.openCreateModal();
@@ -98,35 +124,6 @@ const FileSystem = () => {
     },
     [deleteFileSystem]
   );
-
-  const handleToggleSelect = useCallback(
-    (filesystem: FileSystemEntry, checked: boolean) => {
-      setSelectedFilesystems((prev) => {
-        if (checked) {
-          if (prev.includes(filesystem.id)) {
-            return prev;
-          }
-
-          return [...prev, filesystem.id];
-        }
-
-        return prev.filter((id) => id !== filesystem.id);
-      });
-    },
-    []
-  );
-
-  const handleRemoveSelected = useCallback((filesystemId: string) => {
-    setSelectedFilesystems((prev) => prev.filter((id) => id !== filesystemId));
-  }, []);
-
-  const selectedFilesystemDetails = useMemo(() => {
-    const lookup = new Map(filesystems.map((filesystem) => [filesystem.id, filesystem]));
-
-    return selectedFilesystems
-      .map((filesystemId) => lookup.get(filesystemId))
-      .filter((item): item is FileSystemEntry => Boolean(item));
-  }, [filesystems, selectedFilesystems]);
 
   return (
     <PageContainer>
@@ -175,19 +172,18 @@ const FileSystem = () => {
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <FileSystemsTable
+          detailViewId={FILESYSTEM_DETAIL_VIEW_ID}
           filesystems={filesystems}
           attributeKeys={attributeKeys}
           isLoading={isLoading}
           error={error ?? null}
           onDeleteFilesystem={handleDelete}
           isDeleteDisabled={deleteFileSystem.isDeleting}
-          selectedFilesystems={selectedFilesystems}
-          onToggleSelect={handleToggleSelect}
         />
 
         <SelectedFileSystemsDetailsPanel
-          items={selectedFilesystemDetails}
-          onRemove={handleRemoveSelected}
+          items={filesystems}
+          viewId={FILESYSTEM_DETAIL_VIEW_ID}
         />
       </Box>
 

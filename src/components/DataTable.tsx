@@ -23,6 +23,11 @@ import {
   defaultHeaderCellSx,
   defaultHeadRowSx,
 } from '../constants/dataTable.ts';
+import {
+  DEFAULT_DETAIL_VIEW_ID,
+  selectDetailViewState,
+  useDetailSplitViewStore,
+} from '../stores/detailSplitViewStore';
 
 const mergeSx = (...styles: (SxProps<Theme> | undefined)[]): SxProps<Theme> => {
   const filtered = styles.filter((style): style is SxProps<Theme> =>
@@ -74,6 +79,7 @@ const DataTable = <T,>({
   getRowId,
   isLoading = false,
   error = null,
+  detailViewId,
   renderLoadingState,
   renderErrorState,
   renderEmptyState,
@@ -81,11 +87,18 @@ const DataTable = <T,>({
   tableSx,
   headRowSx,
   bodyRowSx,
+  activeRowId,
+  pinnedRowIds,
   onRowClick,
   containerProps,
   tableProps,
   pagination,
 }: DataTableProps<T>) => {
+  const resolvedDetailViewId = detailViewId ?? DEFAULT_DETAIL_VIEW_ID;
+  const { activeItemId: storeActiveItemId, pinnedItemIds } = useDetailSplitViewStore(
+    selectDetailViewState(resolvedDetailViewId)
+  );
+  const setActiveItemId = useDetailSplitViewStore((state) => state.setActiveItemId);
   const renderStateRow = (content: ReactNode) => (
     <TableRow>
       <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
@@ -176,9 +189,28 @@ const DataTable = <T,>({
                   )
                 : bodyRowSx;
             const rowId = getRowId(row, index);
+            const resolvedActiveRowId = activeRowId ?? storeActiveItemId;
+            const resolvedPinnedRowIds = pinnedRowIds ?? pinnedItemIds;
+            const isActiveRow = resolvedActiveRowId
+              ? rowId === resolvedActiveRowId
+              : false;
+            const isPinnedRow = resolvedPinnedRowIds.includes(rowId);
             const clickableRowSx = onRowClick
               ? ({ cursor: 'pointer' } as SxProps<Theme>)
               : undefined;
+            const rowStateSx: SxProps<Theme> | undefined =
+              isActiveRow || isPinnedRow
+                ? {
+                    backgroundColor: isActiveRow
+                      ? 'rgba(0, 198, 169, 0.12)'
+                      : 'rgba(0, 198, 169, 0.06)',
+                    '&:hover': {
+                      backgroundColor: isActiveRow
+                        ? 'rgba(0, 198, 169, 0.18)'
+                        : 'rgba(0, 198, 169, 0.1)',
+                    },
+                  }
+                : undefined;
 
             return (
               <TableRow
@@ -187,11 +219,17 @@ const DataTable = <T,>({
                 onClick={
                   onRowClick
                     ? () => {
-                        onRowClick(row, index);
+                        setActiveItemId(resolvedDetailViewId, rowId);
+                        onRowClick(row, index, rowId);
                       }
                     : undefined
                 }
-                sx={mergeSx(defaultBodyRowSx, resolvedRowSx, clickableRowSx)}
+                sx={mergeSx(
+                  defaultBodyRowSx,
+                  resolvedRowSx,
+                  rowStateSx,
+                  clickableRowSx
+                )}
               >
                 {columns.map((column) => {
                   const cellProps = column.getCellProps?.(row, index) ?? {};
