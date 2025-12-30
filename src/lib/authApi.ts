@@ -71,17 +71,10 @@ export const verifyAccessToken = async (token: string): Promise<void> => {
   await authClient.post('token/verify/', { token });
 };
 
-export const logout = async (
-  access: string,
-  refresh: string
-): Promise<void> => {
-  await authClient.post(
-    'logout/',
-    { refresh },
-    {
-      headers: {
-        Authorization: `Bearer ${access}`,
-      },
-    }
-  );
+export const logout = async (access: string): Promise<void> => {
+  await authClient.get('/api/system/ui-user/logout/', {
+    headers: {
+      Authorization: `Bearer ${access}`,
+    },
+  });
 };

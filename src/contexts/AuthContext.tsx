@@ -181,12 +181,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = useCallback(async () => {
     const currentAccess = accessToken ?? tokenStorage.getAccessToken();
-    const currentRefresh = refreshToken ?? tokenStorage.getRefreshToken();
     let logoutError: unknown = null;
 
     try {
-      if (currentAccess && currentRefresh) {
-        await logoutRequest(currentAccess, currentRefresh);
+      if (currentAccess) {
+        await logoutRequest(currentAccess);
       }
     } catch (error) {
       console.error('Failed to notify server about logout', error);
@@ -198,7 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (logoutError) {
       throw logoutError;
     }
-  }, [accessToken, refreshToken, clearAuthState]);
+  }, [accessToken, clearAuthState]);
 
   const value = useMemo(
     () => ({ isAuthenticated, isAuthLoading, loginAction, logout, username }),
