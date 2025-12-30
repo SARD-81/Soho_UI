@@ -5,95 +5,58 @@ import formatDetailValue from '../../utils/formatDetailValue';
 import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import { omitNullishEntries } from '../../utils/detailValues';
 import { SAMBA_USER_DETAIL_LAYOUT } from '../../config/detailLayouts';
-import { selectDetailViewState, useDetailSplitViewStore } from '../../stores/detailSplitViewStore';
+import { filterDetailValuesByLayout } from '../../utils/detailLayouts';
 
 interface SelectedSambaUsersDetailsPanelProps {
   items: SambaUserTableItem[];
-  viewId: string;
+  onRemove: (username: string) => void;
 }
 
 const SelectedSambaUsersDetailsPanel = ({
   items,
-  viewId,
+  onRemove,
 }: SelectedSambaUsersDetailsPanelProps) => {
-  const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
-    selectDetailViewState(viewId)
-  );
-  const togglePinnedItem = useDetailSplitViewStore((state) => state.togglePinnedItem);
-  const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
-  const itemLookup = new Map(items.map((item) => [item.username, item]));
-
-  const buildColumn = (item: SambaUserTableItem, isPinned: boolean) => ({
+  const columns: DetailComparisonColumn[] = items.map((item) => ({
     id: item.username,
     title: item.username,
-    onRemove: isPinned ? () => unpinItem(viewId, item.username) : undefined,
-    values: omitNullishEntries(item.details),
-    pinToggle: {
-      isPinned,
-      onToggle: () => togglePinnedItem(viewId, item.username),
-    },
-  });
-
-  const pinnedColumns: DetailComparisonColumn[] = pinnedItemIds
-    .map((username) => itemLookup.get(username))
-    .filter((item): item is SambaUserTableItem => Boolean(item))
-    .map((item) => buildColumn(item, true));
-
-  const shouldShowSingle = pinnedColumns.length === 0;
-  const activeItem = activeItemId ? itemLookup.get(activeItemId) : null;
-  const comparisonColumns: DetailComparisonColumn[] = [];
-
-  if (!shouldShowSingle && activeItem && !pinnedItemIds.includes(activeItem.username)) {
-    comparisonColumns.push(buildColumn(activeItem, false));
-  }
-
-  comparisonColumns.push(...pinnedColumns);
+    onRemove: () => onRemove(item.username),
+    values: filterDetailValuesByLayout(
+      omitNullishEntries(item.details),
+      SAMBA_USER_DETAIL_LAYOUT
+    ),
+  }));
 
   const title =
-    comparisonColumns.length > 1
+    columns.length > 1
       ? 'مقایسه جزئیات کاربران اشتراک فایل'
       : 'جزئیات کاربران اشتراک فایل';
+  const attributeSort = createPriorityAwareComparatorFromRecords(
+    columns.map(({ values }) => values),
+    'fa-IR',
+    SAMBA_USER_DETAIL_LAYOUT.comparisonPriority
+  );
 
-  if (shouldShowSingle && activeItem) {
-    const singleValues = buildColumn(activeItem, false).values;
-    const attributeSort = createPriorityAwareComparatorFromRecords(
-      [singleValues],
-      'fa-IR',
-      SAMBA_USER_DETAIL_LAYOUT.comparisonPriority
-    );
-
-    return (
+  return (
+    columns.length === 1 ? (
       <SingleDetailView
         title={title}
         sections={SAMBA_USER_DETAIL_LAYOUT.sections}
-        values={singleValues}
+        values={columns[0].values}
         formatValue={formatDetailValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
         attributeOrder={SAMBA_USER_DETAIL_LAYOUT.comparisonPriority}
         attributeSort={attributeSort}
-        itemId={activeItem.username}
-        viewId={viewId}
       />
-    );
-  }
-
-  if (comparisonColumns.length === 0) {
-    return null;
-  }
-
-  return (
-    <DetailComparisonPanel
-      title={title}
-      attributeLabel="ویژگی"
-      columns={comparisonColumns}
-      formatValue={formatDetailValue}
-      emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
-      attributeSort={createPriorityAwareComparatorFromRecords(
-        comparisonColumns.map(({ values }) => values),
-        'fa-IR',
-        SAMBA_USER_DETAIL_LAYOUT.comparisonPriority
-      )}
-    />
+    ) : (
+      <DetailComparisonPanel
+        title={title}
+        attributeLabel="ویژگی"
+        columns={columns}
+        formatValue={formatDetailValue}
+        emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."
+        attributeSort={attributeSort}
+      />
+    )
   );
 };
 

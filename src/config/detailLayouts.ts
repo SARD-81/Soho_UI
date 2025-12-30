@@ -8,6 +8,7 @@ export interface DetailSectionConfig {
 export interface DetailLayoutConfig {
   sections: DetailSectionConfig[];
   comparisonPriority: string[];
+  excludedKeys?: string[];
 }
 
 export const POOL_DETAIL_LAYOUT: DetailLayoutConfig = {
@@ -21,6 +22,7 @@ export const POOL_DETAIL_LAYOUT: DetailLayoutConfig = {
     'vdev_type',
     'fragmentation',
   ],
+  excludedKeys: [],
   sections: [
     {
       id: 'general',
@@ -69,6 +71,7 @@ export const DISK_DETAIL_LAYOUT: DetailLayoutConfig = {
     'حجم استفاده‌شده',
     'درصد استفاده',
   ],
+  excludedKeys: [],
   sections: [
     {
       id: 'general',
@@ -127,6 +130,7 @@ export const SHARE_DETAIL_LAYOUT: DetailLayoutConfig = {
     'is_custom',
     'created_time',
   ],
+  excludedKeys: [],
   sections: [
     {
       id: 'general',
@@ -162,20 +166,25 @@ export const SAMBA_USER_DETAIL_LAYOUT: DetailLayoutConfig = {
     'Unix username',
     'Domain',
     'Account Flags',
-    'User SID',
-    'Primary Group SID',
+    
     'Home Directory',
     'Profile Path',
     'Full Name',
-    'Logon time',
-    'Logoff time',
-    'Kickoff time',
+    
     'Password last set',
+    
+  ],
+  excludedKeys: [
     'Password can change',
     'Password must change',
     'Last bad password',
     'Bad password count',
     'Logon hours',
+    'Logon time',
+    'Logoff time',
+    'Kickoff time',
+    'User SID',
+    'Primary Group SID',
   ],
   sections: [
     {
@@ -206,6 +215,7 @@ export const SAMBA_USER_DETAIL_LAYOUT: DetailLayoutConfig = {
 
 export const FILESYSTEM_DETAIL_LAYOUT: DetailLayoutConfig = {
   comparisonPriority: ['نام فضا', 'Pool', 'mountpoint'],
+  excludedKeys: [],
   sections: [
     {
       id: 'general',

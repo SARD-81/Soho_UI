@@ -1,4 +1,5 @@
 import type { FileSystemEntry } from '../@types/filesystem';
+import { omitNullishEntries } from './detailValues';
 
 const addDetailIfMissing = (
   details: Record<string, unknown>,
@@ -29,7 +30,7 @@ export const buildFilesystemDetailValues = (filesystem: FileSystemEntry) => {
     addDetailIfMissing(details, normalizedKey, value);
   });
 
-  return details;
+  return omitNullishEntries(details);
 };
 
 export default buildFilesystemDetailValues;
