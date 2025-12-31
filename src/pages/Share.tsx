@@ -12,10 +12,10 @@ import type {
   UpdateSambaUserPasswordPayload,
 } from '../@types/samba';
 import ConfirmDeleteSambaGroupModal from '../components/groups/ConfirmDeleteSambaGroupModal';
+import GroupsGuidanceAccordion from '../components/groups/GroupsGuidanceAccordion';
 import SambaGroupAddMemberModal from '../components/groups/SambaGroupAddMemberModal';
 import SambaGroupCreateModal from '../components/groups/SambaGroupCreateModal';
 import SambaGroupRemoveMemberModal from '../components/groups/SambaGroupRemoveMemberModal';
-import GroupsGuidanceAccordion from '../components/groups/GroupsGuidanceAccordion';
 import SambaGroupsTable from '../components/groups/SambaGroupsTable';
 import PageContainer from '../components/PageContainer';
 import ConfirmDeleteShareModal from '../components/share/ConfirmDeleteShareModal';
@@ -34,8 +34,6 @@ import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
 import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
 import SambaUsersTable from '../components/users/SambaUsersTable';
 import SelectedSambaUsersDetailsPanel from '../components/users/SelectedSambaUsersDetailsPanel';
-import { DEFAULT_LOGIN_SHELL } from '../constants/users';
-import { useCreateOsUser } from '../hooks/useCreateOsUser';
 import { useCreateSambaGroup } from '../hooks/useCreateSambaGroup';
 import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
 import { useCreateShare } from '../hooks/useCreateShare';
@@ -50,8 +48,11 @@ import { useServiceAction } from '../hooks/useServiceAction';
 import { useUpdateSambaGroupMember } from '../hooks/useUpdateSambaGroupMember';
 import { useUpdateSambaUserPassword } from '../hooks/useUpdateSambaUserPassword';
 import { useUpdateSambaUserStatus } from '../hooks/useUpdateSambaUserStatus';
+import {
+  selectDetailViewState,
+  useDetailSplitViewStore,
+} from '../stores/detailSplitViewStore';
 import { normalizeSambaUsers } from '../utils/sambaUsers';
-import { selectDetailViewState, useDetailSplitViewStore } from '../stores/detailSplitViewStore';
 
 const SHARE_TABS = {
   shares: 'shares',
@@ -64,7 +65,9 @@ const SHARE_DETAIL_VIEW_ID = 'samba-shares';
 const SAMBA_USER_DETAIL_VIEW_ID = 'samba-users';
 
 const Share = () => {
-  const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.sambaUsers);
+  const [activeTab, setActiveTab] = useState<ShareTabValue>(
+    SHARE_TABS.sambaUsers
+  );
   const [manageUsersShare, setManageUsersShare] = useState<string | null>(null);
   const [manageGroupsShare, setManageGroupsShare] = useState<string | null>(
     null
@@ -114,15 +117,13 @@ const Share = () => {
   );
 
   const { data: rawShares = [], isLoading, error } = useSambaShares();
-  const {
-    activeItemId: activeShareName,
-    pinnedItemIds: pinnedShareNames,
-  } = useDetailSplitViewStore(selectDetailViewState(SHARE_DETAIL_VIEW_ID));
-  const {
-    activeItemId: activeSambaUser,
-    pinnedItemIds: pinnedSambaUsers,
-  } = useDetailSplitViewStore(selectDetailViewState(SAMBA_USER_DETAIL_VIEW_ID));
-  const setActiveItemId = useDetailSplitViewStore((state) => state.setActiveItemId);
+  const { activeItemId: activeShareName, pinnedItemIds: pinnedShareNames } =
+    useDetailSplitViewStore(selectDetailViewState(SHARE_DETAIL_VIEW_ID));
+  const { activeItemId: activeSambaUser, pinnedItemIds: pinnedSambaUsers } =
+    useDetailSplitViewStore(selectDetailViewState(SAMBA_USER_DETAIL_VIEW_ID));
+  const setActiveItemId = useDetailSplitViewStore(
+    (state) => state.setActiveItemId
+  );
   const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
 
   const shares = useMemo(
@@ -225,13 +226,7 @@ const Share = () => {
     if (activeShareName && !validShares.has(activeShareName)) {
       setActiveItemId(SHARE_DETAIL_VIEW_ID, shares[0]?.name ?? null);
     }
-  }, [
-    activeShareName,
-    pinnedShareNames,
-    setActiveItemId,
-    shares,
-    unpinItem,
-  ]);
+  }, [activeShareName, pinnedShareNames, setActiveItemId, shares, unpinItem]);
 
   const handleDeleteShare = useCallback(
     (share: SambaShareEntry) => {
@@ -274,6 +269,14 @@ const Share = () => {
     );
   }, [sambaUsersQuery.data?.data]);
 
+  const sambaUsernames = useMemo(
+    () =>
+      sambaUsers
+        .map((user) => user.username)
+        .filter((username): username is string => Boolean(username)),
+    [sambaUsers]
+  );
+
   const normalizedSambaUsernames = useMemo(() => {
     return new Set(
       sambaUsers
@@ -283,7 +286,7 @@ const Share = () => {
   }, [sambaUsers]);
 
   const sambaUserAccountFlags = useSambaUserAccountFlags({
-    usernames: sambaUsers.map((user) => user.username),
+    usernames: sambaUsernames,
     enabled: activeTab === SHARE_TABS.sambaUsers,
   });
 
@@ -301,14 +304,14 @@ const Share = () => {
     [sambaGroupsQuery.data]
   );
 
-  const createOsUser = useCreateOsUser({
-    onSuccess: (username) => {
-      toast.success(`کاربر ${username} با موفقیت ایجاد شد.`);
-    },
-    onError: (message) => {
-      toast.error(`ایجاد کاربر با خطا مواجه شد: ${message}`);
-    },
-  });
+  // const createOsUser = useCreateOsUser({
+  //   onSuccess: (username) => {
+  //     toast.success(`کاربر ${username} با موفقیت ایجاد شد.`);
+  //   },
+  //   onError: (message) => {
+  //     toast.error(`ایجاد کاربر با خطا مواجه شد: ${message}`);
+  //   },
+  // });
 
   const createSambaUser = useCreateSambaUser({
     onSuccess: () => {
@@ -437,7 +440,6 @@ const Share = () => {
     ({
       username,
       password,
-      createOsUserFirst,
     }: {
       username: string;
       password: string;
@@ -458,28 +460,28 @@ const Share = () => {
       }
 
       const run = async () => {
-        if (createOsUserFirst) {
-          try {
-            await createOsUser.mutateAsync({
-              username: trimmedUsername,
-              login_shell: DEFAULT_LOGIN_SHELL,
-              shell: DEFAULT_LOGIN_SHELL,
-            });
-          } catch {
-            return;
-          }
-        }
+        // if (createOsUserFirst) {
+        //   try {
+        //     await createOsUser.mutateAsync({
+        //       username: trimmedUsername,
+        //       login_shell: DEFAULT_LOGIN_SHELL,
+        //       shell: DEFAULT_LOGIN_SHELL,
+        //     });
+        //   } catch {
+        //     return;
+        //   }
+        // }
 
         createSambaUser.mutate({ username: trimmedUsername, password });
       };
 
       void run();
     },
-    [createOsUser, createSambaUser, normalizedSambaUsernames]
+    [createSambaUser, normalizedSambaUsernames]
   );
 
   useEffect(() => {
-    const validUsers = new Set(sambaUsers.map((user) => user.username));
+    const validUsers = new Set(sambaUsernames);
 
     pinnedSambaUsers.forEach((username) => {
       if (!validUsers.has(username)) {
@@ -488,17 +490,24 @@ const Share = () => {
     });
 
     if (!activeSambaUser && sambaUsers.length > 0) {
-      setActiveItemId(SAMBA_USER_DETAIL_VIEW_ID, sambaUsers[0].username);
+      setActiveItemId(
+        SAMBA_USER_DETAIL_VIEW_ID,
+        sambaUsers[0]?.username ?? null
+      );
       return;
     }
 
     if (activeSambaUser && !validUsers.has(activeSambaUser)) {
-      setActiveItemId(SAMBA_USER_DETAIL_VIEW_ID, sambaUsers[0]?.username ?? null);
+      setActiveItemId(
+        SAMBA_USER_DETAIL_VIEW_ID,
+        sambaUsers[0]?.username ?? null
+      );
     }
   }, [
     activeSambaUser,
     pinnedSambaUsers,
     sambaUsers,
+    sambaUsernames,
     setActiveItemId,
     unpinItem,
   ]);

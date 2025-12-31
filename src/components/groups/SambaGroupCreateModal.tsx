@@ -63,6 +63,11 @@ const SambaGroupCreateModal = ({
           fullWidth
           error={Boolean(nameError)}
           helperText={nameError}
+          sx={{
+                '& .MuiInputBase-input': {
+                  color: 'var(--color-text)',
+                },
+              }}
         />
         {errorMessage ? (
           <Typography sx={{ color: 'var(--color-error)', fontWeight: 600 }}>

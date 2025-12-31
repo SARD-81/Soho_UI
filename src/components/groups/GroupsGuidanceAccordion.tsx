@@ -13,7 +13,7 @@ import { MdExpandCircleDown } from "react-icons/md";
 
 const accordionSx = {
 //   backgroundColor: 'var(--color-bg)',
-width: '400px',
+width: '860px',
   border: '1px solid var(--color-border)',
   boxShadow: '0 12px 32px -18px rgba(0, 0, 0, 0.15)',
   borderRadius: '8px !important',
@@ -34,7 +34,7 @@ const primaryGroupConclusion = [
 const GroupsGuidanceAccordion = () => {
   const sections = useMemo(
     () => [
-      { title: 'راهنما', items: primaryGroupConclusion },
+      { title: '', items: primaryGroupConclusion },
     //   { title: 'راهنمای سبک مستندات', items: documentationStyleGuide },
     ],
     []

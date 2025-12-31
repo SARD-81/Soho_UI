@@ -16,6 +16,7 @@ import { isValidElement, useMemo } from 'react';
 import { POOL_DETAIL_LAYOUT } from '../../config/detailLayouts';
 import { translateDetailKey } from '../../utils/detailLabels';
 import { selectDetailViewState, useDetailSplitViewStore } from '../../stores/detailSplitViewStore';
+import { filterDetailValuesByLayout } from '../../utils/detailLayouts';
 
 interface PoolDetailItem {
   poolName: string;
@@ -101,7 +102,10 @@ const SelectedPoolsDetailsPanel = ({
       id: poolName,
       title: poolName,
       onRemove: isPinned ? () => onRemove(poolName) : undefined,
-      values: buildPoolDetailValues(detail),
+      values: filterDetailValuesByLayout(
+        buildPoolDetailValues(detail),
+        POOL_DETAIL_LAYOUT
+      ),
       status,
       pinToggle: {
         isPinned,
@@ -130,7 +134,12 @@ const SelectedPoolsDetailsPanel = ({
 
   const comparisonValues =
     shouldShowSingle && activeItem
-      ? [buildPoolDetailValues(activeItem.detail)]
+      ? [
+          filterDetailValuesByLayout(
+            buildPoolDetailValues(activeItem.detail),
+            POOL_DETAIL_LAYOUT
+          ),
+        ]
       : comparisonColumns.map(({ values }) => values);
 
   const attributeSort = useMemo(
@@ -148,7 +157,10 @@ const SelectedPoolsDetailsPanel = ({
       <SingleDetailView
         title={title}
         sections={sections}
-        values={buildPoolDetailValues(activeItem.detail)}
+        values={filterDetailValuesByLayout(
+          buildPoolDetailValues(activeItem.detail),
+          POOL_DETAIL_LAYOUT
+        )}
         status={buildColumn(activeItem, false).status}
         formatValue={formatValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."

@@ -24,6 +24,15 @@ interface UseServiceActionOptions {
   onError?: (message: string, payload: ServiceActionPayload) => void;
 }
 
+const SERVICE_SUFFIX = ".service" as const;
+
+export function normalizeSystemdServiceName(service: string): string {
+  const s = service.trim();
+  return s.endsWith(SERVICE_SUFFIX)
+    ? s.slice(0, -SERVICE_SUFFIX.length)
+    : s;
+}
+
 const extractErrorMessage = (error: AxiosError<ApiErrorResponse>) => {
   const payload = error.response?.data;
 
@@ -61,7 +70,7 @@ const extractErrorMessage = (error: AxiosError<ApiErrorResponse>) => {
 };
 
 const buildServiceActionUrl = ({ action, service }: ServiceActionPayload) =>
-  `/api/system/service/${encodeURIComponent(service)}/control/?action=${encodeURIComponent(action)}`;
+  `/api/system/service/${encodeURIComponent(normalizeSystemdServiceName(service))}/control/?action=${encodeURIComponent(action)}`;
 
 export const useServiceAction = (options: UseServiceActionOptions = {}) => {
   const queryClient = useQueryClient();

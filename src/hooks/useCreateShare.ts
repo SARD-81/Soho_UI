@@ -170,7 +170,7 @@ export const useCreateShare = ({
         guest_ok: true,
         browseable: true,
         max_connections: 10,
-        create_mask: '0644',
+        create_mask: '0755',
         directory_mask: '0755',
         inherit_permissions: false,
         save_to_db: true,
