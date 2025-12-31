@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance } from 'axios';
+import axiosInstance from './axiosInstance';
 
 const resolveBaseUrl = () => {
   const explicit = import.meta.env.VITE_AUTH_API_BASE_URL;
@@ -71,17 +72,6 @@ export const verifyAccessToken = async (token: string): Promise<void> => {
   await authClient.post('token/verify/', { token });
 };
 
-export const logout = async (
-  access: string,
-  refresh: string
-): Promise<void> => {
-  await authClient.post(
-    'logout/',
-    { refresh },
-    {
-      headers: {
-        Authorization: `Bearer ${access}`,
-      },
-    }
-  );
+export const logout = async (refresh: string): Promise<void> => {
+  await axiosInstance.post('/api/system/ui-user/logout/', { refresh });
 };
