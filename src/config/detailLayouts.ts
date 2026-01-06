@@ -213,6 +213,39 @@ export const SAMBA_USER_DETAIL_LAYOUT: DetailLayoutConfig = {
   ],
 };
 
+export const SNMP_DETAIL_LAYOUT: DetailLayoutConfig = {
+  comparisonPriority: [
+    'community',
+    'allowed_ips',
+    'version',
+    'enabled',
+    'contact',
+    'location',
+    'sys_name',
+    'port',
+    'bind_ip',
+  ],
+  sections: [
+    {
+      id: 'general',
+      title: 'تنظیمات عمومی',
+      keys: ['community', 'allowed_ips', 'version', 'enabled'],
+    },
+    {
+      id: 'identity',
+      title: 'مشخصات سامانه',
+      keys: ['contact', 'location', 'sys_name'],
+      optional: true,
+    },
+    {
+      id: 'network',
+      title: 'شبکه',
+      keys: ['port', 'bind_ip'],
+      optional: true,
+    },
+  ],
+};
+
 export const FILESYSTEM_DETAIL_LAYOUT: DetailLayoutConfig = {
   comparisonPriority: ['نام فضا', 'Pool', 'mountpoint'],
   excludedKeys: [],
