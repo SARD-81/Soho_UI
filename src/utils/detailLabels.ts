@@ -46,6 +46,7 @@ const NORMALIZED_KEY_LABELS: Record<string, string> = {
   state: 'وضعیت',
   status: 'وضعیت',
   health: 'سلامت',
+  enabled: 'فعال',
   size: 'حجم',
   totalbytes: 'حجم کل',
   total_bytes: 'حجم کل',
@@ -102,6 +103,13 @@ const NORMALIZED_KEY_LABELS: Record<string, string> = {
   multihost: 'چندمیزبانی',
   tname: 'نام موقت',
   vdev_type: 'نوع VDEV',
+  community: 'جامعه',
+  allowed_ips: 'آی‌پی‌های مجاز',
+  contact: 'اطلاعات تماس',
+  location: 'مکان',
+  sys_name: 'نام سیستم',
+  port: 'پورت',
+  bind_ip: 'آی‌پی اتصال',
 };
 
 const WORD_TRANSLATIONS: Record<string, string> = {
@@ -160,6 +168,12 @@ const WORD_TRANSLATIONS: Record<string, string> = {
   disk: 'دیسک',
   type: 'نوع',
   guid: 'شناسه GUID',
+  community: 'جامعه',
+  ips: 'آی‌پی‌ها',
+  contact: 'اطلاعات تماس',
+  location: 'مکان',
+  sys: 'سیستم',
+  bind: 'اتصال',
 };
 
 const normalizeKey = (key: string) =>
