@@ -1,48 +1,16 @@
 import { Box, Button, Stack, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import PageContainer from '../components/PageContainer';
-import SelectedSnmpDetailsPanel from '../components/snmp/SelectedSnmpDetailsPanel';
 import SnmpConfigModal from '../components/snmp/SnmpConfigModal';
-import SnmpInfoTable, { type SnmpInfoRow } from '../components/snmp/SnmpInfoTable';
+import SnmpOverview from '../components/snmp/SnmpOverview';
 import { useConfigureSnmp } from '../hooks/useConfigureSnmp';
 import { useSnmpInfo } from '../hooks/useSnmpInfo';
-import { selectDetailViewState, useDetailSplitViewStore } from '../stores/detailSplitViewStore';
-
-const SNMP_DETAIL_VIEW_ID = 'snmp-service';
 
 const SnmpService = () => {
   const snmpInfoQuery = useSnmpInfo();
   const configureSnmp = useConfigureSnmp();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const { activeItemId } = useDetailSplitViewStore(
-    selectDetailViewState(SNMP_DETAIL_VIEW_ID)
-  );
-  const setActiveItemId = useDetailSplitViewStore((state) => state.setActiveItemId);
-
-  const rows = useMemo<SnmpInfoRow[]>(() => {
-    if (!snmpInfoQuery.data) {
-      return [];
-    }
-
-    const details = {
-      ...snmpInfoQuery.data,
-    } as Record<string, unknown>;
-
-    return [
-      {
-        id: snmpInfoQuery.data.sys_name || 'snmp-service',
-        ...snmpInfoQuery.data,
-        details,
-      },
-    ];
-  }, [snmpInfoQuery.data]);
-
-  useEffect(() => {
-    if (!activeItemId && rows[0]) {
-      setActiveItemId(SNMP_DETAIL_VIEW_ID, rows[0].id);
-    }
-  }, [activeItemId, rows, setActiveItemId]);
 
   const handleSubmitConfig = (payload: Parameters<typeof configureSnmp.mutate>[0]) => {
     configureSnmp.mutate(payload, {
@@ -89,14 +57,11 @@ const SnmpService = () => {
           </Button>
         </Stack>
 
-        <SnmpInfoTable
-          detailViewId={SNMP_DETAIL_VIEW_ID}
-          rows={rows}
+        <SnmpOverview
+          data={snmpInfoQuery.data}
           isLoading={snmpInfoQuery.isLoading}
           error={snmpInfoQuery.error ?? null}
         />
-
-        <SelectedSnmpDetailsPanel items={rows} viewId={SNMP_DETAIL_VIEW_ID} />
       </Box>
 
       <SnmpConfigModal
