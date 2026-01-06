@@ -5,7 +5,7 @@ import { BsFillShareFill } from "react-icons/bs";
 import { GrServices, GrStorage } from 'react-icons/gr';
 import { MdOutlineSdStorage, MdSpaceDashboard, MdStorage } from 'react-icons/md';
 import { RiSettings3Fill } from 'react-icons/ri';
-import { MdNetworkCheck } from "react-icons/md";
+import { TbHeartRateMonitor } from "react-icons/tb";
 import type { NavigationItem } from '../@types/navigationDrawer';
 
 
@@ -43,7 +43,7 @@ export const navItems: NavigationItem[] = [
     icon: createElement(GrServices),
     path: '/services',
     children:[
-      {text:"سرویس SNMP" , icon:createElement(MdNetworkCheck), path:"/snmp-service"}
+      {text:"سرویس SNMP" , icon:createElement(TbHeartRateMonitor), path:"/snmp-service"}
     ]
   },
 
