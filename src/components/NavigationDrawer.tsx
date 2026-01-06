@@ -167,7 +167,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                   position: 'relative',
                   overflow: 'hidden',
                   color: 'var(--color-bg-primary)',
-                  minHeight: 48,
+                  // minHeight: 48,
                   justifyContent: open ? 'initial' : 'center',
                   px: 2.5,
                   mx: 1,
@@ -232,7 +232,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                 <ListItemIcon
                   sx={(theme) => ({
                     minWidth: 0,
-                    mr: open ? 2 : 'auto',
+                    mr: open ? 1 : 'auto',
                     justifyContent: 'center',
                     color: 'var(--color-bg-primary)',
                     transition: theme.transitions.create('color', {
@@ -276,6 +276,9 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                       ml: 'auto',
                       color: 'var(--color-bg-primary)',
                       cursor: 'pointer',
+                      backgroundColor: 'var(--color-input-border)',
+                      borderRadius:"9999px",
+                      p: 0.25
                     }}
                   >
                     {isExpanded ? (
@@ -288,7 +291,12 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
               </ListItemButton>
             </ListItem>
             {item.children && (
-              <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+              <Collapse
+                in={isExpanded}
+                timeout="auto"
+                unmountOnExit
+                sx={{ ml: -2 }}
+              >
                 {renderNavItems(item.children, depth + 1)}
               </Collapse>
             )}
@@ -343,7 +351,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
       </Toolbar>
       {renderNavItems(navItems)}
       <Typography
-        // variant="h6"
+        variant="h6"
         color="var(--color-secondary)"
         sx={{
           fontSize: 15,
