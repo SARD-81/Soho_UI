@@ -5,9 +5,11 @@ import { BsFillShareFill } from "react-icons/bs";
 import { GrServices, GrStorage } from 'react-icons/gr';
 import { MdOutlineSdStorage, MdSpaceDashboard, MdStorage } from 'react-icons/md';
 import { RiSettings3Fill } from 'react-icons/ri';
+import { MdNetworkCheck } from "react-icons/md";
 import type { NavigationItem } from '../@types/navigationDrawer';
 
-export const drawerWidth = 200;
+
+export const drawerWidth = 210;
 
 export const navItems: NavigationItem[] = [
   {
@@ -40,15 +42,18 @@ export const navItems: NavigationItem[] = [
     text: 'سرویس ها',
     icon: createElement(GrServices),
     path: '/services',
+    children:[
+      {text:"سرویس SNMP" , icon:createElement(MdNetworkCheck), path:"/snmp-service"}
+    ]
   },
 
   {
     text: 'تنظیمات',
     icon: createElement(RiSettings3Fill),
     path: '/settings',
-    children: [
-      // { text: 'کاربران', icon: createElement(FiUsers), path: '/users' },
-    ],
+    // children: [
+    //   { text: 'کاربران', icon: createElement(FiUsers), path: '/users' },
+    // ],
   },
   // { text: 'تاریخچه', icon: createElement(BiHistory), path: '/history' },
 ];

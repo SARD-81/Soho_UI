@@ -16,6 +16,7 @@ const Services = lazy(() => import('../pages/Services.tsx'));
 const Settings = lazy(() => import('../pages/Settings.tsx'));
 const Share = lazy(() => import('../pages/Share.tsx'));
 const Users = lazy(() => import('../pages/Users.tsx'));
+const SnmpService = lazy(() => import('../pages/SnmpService.tsx'));
 
 const withSuspense = (node: ReactNode) => (
   <Suspense fallback={<LoadingComponent />}>{node}</Suspense>
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
       { path: 'settings', element: withSuspense(<Settings />) },
       { path: 'share', element: withSuspense(<Share />) },
       { path: 'history', element: withSuspense(<History />) },
+      { path: 'snmp-service', element: withSuspense(<SnmpService />) },
       { path: '*', element: withSuspense(<NotFoundPage />) },
     ],
   },
