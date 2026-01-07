@@ -161,6 +161,24 @@ export const SHARE_DETAIL_LAYOUT: DetailLayoutConfig = {
   ],
 };
 
+export const NFS_SHARE_DETAIL_LAYOUT: DetailLayoutConfig = {
+  comparisonPriority: ['path', 'clients', 'options'],
+  excludedKeys: [],
+  sections: [
+    {
+      id: 'general',
+      title: 'مشخصات کلی',
+      keys: ['path', 'clients'],
+    },
+    {
+      id: 'options',
+      title: 'تنظیمات',
+      keys: ['options'],
+      optional: true,
+    },
+  ],
+};
+
 export const SAMBA_USER_DETAIL_LAYOUT: DetailLayoutConfig = {
   comparisonPriority: [
     'Unix username',
