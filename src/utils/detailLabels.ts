@@ -110,6 +110,16 @@ const NORMALIZED_KEY_LABELS: Record<string, string> = {
   sys_name: 'نام سیستم',
   port: 'پورت',
   bind_ip: 'آی‌پی اتصال',
+  clients: 'کلاینت‌ها',
+  options: 'گزینه‌ها',
+  read_write: 'خواندن/نوشتن',
+  rw: 'خواندن/نوشتن',
+  sync: 'همگام',
+  async: 'ناهمگام',
+  root_squash: 'محدودسازی ریشه',
+  all_squash: 'محدودسازی همه',
+  insecure: 'ناامن',
+  'no_subtree_check': 'بدون بررسی زیرشاخه',
 };
 
 const WORD_TRANSLATIONS: Record<string, string> = {
@@ -174,6 +184,16 @@ const WORD_TRANSLATIONS: Record<string, string> = {
   location: 'مکان',
   sys: 'سیستم',
   bind: 'اتصال',
+  clients: 'کلاینت‌ها',
+  options: 'گزینه‌ها',
+  write: 'نوشتن',
+  sync: 'همگام',
+  async: 'ناهمگام',
+  root: 'ریشه',
+  squash: 'محدودسازی',
+  insecure: 'ناامن',
+  subtree: 'زیرشاخه',
+  check: 'بررسی',
 };
 
 const normalizeKey = (key: string) =>
