@@ -85,6 +85,10 @@ const ShareNfs = () => {
 
   const { data: mountpointOptions = [], isLoading: mountpointLoading } =
     useFilesystemMountpoints({ enabled: isCreateOpen });
+  const availableMountpoints = useMemo(() => {
+    const usedPaths = new Set(shares.map((share) => share.path));
+    return mountpointOptions.filter((option) => !usedPaths.has(option));
+  }, [mountpointOptions, shares]);
 
   const handleOpenCreate = useCallback(() => {
     setCreateError(null);
@@ -169,7 +173,7 @@ const ShareNfs = () => {
       <NfsShareModal
         open={isCreateOpen}
         mode="create"
-        mountpointOptions={mountpointOptions}
+        mountpointOptions={availableMountpoints}
         mountpointLoading={mountpointLoading}
         isSubmitting={createShare.isPending}
         errorMessage={createError}

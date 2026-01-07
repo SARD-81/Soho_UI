@@ -308,12 +308,13 @@ const NfsShareModal = ({
             {NFS_OPTION_KEYS.map((optionKey) => {
               const isEnabled = enabledOptions.includes(optionKey);
               const label = translateDetailKey(optionKey);
+              const valueLabel = optionValues[optionKey] ? 'فعال' : 'غیرفعال';
 
               return (
                 <Stack
                   key={optionKey}
                   direction="row"
-                  spacing={1.5}
+                  spacing={2}
                   alignItems="center"
                 >
                   <Typography
@@ -326,12 +327,25 @@ const NfsShareModal = ({
                     {label}
                   </Typography>
                   {isEnabled ? (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <ToggleBtn
-                        id={`nfs-option-${optionKey}`}
-                        checked={optionValues[optionKey]}
-                        onChange={() => handleToggleOption(optionKey)}
-                      />
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Stack spacing={0.25} alignItems="center">
+                        <ToggleBtn
+                          id={`nfs-option-${optionKey}`}
+                          checked={optionValues[optionKey]}
+                          onChange={() => handleToggleOption(optionKey)}
+                        />
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: optionValues[optionKey]
+                              ? 'var(--color-success)'
+                              : 'var(--color-error)',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {valueLabel}
+                        </Typography>
+                      </Stack>
                       <IconButton
                         aria-label={`حذف ${label}`}
                         onClick={() => handleRemoveOption(optionKey)}

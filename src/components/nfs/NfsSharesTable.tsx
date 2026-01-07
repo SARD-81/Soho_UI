@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
-import { MdDeleteOutline, MdEdit } from 'react-icons/md';
+import { MdCheck, MdClose, MdDeleteOutline, MdEdit } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { NfsShareEntry } from '../../@types/nfs';
 import { translateDetailKey } from '../../utils/detailLabels';
@@ -139,15 +139,29 @@ const NfsSharesTable = ({
                         ? theme.palette.success.main
                         : theme.palette.error.main
                       : theme.palette.text.secondary;
-                    const label = `${translateDetailKey(key)}: ${String(value)}`;
+                    const label = isBoolean
+                      ? translateDetailKey(key)
+                      : `${translateDetailKey(key)}: ${String(value)}`;
 
                     return (
                       <Chip
                         key={`${clientEntry.client}-${key}`}
                         label={label}
                         size="small"
+                        icon={
+                          isBoolean ? (
+                            value ? (
+                              <MdCheck />
+                            ) : (
+                              <MdClose />
+                            )
+                          ) : undefined
+                        }
                         sx={{
                           fontWeight: 700,
+                          '& .MuiChip-icon': {
+                            color: chipColor,
+                          },
                           color: chipColor,
                           borderColor: alpha(chipColor, 0.45),
                           backgroundColor: alpha(chipColor, 0.08),
