@@ -1,5 +1,5 @@
 import { IconButton, Tooltip, type TooltipProps } from '@mui/material';
-import { MdHelpOutline } from 'react-icons/md';
+import { HiMiniInformationCircle } from "react-icons/hi2";
 
 interface HelpTooltipProps {
   title: TooltipProps['title'];
@@ -21,7 +21,7 @@ const HelpTooltip = ({
       sx={{ color, padding: 0.5 }}
       disableRipple
     >
-      <MdHelpOutline size={iconSize} />
+      <HiMiniInformationCircle size={iconSize} />
     </IconButton>
   </Tooltip>
 );

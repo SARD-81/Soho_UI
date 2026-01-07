@@ -6,6 +6,7 @@ import { GrServices, GrStorage } from 'react-icons/gr';
 import { MdOutlineSdStorage, MdSpaceDashboard, MdStorage } from 'react-icons/md';
 import { RiSettings3Fill } from 'react-icons/ri';
 import { TbHeartRateMonitor } from "react-icons/tb";
+import { MdFolderShared } from "react-icons/md";
 import type { NavigationItem } from '../@types/navigationDrawer';
 
 
@@ -37,7 +38,13 @@ export const navItems: NavigationItem[] = [
     icon: createElement(MdStorage),
     path: '/file-system',
   },
-  { text: 'اشتراک گذاری', icon: createElement(BsFillShareFill), path: '/share' },
+  { text: 'اشتراک گذاری',
+    icon: createElement(BsFillShareFill),
+    path: '/share',
+    children:[
+      {text:"NFS" , icon:createElement(MdFolderShared), path:"/share-nfs"}
+    ] 
+  },
   {
     text: 'سرویس ها',
     icon: createElement(GrServices),
