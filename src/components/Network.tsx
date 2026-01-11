@@ -27,7 +27,8 @@ const Network = () => {
   const [history, setHistory] = useState<History>({});
   const startTimeRef = useRef<number>(Date.now());
   const formatBandwidthValue = (value: number | null | undefined) =>
-    formatBytes(Math.max(value ?? 0, 0), { maximumFractionDigits: 1 });
+    formatBytes(value);
+  //Math.max(value ?? 0, 0), { maximumFractionDigits: 1 }
 
   useEffect(() => {
     if (!data?.interfaces) return;
@@ -185,6 +186,7 @@ const Network = () => {
         </ResponsiveChartContainer>
       ) : (
         names.map((name) => {
+          if (name.includes("enp")) {
           const interfaceInfo = interfaces[name];
           const unit = interfaceInfo?.bandwidth.unit ?? '';
           const ipv4Details = extractIPv4Info(interfaceInfo);
@@ -244,16 +246,19 @@ const Network = () => {
                       },
                     ]}
                     yAxis={[
+                      
                       {
                         label: unit,
                         max: maxCombinedValue || 15,
                         position: 'left',
-                        tickSize: 76, // ⬅ increase gap between numbers and the y-axis line
+                        tickSize: 56, // ⬅ increase gap between numbers and the y-axis line
                         width: 156, // ⬅ reserve room so labels don’t get clipped
-                        tickLabelStyle: { fill: 'var(--color-text)' },
+                        tickLabelStyle: { fill: 'var(--color-text)' , direction:"ltr" },
                         valueFormatter: (value: number | null | undefined) =>
                           formatBandwidthValue(value),
+                        
                       },
+                      
                     ]}
                     series={[
                       {
@@ -353,6 +358,7 @@ const Network = () => {
               </Box>
             </Box>
           );
+        }
         })
       )}
     </Box>

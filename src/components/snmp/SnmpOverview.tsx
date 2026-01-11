@@ -21,7 +21,7 @@ interface SnmpOverviewProps {
 }
 
 const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
-  <Stack spacing={0.5} sx={{ minWidth: 0, position: 'relative'}}>
+  <Stack spacing={0.5} sx={{display:"flex ", minWidth: 0, position: 'relative'}}>
     <Typography
       variant="body2"
       sx={{ 
@@ -249,6 +249,7 @@ const SnmpOverview = ({ data, isLoading, error }: SnmpOverviewProps) => {
                 fontWeight: 700,
                 fontSize: '0.85rem',
                 borderRadius: 1.5,
+                color: "var(--color-text)",
                 height: 28,
                 px: 1,
                 boxShadow: data.enabled ? '0 2px 8px rgba(76, 175, 80, 0.2)' : 'none',

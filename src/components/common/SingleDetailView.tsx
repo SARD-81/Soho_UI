@@ -224,7 +224,7 @@ const SingleDetailView = ({
             textAlign: 'center',
             // whiteSpace: 'pre-wrap',
             // wordBreak: 'break-word',
-            direction: 'rtl',
+            direction: 'ltr',
             // unicodeBidi: 'plaintext',
           }}
         >
@@ -399,6 +399,7 @@ const SingleDetailView = ({
                           color: 'var(--color-text)',
                           fontWeight: 500,
                           minHeight: 64,
+                        
                         }}
                       >
                         {renderFormattedValue(values[key])}

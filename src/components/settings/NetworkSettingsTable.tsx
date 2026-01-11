@@ -31,7 +31,13 @@ const createRows = (
     return [];
   }
 
-  return Object.entries(interfaces).map<NetworkSettingsTableRow>(
+  const validInterfaces = Object.entries(interfaces).filter((inter) => {
+    if (inter[0].includes("enp")) {
+      return inter
+    }
+  })
+
+  return validInterfaces.map<NetworkSettingsTableRow>(
     ([interfaceName, details]) => {
       const ipv4Entries = extractIPv4Info(details);
       const speedText = formatInterfaceSpeed(details?.status, formatter);

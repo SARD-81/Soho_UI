@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
-import { MdCheck, MdClose, MdDeleteOutline, MdEdit } from 'react-icons/md';
+import { MdDeleteOutline, MdEdit } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { NfsShareEntry } from '../../@types/nfs';
 import { translateDetailKey } from '../../utils/detailLabels';
@@ -148,15 +148,15 @@ const NfsSharesTable = ({
                         key={`${clientEntry.client}-${key}`}
                         label={label}
                         size="small"
-                        icon={
-                          isBoolean ? (
-                            value ? (
-                              <MdCheck />
-                            ) : (
-                              <MdClose />
-                            )
-                          ) : undefined
-                        }
+                        // icon={
+                        //   isBoolean ? (
+                        //     value ? (
+                        //       <MdCheck />
+                        //     ) : (
+                        //       <MdClose />
+                        //     )
+                        //   ) : undefined
+                        // }
                         sx={{
                           fontWeight: 700,
                           '& .MuiChip-icon': {

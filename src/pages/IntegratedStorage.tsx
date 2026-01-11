@@ -280,9 +280,7 @@ const IntegratedStorage = () => {
   });
 
   const handleEdit = useCallback((pool: ZpoolCapacityEntry) => {
-    if (typeof window !== 'undefined') {
-      window.alert(`ویرایش فضای یکپارچه ${pool.name}`);
-    }
+    console.log(pool)
   }, []);
 
   const handleOpenCreate = useCallback(() => {

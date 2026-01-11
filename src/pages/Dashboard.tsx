@@ -706,7 +706,7 @@ const Dashboard = () => {
               startIcon={<MdAdd />}
               onClick={handleOpenPanel}
             >
-              اضافه و ویرایش کردن
+            ویرایش کردن
             </Button>
             <Button
               variant="contained"
