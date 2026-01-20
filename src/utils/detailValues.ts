@@ -7,6 +7,7 @@ export const omitNullishEntries = (
         value !== null &&
         value !== undefined &&
         value !== '—' &&
+        value !== '-' &&
         value !== 'none'
     )
   );

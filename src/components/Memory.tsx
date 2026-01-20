@@ -336,7 +336,7 @@ const Memory = () => {
                 {
                   id: 'remaining',
                   value: chartRemaining,
-                  label: 'باقی‌مانده',
+                  label: 'آزاد',
                   color: remainingArcColor,
                 },
               ],
@@ -357,8 +357,8 @@ const Memory = () => {
                   const lines = [
                     `${formatBytesForDisplay(safeUsed)} : استفاده‌شده `,
                     `${formatBytesForDisplay(safeTotal)} : کل `,
-                    `${formatBytesForDisplay(safeAvailable)} : در دسترس `,
-                    `${formatBytesForDisplay(safeFree)} : آزاد `,
+                    `${formatBytesForDisplay(safeFree)} : در دسترس `,
+                    // `${formatBytesForDisplay(safeFree)} : آزاد `,
                     `${percentDisplay} : درصد استفاده `,
                     // `${formatBytesForDisplay(cachedValue)} : کش `,
                     // `${formatBytesForDisplay(buffersValue)} : بافر `,

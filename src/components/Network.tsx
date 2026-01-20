@@ -26,6 +26,14 @@ const Network = () => {
 
   const [history, setHistory] = useState<History>({});
   const startTimeRef = useRef<number>(Date.now());
+  function formatTimeTo24Hour(date: Date): string {
+  return date.toLocaleTimeString('en-GB', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
   const formatBandwidthValue = (value: number | null | undefined) =>
     formatBytes(value);
   //Math.max(value ?? 0, 0), { maximumFractionDigits: 1 }
@@ -188,7 +196,7 @@ const Network = () => {
         names.map((name) => {
           if (name.includes("enp")) {
           const interfaceInfo = interfaces[name];
-          const unit = interfaceInfo?.bandwidth.unit ?? '';
+          // const unit = interfaceInfo?.bandwidth.unit ?? '';
           const ipv4Details = extractIPv4Info(interfaceInfo);
           const displayName = `${name}`;
           const speedText = formatInterfaceSpeed(
@@ -239,7 +247,7 @@ const Network = () => {
                       {
                         dataKey: 'time',
                         valueFormatter: (value) =>
-                          new Date(value).toLocaleTimeString(),
+                          formatTimeTo24Hour(new Date(value)),
                         scaleType: 'time',
                         min,
                         max,
@@ -248,7 +256,7 @@ const Network = () => {
                     yAxis={[
                       
                       {
-                        label: unit,
+                        label: "سرعت",
                         max: maxCombinedValue || 15,
                         position: 'left',
                         tickSize: 56, // ⬅ increase gap between numbers and the y-axis line

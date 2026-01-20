@@ -22,14 +22,14 @@ const ImportPoolModal = ({ controller }: ImportPoolModalProps) => {
     <BlurModal
       open={isOpen}
       onClose={closeModal}
-      title="درون‌ریزی فضای یکپارچه"
+      title="فراخوانی فضای یکپارچه"
       minWidth="380px"
       actions={
         <ModalActionButtons
           onCancel={closeModal}
           onConfirm={handleSubmit}
-          confirmLabel="درون‌ریزی"
-          loadingLabel="در حال درون‌ریزی..."
+          confirmLabel="فراخوانی"
+          loadingLabel="در حال فراخوانی..."
           isLoading={isImporting}
           disabled={isImporting}
           disableConfirmGradient
@@ -48,7 +48,7 @@ const ImportPoolModal = ({ controller }: ImportPoolModalProps) => {
             error={Boolean(errorMessage)}
             helperText={
               errorMessage ||
-              'نام فضای یکپارچه‌ای که قصد درون‌ریزی آن را دارید وارد کنید.'
+              'نام فضای یکپارچه‌ای که قصد فراخوانی آن را دارید وارد کنید.'
             }
             sx={{
               '& .MuiOutlinedInput-input': {

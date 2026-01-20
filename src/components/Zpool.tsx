@@ -8,22 +8,50 @@ import {
   useTheme,
 } from '@mui/material';
 import { useMemo } from 'react';
+import { SiGooglecloudstorage } from 'react-icons/si';
 import { diskPercentFormatter, tooltipMultilineSx } from '../constants/disk';
 import { useZpool } from '../hooks/useZpool';
 import { formatBytes } from '../utils/formatters';
 import { createCardSx } from './cardStyles';
 import AppPieChart from './charts/AppPieChart';
-import { SiGooglecloudstorage } from "react-icons/si";
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
 const Zpool = () => {
-  const { data, isLoading, error } = useZpool({ refetchInterval: 15000 });
+  const { data, isLoading, error } = useZpool({
+    refetchInterval: 1 * 60 * 1000,
+  });
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const chartSize = isSmallScreen ? 180 : 230;
 
   const cardSx = createCardSx(theme);
+
+  const poolStatusLabel = (poolHealth: string | undefined) => {
+    switch (poolHealth) {
+      case 'ONLINE':
+        return `(${poolHealth}) آنلاین `;
+      case 'DEGRADED':
+        return `(${poolHealth}) کارایی کاهش یافته `;
+      case 'FAULTED':
+        return `(${poolHealth}) خراب شده `;
+      case 'OFFLINE':
+        return `(${poolHealth}) آفلاین `;
+      case 'UNAVAIL':
+        return `(${poolHealth}) غیرقابل دسترس `;
+      case 'REMOVED':
+        return `(${poolHealth}) حذف شده `;
+      case 'SUSPENDED':
+        return `(${poolHealth}) معلق `;
+      case 'CORRUPTED':
+        return `(${poolHealth}) آسیب دیده `;
+      case 'INCONSISTENT':
+        return `(${poolHealth}) ناسازگار `;
+      default:
+        return 'حالت ناشناخته';
+        break;
+    }
+  };
 
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
   const failedPools = useMemo(
@@ -258,7 +286,7 @@ const Zpool = () => {
               ];
 
             if (pool.health) {
-              stats.push({ key: 'health', label: 'وضعیت', value: pool.health });
+              stats.push({ key: 'health', label: 'وضعیت', value: poolStatusLabel(pool.health) });
             }
 
             const usedColor = theme.palette.primary.main;
@@ -289,16 +317,16 @@ const Zpool = () => {
               >
                 <Stack spacing={0.5} sx={{ alignSelf: 'stretch' }}>
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {pool.name}
+                    فضای یکپارچه {pool.name}
                   </Typography>
-                  {pool.health && (
+                  {/* {pool.health && (
                     <Typography
                       variant="caption"
                       sx={{ color: theme.palette.text.secondary }}
                     >
                       وضعیت : {pool.health}
                     </Typography>
-                  )}
+                  )} */}
                 </Stack>
 
                 <Box
@@ -323,7 +351,7 @@ const Zpool = () => {
                           {
                             id: 'remaining',
                             value: chartRemaining,
-                            label: 'باقی‌مانده',
+                            label: 'آزاد',
                             color: remainingColor,
                           },
                         ],
@@ -345,13 +373,13 @@ const Zpool = () => {
                         valueFormatter: (item) => {
                           if (item.id === 'used') {
                             return [
-                              `${formatBytes(boundedUsed)} : استفاده‌شده`,
                               `${formatBytes(safeTotal)} : کل`,
-                              `${formatBytes(boundedFree)} : آزاد`,
+                              `${formatBytes(boundedUsed)} : استفاده‌شده`,
+                              // `${formatBytes(boundedFree)} : آزاد`,
                               `${percentText} : درصد استفاده`,
                             ].join('\n');
                           }
-                          return `${formatBytes(chartRemaining)} : باقی‌مانده`;
+                          return `${formatBytes(chartRemaining)}`;
                         },
                       },
                     ]}
