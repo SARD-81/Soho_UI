@@ -14,9 +14,13 @@ import {
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
+import { useSambaAvailableUsersByGroup } from '../../hooks/useSambaAvailableUsersByGroup';
+import { useSambaGroupMembers } from '../../hooks/useSambaGroupMembers';
 import axiosInstance from '../../lib/axiosInstance';
+import { useUpdateSambaGroupMember } from '../../hooks/useUpdateSambaGroupMember';
 import { parseDelimitedList, uniqueSortedList } from '../../utils/samba';
 import { useUpdateSharepoint } from '../../hooks/useUpdateSharepoint';
 
@@ -27,13 +31,22 @@ type DragPayload = {
 };
 
 type ManageShareMembersType = 'users' | 'groups';
+type ManageShareMembersMode = 'share' | 'group';
 
-interface ManageShareMembersModalProps {
-  open: boolean;
-  shareName: string | null;
-  type: ManageShareMembersType;
-  onClose: () => void;
-}
+type ManageShareMembersModalProps =
+  | {
+      open: boolean;
+      shareName: string | null;
+      type: ManageShareMembersType;
+      onClose: () => void;
+      mode?: 'share';
+    }
+  | {
+      open: boolean;
+      groupName: string | null;
+      onClose: () => void;
+      mode: 'group';
+    };
 
 const chipStyles = {
   add: {
@@ -71,15 +84,34 @@ const membersProperty: Record<ManageShareMembersType, string> = {
   groups: 'valid groups',
 };
 
-const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShareMembersModalProps) => {
-  const propertyKey = membersProperty[type];
+const groupCopy = {
+  title: 'مدیریت اعضای گروه',
+  addLabel: 'کاربران خارج از گروه',
+  empty: 'هیچ عضوی برای این گروه ثبت نشده است.',
+};
+
+const ManageShareMembersModal = (props: ManageShareMembersModalProps) => {
+  const mode: ManageShareMembersMode = props.mode ?? 'share';
+  const isGroupMode = mode === 'group';
+  const shareName = !isGroupMode ? props.shareName : null;
+  const groupName = isGroupMode ? props.groupName : null;
+  const type = !isGroupMode ? props.type : 'users';
+  const onClose = props.onClose;
+  const propertyKey = !isGroupMode ? membersProperty[type] : null;
   const updateSharepoint = useUpdateSharepoint();
   const queryClient = useQueryClient();
+  const updateGroupMember = useUpdateSambaGroupMember();
 
   const [stagedMembers, setStagedMembers] = useState<string[]>([]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [groupUpdateError, setGroupUpdateError] = useState<string | null>(null);
+  const [isGroupUpdateInFlight, setIsGroupUpdateInFlight] = useState(false);
 
-  const membersQuery = useQuery<string[]>({
+  const groupMembersQuery = useSambaGroupMembers(groupName, {
+    enabled: isGroupMode && open,
+  });
+
+  const shareMembersQuery = useQuery<string[]>({
     queryKey: ['samba', 'sharepoints', shareName, propertyKey],
     queryFn: async () => {
       if (!shareName) return [];
@@ -91,10 +123,14 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
       const rawMembers = response.data?.data?.[propertyKey];
       return parseDelimitedList(rawMembers);
     },
-    enabled: open && Boolean(shareName),
+    enabled: !isGroupMode && open && Boolean(shareName),
   });
 
-  const availableQuery = useQuery<string[]>({
+  const groupAvailableQuery = useSambaAvailableUsersByGroup(groupName, {
+    enabled: isGroupMode && open,
+  });
+
+  const shareAvailableQuery = useQuery<string[]>({
     queryKey: ['samba', type === 'users' ? 'users' : 'groups', 'available', shareName],
     queryFn: async () => {
       if (type === 'users') {
@@ -133,44 +169,62 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
 
       return uniqueSortedList(groupNames);
     },
-    enabled: open && Boolean(shareName),
+    enabled: !isGroupMode && open && Boolean(shareName),
   });
 
+  const currentMembers = useMemo(
+    () =>
+      uniqueSortedList(
+        isGroupMode
+          ? groupMembersQuery.data?.members ?? []
+          : shareMembersQuery.data ?? []
+      ),
+    [groupMembersQuery.data?.members, isGroupMode, shareMembersQuery.data]
+  );
+
+  const availableMembers = useMemo(
+    () =>
+      isGroupMode ? groupAvailableQuery.data ?? [] : shareAvailableQuery.data ?? [],
+    [groupAvailableQuery.data, isGroupMode, shareAvailableQuery.data]
+  );
+
   const availableCandidates = useMemo(() => {
-    const available = availableQuery.data ?? [];
     const memberSet = new Set(stagedMembers);
 
-    return available.filter((candidate) => !memberSet.has(candidate));
-  }, [availableQuery.data, stagedMembers]);
+    return availableMembers.filter((candidate) => !memberSet.has(candidate));
+  }, [availableMembers, stagedMembers]);
 
   useEffect(() => {
-    if (open && membersQuery.data) {
-      setStagedMembers(uniqueSortedList(membersQuery.data));
+    if (open) {
+      setStagedMembers(currentMembers);
     }
-  }, [membersQuery.data, open]);
+  }, [currentMembers, open]);
 
   useEffect(() => {
     if (!open) {
       setIsConfirmOpen(false);
+      setGroupUpdateError(null);
+      setIsGroupUpdateInFlight(false);
     }
   }, [open]);
 
-  const isSubmitting = updateSharepoint.isPending;
+  const isSubmitting = isGroupMode ? isGroupUpdateInFlight : updateSharepoint.isPending;
   const hasMembers = stagedMembers.length > 0;
-  const hasRemovableMembers = stagedMembers.length > 1;
+  const hasRemovableMembers = isGroupMode ? stagedMembers.length > 0 : stagedMembers.length > 1;
 
   const hasChanges = useMemo(() => {
-    const currentMembers = membersQuery.data ?? [];
     if (currentMembers.length !== stagedMembers.length) return true;
 
     const currentSorted = [...currentMembers].sort();
     const stagedSorted = [...stagedMembers].sort();
 
     return currentSorted.some((value, index) => value !== stagedSorted[index]);
-  }, [membersQuery.data, stagedMembers]);
+  }, [currentMembers, stagedMembers]);
 
   const handleAddMember = (member: string) => {
-    if (!shareName || isSubmitting) return;
+    if (!isGroupMode && !shareName) return;
+    if (isGroupMode && !groupName) return;
+    if (isSubmitting) return;
 
     const trimmed = member.trim();
     if (!trimmed) return;
@@ -179,12 +233,14 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
   };
 
   const handleRemoveMember = (member: string) => {
-    if (!shareName || isSubmitting) return;
+    if (!isGroupMode && !shareName) return;
+    if (isGroupMode && !groupName) return;
+    if (isSubmitting) return;
 
     setStagedMembers((prev) => {
-      if (prev.length <= 1) return prev;
+      if (!isGroupMode && prev.length <= 1) return prev;
       const next = prev.filter((item) => item !== member);
-      return next.length === 0 ? prev : next;
+      return !isGroupMode && next.length === 0 ? prev : next;
     });
   };
 
@@ -227,8 +283,10 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
     }
   };
 
+  const canSubmit = isGroupMode ? hasChanges : hasChanges && hasMembers;
+
   const handleRequestSubmit = () => {
-    if (isSubmitting || !hasChanges || !hasMembers) return;
+    if (isSubmitting || !canSubmit) return;
     setIsConfirmOpen(true);
   };
 
@@ -238,7 +296,66 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
   };
 
   const handleApplyChanges = () => {
-    if (!shareName || isSubmitting || !hasChanges || !hasMembers) {
+    if (isSubmitting || !canSubmit) {
+      handleCancelConfirmation();
+      return;
+    }
+
+    if (isGroupMode) {
+      if (!groupName) {
+        handleCancelConfirmation();
+        return;
+      }
+
+      const currentSet = new Set(currentMembers);
+      const stagedSet = new Set(stagedMembers);
+      const membersToAdd = stagedMembers.filter((member) => !currentSet.has(member));
+      const membersToRemove = currentMembers.filter((member) => !stagedSet.has(member));
+
+      setIsGroupUpdateInFlight(true);
+      setGroupUpdateError(null);
+
+      const applyUpdate = async () => {
+        if (membersToAdd.length) {
+          await updateGroupMember.mutateAsync({
+            groupname: groupName,
+            usernames: membersToAdd,
+            action: 'add',
+          });
+          toast.success(`کاربران ${membersToAdd.join(', ')} به گروه افزوده شدند (${groupName}).`);
+        }
+
+        if (membersToRemove.length) {
+          await updateGroupMember.mutateAsync({
+            groupname: groupName,
+            usernames: membersToRemove,
+            action: 'remove',
+          });
+          toast.success(`کاربران ${membersToRemove.join(', ')} از گروه حذف شدند (${groupName}).`);
+        }
+      };
+
+      applyUpdate()
+        .then(() => {
+          setIsConfirmOpen(false);
+          onClose();
+        })
+        .catch((error) => {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'به‌روزرسانی اعضای گروه با خطا مواجه شد.';
+          setGroupUpdateError(message);
+          toast.error(message);
+        })
+        .finally(() => {
+          setIsGroupUpdateInFlight(false);
+        });
+
+      return;
+    }
+
+    if (!shareName || !propertyKey) {
       handleCancelConfirmation();
       return;
     }
@@ -260,8 +377,12 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
     );
   };
 
-  const isLoading = membersQuery.isLoading || availableQuery.isLoading;
-  const copy = modalCopy[type];
+  const isLoading = isGroupMode
+    ? groupMembersQuery.isLoading || groupAvailableQuery.isLoading
+    : shareMembersQuery.isLoading || shareAvailableQuery.isLoading;
+  const copy = isGroupMode ? groupCopy : modalCopy[type];
+  const targetName = isGroupMode ? groupName : shareName;
+  const targetLabel = isGroupMode ? 'گروه' : 'اشتراک';
 
   return (
     <BlurModal
@@ -270,21 +391,27 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
         if (isSubmitting) return;
         onClose();
       }}
-      title={`${copy.title} ${shareName ?? ''}`.trim()}
+      title={`${copy.title} ${targetName ?? ''}`.trim()}
       actions={
         <ModalActionButtons
           onCancel={onClose}
           onConfirm={handleRequestSubmit}
           confirmLabel="ثبت تغییرات"
           disabled={isSubmitting}
-          confirmProps={{ disabled: !hasChanges || !hasMembers }}
+          confirmProps={{ disabled: !canSubmit }}
         />
       }
     >
       <Stack spacing={2} sx={{ mt: 1 }}>
-        {updateSharepoint.isError ? (
+        {updateSharepoint.isError && !isGroupMode ? (
           <Typography sx={{ color: 'var(--color-error)', fontWeight: 600 }}>
             {updateSharepoint.error?.message}
+          </Typography>
+        ) : null}
+
+        {groupUpdateError ? (
+          <Typography sx={{ color: 'var(--color-error)', fontWeight: 600 }}>
+            {groupUpdateError}
           </Typography>
         ) : null}
 
@@ -412,10 +539,10 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                           letterSpacing: 0.5,
                         }}
                       >
-                         اعضای فعلی اشتراک ({stagedMembers.length} عضو)
+                        اعضای فعلی {targetLabel} ({stagedMembers.length} عضو)
                       </Typography>
                       <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600, fontSize: 12 }}>
-                        اعضای تایید شده این اشتراک در این بخش نمایش داده می‌شوند.
+                        اعضای تایید شده این {targetLabel} در این بخش نمایش داده می‌شوند.
                       </Typography>
                     </Box>
                   </Box>
@@ -470,7 +597,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ color: 'var(--color-secondary)', lineHeight: 1.9 }}>
-            با تایید، تغییرات اعضا در اشتراک «{shareName}» ثبت می‌شود. در غیر این صورت بدون ذخیره‌سازی بسته خواهد شد.
+            با تایید، تغییرات اعضا در {targetLabel} «{targetName}» ثبت می‌شود. در غیر این صورت بدون ذخیره‌سازی بسته خواهد شد.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
