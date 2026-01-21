@@ -13,9 +13,7 @@ import type {
 } from '../@types/samba';
 import ConfirmDeleteSambaGroupModal from '../components/groups/ConfirmDeleteSambaGroupModal';
 import GroupsGuidanceAccordion from '../components/groups/GroupsGuidanceAccordion';
-import SambaGroupAddMemberModal from '../components/groups/SambaGroupAddMemberModal';
 import SambaGroupCreateModal from '../components/groups/SambaGroupCreateModal';
-import SambaGroupRemoveMemberModal from '../components/groups/SambaGroupRemoveMemberModal';
 import SambaGroupsTable from '../components/groups/SambaGroupsTable';
 import PageContainer from '../components/PageContainer';
 import ConfirmDeleteShareModal from '../components/share/ConfirmDeleteShareModal';
@@ -102,19 +100,15 @@ const Share = () => {
   const [pendingGroupDelete, setPendingGroupDelete] = useState<string | null>(
     null
   );
-  const [pendingGroupMember, setPendingGroupMember] = useState<string | null>(
-    null
-  );
-  const [addMemberGroup, setAddMemberGroup] = useState<string | null>(null);
-  const [removeMemberGroup, setRemoveMemberGroup] = useState<string | null>(
+  const [createGroupMemberGroup, setCreateGroupMemberGroup] = useState<
+    string | null
+  >(null);
+  const [manageGroupMembers, setManageGroupMembers] = useState<string | null>(
     null
   );
   const [deleteGroupName, setDeleteGroupName] = useState<string | null>(null);
   const [deleteGroupError, setDeleteGroupError] = useState<string | null>(null);
   const [groupMemberError, setGroupMemberError] = useState<string | null>(null);
-  const [removeMemberError, setRemoveMemberError] = useState<string | null>(
-    null
-  );
 
   const { data: rawShares = [], isLoading, error } = useSambaShares();
   const { activeItemId: activeShareName, pinnedItemIds: pinnedShareNames } =
@@ -376,6 +370,8 @@ const Share = () => {
       toast.success(`گروه ${groupname} با موفقیت ایجاد شد.`);
       setIsGroupCreateModalOpen(false);
       setGroupCreateError(null);
+      setCreateGroupMemberGroup(groupname);
+      setGroupMemberError(null);
     },
     onError: (message) => {
       setGroupCreateError(message);
@@ -399,23 +395,15 @@ const Share = () => {
       const joinedUsers = usernames.join(', ');
       toast.success(`کاربران ${joinedUsers} ${actionLabel} (${groupname}).`);
       setGroupMemberError(null);
-      setRemoveMemberError(null);
-      setAddMemberGroup(null);
-      setRemoveMemberGroup(null);
-      setPendingGroupMember(null);
+      setCreateGroupMemberGroup(null);
     },
     onError: (message, groupname, usernames, action) => {
       const actionLabel = action === 'add' ? 'افزودن' : 'حذف';
       const joinedUsers = usernames.join(', ');
-      if (action === 'add') {
-        setGroupMemberError(message);
-      } else {
-        setRemoveMemberError(message);
-      }
+      setGroupMemberError(message);
       toast.error(
         `${actionLabel} کاربران ${joinedUsers} در گروه ${groupname} با خطا مواجه شد: ${message}`
       );
-      setPendingGroupMember(null);
     },
   });
 
@@ -588,27 +576,18 @@ const Share = () => {
     [createSambaGroup]
   );
 
-  const handleOpenAddGroupMemberModal = useCallback(
-    (group: { name: string }) => {
-      setGroupMemberError(null);
-      updateSambaGroupMember.reset();
-      setAddMemberGroup(group.name);
-    },
-    [updateSambaGroupMember]
-  );
-
-  const handleCloseAddGroupMemberModal = useCallback(() => {
+  const handleCloseCreateGroupMemberModal = useCallback(() => {
     if (updateSambaGroupMember.isPending) {
       return;
     }
 
-    setAddMemberGroup(null);
+    setCreateGroupMemberGroup(null);
     setGroupMemberError(null);
   }, [updateSambaGroupMember.isPending]);
 
-  const handleSubmitAddMember = useCallback(
+  const handleSubmitCreateGroupMembers = useCallback(
     (usernames: string[]) => {
-      if (!addMemberGroup) {
+      if (!createGroupMemberGroup) {
         return;
       }
 
@@ -620,75 +599,24 @@ const Share = () => {
         return;
       }
 
-      setPendingGroupMember(addMemberGroup);
       setGroupMemberError(null);
 
-      updateSambaGroupMember.mutate(
-        {
-          groupname: addMemberGroup,
-          usernames: trimmedUsernames,
-          action: 'add',
-        },
-        {
-          onSettled: () => {
-            setPendingGroupMember(null);
-          },
-        }
-      );
+      updateSambaGroupMember.mutate({
+        groupname: createGroupMemberGroup,
+        usernames: trimmedUsernames,
+        action: 'add',
+      });
     },
-    [addMemberGroup, updateSambaGroupMember]
+    [createGroupMemberGroup, updateSambaGroupMember]
   );
 
-  const handleOpenRemoveGroupMemberModal = useCallback(
-    (group: { name: string }) => {
-      setRemoveMemberError(null);
-      updateSambaGroupMember.reset();
-      setRemoveMemberGroup(group.name);
-    },
-    [updateSambaGroupMember]
-  );
+  const handleOpenManageGroupMembersModal = useCallback((group: { name: string }) => {
+    setManageGroupMembers(group.name);
+  }, []);
 
-  const handleCloseRemoveGroupMemberModal = useCallback(() => {
-    if (updateSambaGroupMember.isPending) {
-      return;
-    }
-
-    setRemoveMemberGroup(null);
-    setRemoveMemberError(null);
-  }, [updateSambaGroupMember.isPending]);
-
-  const handleSubmitRemoveMembers = useCallback(
-    (usernames: string[]) => {
-      if (!removeMemberGroup) {
-        return;
-      }
-
-      const trimmedMembers = usernames
-        .map((username) => username.trim())
-        .filter(Boolean);
-
-      if (!trimmedMembers.length) {
-        return;
-      }
-
-      setPendingGroupMember(removeMemberGroup);
-      setRemoveMemberError(null);
-
-      updateSambaGroupMember.mutate(
-        {
-          groupname: removeMemberGroup,
-          usernames: trimmedMembers,
-          action: 'remove',
-        },
-        {
-          onSettled: () => {
-            setPendingGroupMember(null);
-          },
-        }
-      );
-    },
-    [removeMemberGroup, updateSambaGroupMember]
-  );
+  const handleCloseManageGroupMembersModal = useCallback(() => {
+    setManageGroupMembers(null);
+  }, []);
 
   const handleDeleteSambaGroup = useCallback((group: { name: string }) => {
     setDeleteGroupError(null);
@@ -861,9 +789,7 @@ const Share = () => {
                 }
                 error={sambaGroupsQuery.error ?? null}
                 pendingDeleteGroup={pendingGroupDelete}
-                pendingMemberGroup={pendingGroupMember}
-                onAddUser={handleOpenAddGroupMemberModal}
-                onRemoveUser={handleOpenRemoveGroupMemberModal}
+                onManageMembers={handleOpenManageGroupMembersModal}
                 onDelete={handleDeleteSambaGroup}
               />
             </Box>
@@ -1012,6 +938,11 @@ const Share = () => {
         onSubmit={handleSubmitCreateGroup}
         isSubmitting={createSambaGroup.isPending}
         errorMessage={groupCreateError}
+        memberModalGroupname={createGroupMemberGroup}
+        onCloseMemberModal={handleCloseCreateGroupMemberModal}
+        onSubmitMembers={handleSubmitCreateGroupMembers}
+        isSubmittingMembers={updateSambaGroupMember.isPending}
+        memberErrorMessage={groupMemberError}
       />
 
       <ConfirmDeleteSambaGroupModal
@@ -1023,22 +954,11 @@ const Share = () => {
         errorMessage={deleteGroupError}
       />
 
-      <SambaGroupAddMemberModal
-        open={Boolean(addMemberGroup)}
-        groupname={addMemberGroup}
-        onClose={handleCloseAddGroupMemberModal}
-        onSubmit={handleSubmitAddMember}
-        isSubmitting={updateSambaGroupMember.isPending}
-        errorMessage={groupMemberError}
-      />
-
-      <SambaGroupRemoveMemberModal
-        open={Boolean(removeMemberGroup)}
-        groupname={removeMemberGroup}
-        onClose={handleCloseRemoveGroupMemberModal}
-        onRemove={handleSubmitRemoveMembers}
-        isSubmitting={updateSambaGroupMember.isPending}
-        errorMessage={removeMemberError}
+      <ManageShareMembersModal
+        open={Boolean(manageGroupMembers)}
+        groupName={manageGroupMembers}
+        mode="group"
+        onClose={handleCloseManageGroupMembersModal}
       />
 
       <ManageShareMembersModal
