@@ -1,11 +1,7 @@
 import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useMemo } from 'react';
-import {
-  MdDeleteOutline,
-  MdPersonAddAlt1,
-  MdPersonRemove,
-} from 'react-icons/md';
+import { MdDeleteOutline, MdManageAccounts } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { SambaGroupEntry } from '../../@types/samba';
 import DataTable from '../DataTable';
@@ -16,8 +12,7 @@ interface SambaGroupsTableProps {
   error: Error | null;
   pendingDeleteGroup?: string | null;
   pendingMemberGroup?: string | null;
-  onAddUser: (group: SambaGroupEntry) => void;
-  onRemoveUser: (group: SambaGroupEntry) => void;
+  onManageMembers: (group: SambaGroupEntry) => void;
   onDelete: (group: SambaGroupEntry) => void;
 }
 
@@ -27,8 +22,7 @@ const SambaGroupsTable = ({
   error,
   pendingDeleteGroup,
   pendingMemberGroup,
-  onAddUser,
-  onRemoveUser,
+  onManageMembers,
   onDelete,
 }: SambaGroupsTableProps) => {
   const theme = useTheme();
@@ -133,35 +127,13 @@ const SambaGroupsTable = ({
                 </span>
               </Tooltip>
 
-              <Tooltip title="افزودن عضو" arrow>
+              <Tooltip title="مدیریت کاربران" arrow>
                 <span>
                   <IconButton
                     size="small"
                     onClick={(event) => {
                       event.stopPropagation();
-                      onAddUser(group);
-                    }}
-                    disabled={Boolean(pendingMemberGroup)}
-                    sx={{
-                      color: 'var(--color-success)',
-                      '&.Mui-disabled': {
-                        color: 'var(--color-secondary)',
-                        opacity: isMemberPending ? 0.7 : 0.4,
-                      },
-                    }}
-                  >
-                    <MdPersonAddAlt1 size={18} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-
-              <Tooltip title="حذف عضو" arrow>
-                <span>
-                  <IconButton
-                    size="small"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onRemoveUser(group);
+                      onManageMembers(group);
                     }}
                     disabled={Boolean(pendingMemberGroup)}
                     sx={{
@@ -172,7 +144,7 @@ const SambaGroupsTable = ({
                       },
                     }}
                   >
-                    <MdPersonRemove size={18} />
+                    <MdManageAccounts size={18} />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -182,9 +154,8 @@ const SambaGroupsTable = ({
       },
     ];
   }, [
-    onAddUser,
     onDelete,
-    onRemoveUser,
+    onManageMembers,
     pendingDeleteGroup,
     pendingMemberGroup,
     theme.palette.primary.main,
@@ -192,9 +163,9 @@ const SambaGroupsTable = ({
 
   const handleRowClick = useCallback(
     (group: SambaGroupEntry) => {
-      onAddUser(group);
+      onManageMembers(group);
     },
-    [onAddUser]
+    [onManageMembers]
   );
 
   const resolveRowSx = useCallback(
