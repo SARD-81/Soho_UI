@@ -40,16 +40,18 @@ export const navItems: NavigationItem[] = [
   },
   { text: 'اشتراک گذاری',
     icon: createElement(BsFillShareFill),
-    path: '/share',
+    // path: '/share',
     children:[
-      {text:"NFS" , icon:createElement(MdFolderShared), path:"/share-nfs"}
+      {text:"SMB" , icon:createElement(BsFillShareFill), path:"/share"},
+      {text:"NFS" , icon:createElement(MdFolderShared), path:"/share-nfs"},
     ] 
   },
   {
     text: 'سرویس ها',
     icon: createElement(GrServices),
-    path: '/services',
+    // path: '/',
     children:[
+      {text:'سرویس ها' , icon:createElement(TbHeartRateMonitor), path:"/services"},
       {text:"سرویس SNMP" , icon:createElement(TbHeartRateMonitor), path:"/snmp-service"}
     ]
   },

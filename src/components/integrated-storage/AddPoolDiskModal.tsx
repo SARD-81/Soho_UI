@@ -43,11 +43,11 @@ const inputBaseStyles = {
 
 const validationRules = [
   { type: 'disk', label: 'STRIP', rule: 'هر چند دیسک' },
-  { type: 'mirror', label: 'RAID1', rule: 'حداقل ۲ دیسک (تعداد زوج)' },
+  { type: 'mirror', label: 'MIRROR', rule: 'حداقل ۲ دیسک (تعداد زوج)' },
   { type: 'raidz', label: 'RAID5', rule: 'حداقل ۳ دیسک' },
-  { type: 'raidz2', label: 'RAID6', rule: 'حداقل ۵ دیسک' },
-  { type: 'raidz3', label: 'Triple parity', rule: 'حداقل ۵ دیسک' },
-  { type: 'spare', label: 'دیسک رزرو', rule: 'حداقل ۱ دیسک' },
+  // { type: 'raidz2', label: 'RAID6', rule: 'حداقل ۵ دیسک' },
+  // { type: 'raidz3', label: 'Triple parity', rule: 'حداقل ۵ دیسک' },
+  // { type: 'spare', label: 'دیسک رزرو', rule: 'حداقل ۱ دیسک' },
 ];
 
 const AddPoolDiskModal = ({
@@ -80,7 +80,7 @@ const AddPoolDiskModal = ({
     <BlurModal
       open={isOpen}
       onClose={closeModal}
-      title={`افزودن دیسک به ${poolName ?? ''}`}
+      title={`افزودن دیسک به فضای یکپارچه ${poolName ?? ''}`}
       actions={
         <ModalActionButtons
           onCancel={closeModal}

@@ -8,6 +8,6 @@ export interface NavigationDrawerProps {
 export interface NavigationItem {
   text: string;
   icon: ReactNode;
-  path: string;
+  path?: string;
   children?: NavigationItem[];
 }

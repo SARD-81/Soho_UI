@@ -8,11 +8,11 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { useCallback, useMemo } from 'react';
-import { MdCheck, MdClose, MdDeleteOutline, MdEdit } from 'react-icons/md';
+import { useMemo } from 'react';
+import { MdDeleteOutline, MdEdit } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { NfsShareEntry } from '../../@types/nfs';
-import { translateDetailKey } from '../../utils/detailLabels';
+// import { translateDetailKey } from '../../utils/detailLabels';
 import DataTable from '../DataTable';
 
 interface NfsSharesTableProps {
@@ -88,95 +88,95 @@ const NfsSharesTable = ({
       );
     };
 
-    const renderOptions = (share: NfsShareEntry) => {
-      if (!share.clients.length) {
-        return <Typography sx={{ color: 'var(--color-text)' }}>-</Typography>;
-      }
+    // const renderOptions = (share: NfsShareEntry) => {
+    //   if (!share.clients.length) {
+    //     return <Typography sx={{ color: 'var(--color-text)' }}>-</Typography>;
+    //   }
 
-      return (
-        <Stack spacing={1} alignItems="stretch">
-          {share.clients.map((clientEntry, index) => {
-            const optionEntries = Object.entries(clientEntry.options ?? {});
+    //   return (
+    //     <Stack spacing={1} alignItems="stretch">
+    //       {share.clients.map((clientEntry, index) => {
+    //         const optionEntries = Object.entries(clientEntry.options ?? {});
 
-            if (optionEntries.length === 0) {
-              return (
-                <Typography
-                  key={`${clientEntry.client}-${index}`}
-                  sx={{ color: 'var(--color-text)', textAlign: 'center' }}
-                >
-                  -
-                </Typography>
-              );
-            }
+    //         if (optionEntries.length === 0) {
+    //           return (
+    //             <Typography
+    //               key={`${clientEntry.client}-${index}`}
+    //               sx={{ color: 'var(--color-text)', textAlign: 'center' }}
+    //             >
+    //               -
+    //             </Typography>
+    //           );
+    //         }
 
-            return (
-              <Stack
-                key={`${clientEntry.client}-${index}`}
-                spacing={0.5}
-                alignItems="center"
-              >
-                {share.clients.length > 1 ? (
-                  <Typography
-                    sx={{
-                      color: 'var(--color-secondary)',
-                      fontSize: '0.85rem',
-                      direction: 'ltr',
-                    }}
-                  >
-                    {clientEntry.client || `کلاینت ${index + 1}`}
-                  </Typography>
-                ) : null}
-                <Stack
-                  direction="row"
-                  spacing={0.5}
-                  justifyContent="center"
-                  flexWrap="wrap"
-                >
-                  {optionEntries.map(([key, value]) => {
-                    const isBoolean = typeof value === 'boolean';
-                    const chipColor = isBoolean
-                      ? value
-                        ? theme.palette.success.main
-                        : theme.palette.error.main
-                      : theme.palette.text.secondary;
-                    const label = isBoolean
-                      ? translateDetailKey(key)
-                      : `${translateDetailKey(key)}: ${String(value)}`;
+    //         return (
+    //           <Stack
+    //             key={`${clientEntry.client}-${index}`}
+    //             spacing={0.5}
+    //             alignItems="center"
+    //           >
+    //             {share.clients.length > 1 ? (
+    //               <Typography
+    //                 sx={{
+    //                   color: 'var(--color-secondary)',
+    //                   fontSize: '0.85rem',
+    //                   direction: 'ltr',
+    //                 }}
+    //               >
+    //                 {clientEntry.client || `کلاینت ${index + 1}`}
+    //               </Typography>
+    //             ) : null}
+    //             <Stack
+    //               direction="row"
+    //               spacing={0.5}
+    //               justifyContent="center"
+    //               flexWrap="wrap"
+    //             >
+    //               {optionEntries.map(([key, value]) => {
+    //                 const isBoolean = typeof value === 'boolean';
+    //                 const chipColor = isBoolean
+    //                   ? value
+    //                     ? theme.palette.success.main
+    //                     : theme.palette.error.main
+    //                   : theme.palette.text.secondary;
+    //                 const label = isBoolean
+    //                   ? translateDetailKey(key)
+    //                   : `${translateDetailKey(key)}: ${String(value)}`;
 
-                    return (
-                      <Chip
-                        key={`${clientEntry.client}-${key}`}
-                        label={label}
-                        size="small"
-                        icon={
-                          isBoolean ? (
-                            value ? (
-                              <MdCheck />
-                            ) : (
-                              <MdClose />
-                            )
-                          ) : undefined
-                        }
-                        sx={{
-                          fontWeight: 700,
-                          '& .MuiChip-icon': {
-                            color: chipColor,
-                          },
-                          color: chipColor,
-                          borderColor: alpha(chipColor, 0.45),
-                          backgroundColor: alpha(chipColor, 0.08),
-                        }}
-                        variant="outlined"
-                      />
-                    );
-                  })}
-                </Stack>
-              </Stack>
-            );
-          })}
-        </Stack>
-      );
-    };
+    //                 return (
+    //                   <Chip
+    //                     key={`${clientEntry.client}-${key}`}
+    //                     label={label}
+    //                     size="small"
+    //                     // icon={
+    //                     //   isBoolean ? (
+    //                     //     value ? (
+    //                     //       <MdCheck />
+    //                     //     ) : (
+    //                     //       <MdClose />
+    //                     //     )
+    //                     //   ) : undefined
+    //                     // }
+    //                     sx={{
+    //                       fontWeight: 700,
+    //                       '& .MuiChip-icon': {
+    //                         color: chipColor,
+    //                       },
+    //                       color: chipColor,
+    //                       borderColor: alpha(chipColor, 0.45),
+    //                       backgroundColor: alpha(chipColor, 0.08),
+    //                     }}
+    //                     variant="outlined"
+    //                   />
+    //                 );
+    //               })}
+    //             </Stack>
+    //           </Stack>
+    //         );
+    //       })}
+    //     </Stack>
+    //   );
+    // };
 
     return [
       {
@@ -213,16 +213,17 @@ const NfsSharesTable = ({
         align: 'center',
         renderCell: (share) => renderClients(share),
       },
-      {
-        id: 'options',
-        header: 'ویژگی‌ها',
-        align: 'center',
-        renderCell: (share) => renderOptions(share),
-      },
+      // {
+      //   id: 'options',
+      //   header: 'ویژگی‌ها',
+      //   align: 'center',
+      //   renderCell: (share) => renderOptions(share),
+      // },
       {
         id: 'actions',
         header: 'عملیات',
-        align: 'center',
+        align: 'right',
+        width: 60,
         renderCell: (share) => {
           const isShareDeleting = isDeleting && pendingPath === share.path;
 
@@ -265,7 +266,7 @@ const NfsSharesTable = ({
     ];
   }, [isDeleting, onDelete, onEdit, pendingPath, theme]);
 
-  const handleRowClick = useCallback((share: NfsShareEntry) => share, []);
+  // const handleRowClick = useCallback((share: NfsShareEntry) => share, []);
 
   return (
     <DataTable<NfsShareEntry>
@@ -275,7 +276,7 @@ const NfsSharesTable = ({
       getRowId={(share) => share.path}
       isLoading={isLoading}
       error={error}
-      onRowClick={handleRowClick}
+      // onRowClick={handleRowClick}
       bodyRowSx={{
         transition: 'background-color 0.2s ease',
       }}

@@ -31,6 +31,7 @@ const inputBaseStyles = {
   color: 'var(--color-text)',
   '& fieldset': {
     borderColor: 'var(--color-input-border)',
+    color: 'var(--color-text)',
   },
   '&:hover fieldset': {
     borderColor: 'var(--color-input-focus-border)',
@@ -272,7 +273,7 @@ const CreateFileSystemModal = ({
                   disabled
                   sx={{ color: 'var(--color-secondary)' }}
                 >
-                  یکی از گزینه های زیر را انتخاب کنید
+                  یکی از فضاهای یکپارچه زیر را انتخاب کنید
                 </MenuItem>
               )}
               {poolOptions.length === 0 && (
@@ -368,7 +369,7 @@ const CreateFileSystemModal = ({
                 pattern: '[0-9]*[.,]?[0-9]*',
               }}
             />
-            <FormControl size="small" sx={{ minWidth: 90 }}>
+            <FormControl size="small" sx={{ minWidth: 110 }}>
               <InputLabel id="filesystem-quota-unit" sx={{ color: 'var(--color-text)' }}>
                 واحد
               </InputLabel>
@@ -377,10 +378,18 @@ const CreateFileSystemModal = ({
                 value={quotaUnit}
                 onChange={handleQuotaUnitChange}
                 sx={inputBaseStyles}
+                MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: 'var(--color-card-bg)',
+                    color: 'var(--color-text)',
+                  },
+                },
+              }}
                 label="واحد"
               >
-                <MenuItem value="G">G</MenuItem>
-                <MenuItem value="T">T</MenuItem>
+                <MenuItem value="G">گیگابایت</MenuItem>
+                <MenuItem value="T">ترابایت</MenuItem>
               </Select>
             </FormControl>
           </Box>

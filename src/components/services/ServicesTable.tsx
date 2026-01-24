@@ -3,14 +3,13 @@ import {
   Button,
   CircularProgress,
   Divider,
-  IconButton,
   Menu,
   MenuItem,
   Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useMemo, useState, type MouseEvent } from 'react';
+import { useMemo, useState } from 'react';
 import type { IconType } from 'react-icons';
 import {
   FiAlertCircle,
@@ -23,7 +22,6 @@ import {
   FiSlash,
   FiStopCircle,
 } from 'react-icons/fi';
-import { HiDotsVertical } from 'react-icons/hi';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { ServiceActionType, ServiceValue } from '../../@types/service';
 import BlurModal from '../BlurModal';
@@ -76,99 +74,99 @@ const actionIcons: Record<ServiceActionType, IconType> = {
   unmask: FiShieldOff,
 };
 
-const serviceDetailLabels: Record<string, string> = {
-  description: 'توضیحات',
-  active: 'وضعیت کلی',
-  active_state: 'وضعیت کلی',
-  sub: 'زیر وضعیت',
-  sub_state: 'زیر وضعیت',
-  load: 'وضعیت بارگذاری',
-  pid: 'شناسه پردازش',
-  enabled: 'فعال',
-  masked: 'ماسک شده',
-  status: 'وضعیت سرویس',
-  last_action: 'آخرین اقدام',
-  last_restart: 'آخرین راه‌اندازی مجدد',
-};
+// const serviceDetailLabels: Record<string, string> = {
+//   description: 'توضیحات',
+//   active: 'وضعیت کلی',
+//   active_state: 'وضعیت کلی',
+//   sub: 'زیر وضعیت',
+//   sub_state: 'زیر وضعیت',
+//   load: 'وضعیت بارگذاری',
+//   pid: 'شناسه پردازش',
+//   enabled: 'فعال',
+//   masked: 'ماسک شده',
+//   status: 'وضعیت سرویس',
+//   last_action: 'آخرین اقدام',
+//   last_restart: 'آخرین راه‌اندازی مجدد',
+// };
 
-const normalizedValueTranslations: Record<string, string> = {
-  active: 'فعال',
-  exited: 'خارج شده',
-  inactive: 'غیرفعال',
-  loaded: 'بارگذاری شده',
-  activating: 'در حال فعال‌سازی',
-  deactivating: 'در حال غیرفعال‌سازی',
-  running: 'در حال اجرا',
-  stopping: 'در حال توقف',
-  stopped: 'متوقف',
-  dead: 'متوقف',
-  failed: 'ناموفق',
-  enabling: 'در حال فعال‌سازی',
-  disabling: 'در حال غیرفعال‌سازی',
-  enabled: 'فعال',
-  disabled: 'غیرفعال',
-  pending: 'در انتظار',
-  masked: 'ماسک شده',
-  unmasked: 'ماسک نشده',
-};
+// const normalizedValueTranslations: Record<string, string> = {
+//   active: 'فعال',
+//   exited: 'خارج شده',
+//   inactive: 'غیرفعال',
+//   loaded: 'بارگذاری شده',
+//   activating: 'در حال فعال‌سازی',
+//   deactivating: 'در حال غیرفعال‌سازی',
+//   running: 'در حال اجرا',
+//   stopping: 'در حال توقف',
+//   stopped: 'متوقف',
+//   dead: 'متوقف',
+//   failed: 'ناموفق',
+//   enabling: 'در حال فعال‌سازی',
+//   disabling: 'در حال غیرفعال‌سازی',
+//   enabled: 'فعال',
+//   disabled: 'غیرفعال',
+//   pending: 'در انتظار',
+//   masked: 'ماسک شده',
+//   unmasked: 'ماسک نشده',
+// };
 
-const directValueTranslations: Record<string, string> = {
-  'Samba SMB Daemon': 'سرویس SMB سامبا',
-  'Samba NMB Daemon': 'سرویس NMB سامبا',
-  'OpenSSH server daemon': 'سرویس سرور OpenSSH',
-  'Raise network interfaces': 'راه‌اندازی رابط‌های شبکه',
-  'A high performance web server and a reverse proxy server':
-    'وب‌سرور قدرتمند و پراکسی معکوس',
-  'stopped via mock service': 'توسط سرویس شبیه‌ساز متوقف شد',
-  'started via mock service': 'توسط سرویس شبیه‌ساز راه‌اندازی شد',
-  'restarted via mock service': 'توسط سرویس شبیه‌ساز راه‌اندازی مجدد شد',
-  'reloaded via mock service': 'توسط سرویس شبیه‌ساز بارگذاری مجدد شد',
-  'enabled via mock service': 'توسط سرویس شبیه‌ساز فعال شد',
-  'disabled via mock service': 'توسط سرویس شبیه‌ساز غیرفعال شد',
-  'masked via mock service': 'توسط سرویس شبیه‌ساز ماسک شد',
-  'unmasked via mock service': 'ماسک توسط سرویس شبیه‌ساز حذف شد',
-};
+// const directValueTranslations: Record<string, string> = {
+//   'Samba SMB Daemon': 'سرویس SMB سامبا',
+//   'Samba NMB Daemon': 'سرویس NMB سامبا',
+//   'OpenSSH server daemon': 'سرویس سرور OpenSSH',
+//   'Raise network interfaces': 'راه‌اندازی رابط‌های شبکه',
+//   'A high performance web server and a reverse proxy server':
+//     'وب‌سرور قدرتمند و پراکسی معکوس',
+//   'stopped via mock service': 'توسط سرویس شبیه‌ساز متوقف شد',
+//   'started via mock service': 'توسط سرویس شبیه‌ساز راه‌اندازی شد',
+//   'restarted via mock service': 'توسط سرویس شبیه‌ساز راه‌اندازی مجدد شد',
+//   'reloaded via mock service': 'توسط سرویس شبیه‌ساز بارگذاری مجدد شد',
+//   'enabled via mock service': 'توسط سرویس شبیه‌ساز فعال شد',
+//   'disabled via mock service': 'توسط سرویس شبیه‌ساز غیرفعال شد',
+//   'masked via mock service': 'توسط سرویس شبیه‌ساز ماسک شد',
+//   'unmasked via mock service': 'ماسک توسط سرویس شبیه‌ساز حذف شد',
+// };
 
-const numberTypographySx = {
-  display: 'block',
-  textAlign: 'center' as const,
-  direction: 'ltr' as const,
-  fontVariantNumeric: 'tabular-nums',
-};
+// const numberTypographySx = {
+//   display: 'block',
+//   textAlign: 'center' as const,
+//   direction: 'ltr' as const,
+//   fontVariantNumeric: 'tabular-nums',
+// };
 
-const formatServiceValue = (value: ServiceValue) => {
-  if (value === null || value === undefined) {
-    return '—';
-  }
+// const formatServiceValue = (value: ServiceValue) => {
+//   if (value === null || value === undefined) {
+//     return '—';
+//   }
 
-  if (typeof value === 'boolean') {
-    return value ? 'بله' : 'خیر';
-  }
+//   if (typeof value === 'boolean') {
+//     return value ? 'بله' : 'خیر';
+//   }
 
-  if (Array.isArray(value)) {
-    return value.map((item) => (item ?? '—').toString()).join(', ');
-  }
+//   if (Array.isArray(value)) {
+//     return value.map((item) => (item ?? '—').toString()).join(', ');
+//   }
 
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
+//   if (typeof value === 'number' && Number.isFinite(value)) {
+//     return value;
+//   }
 
-  if (typeof value === 'string') {
-    const directTranslation = directValueTranslations[value];
-    if (directTranslation) {
-      return directTranslation;
-    }
+//   if (typeof value === 'string') {
+//     const directTranslation = directValueTranslations[value];
+//     if (directTranslation) {
+//       return directTranslation;
+//     }
 
-    const normalized = value.trim().toLowerCase();
-    const normalizedTranslation = normalizedValueTranslations[normalized];
+//     const normalized = value.trim().toLowerCase();
+//     const normalizedTranslation = normalizedValueTranslations[normalized];
 
-    if (normalizedTranslation) {
-      return normalizedTranslation;
-    }
-  }
+//     if (normalizedTranslation) {
+//       return normalizedTranslation;
+//     }
+//   }
 
-  return value?.toString?.() ?? '—';
-};
+//   return value?.toString?.() ?? '—';
+// };
 
 const statusConfig: Record<
   ServiceStatus,
@@ -304,16 +302,19 @@ const ServicesTable = ({
     service: string | null;
   }>({ anchorEl: null, service: null });
 
-  const [confirmState, setConfirmState] = useState<
-    { service: string; action: ServiceActionType } | null
-  >(null);
+  const [confirmState, setConfirmState] = useState<{
+    service: string;
+    action: ServiceActionType;
+  } | null>(null);
 
   const detailKeys = useMemo(() => {
     const keys = new Set<string>();
 
     services.forEach((service) => {
       Object.keys(service.details).forEach((key) => {
-        if (!['unit', 'description', 'enabled', 'masked', 'status'].includes(key)) {
+        if (
+          !['unit', 'description', 'enabled', 'masked', 'status'].includes(key)
+        ) {
           keys.add(key);
         }
       });
@@ -374,7 +375,7 @@ const ServicesTable = ({
       id: 'service-status',
       header: 'وضعیت',
       align: 'center',
-      width: 150,
+      // width: 150,
       renderCell: (row) => {
         const isPending = isActionLoading && activeServiceName === row.name;
         const { status } = deriveStatus(row, isPending);
@@ -404,38 +405,39 @@ const ServicesTable = ({
       },
     };
 
-    const dynamicColumns = detailKeys.map<DataTableColumn<ServiceTableRow>>(
-      (key) => ({
-        id: key,
-        header: serviceDetailLabels[key] ?? key,
-        align: 'center',
-        renderCell: (row) => {
-          const rawValue = row.details[key];
-          const formatted = formatServiceValue(rawValue);
-          const isNumeric = typeof rawValue === 'number' && Number.isFinite(rawValue);
+    // const dynamicColumns = detailKeys.map<DataTableColumn<ServiceTableRow>>(
+    //   (key) => ({
+    //     id: key,
+    //     header: serviceDetailLabels[key] ?? key,
+    //     align: 'center',
+    //     renderCell: (row) => {
+    //       const rawValue = row.details[key];
+    //       const formatted = formatServiceValue(rawValue);
+    //       const isNumeric = typeof rawValue === 'number' && Number.isFinite(rawValue);
 
-          return (
-            <Typography
-              component="span"
-              sx={isNumeric ? numberTypographySx : undefined}
-            >
-              {formatted}
-            </Typography>
-          );
-        },
-      })
-    );
+    //       return (
+    //         <Typography
+    //           component="span"
+    //           sx={isNumeric ? numberTypographySx : undefined}
+    //         >
+    //           {formatted}
+    //         </Typography>
+    //       );
+    //     },
+    //   })
+    // );
 
     const actionColumn: DataTableColumn<ServiceTableRow> = {
       id: 'actions',
       header: 'عملیات',
-      align: 'center',
-      width: 240,
+      align: 'right',
+      // width: 240,
       renderCell: (row) => {
         const isPending = isActionLoading && activeServiceName === row.name;
         const { status, enabled, masked } = deriveStatus(row, isPending);
         const primaryAction = getPrimaryAction(status);
-        const primaryDisabled = isPending || (primaryAction === 'start' && masked);
+        const primaryDisabled =
+          isPending || (primaryAction === 'start' && masked);
         const overflowActions = getOverflowActions(status, enabled, masked);
 
         const handlePrimaryClick = () => {
@@ -447,9 +449,9 @@ const ServicesTable = ({
           onAction(row.name, primaryAction);
         };
 
-        const handleMenuClick = (event: MouseEvent<HTMLButtonElement>) => {
-          setMenuState({ anchorEl: event.currentTarget, service: row.name });
-        };
+        // const handleMenuClick = (event: MouseEvent<HTMLButtonElement>) => {
+        //   setMenuState({ anchorEl: event.currentTarget, service: row.name });
+        // };
 
         const pendingLabel =
           primaryAction === 'stop' ? 'در حال توقف...' : 'در حال شروع...';
@@ -463,7 +465,7 @@ const ServicesTable = ({
               alignItems: 'center',
               justifyContent: 'flex-end',
               gap: 1,
-              minWidth: 220,
+              // minWidth: 20,
             }}
           >
             <Tooltip
@@ -489,7 +491,7 @@ const ServicesTable = ({
                     )
                   }
                   sx={{
-                    minWidth: 110,
+                    // minWidth: 110,
                     fontWeight: 700,
                     '&.Mui-disabled': {
                       opacity: 0.6,
@@ -500,8 +502,9 @@ const ServicesTable = ({
                 </Button>
               </span>
             </Tooltip>
+            
 
-            <IconButton
+            {/* <IconButton
               aria-label={`اقدامات بیشتر برای ${row.label}`}
               onClick={handleMenuClick}
               disabled={isPending}
@@ -512,7 +515,7 @@ const ServicesTable = ({
               }}
             >
               <HiDotsVertical />
-            </IconButton>
+            </IconButton> */}
 
             <Menu
               anchorEl={menuState.anchorEl}
@@ -533,7 +536,9 @@ const ServicesTable = ({
                   .filter((action) => ['restart', 'reload'].includes(action))
                   .map((action) => {
                     const Icon = actionIcons[action];
-                    const isDisabled = isPending || (action === 'reload' && status !== 'running');
+                    const isDisabled =
+                      isPending ||
+                      (action === 'reload' && status !== 'running');
 
                     const content = (
                       <MenuItem
@@ -548,7 +553,12 @@ const ServicesTable = ({
                         }}
                         disabled={isDisabled}
                       >
-                        <Stack direction="row" spacing={1.25} alignItems="center" color="var(--color-text)">
+                        <Stack
+                          direction="row"
+                          spacing={1.25}
+                          alignItems="center"
+                          color="var(--color-text)"
+                        >
                           <Icon size={16} />
                           <span>{actionLabels[action]}</span>
                         </Stack>
@@ -558,7 +568,11 @@ const ServicesTable = ({
                     return isDisabled ? (
                       <Tooltip
                         key={action}
-                        title={status !== 'running' ? 'این عملیات تنها در حالت اجرا در دسترس است.' : ''}
+                        title={
+                          status !== 'running'
+                            ? 'این عملیات تنها در حالت اجرا در دسترس است.'
+                            : ''
+                        }
                         placement="left"
                         arrow
                       >
@@ -591,7 +605,12 @@ const ServicesTable = ({
                         }}
                         disabled={isDisabled}
                       >
-                        <Stack direction="row" spacing={1.25} alignItems="center" color="var(--color-text)">
+                        <Stack
+                          direction="row"
+                          spacing={1.25}
+                          alignItems="center"
+                          color="var(--color-text)"
+                        >
                           <Icon size={16} />
                           <span>{actionLabels[action]}</span>
                         </Stack>
@@ -621,7 +640,12 @@ const ServicesTable = ({
                         }}
                         disabled={isDisabled}
                       >
-                        <Stack direction="row" spacing={1.25} alignItems="center" color="var(--color-text)">
+                        <Stack
+                          direction="row"
+                          spacing={1.25}
+                          alignItems="center"
+                          color="var(--color-text)"
+                        >
                           <Icon size={16} />
                           <span>{actionLabels[action]}</span>
                         </Stack>
@@ -635,7 +659,7 @@ const ServicesTable = ({
       },
     };
 
-    return [indexColumn, baseColumn, statusColumn, ...dynamicColumns, actionColumn];
+    return [indexColumn, baseColumn, statusColumn, actionColumn];
   }, [
     activeServiceName,
     detailKeys,
@@ -675,7 +699,9 @@ const ServicesTable = ({
                 setConfirmState(null);
               }}
               confirmLabel={
-                confirmState.action === 'stop' ? 'توقف سرویس' : 'راه‌اندازی مجدد'
+                confirmState.action === 'stop'
+                  ? 'توقف سرویس'
+                  : 'راه‌اندازی مجدد'
               }
               cancelLabel="انصراف"
               confirmProps={{ color: 'error', disableElevation: true }}
@@ -685,7 +711,8 @@ const ServicesTable = ({
           minWidth={420}
         >
           <Typography sx={{ color: 'var(--color-secondary)', lineHeight: 1.7 }}>
-            این عملیات ممکن است باعث اختلال در دسترسی کاربران شود. آیا مطمئن هستید؟
+            این عملیات ممکن است باعث اختلال در دسترسی کاربران شود. آیا مطمئن
+            هستید؟
           </Typography>
         </BlurModal>
       ) : null}

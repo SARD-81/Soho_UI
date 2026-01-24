@@ -172,7 +172,7 @@ const IntegratedStorage = () => {
     isLoading: isPoolsLoading,
     error: zpoolError,
   } = useZpool({
-    refetchInterval: 1000,
+    refetchInterval: 1 * 60 * 1000,
   });
 
   const [replacePoolName, setReplacePoolName] = useState<string | null>(null);
@@ -224,7 +224,7 @@ const IntegratedStorage = () => {
     refetch: refetchPoolSlots,
   } = usePoolDeviceSlots(poolNames, {
     enabled: pools.length > 0,
-    refetchInterval: 20000,
+    refetchInterval: 1 * 60 * 1000,
   });
 
   const addPoolDevices = useAddPoolDevices({
@@ -280,9 +280,7 @@ const IntegratedStorage = () => {
   });
 
   const handleEdit = useCallback((pool: ZpoolCapacityEntry) => {
-    if (typeof window !== 'undefined') {
-      window.alert(`ویرایش فضای یکپارچه ${pool.name}`);
-    }
+    console.log(pool)
   }, []);
 
   const handleOpenCreate = useCallback(() => {
@@ -397,7 +395,7 @@ const IntegratedStorage = () => {
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Tooltip title=" فراخوانی فضای یکپارچه اکسپورت شده از سیستم‌"> 
+            <Tooltip title=" فراخوانی فضای یکپارچه آزاد شده از سیستم‌"> 
             <Button
               onClick={poolImport.openModal}
               variant="outlined"

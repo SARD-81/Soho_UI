@@ -1,22 +1,31 @@
-import { Box, Button, Grow, Stack, Typography } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DndContext, type DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
-import { MdAdd, MdAutoAwesome, MdClose, MdOutlineDashboardCustomize, MdOutlineSave } from 'react-icons/md';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { Box, Button, Grow, Stack, Tooltip, Typography } from '@mui/material';
 import type { ComponentType } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  MdAdd,
+  MdClose,
+  MdOutlineDashboardCustomize,
+  MdOutlineSave,
+} from 'react-icons/md';
 import Cpu from '../components/Cpu';
 // import Disk from '../components/Disk';
 import Memory from '../components/Memory';
 import Network from '../components/Network';
 // import SystemInfo from '../components/SystemInfo';
-import Zpool from '../components/Zpool';
+import { TransitionGroup } from 'react-transition-group';
 import DashboardLayoutPanel, {
   type DashboardLayoutPanelWidget,
 } from '../components/dashboard/DashboardLayoutPanel';
 import SortableWidget from '../components/dashboard/SortableWidget';
 import PageContainer from '../components/PageContainer';
+import Zpool from '../components/Zpool';
 import { useAuth } from '../contexts/AuthContext';
-import { TransitionGroup } from 'react-transition-group';
 
 const LAYOUT_STORAGE_BASE_KEY = 'dashboard-layout.v2';
 
@@ -293,15 +302,21 @@ const Dashboard = () => {
       ? `${LAYOUT_STORAGE_BASE_KEY}:${normalizedUsername}`
       : `${LAYOUT_STORAGE_BASE_KEY}:guest`;
   }, [username]);
-  const widgetIds = useMemo(() => dashboardWidgets.map((widget) => widget.id), []);
+  const widgetIds = useMemo(
+    () => dashboardWidgets.map((widget) => widget.id),
+    []
+  );
   const widgetMap = useMemo(
-    () => new Map<string, DashboardWidgetDefinition>(dashboardWidgets.map((widget) => [widget.id, widget])),
+    () =>
+      new Map<string, DashboardWidgetDefinition>(
+        dashboardWidgets.map((widget) => [widget.id, widget])
+      ),
     []
   );
 
   const createNormalizedState = useCallback(
     (raw?: Partial<LayoutState> | null): LayoutState => {
-      const providedOrder = Array.isArray(raw?.order) ? raw?.order ?? [] : [];
+      const providedOrder = Array.isArray(raw?.order) ? (raw?.order ?? []) : [];
       const seen = new Set<string>();
       const order: string[] = [];
 
@@ -319,7 +334,9 @@ const Dashboard = () => {
         }
       });
 
-      const providedHidden = Array.isArray(raw?.hidden) ? raw?.hidden ?? [] : [];
+      const providedHidden = Array.isArray(raw?.hidden)
+        ? (raw?.hidden ?? [])
+        : [];
       const hiddenSeen = new Set<string>();
       const hidden: string[] = [];
 
@@ -342,7 +359,9 @@ const Dashboard = () => {
             return;
           }
 
-          const validOption = widget.layoutOptions?.some((option) => option.id === presetId);
+          const validOption = widget.layoutOptions?.some(
+            (option) => option.id === presetId
+          );
           if (validOption) {
             sizeOverrides[widgetId] = presetId;
           }
@@ -354,7 +373,10 @@ const Dashboard = () => {
     [widgetIds, widgetMap]
   );
 
-  const defaultLayoutState = useMemo(() => createNormalizedState(), [createNormalizedState]);
+  const defaultLayoutState = useMemo(
+    () => createNormalizedState(),
+    [createNormalizedState]
+  );
   const [persistedLayout, setPersistedLayout] = useState<LayoutState>(() => {
     const stored = loadStoredLayout(layoutStorageKey);
     return createNormalizedState(stored);
@@ -400,7 +422,9 @@ const Dashboard = () => {
       }
 
       const normalized = createNormalizedState(prev);
-      return areLayoutStatesEqual(prev, normalized) ? prev : cloneLayoutState(normalized);
+      return areLayoutStatesEqual(prev, normalized)
+        ? prev
+        : cloneLayoutState(normalized);
     });
   }, [createNormalizedState, isCustomizing]);
 
@@ -441,7 +465,9 @@ const Dashboard = () => {
 
         const options = getWidgetLayoutOptions(widget);
         const activeOptionId = layoutState.sizeOverrides[id] ?? 'default';
-        const optionExists = options.some((option) => option.id === activeOptionId);
+        const optionExists = options.some(
+          (option) => option.id === activeOptionId
+        );
 
         return {
           id,
@@ -449,16 +475,24 @@ const Dashboard = () => {
           description: widget.description,
           hidden: layoutState.hidden.includes(id),
           activeOptionId: optionExists ? activeOptionId : 'default',
-          options: options.map(({ id: optionId, label, description, isDefault }) => ({
-            id: optionId,
-            label,
-            description,
-            isDefault,
-          })),
+          options: options.map(
+            ({ id: optionId, label, description, isDefault }) => ({
+              id: optionId,
+              label,
+              description,
+              isDefault,
+            })
+          ),
         } satisfies DashboardLayoutPanelWidget;
       })
       .filter(Boolean) as DashboardLayoutPanelWidget[];
-  }, [getWidgetLayoutOptions, layoutState.hidden, layoutState.order, layoutState.sizeOverrides, widgetMap]);
+  }, [
+    getWidgetLayoutOptions,
+    layoutState.hidden,
+    layoutState.order,
+    layoutState.sizeOverrides,
+    widgetMap,
+  ]);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -476,7 +510,9 @@ const Dashboard = () => {
           return prev;
         }
 
-        const currentVisible = prev.order.filter((id) => !prev.hidden.includes(id));
+        const currentVisible = prev.order.filter(
+          (id) => !prev.hidden.includes(id)
+        );
         const oldIndex = currentVisible.indexOf(String(active.id));
         const newIndex = currentVisible.indexOf(String(over.id));
 
@@ -655,7 +691,8 @@ const Dashboard = () => {
   );
 
   const hasUnsavedChanges = useMemo(
-    () => (draftLayout ? !areLayoutStatesEqual(draftLayout, persistedLayout) : false),
+    () =>
+      draftLayout ? !areLayoutStatesEqual(draftLayout, persistedLayout) : false,
     [draftLayout, persistedLayout]
   );
 
@@ -663,7 +700,8 @@ const Dashboard = () => {
     (widget: DashboardWidgetDefinition): WidgetLayoutConfig => {
       const options = getWidgetLayoutOptions(widget);
       const overrideId = layoutState.sizeOverrides[widget.id] ?? 'default';
-      const activeOption = options.find((option) => option.id === overrideId) ?? options[0];
+      const activeOption =
+        options.find((option) => option.id === overrideId) ?? options[0];
 
       return {
         columns: activeOption.columns ?? widget.columns,
@@ -686,12 +724,12 @@ const Dashboard = () => {
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             داشبورد
           </Typography>
-          <Stack direction="row" gap={1} alignItems="center" mt={0.5}>
+          {/* <Stack direction="row" gap={1} alignItems="center" mt={0.5}>
             <MdAutoAwesome size={18} color="var(--color-primary-500, currentColor)" />
             <Typography variant="body2" color="text.secondary">
               با استفاده از ابزارهای طرح‌بندی، ویجت‌ها را مرتب، اضافه یا پنهان کنید
             </Typography>
-          </Stack>
+          </Stack> */}
         </Box>
         {isCustomizing ? (
           <Stack
@@ -706,7 +744,7 @@ const Dashboard = () => {
               startIcon={<MdAdd />}
               onClick={handleOpenPanel}
             >
-              اضافه و ویرایش کردن
+              ویرایش کردن
             </Button>
             <Button
               variant="contained"
@@ -727,21 +765,29 @@ const Dashboard = () => {
             </Button>
           </Stack>
         ) : (
-          <Stack direction="row" justifyContent={{ xs: 'flex-start', md: 'flex-end' }}>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<MdOutlineDashboardCustomize />}
-              onClick={handleEnterCustomize}
+          <Tooltip title="ابزارهای طرح‌بندی ویجت‌ها">
+            <Stack
+              direction="row"
+              justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
             >
-              سفارشی‌سازی صفحه
-            </Button>
-          </Stack>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<MdOutlineDashboardCustomize />}
+                onClick={handleEnterCustomize}
+              >
+                سفارشی‌سازی صفحه
+              </Button>
+            </Stack>
+          </Tooltip>
         )}
       </Stack>
 
       <DndContext onDragEnd={handleDragEnd}>
-        <SortableContext items={visibleWidgetIds} strategy={rectSortingStrategy}>
+        <SortableContext
+          items={visibleWidgetIds}
+          strategy={rectSortingStrategy}
+        >
           <Box
             sx={{
               display: 'grid',
@@ -765,7 +811,11 @@ const Dashboard = () => {
                   FULL_WIDTH_COLUMNS
                 );
                 const rowStyles = layout.rows
-                  ? createResponsiveSpan(layout.rows, DEFAULT_ROW_SPAN, Number.MAX_SAFE_INTEGER)
+                  ? createResponsiveSpan(
+                      layout.rows,
+                      DEFAULT_ROW_SPAN,
+                      Number.MAX_SAFE_INTEGER
+                    )
                   : undefined;
 
                 return (
@@ -785,7 +835,11 @@ const Dashboard = () => {
                         minWidth: 0,
                       }}
                     >
-                      <SortableWidget id={widget.id} customizing={isCustomizing} title={widget.title}>
+                      <SortableWidget
+                        id={widget.id}
+                        customizing={isCustomizing}
+                        title={widget.title}
+                      >
                         <WidgetComponent />
                       </SortableWidget>
                     </Box>

@@ -227,7 +227,7 @@ function LoginForm() {
             color="var(--color-secondary)"
             sx={{ fontSize: 12, marginBottom: -15 }}
           >
-            نسخه BETA
+            نسخه 2
           </Typography>
         </Box>
       </Stack>

@@ -26,8 +26,17 @@ const Network = () => {
 
   const [history, setHistory] = useState<History>({});
   const startTimeRef = useRef<number>(Date.now());
+  function formatTimeTo24Hour(date: Date): string {
+  return date.toLocaleTimeString('en-GB', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
   const formatBandwidthValue = (value: number | null | undefined) =>
-    formatBytes(Math.max(value ?? 0, 0), { maximumFractionDigits: 1 });
+    formatBytes(value);
+  //Math.max(value ?? 0, 0), { maximumFractionDigits: 1 }
 
   useEffect(() => {
     if (!data?.interfaces) return;
@@ -185,8 +194,9 @@ const Network = () => {
         </ResponsiveChartContainer>
       ) : (
         names.map((name) => {
+          if (name.includes("enp")) {
           const interfaceInfo = interfaces[name];
-          const unit = interfaceInfo?.bandwidth.unit ?? '';
+          // const unit = interfaceInfo?.bandwidth.unit ?? '';
           const ipv4Details = extractIPv4Info(interfaceInfo);
           const displayName = `${name}`;
           const speedText = formatInterfaceSpeed(
@@ -237,23 +247,26 @@ const Network = () => {
                       {
                         dataKey: 'time',
                         valueFormatter: (value) =>
-                          new Date(value).toLocaleTimeString(),
+                          formatTimeTo24Hour(new Date(value)),
                         scaleType: 'time',
                         min,
                         max,
                       },
                     ]}
                     yAxis={[
+                      
                       {
-                        label: unit,
+                        label: "سرعت",
                         max: maxCombinedValue || 15,
                         position: 'left',
-                        tickSize: 76, // ⬅ increase gap between numbers and the y-axis line
+                        tickSize: 56, // ⬅ increase gap between numbers and the y-axis line
                         width: 156, // ⬅ reserve room so labels don’t get clipped
-                        tickLabelStyle: { fill: 'var(--color-text)' },
+                        tickLabelStyle: { fill: 'var(--color-text)' , direction:"ltr" },
                         valueFormatter: (value: number | null | undefined) =>
                           formatBandwidthValue(value),
+                        
                       },
+                      
                     ]}
                     series={[
                       {
@@ -353,6 +366,7 @@ const Network = () => {
               </Box>
             </Box>
           );
+        }
         })
       )}
     </Box>

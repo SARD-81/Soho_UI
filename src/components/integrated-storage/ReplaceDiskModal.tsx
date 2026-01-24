@@ -27,6 +27,9 @@ interface ReplaceDiskModalProps {
   apiError?: string | null;
 }
 
+const poolSlots : PoolDiskSlot[] = []
+console.log(poolSlots)
+
 const selectBaseStyles = {
   backgroundColor: 'var(--color-input-bg)',
   '& .MuiOutlinedInput-notchedOutline': {
@@ -67,6 +70,7 @@ const buildOldDeviceOptions = (slots: PoolDiskSlot[]) =>
       value: basePath,
       label,
       key: `${slot.diskName}-${index}`,
+      show: `دیسک ${slot.diskName} ( اسلات ${slot.slotNumber})`
     };
   });
 
@@ -86,6 +90,7 @@ const ReplaceDiskModal = ({
   const [oldDevice, setOldDevice] = useState('');
   const [newDevice, setNewDevice] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+  console.log(slots)
 
   useEffect(() => {
     if (open) {
@@ -133,7 +138,7 @@ const ReplaceDiskModal = ({
     <BlurModal
       open={open}
       onClose={onClose}
-      title={`جایگزینی دیسک ${poolName ?? ''}`}
+      title={`جایگزینی دیسک فضای یکپارچه ${poolName ?? ''}`}
       actions={
         <ModalActionButtons
           onCancel={onClose}
@@ -249,7 +254,8 @@ const ReplaceDiskModal = ({
                   </MenuItem>
                   {oldDeviceOptions.map((option) => (
                     <MenuItem key={option.key} value={option.value}>
-                      {option.label}
+                      {option.show}
+
                     </MenuItem>
                   ))}
                 </Select>

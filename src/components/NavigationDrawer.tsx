@@ -123,25 +123,30 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   };
 
   React.useEffect(() => {
-    setExpandedItems((prev) => {
-      const next = { ...prev };
+  setExpandedItems((prev) => {
+    const next = { ...prev };
 
-      const ensureActiveParentsExpanded = (items: NavigationItem[]) => {
-        items.forEach((item) => {
-          if (item.children?.length) {
-            if (isItemActive(item) && next[item.path] === undefined) {
-              next[item.path] = true;
-            }
-            ensureActiveParentsExpanded(item.children);
+    const ensureActiveParentsExpanded = (items: NavigationItem[]) => {
+      items.forEach((item) => {
+        if (item.children?.length) {
+          const itemKey = getItemKey(item); // استفاده از تابع getItemKey
+          if (isItemActive(item) && next[itemKey] === undefined) {
+            next[itemKey] = true;
           }
-        });
-      };
+          ensureActiveParentsExpanded(item.children);
+        }
+      });
+    };
 
-      ensureActiveParentsExpanded(navItems);
+    ensureActiveParentsExpanded(navItems);
 
-      return next;
-    });
-  }, [location.pathname]);
+    return next;
+  });
+}, [location.pathname]);
+
+  const getItemKey = (item: NavigationItem): string => {
+    return item.path || item.text; // اگر path وجود داشت از آن استفاده کن، در غیر این صورت از text
+  };
 
   const renderNavItems = (
     items: NavigationItem[],
@@ -149,25 +154,37 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   ): React.ReactNode => (
     <List disablePadding={depth > 0} sx={{ pl: open && depth > 0 ? 2 : 0 }}>
       {items.map((item) => {
+        const itemKey = getItemKey(item);
         const isActive = isItemActive(item);
         const hasChildren = Boolean(item.children?.length);
+        const hasPath = item.path && item.path.length > 0;
         const isExpanded = hasChildren
-          ? (expandedItems[item.path] ?? false)
-          : false;
+        ? (expandedItems[itemKey] ?? false)
+        : false;
 
         return (
-          <React.Fragment key={`${item.text}-${item.path}`}>
+          <React.Fragment key={`${item.text}-${itemKey}`}>
             <ListItem disablePadding sx={{ display: 'block' }}>
               <ListItemButton
-                component={Link}
-                to={item.path}
-                onClick={handleItemClick}
-                selected={isActive}
+                component={hasChildren ? 'div' : Link}
+                to={!hasChildren && hasPath ? item.path : undefined}
+                onClick={(event) => {
+                if (hasChildren) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setExpandedItems((prev) => ({
+                    ...prev,
+                    [itemKey]: !(prev[itemKey] ?? false),
+                  }));
+                } else if (hasPath) {
+                  handleItemClick();
+                }
+              }}
+              selected={isActive}
                 sx={(theme) => ({
                   position: 'relative',
                   overflow: 'hidden',
                   color: 'var(--color-bg-primary)',
-                  // minHeight: 48,
                   justifyContent: open ? 'initial' : 'center',
                   px: 2.5,
                   mx: 1,
@@ -227,6 +244,8 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                     backgroundColor: 'transparent',
                     transform: 'translateX(2px)',
                   },
+                  // اضافه کردن cursor pointer برای آیتم‌های دارای زیرمنو
+                  cursor:  'pointer',
                 })}
               >
                 <ListItemIcon
@@ -262,23 +281,14 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                 {hasChildren && open && (
                   <Box
                     component="span"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      setExpandedItems((prev) => ({
-                        ...prev,
-                        [item.path]: !(prev[item.path] ?? false),
-                      }));
-                    }}
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
                       ml: 'auto',
                       color: 'var(--color-bg-primary)',
-                      cursor: 'pointer',
                       backgroundColor: 'var(--color-input-border)',
-                      borderRadius:"9999px",
-                      p: 0.25
+                      borderRadius: '9999px',
+                      p: 0.25,
                     }}
                   >
                     {isExpanded ? (
@@ -360,7 +370,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           visibility: open ? 'visible' : 'hidden',
         }}
       >
-        نسخه BETA
+        نسخه 2
       </Typography>
     </StyledDrawer>
   );
