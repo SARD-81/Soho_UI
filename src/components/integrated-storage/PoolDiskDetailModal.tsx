@@ -97,14 +97,18 @@ const PoolDiskDetailModal = ({
 
   const slotLabel = slot.slotNumber ?? 'نامشخص';
   const detailValues = buildDiskDetailValues(slot.detail);
+  const hiddenKeys = new Set(['پارتیشن‌ها', 'مسیر دستگاه' , "WWID" , "UUID" , "زمان‌بندی"]);
+
   const detailKeys = sortKeysByLengthThenLocale(
     Object.keys(detailValues),
     buildKeyLengthMap([detailValues]),
     'fa-IR'
-  );
+  ).filter((key) => !hiddenKeys.has(key));
+
   const detailEntries = detailKeys.map(
     (key) => [key, detailValues[key]] as const
   );
+
   const diskLink = `/disks?selected=${encodeURIComponent(slot.diskName)}`;
 
   return (
@@ -148,8 +152,8 @@ const PoolDiskDetailModal = ({
           // background:
           //   'linear-gradient(135deg, rgba(14,44,88,0.95) 0%, rgba(14,174,164,0.9) 100%)',
           color: '#eaf7ff',
-          
-              backgroundColor: 'rgba(56, 189, 248, 0.28)',
+
+          backgroundColor: 'rgba(56, 189, 248, 0.28)',
           borderRadius: '12px',
           p: 3,
           display: 'flex',
