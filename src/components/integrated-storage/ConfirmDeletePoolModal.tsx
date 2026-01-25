@@ -28,7 +28,7 @@ const ConfirmDeletePoolModal = ({
     <BlurModal
       open={isOpen}
       onClose={closeModal}
-      title="حذف Pool"
+      title="حذف فضای یکپارچه"
       actions={
         <ModalActionButtons
           onCancel={closeModal}
@@ -48,7 +48,10 @@ const ConfirmDeletePoolModal = ({
           <Typography component="span" sx={{ fontWeight: 700 }}>
             {targetPool?.name}
           </Typography>{' '}
-          مطمئن هستید؟ با انجام این عملیات تمام اطلاعات شما حذف خواهد شد.
+          مطمئن هستید؟ 
+        </Typography>
+        <Typography sx={{ color: 'var(--color-error)' }}>
+          با انجام این عملیات تمام اطلاعات شما حذف خواهد شد.
         </Typography>
 
         {/* {errorMessage && (

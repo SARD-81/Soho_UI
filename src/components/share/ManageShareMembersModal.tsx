@@ -11,14 +11,14 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import BlurModal from '../BlurModal';
-import ModalActionButtons from '../common/ModalActionButtons';
+import { useUpdateSharepoint } from '../../hooks/useUpdateSharepoint';
 import axiosInstance from '../../lib/axiosInstance';
 import { parseDelimitedList, uniqueSortedList } from '../../utils/samba';
-import { useUpdateSharepoint } from '../../hooks/useUpdateSharepoint';
+import BlurModal from '../BlurModal';
+import ModalActionButtons from '../common/ModalActionButtons';
 
 type DragSource = 'available' | 'members';
 type DragPayload = {
@@ -53,13 +53,18 @@ const chipStyles = {
   },
 } as const;
 
-const modalCopy: Record<ManageShareMembersType, { title: string; addLabel: string; empty: string }> = {
+const modalCopy: Record<
+  ManageShareMembersType,
+  {type: string, title: string; addLabel: string; empty: string }
+> = {
   users: {
+    type: 'user',
     title: 'مدیریت کاربران اشتراک',
     addLabel: 'کاربران خارج از اشتراک',
     empty: 'هیچ کاربری برای این اشتراک ثبت نشده است.',
   },
   groups: {
+    type: 'group',
     title: 'مدیریت گروه‌های اشتراک',
     addLabel: 'گروه‌های خارج از اشتراک',
     empty: 'هیچ گروهی برای این اشتراک ثبت نشده است.',
@@ -71,7 +76,12 @@ const membersProperty: Record<ManageShareMembersType, string> = {
   groups: 'valid groups',
 };
 
-const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShareMembersModalProps) => {
+const ManageShareMembersModal = ({
+  open,
+  shareName,
+  type,
+  onClose,
+}: ManageShareMembersModalProps) => {
   const propertyKey = membersProperty[type];
   const updateSharepoint = useUpdateSharepoint();
   const queryClient = useQueryClient();
@@ -84,9 +94,12 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
     queryFn: async () => {
       if (!shareName) return [];
       const encodedName = encodeURIComponent(shareName);
-      const response = await axiosInstance.get(`/api/samba/sharepoints/${encodedName}/`, {
-        params: { only_active: false, property: propertyKey },
-      });
+      const response = await axiosInstance.get(
+        `/api/samba/sharepoints/${encodedName}/`,
+        {
+          params: { only_active: false, property: propertyKey },
+        }
+      );
 
       const rawMembers = response.data?.data?.[propertyKey];
       return parseDelimitedList(rawMembers);
@@ -95,7 +108,12 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
   });
 
   const availableQuery = useQuery<string[]>({
-    queryKey: ['samba', type === 'users' ? 'users' : 'groups', 'available', shareName],
+    queryKey: [
+      'samba',
+      type === 'users' ? 'users' : 'groups',
+      'available',
+      shareName,
+    ],
     queryFn: async () => {
       if (type === 'users') {
         const response = await axiosInstance.get('/api/samba/users/', {
@@ -107,7 +125,8 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
           ? data
               .map((entry) =>
                 typeof entry === 'object'
-                  ? (entry['Unix username'] as string) ?? (entry.username as string)
+                  ? ((entry['Unix username'] as string) ??
+                    (entry.username as string))
                   : undefined
               )
               .filter((username): username is string => Boolean(username))
@@ -125,7 +144,7 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
         ? data
             .map((entry) =>
               typeof entry === 'object'
-                ? (entry.name as string) ?? (entry.groupname as string)
+                ? ((entry.name as string) ?? (entry.groupname as string))
                 : undefined
             )
             .filter((name): name is string => Boolean(name))
@@ -247,9 +266,16 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
       { shareName, updates: { [propertyKey]: stagedMembers }, saveToDb: true },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['samba', 'sharepoints', shareName, propertyKey] });
           queryClient.invalidateQueries({
-            queryKey: ['samba', type === 'users' ? 'users' : 'groups', 'available', shareName],
+            queryKey: ['samba', 'sharepoints', shareName, propertyKey],
+          });
+          queryClient.invalidateQueries({
+            queryKey: [
+              'samba',
+              type === 'users' ? 'users' : 'groups',
+              'available',
+              shareName,
+            ],
           });
         },
         onSettled: () => {
@@ -301,8 +327,8 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                 border: '1px solid rgba(255, 255, 255, 0.5)',
                 borderRadius: 2,
                 p: 1.5,
-                width:'100px',
-                
+                width: '200px',
+                // backgroundColor: "red"
                 // backgroundColor: 'rgba(31, 182, 255, 0.05)',
                 // width:"2px"
               }}
@@ -314,10 +340,9 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                 sx={{
                   display: 'flex',
                   flexWrap: 'nowrap',
-                  flexDirection:'column',
+                  flexDirection: 'column',
                   gap: 1,
-                  alignItems:'stretch',
-
+                  alignItems: 'stretch',
                 }}
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={handleDropToAvailable}
@@ -332,24 +357,33 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                       disabled={isSubmitting}
                       sx={{
                         ...chipStyles.add,
-                        width:'100%' ,
+                        width: '100%',
                         justifyContent: 'flex-start',
                       }}
                       draggable
                       onDragStart={(event) =>
-                        handleDragStart(event, { member: candidate, source: 'available' })
+                        handleDragStart(event, {
+                          member: candidate,
+                          source: 'available',
+                        })
                       }
                     />
                   ))
                 ) : (
-                  <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
+                  <Typography
+                    sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}
+                  >
                     گزینه‌ای برای افزودن وجود ندارد.
                   </Typography>
                 )}
               </Box>
             </Stack>
 
-            <Divider flexItem orientation="vertical" sx={{ display: { xs: 'none', md: 'block' } }} />
+            <Divider
+              flexItem
+              orientation="vertical"
+              sx={{ display: { xs: 'none', md: 'block' } }}
+            />
 
             <Box
               sx={{
@@ -358,8 +392,8 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                 borderRadius: 3,
                 backgroundColor: 'rgba(31, 182, 255, 0.05)',
                 p: 1.2,
-                
-                border: '1px solid rgba(131, 182, 255, 0.24)'
+
+                border: '1px solid rgba(131, 182, 255, 0.24)',
                 // boxShadow: '0 22px 46px rgba(255, 99, 132, 0.26)',
               }}
             >
@@ -368,8 +402,9 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                 sx={{
                   position: 'relative',
                   borderRadius: 2.5,
-                //   background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 245, 247, 0.96))',
-                  
+                  width: '260px',
+                  //   background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 245, 247, 0.96))',
+
                   // boxShadow: '0 10px 14px rgba(255, 99, 132, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.65)',
                   p: 2,
                   overflow: 'hidden',
@@ -387,7 +422,9 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                     position: 'relative',
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}
+                  >
                     {/* <Box
                       sx={{
                         width: 38,
@@ -412,11 +449,13 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                           letterSpacing: 0.5,
                         }}
                       >
-                         اعضای فعلی اشتراک ({stagedMembers.length} عضو)
+                        {copy.type === 'user'
+                          ? `کاربران فعلی اشتراک (${stagedMembers.length} کاربر)`
+                          : `گروه های فعلی اشتراک (${stagedMembers.length} گروه)`}
                       </Typography>
-                      <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600, fontSize: 12 }}>
+                      {/* <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600, fontSize: 12 }}>
                         اعضای تایید شده این اشتراک در این بخش نمایش داده می‌شوند.
-                      </Typography>
+                      </Typography> */}
                     </Box>
                   </Box>
                   {/* <Chip
@@ -449,7 +488,9 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
                       />
                     ))
                   ) : (
-                    <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
+                    <Typography
+                      sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}
+                    >
                       {copy.empty}
                     </Typography>
                   )}
@@ -465,19 +506,30 @@ const ManageShareMembersModal = ({ open, shareName, type, onClose }: ManageShare
         onClose={handleCancelConfirmation}
         aria-labelledby="manage-share-members-confirmation"
       >
-        <DialogTitle id="manage-share-members-confirmation" sx={{ fontWeight: 800 }}>
+        <DialogTitle
+          id="manage-share-members-confirmation"
+          sx={{ fontWeight: 800, color: 'var(--color-text)' }}
+        >
           آیا از اعمال تغییرات مطمئن هستید؟
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ color: 'var(--color-secondary)', lineHeight: 1.9 }}>
-            با تایید، تغییرات اعضا در اشتراک «{shareName}» ثبت می‌شود. در غیر این صورت بدون ذخیره‌سازی بسته خواهد شد.
+            با تایید، تغییرات اعضا در اشتراک «{shareName}» ثبت می‌شود. در غیر
+            این صورت بدون ذخیره‌سازی بسته خواهد شد.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCancelConfirmation} color="inherit">
+          <Button
+            onClick={handleCancelConfirmation}
+            sx={{ color: 'var(--color-text)' }}
+          >
             انصراف
           </Button>
-          <Button variant="contained" onClick={handleApplyChanges} disabled={isSubmitting}>
+          <Button
+            variant="contained"
+            onClick={handleApplyChanges}
+            disabled={isSubmitting}
+          >
             تایید و اعمال
           </Button>
         </DialogActions>

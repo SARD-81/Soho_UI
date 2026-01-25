@@ -72,6 +72,16 @@ const SambaUsersTable = ({
         ),
       },
       {
+        id: 'passLastSet',
+        header: 'آخرین زمان تغییر گذرواژه',
+        align: 'left',
+        renderCell: (user) => (
+          <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+            {user.passwordLastSet}
+          </Typography>
+        ),
+      },
+      {
         id: 'actions',
         header: 'عملیات',
         align: 'center',

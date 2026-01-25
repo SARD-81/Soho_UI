@@ -41,9 +41,9 @@ const SHARE_ATTRIBUTE_LABELS: Record<string, string> = {
   browseable: 'قابل مرور',
   'guest ok': 'دسترسی مهمان',
   'inherit permissions': 'ارث‌بری مجوزها',
-  'create mask': 'ماسک ایجاد',
-  'directory mask': 'ماسک پوشه',
-  'max connections': 'حداکثر اتصال',
+  'create mask': 'سیاست ایجاد فایل',
+  'directory mask': 'سیاست ایجاد پوشه',
+  'max connections': 'حداکثر تعداد اتصال',
   is_custom: 'سفارشی',
   created_time: 'زمان ایجاد',
 };

@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Fragment, useEffect, useMemo } from 'react';
+import { Fragment, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import type { SambaSharepointsResponse } from '../../@types/samba';
 import type { UseCreateShareReturn } from '../../hooks/useCreateShare';
@@ -59,6 +59,8 @@ const autocompletePaperSlotProps = {
   },
 } as const;
 
+// const ACCESS_ERROR_MESSAGE = 'حداقل یک کاربر یا یک گروه را انتخاب کنید.';
+
 const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   const {
     isOpen,
@@ -83,6 +85,15 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     isPathChecking,
     isPathValid,
   } = controller;
+
+  const [accessSelectionError, setAccessSelectionError] = useState<string | null>(
+    null
+  );
+
+  useEffect(() => {
+    // When modal closes, clear local error
+    if (!isOpen) setAccessSelectionError(null);
+  }, [isOpen]);
 
   const sambaUsernamesQuery = useSambaUsernamesList({ enabled: isOpen });
   const sambaUsernames = useMemo(() => sambaUsernamesQuery.data ?? [], [
@@ -118,29 +129,19 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
 
   const existingSharePaths = useMemo(() => {
     const shareDetails = existingSharesQuery.data?.data ?? [];
-
     const paths = new Set<string>();
 
     shareDetails.forEach((details) => {
       const rawPath = typeof details?.path === 'string' ? details.path : undefined;
-
-      if (!rawPath) {
-        return;
-      }
+      if (!rawPath) return;
 
       const trimmedPath = rawPath.trim();
-
-      if (!trimmedPath) {
-        return;
-      }
+      if (!trimmedPath) return;
 
       paths.add(trimmedPath);
 
       const withoutTrailingSlashes = trimmedPath.replace(/\/+$/, '');
-
-      if (withoutTrailingSlashes) {
-        paths.add(withoutTrailingSlashes);
-      }
+      if (withoutTrailingSlashes) paths.add(withoutTrailingSlashes);
     });
 
     return paths;
@@ -149,11 +150,14 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   const filesystemMountpointsQuery = useFilesystemMountpoints({
     enabled: isOpen,
   });
+
   const mountpointOptions = useMemo(
     () => filesystemMountpointsQuery.data ?? [],
     [filesystemMountpointsQuery.data]
   );
+
   const { data: zpoolData } = useZpool();
+
   const normalizedPoolNames = useMemo(() => {
     const pools = zpoolData?.pools ?? [];
 
@@ -164,27 +168,18 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
         .map((name) => name.toLowerCase())
     );
   }, [zpoolData?.pools]);
+
   const filteredMountpointOptions = useMemo(
     () =>
       mountpointOptions.filter((option) => {
         const trimmedOption = option.trim();
+        if (!trimmedOption) return false;
 
-        if (!trimmedOption) {
-          return false;
-        }
-
-        if (existingSharePaths.has(trimmedOption)) {
-          return false;
-        }
+        if (existingSharePaths.has(trimmedOption)) return false;
 
         const withoutTrailingSlashes = trimmedOption.replace(/\/+$/, '');
-
-        if (
-          withoutTrailingSlashes &&
-          existingSharePaths.has(withoutTrailingSlashes)
-        ) {
+        if (withoutTrailingSlashes && existingSharePaths.has(withoutTrailingSlashes))
           return false;
-        }
 
         const normalizedOption = trimmedOption.toLowerCase();
         const normalizedOptionWithoutBoundarySlashes = normalizedOption.replace(
@@ -199,9 +194,16 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
 
   const hasPathError = Boolean(fullPathError) || pathValidationStatus === 'invalid';
   const pathHelperText = fullPathError || pathValidationMessage;
+
   const validUsersHelperText =
     validUsersError ||
-    (sambaUsernamesQuery.isError ? 'امکان دریافت کاربران سامبا وجود ندارد.' : null);
+    (sambaUsernamesQuery.isError ? 'امکان دریافت کاربران اشتراک SMB وجود ندارد.' : null) ||
+    accessSelectionError;
+
+  const validGroupsHelperText =
+    validGroupsError ||
+    (sambaGroupNamesQuery.isError ? 'امکان دریافت گروه‌های اشتراک SMB وجود ندارد.' : null) ||
+    accessSelectionError;
 
   const pathValidationAdornment = (() => {
     if (isPathChecking) {
@@ -240,6 +242,23 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
     return undefined;
   })();
 
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    // const hasAnyAccess =
+    //   (validUsers?.length ?? 0) > 0 || (validGroups?.length ?? 0) > 0;
+
+    // if (!hasAnyAccess) {
+    //   setAccessSelectionError(ACCESS_ERROR_MESSAGE);
+    //   return;
+    // }
+
+    setAccessSelectionError(null);
+
+    // pass-through to controller submit
+    handleSubmit(event);
+  };
+
   return (
     <BlurModal
       open={isOpen}
@@ -263,7 +282,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
         />
       }
     >
-      <Box component="form" id="create-share-form" onSubmit={handleSubmit}>
+      <Box component="form" id="create-share-form" onSubmit={onSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <InputLabel
             htmlFor="share-name-input"
@@ -271,6 +290,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
           >
             نام اشتراک
           </InputLabel>
+
           <TextField
             id="share-name-input"
             value={shareName}
@@ -289,6 +309,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
           >
             مسیر کامل
           </InputLabel>
+
           <Autocomplete
             options={filteredMountpointOptions}
             value={fullPath}
@@ -296,24 +317,20 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
               setFullPath(newValue ?? '');
             }}
             onInputChange={(_event, newInputValue, reason) => {
-              if (
-                reason === 'input' ||
-                reason === 'clear' ||
-                reason === 'reset'
-              ) {
+              if (reason === 'input' || reason === 'clear' || reason === 'reset') {
                 setFullPath(newInputValue ?? '');
               }
             }}
             fullWidth
             size="small"
             loading={filesystemMountpointsQuery.isLoading}
-            noOptionsText="مسیر مونتی در دسترس نیست"
+            noOptionsText="مسیر (Mountpoin) در دسترس نیست"
             slotProps={autocompletePaperSlotProps}
             renderInput={(params) => (
               <TextField
                 {...params}
                 id="full-path-input"
-                placeholder="مسیر اشتراک را انتخاب یا تایپ کنید"
+                placeholder="مسیر (Mountpoin) اشتراک را انتخاب کنید"
                 error={hasPathError}
                 helperText={pathHelperText}
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
@@ -324,11 +341,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                     <Fragment>
                       {pathValidationAdornment}
                       {filesystemMountpointsQuery.isLoading && (
-                        <CircularProgress
-                          size={18}
-                          thickness={5}
-                          sx={{ mr: 1 }}
-                        />
+                        <CircularProgress size={18} thickness={5} sx={{ mr: 1 }} />
                       )}
                       {params.InputProps?.endAdornment}
                     </Fragment>
@@ -344,12 +357,17 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
           >
             کاربران مجاز
           </InputLabel>
+
           <Autocomplete
             multiple
             options={sambaUsernames}
             value={validUsers}
             onChange={(_event, newValue) => {
-              setValidUsers(newValue ?? []);
+              const nextUsers = newValue ?? [];
+              setValidUsers(nextUsers);
+
+              const hasAnyAccess = nextUsers.length > 0 || (validGroups?.length ?? 0) > 0;
+              if (hasAnyAccess) setAccessSelectionError(null);
             }}
             loading={sambaUsernamesQuery.isLoading || sambaUsernamesQuery.isFetching}
             noOptionsText="کاربری در دسترس نیست"
@@ -359,7 +377,7 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
               <TextField
                 {...params}
                 placeholder="کاربران مجاز برای دسترسی را انتخاب کنید"
-                error={Boolean(validUsersError)}
+                error={Boolean(validUsersError || accessSelectionError)}
                 helperText={validUsersHelperText}
                 size="small"
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
@@ -378,12 +396,17 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
           >
             گروه‌های مجاز
           </InputLabel>
+
           <Autocomplete
             multiple
             options={sambaGroupNames}
             value={validGroups}
             onChange={(_event, newValue) => {
-              setValidGroups(newValue ?? []);
+              const nextGroups = newValue ?? [];
+              setValidGroups(nextGroups);
+
+              const hasAnyAccess = (validUsers?.length ?? 0) > 0 || nextGroups.length > 0;
+              if (hasAnyAccess) setAccessSelectionError(null);
             }}
             loading={sambaGroupNamesQuery.isLoading || sambaGroupNamesQuery.isFetching}
             noOptionsText="گروهی در دسترس نیست"
@@ -393,8 +416,8 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
               <TextField
                 {...params}
                 placeholder="گروه‌های مجاز برای دسترسی را انتخاب کنید"
-                error={Boolean(validGroupsError)}
-                helperText={validGroupsError}
+                error={Boolean(validGroupsError || accessSelectionError)}
+                helperText={validGroupsHelperText}
                 size="small"
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
                 InputProps={{
