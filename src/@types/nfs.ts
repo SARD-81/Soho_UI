@@ -22,8 +22,6 @@ export type NfsShareOptionKey =
   | 'read_write'
   | 'sync'
   | 'root_squash'
-  | 'all_squash'
-  | 'insecure'
   | 'no_subtree_check';
 
 export type NfsShareOptionValues = Record<NfsShareOptionKey, boolean>;

@@ -2,16 +2,12 @@ import {
   Alert,
   Autocomplete,
   Box,
-  Button,
-  Collapse,
   Divider,
-  IconButton,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
-import { MdAdd, MdClose, MdExpandLess, MdExpandMore } from 'react-icons/md';
 import type {
   NfsShareEntry,
   NfsShareOptionKey,
@@ -20,10 +16,8 @@ import type {
 import { isCompleteIPv4Address } from '../../utils/ipAddress';
 import { translateDetailKey } from '../../utils/detailLabels';
 import {
-  buildOptionPayload,
   NFS_OPTION_DEFAULTS,
   NFS_OPTION_KEYS,
-  resolveEnabledOptionKeys,
   resolveOptionValues,
 } from '../../utils/nfsShareOptions';
 import BlurModal from '../BlurModal';
@@ -95,8 +89,6 @@ const NfsShareModal = ({
   const [path, setPath] = useState('');
   const [pathInput, setPathInput] = useState('');
   const [client, setClient] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [enabledOptions, setEnabledOptions] = useState<NfsShareOptionKey[]>([]);
   const [optionValues, setOptionValues] = useState(NFS_OPTION_DEFAULTS);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -116,17 +108,14 @@ const NfsShareModal = ({
       setPathInput(initialPath);
       setClient(initialClient);
       setOptionValues(resolveOptionValues(initialOptions));
-      setEnabledOptions(resolveEnabledOptionKeys(initialOptions));
     } else {
       setPath('');
       setPathInput('');
       setClient('');
       setOptionValues({ ...NFS_OPTION_DEFAULTS });
-      setEnabledOptions([]);
     }
 
     setFormError(null);
-    setShowAdvanced(false);
   }, [initialShare, isEditMode, open]);
 
   const selectableMountpoints = useMemo(
@@ -157,14 +146,6 @@ const NfsShareModal = ({
     }));
   };
 
-  const handleAddOption = (key: NfsShareOptionKey) => {
-    setEnabledOptions((prev) => (prev.includes(key) ? prev : [...prev, key]));
-  };
-
-  const handleRemoveOption = (key: NfsShareOptionKey) => {
-    setEnabledOptions((prev) => prev.filter((item) => item !== key));
-  };
-
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(null);
@@ -186,13 +167,12 @@ const NfsShareModal = ({
       }
     }
 
-    const optionPayload = buildOptionPayload(enabledOptions, optionValues);
 
     onSubmit({
       save_to_db: !isEditMode,
       path: path.trim(),
       clients: client.trim(),
-      ...(optionPayload as Record<string, boolean>),
+      ...(optionValues as Record<string, boolean>),
     });
   };
 
@@ -290,86 +270,53 @@ const NfsShareModal = ({
 
         <Divider />
 
-        <Button
-          onClick={() => setShowAdvanced((prev) => !prev)}
-          endIcon={showAdvanced ? <MdExpandLess /> : <MdExpandMore />}
-          variant="text"
-          sx={{
-            alignSelf: 'flex-start',
-            color: 'var(--color-primary)',
-            fontWeight: 700,
-          }}
-        >
-          تنظیمات پیشرفته
-        </Button>
+        <Stack spacing={1.5}>
+          <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 700 }}>
+            گزینه‌های پیش‌فرض اشتراک NFS
+          </Typography>
+          {NFS_OPTION_KEYS.map((optionKey) => {
+            const label = translateDetailKey(optionKey);
+            const valueLabel = optionValues[optionKey] ? 'فعال' : 'غیرفعال';
 
-        <Collapse in={showAdvanced} unmountOnExit>
-          <Stack spacing={2}>
-            {NFS_OPTION_KEYS.map((optionKey) => {
-              const isEnabled = enabledOptions.includes(optionKey);
-              const label = translateDetailKey(optionKey);
-              const valueLabel = optionValues[optionKey] ? 'فعال' : 'غیرفعال';
-
-              return (
-                <Stack
-                  key={optionKey}
-                  direction="row"
-                  spacing={2}
-                  alignItems="center"
+            return (
+              <Stack
+                key={optionKey}
+                direction="row"
+                spacing={2}
+                alignItems="center"
+              >
+                <Typography
+                  sx={{
+                    flex: 1,
+                    color: 'var(--color-text)',
+                    fontWeight: 600,
+                  }}
                 >
+                  {label}
+                </Typography>
+                <Stack spacing={0.25} alignItems="center">
+                  <ToggleBtn
+                    id={`nfs-option-${optionKey}`}
+                    checked={optionValues[optionKey]}
+                    onChange={() => handleToggleOption(optionKey)}
+                  />
                   <Typography
+                  variant="caption"
                     sx={{
-                      flex: 1,
-                      color: 'var(--color-text)',
-                      fontWeight: 600,
+                      color: optionValues[optionKey]
+                        ? 'var(--color-success)'
+                        : 'var(--color-error)',
+                      fontWeight: 700,
                     }}
                   >
-                    {label}
+                    {valueLabel}
                   </Typography>
-                  {isEnabled ? (
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Stack spacing={0.25} alignItems="center">
-                        <ToggleBtn
-                          id={`nfs-option-${optionKey}`}
-                          checked={optionValues[optionKey]}
-                          onChange={() => handleToggleOption(optionKey)}
-                        />
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: optionValues[optionKey]
-                              ? 'var(--color-success)'
-                              : 'var(--color-error)',
-                            fontWeight: 700,
-                          }}
-                        >
-                          {valueLabel}
-                        </Typography>
-                      </Stack>
-                      <IconButton
-                        aria-label={`حذف ${label}`}
-                        onClick={() => handleRemoveOption(optionKey)}
-                        size="small"
-                        sx={{ color: 'var(--color-error)' }}
-                      >
-                        <MdClose />
-                      </IconButton>
-                    </Stack>
-                  ) : (
-                    <IconButton
-                      aria-label={`افزودن ${label}`}
-                      onClick={() => handleAddOption(optionKey)}
-                      size="small"
-                      color="primary"
-                    >
-                      <MdAdd />
-                    </IconButton>
-                  )}
+                  
                 </Stack>
-              );
-            })}
-          </Stack>
-        </Collapse>
+              </Stack>
+            );
+          })}
+        </Stack>
       </Box>
     </BlurModal>
   );

@@ -3,6 +3,7 @@ import type { AxiosError } from 'axios';
 import type { FormEvent } from 'react';
 import { useCallback, useState } from 'react';
 import axiosInstance from '../lib/axiosInstance';
+import { validateEnglishAlphanumericName } from '../utils/text';
 
 interface ApiErrorResponse {
   detail?: string;
@@ -20,21 +21,8 @@ interface CreatePoolPayload {
 
 export type VdevType = 'disk' | 'mirror' | 'raidz' | '';
 
-const validatePoolName = (trimmedName: string): string | null => {
-  if (!trimmedName) {
-    return 'لطفاً نام فضای یکپارچه را وارد کنید.';
-  }
-
-  if (!/^[A-Za-z0-9]+$/.test(trimmedName)) {
-    return 'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.';
-  }
-
-  if (/^[0-9]/.test(trimmedName)) {
-    return 'نام فضای یکپارچه نمی‌تواند با عدد شروع شود.';
-  }
-
-  return null;
-};
+const validatePoolName = (trimmedName: string): string | null =>
+  validateEnglishAlphanumericName(trimmedName, 'نام فضای یکپارچه');
 
 const vdevSpecificDeviceRules: Record<Exclude<VdevType, ''>, (count: number) => string | null> = {
   disk: () => null,

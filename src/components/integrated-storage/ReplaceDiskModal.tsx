@@ -74,6 +74,11 @@ const buildOldDeviceOptions = (slots: PoolDiskSlot[]) =>
     };
   });
 
+  const formatNewDiskLabel = (option: DeviceOption) => {
+  const slotLabel = option.slotNumber ?? 'نامشخص';
+  return `دیسک ${option.label} ( اسلات ${slotLabel})`;
+};
+
 const ReplaceDiskModal = ({
   open,
   poolName,
@@ -309,7 +314,7 @@ const ReplaceDiskModal = ({
                   </MenuItem>
                   {newDiskOptions.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
-                      {option.label}
+                      {formatNewDiskLabel(option)}
                     </MenuItem>
                   ))}
                 </Select>

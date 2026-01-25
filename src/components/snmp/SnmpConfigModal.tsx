@@ -9,13 +9,15 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MdAdd, MdExpandLess, MdExpandMore, MdRemove } from 'react-icons/md';
 import type { SnmpConfigPayload, SnmpInfoData } from '../../@types/snmp';
 import { isCompleteIPv4Address } from '../../utils/ipAddress';
 import BlurModal from '../BlurModal';
 import IPv4AddressInput from '../common/IPv4AddressInput';
 import ModalActionButtons from '../common/ModalActionButtons';
+import { useServiceAction } from '../../hooks/useServiceAction';
+import { toast } from 'react-hot-toast';
 
 interface SnmpConfigModalProps {
   open: boolean;
@@ -97,6 +99,37 @@ const SnmpConfigModal = ({
     );
   };
 
+  const serviceAction = useServiceAction({
+      onSuccess: () => {
+        // toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
+      },
+      onError: (message, { service }) => {
+        toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
+      },
+    });
+
+    const handleRestartSNMP = useCallback(() => {
+        // if (serviceAction.isPending) {
+        //   toast(
+        //     'راه‌اندازی مجدد سرویس smbd.service در حال انجام است. لطفاً صبر کنید.'
+        //   );
+        //   return;
+        // }
+        //
+        // const toastId = toast.loading(
+        //   'در حال راه‌اندازی مجدد سرویس smbd.service...'
+        // );
+    
+        serviceAction.mutate(
+          { service: 'snmpd.service', action: 'restart' },
+          {
+            onSettled: () => {
+              // toast.dismiss(toastId);
+            },
+          }
+        );
+      }, [serviceAction]);
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedCommunity = community.trim();
@@ -116,6 +149,7 @@ const SnmpConfigModal = ({
     }
 
     setLocalError(null);
+    handleRestartSNMP()
 
     onSubmit({
       community: trimmedCommunity,

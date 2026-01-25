@@ -3,7 +3,14 @@ import type { ZpoolDetailEntry } from '../@types/zpool';
 import { formatNullableString } from './diskDetails';
 import { localizeDetailEntries, translateDetailKey } from './detailLabels';
 
-const DISK_ATTRIBUTE_ORDER = ['نام دیسک', 'وضعیت', 'نوع vdev', 'Device', 'WWN'];
+const DISK_ATTRIBUTE_ORDER = [
+  'نام دیسک',
+  'اسلات',
+  'وضعیت',
+  'نوع vdev',
+  'Device',
+  'WWN',
+];
 
 interface PoolDiskRow {
   [key: string]: unknown;
@@ -16,6 +23,8 @@ interface PoolDiskRow {
   wwn?: unknown;
   full_path_wwn?: unknown;
   full_disk_wwn?: unknown;
+  slot_number?: unknown;
+  slot?: unknown;
 }
 
 type DiskValueResolver = (disk: PoolDiskRow) => unknown;
@@ -24,13 +33,17 @@ const DISK_VALUE_ROWS: Array<{ label: string; resolver: DiskValueResolver }> = [
   { label: 'نام دیسک', resolver: (disk) => disk.disk_name },
   { label: 'وضعیت', resolver: (disk) => disk.status },
   {
-    label: 'نوع vdev',
-    resolver: (disk) => disk.vdev_type ?? disk.type,
+    label: 'اسلات',
+    resolver: (disk) => disk.slot_number ?? disk.slot,
   },
-  {
-    label: 'Device',
-    resolver: (disk) => disk.full_path_name ?? disk.full_disk_name,
-  },
+  // {
+  //   label: 'نوع vdev',
+  //   resolver: (disk) => disk.vdev_type ?? disk.type,
+  // },
+  // {
+  //   label: 'Device',
+  //   resolver: (disk) => disk.full_path_name ?? disk.full_disk_name,
+  // },
   {
     label: 'WWN',
     resolver: (disk) => disk.wwn ?? disk.full_path_wwn ?? disk.full_disk_wwn,

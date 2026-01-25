@@ -191,7 +191,7 @@ const Share = () => {
     // );
 
     serviceAction.mutate(
-      { service: 'smbd.service', action: 'restart' },
+      { service: 'smbd.service', action: 'reload' },
       {
         onSettled: () => {
           // toast.dismiss(toastId);
@@ -561,14 +561,6 @@ const Share = () => {
   }, [createSambaGroup, updateSambaGroupMember]);
 
   const handleSubmitCreateGroup = useCallback(
-    (groupname: string) => {
-      setGroupCreateError(null);
-      createSambaGroup.mutate(groupname);
-    },
-    [createSambaGroup]
-  );
-
-  const handleOpenAddGroupMemberModal = useCallback(
     (groupname: string, usernames: string[]) => {
       const trimmedUsers = usernames
         .map((username) => username.trim())

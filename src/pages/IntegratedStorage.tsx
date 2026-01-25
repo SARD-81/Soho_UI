@@ -43,13 +43,64 @@ const INTERACTIVE_POOL_PROPERTIES = [
   'multihost',
 ] as const;
 
+const normalizeDiskIdentifier = (value: unknown) => {
+  const normalized = String(value ?? '').replace(/^\/dev\//, '').trim();
+  return normalized.length > 0 ? normalized : null;
+};
+
+const buildDiskSlotLookup = (slots: PoolDiskSlot[]) => {
+  const lookup = new Map<string, PoolDiskSlot>();
+
+  slots.forEach((slot) => {
+    if (slot.diskName) {
+      lookup.set(slot.diskName, slot);
+    }
+  });
+
+  return lookup;
+};
+
+const attachSlotNumbersToDisks = (
+  disks: unknown,
+  slots: PoolDiskSlot[]
+) => {
+  if (!Array.isArray(disks) || slots.length === 0) {
+    return disks;
+  }
+
+  const slotLookup = buildDiskSlotLookup(slots);
+
+  return disks.map((disk) => {
+    if (!disk || typeof disk !== 'object') {
+      return disk;
+    }
+
+    const diskRecord = disk as Record<string, unknown>;
+    const diskKey =
+      normalizeDiskIdentifier(diskRecord.disk_name) ??
+      normalizeDiskIdentifier(diskRecord.full_disk_name) ??
+      normalizeDiskIdentifier(diskRecord.full_path_name);
+    const slotNumber = diskKey ? slotLookup.get(diskKey)?.slotNumber : null;
+
+    if (slotNumber == null) {
+      return disk;
+    }
+
+    return { ...diskRecord, slot_number: slotNumber };
+  });
+};
+
 const buildPoolDetailValues = (
   detail: ZpoolDetailEntry | null,
-  poolName: string
+  poolName: string,
+  slots: PoolDiskSlot[]
 ): Record<string, unknown> => {
   const localizedValues = localizeDetailEntries(detail);
+  const disksWithSlots = attachSlotNumbersToDisks(detail?.disks, slots);
 
-  localizedValues[translateDetailKey('disks')] = createPoolDisksTable(detail?.disks);
+  localizedValues[translateDetailKey('disks')] = createPoolDisksTable(
+    disksWithSlots
+  );
 
   INTERACTIVE_POOL_PROPERTIES.forEach((propertyKey) => {
     const label = translateDetailKey(propertyKey);
@@ -100,7 +151,7 @@ const mapPartitionedDisksToDeviceOptions = (
   const uniqueValues = new Set<string>();
   const options: DeviceOption[] = [];
 
-  partitionedDisks.forEach(({ name, path, wwn }) => {
+  partitionedDisks.forEach(({ name, path, wwn, slotNumber }) => {
     const identifier = buildDeviceIdentifier(path, wwn);
 
     if (!identifier || uniqueValues.has(identifier)) {
@@ -114,6 +165,7 @@ const mapPartitionedDisksToDeviceOptions = (
       value: identifier,
       tooltip: identifier,
       wwn: wwn ?? undefined,
+      slotNumber,
     });
   });
 
@@ -151,19 +203,19 @@ const IntegratedStorage = () => {
 
   const poolExport = useExportPool({
     onSuccess: (poolName) => {
-      toast.success(`برون‌ریزی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
+      toast.success(`آزادسازی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
     },
     onError: (error, poolName) => {
-      toast.error(`برون‌ریزی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`);
+      toast.error(`آزادسازی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`);
     },
   });
 
   const poolImport = useImportPool({
     onSuccess: (poolName) => {
-      toast.success(`درون‌ریزی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
+      toast.success(`فراخوانی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
     },
     onError: (error, poolName) => {
-      toast.error(`درون‌ریزی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`);
+      toast.error(`فراخوانی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`);
     },
   });
 
@@ -224,7 +276,7 @@ const IntegratedStorage = () => {
     refetch: refetchPoolSlots,
   } = usePoolDeviceSlots(poolNames, {
     enabled: pools.length > 0,
-    refetchInterval: 1 * 60 * 1000,
+    refetchInterval: 5 * 1000,
   });
 
   const addPoolDevices = useAddPoolDevices({
@@ -363,7 +415,12 @@ const IntegratedStorage = () => {
       poolDetailIds.map((poolName, index) => {
         const query = poolDetailQueries[index];
         const rawDetail = query?.data ?? poolByName[poolName]?.raw ?? null;
-        const enhancedDetail = buildPoolDetailValues(rawDetail, poolName);
+        const poolSlots = poolDevices?.slotsByPool[poolName] ?? [];
+        const enhancedDetail = buildPoolDetailValues(
+          rawDetail,
+          poolName,
+          poolSlots
+        );
 
         return {
           poolName,
@@ -372,7 +429,7 @@ const IntegratedStorage = () => {
           error: (query?.error as Error) ?? null,
         };
       }),
-    [poolByName, poolDetailIds, poolDetailQueries]
+    [poolByName, poolDetailIds, poolDetailQueries, poolDevices?.slotsByPool]
   );
 
   return (
