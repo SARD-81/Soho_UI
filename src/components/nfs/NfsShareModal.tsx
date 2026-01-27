@@ -7,7 +7,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   NfsShareEntry,
   NfsShareOptionKey,
@@ -24,6 +24,8 @@ import BlurModal from '../BlurModal';
 import ToggleBtn from '../ToggleBtn';
 import IPv4AddressInput from '../common/IPv4AddressInput';
 import ModalActionButtons from '../common/ModalActionButtons';
+import { useServiceAction } from '../../hooks/useServiceAction';
+import { toast } from 'react-hot-toast';
 
 interface NfsShareModalProps {
   open: boolean;
@@ -146,6 +148,37 @@ const NfsShareModal = ({
     }));
   };
 
+  const serviceAction = useServiceAction({
+        onSuccess: () => {
+          // toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
+        },
+        onError: (message, { service }) => {
+          toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
+        },
+      });
+  
+      const handleRestartNFS = useCallback(() => {
+          // if (serviceAction.isPending) {
+          //   toast(
+          //     'راه‌اندازی مجدد سرویس smbd.service در حال انجام است. لطفاً صبر کنید.'
+          //   );
+          //   return;
+          // }
+          //
+          // const toastId = toast.loading(
+          //   'در حال راه‌اندازی مجدد سرویس smbd.service...'
+          // );
+      
+          serviceAction.mutate(
+            { service: 'nfs-server.service', action: 'restart' },
+            {
+              onSettled: () => {
+                // toast.dismiss(toastId);
+              },
+            }
+          );
+        }, [serviceAction]);
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(null);
@@ -165,6 +198,8 @@ const NfsShareModal = ({
         setFormError('آی‌پی وارد شده معتبر نیست.');
         return;
       }
+
+      handleRestartNFS()
     }
 
 
