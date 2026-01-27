@@ -183,22 +183,22 @@ const NfsShareModal = ({
     event.preventDefault();
     setFormError(null);
 
+    if (!path.trim()) {
+      setFormError('لطفاً مسیر اشتراک را انتخاب کنید.');
+      return;
+    }
+
+    if (!client.trim()) {
+      setFormError('لطفاً آی‌پی کلاینت را وارد کنید.');
+      return;
+    }
+
+    if (!isCompleteIPv4Address(client.trim())) {
+      setFormError('آی‌پی وارد شده معتبر نیست.');
+      return;
+    }
+
     if (!isEditMode) {
-      if (!path.trim()) {
-        setFormError('لطفاً مسیر اشتراک را انتخاب کنید.');
-        return;
-      }
-
-      if (!client.trim()) {
-        setFormError('لطفاً آی‌پی کلاینت را وارد کنید.');
-        return;
-      }
-
-      if (!isCompleteIPv4Address(client.trim())) {
-        setFormError('آی‌پی وارد شده معتبر نیست.');
-        return;
-      }
-
       handleRestartNFS()
     }
 
@@ -213,8 +213,9 @@ const NfsShareModal = ({
 
   const isConfirmDisabled =
     isSubmitting ||
-    (!isEditMode &&
-      (!path.trim() || !client.trim() || !isCompleteIPv4Address(client.trim())));
+    !path.trim() ||
+    !client.trim() ||
+    !isCompleteIPv4Address(client.trim());
 
   return (
     <BlurModal
@@ -284,24 +285,12 @@ const NfsShareModal = ({
           />
         )}
 
-        {isEditMode ? (
-          <TextField
-            label="کلاینت"
-            value={client}
-            fullWidth
-            size="small"
-            InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
-            InputProps={{ sx: inputBaseSx }}
-            disabled
-          />
-        ) : (
-          <IPv4AddressInput
-            label="آی‌پی کلاینت"
-            value={client}
-            onChange={setClient}
-            required
-          />
-        )}
+        <IPv4AddressInput
+          label="آی‌پی کلاینت"
+          value={client}
+          onChange={setClient}
+          required
+        />
 
         <Divider />
 
