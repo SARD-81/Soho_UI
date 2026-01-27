@@ -26,6 +26,7 @@ import IPv4AddressInput from '../common/IPv4AddressInput';
 import ModalActionButtons from '../common/ModalActionButtons';
 import { useServiceAction } from '../../hooks/useServiceAction';
 import { toast } from 'react-hot-toast';
+import { useNfsShareDetails } from '../../hooks/useNfsShareDetails';
 
 interface NfsShareModalProps {
   open: boolean;
@@ -93,8 +94,13 @@ const NfsShareModal = ({
   const [client, setClient] = useState('');
   const [optionValues, setOptionValues] = useState(NFS_OPTION_DEFAULTS);
   const [formError, setFormError] = useState<string | null>(null);
+  const [hasAdjustedOptions, setHasAdjustedOptions] = useState(false);
 
   const isEditMode = mode === 'edit';
+  const { data: remoteShare } = useNfsShareDetails({
+    path,
+    enabled: isEditMode && open,
+  });
 
   useEffect(() => {
     if (!open) {
@@ -117,8 +123,21 @@ const NfsShareModal = ({
       setOptionValues({ ...NFS_OPTION_DEFAULTS });
     }
 
+    setHasAdjustedOptions(false);
     setFormError(null);
   }, [initialShare, isEditMode, open]);
+
+  useEffect(() => {
+    if (!isEditMode || !open || hasAdjustedOptions) {
+      return;
+    }
+
+    const remoteOptions = remoteShare?.clients?.[0]?.options;
+
+    if (remoteOptions) {
+      setOptionValues(resolveOptionValues(remoteOptions));
+    }
+  }, [hasAdjustedOptions, isEditMode, open, remoteShare]);
 
   const selectableMountpoints = useMemo(
     () => mountpointOptions.filter(Boolean),
@@ -142,6 +161,7 @@ const NfsShareModal = ({
   };
 
   const handleToggleOption = (key: NfsShareOptionKey) => {
+    setHasAdjustedOptions(true);
     setOptionValues((prev) => ({
       ...prev,
       [key]: !prev[key],
