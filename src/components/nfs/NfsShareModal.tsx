@@ -2,16 +2,12 @@ import {
   Alert,
   Autocomplete,
   Box,
-  Button,
-  Collapse,
   Divider,
-  IconButton,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
-import { MdAdd, MdClose, MdExpandLess, MdExpandMore } from 'react-icons/md';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   NfsShareEntry,
   NfsShareOptionKey,
@@ -20,16 +16,17 @@ import type {
 import { isCompleteIPv4Address } from '../../utils/ipAddress';
 import { translateDetailKey } from '../../utils/detailLabels';
 import {
-  buildOptionPayload,
   NFS_OPTION_DEFAULTS,
   NFS_OPTION_KEYS,
-  resolveEnabledOptionKeys,
   resolveOptionValues,
 } from '../../utils/nfsShareOptions';
 import BlurModal from '../BlurModal';
 import ToggleBtn from '../ToggleBtn';
 import IPv4AddressInput from '../common/IPv4AddressInput';
 import ModalActionButtons from '../common/ModalActionButtons';
+import { useServiceAction } from '../../hooks/useServiceAction';
+import { toast } from 'react-hot-toast';
+import { useNfsShareDetails } from '../../hooks/useNfsShareDetails';
 
 interface NfsShareModalProps {
   open: boolean;
@@ -95,12 +92,15 @@ const NfsShareModal = ({
   const [path, setPath] = useState('');
   const [pathInput, setPathInput] = useState('');
   const [client, setClient] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [enabledOptions, setEnabledOptions] = useState<NfsShareOptionKey[]>([]);
   const [optionValues, setOptionValues] = useState(NFS_OPTION_DEFAULTS);
   const [formError, setFormError] = useState<string | null>(null);
+  const [hasAdjustedOptions, setHasAdjustedOptions] = useState(false);
 
   const isEditMode = mode === 'edit';
+  const { data: remoteShare } = useNfsShareDetails({
+    path,
+    enabled: isEditMode && open,
+  });
 
   useEffect(() => {
     if (!open) {
@@ -116,18 +116,28 @@ const NfsShareModal = ({
       setPathInput(initialPath);
       setClient(initialClient);
       setOptionValues(resolveOptionValues(initialOptions));
-      setEnabledOptions(resolveEnabledOptionKeys(initialOptions));
     } else {
       setPath('');
       setPathInput('');
       setClient('');
       setOptionValues({ ...NFS_OPTION_DEFAULTS });
-      setEnabledOptions([]);
     }
 
+    setHasAdjustedOptions(false);
     setFormError(null);
-    setShowAdvanced(false);
   }, [initialShare, isEditMode, open]);
+
+  useEffect(() => {
+    if (!isEditMode || !open || hasAdjustedOptions) {
+      return;
+    }
+
+    const remoteOptions = remoteShare?.clients?.[0]?.options;
+
+    if (remoteOptions) {
+      setOptionValues(resolveOptionValues(remoteOptions));
+    }
+  }, [hasAdjustedOptions, isEditMode, open, remoteShare]);
 
   const selectableMountpoints = useMemo(
     () => mountpointOptions.filter(Boolean),
@@ -151,55 +161,81 @@ const NfsShareModal = ({
   };
 
   const handleToggleOption = (key: NfsShareOptionKey) => {
+    setHasAdjustedOptions(true);
     setOptionValues((prev) => ({
       ...prev,
       [key]: !prev[key],
     }));
   };
 
-  const handleAddOption = (key: NfsShareOptionKey) => {
-    setEnabledOptions((prev) => (prev.includes(key) ? prev : [...prev, key]));
-  };
-
-  const handleRemoveOption = (key: NfsShareOptionKey) => {
-    setEnabledOptions((prev) => prev.filter((item) => item !== key));
-  };
+  const serviceAction = useServiceAction({
+        onSuccess: () => {
+          // toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
+        },
+        onError: (message, { service }) => {
+          toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
+        },
+      });
+  
+      const handleRestartNFS = useCallback(() => {
+          // if (serviceAction.isPending) {
+          //   toast(
+          //     'راه‌اندازی مجدد سرویس smbd.service در حال انجام است. لطفاً صبر کنید.'
+          //   );
+          //   return;
+          // }
+          //
+          // const toastId = toast.loading(
+          //   'در حال راه‌اندازی مجدد سرویس smbd.service...'
+          // );
+      
+          serviceAction.mutate(
+            { service: 'nfs-server.service', action: 'restart' },
+            {
+              onSettled: () => {
+                // toast.dismiss(toastId);
+              },
+            }
+          );
+        }, [serviceAction]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(null);
 
-    if (!isEditMode) {
-      if (!path.trim()) {
-        setFormError('لطفاً مسیر اشتراک را انتخاب کنید.');
-        return;
-      }
-
-      if (!client.trim()) {
-        setFormError('لطفاً آی‌پی کلاینت را وارد کنید.');
-        return;
-      }
-
-      if (!isCompleteIPv4Address(client.trim())) {
-        setFormError('آی‌پی وارد شده معتبر نیست.');
-        return;
-      }
+    if (!path.trim()) {
+      setFormError('لطفاً مسیر اشتراک را انتخاب کنید.');
+      return;
     }
 
-    const optionPayload = buildOptionPayload(enabledOptions, optionValues);
+    if (!client.trim()) {
+      setFormError('لطفاً آی‌پی کلاینت را وارد کنید.');
+      return;
+    }
+
+    if (!isCompleteIPv4Address(client.trim())) {
+      setFormError('آی‌پی وارد شده معتبر نیست.');
+      return;
+    }
+
+    if (!isEditMode) {
+      handleRestartNFS()
+    }
+
 
     onSubmit({
       save_to_db: !isEditMode,
       path: path.trim(),
       clients: client.trim(),
-      ...(optionPayload as Record<string, boolean>),
+      ...(optionValues as Record<string, boolean>),
     });
   };
 
   const isConfirmDisabled =
     isSubmitting ||
-    (!isEditMode &&
-      (!path.trim() || !client.trim() || !isCompleteIPv4Address(client.trim())));
+    !path.trim() ||
+    !client.trim() ||
+    !isCompleteIPv4Address(client.trim());
 
   return (
     <BlurModal
@@ -269,107 +305,62 @@ const NfsShareModal = ({
           />
         )}
 
-        {isEditMode ? (
-          <TextField
-            label="کلاینت"
-            value={client}
-            fullWidth
-            size="small"
-            InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
-            InputProps={{ sx: inputBaseSx }}
-            disabled
-          />
-        ) : (
-          <IPv4AddressInput
-            label="آی‌پی کلاینت"
-            value={client}
-            onChange={setClient}
-            required
-          />
-        )}
+        <IPv4AddressInput
+          label="آی‌پی کلاینت"
+          value={client}
+          onChange={setClient}
+          required
+        />
 
         <Divider />
 
-        <Button
-          onClick={() => setShowAdvanced((prev) => !prev)}
-          endIcon={showAdvanced ? <MdExpandLess /> : <MdExpandMore />}
-          variant="text"
-          sx={{
-            alignSelf: 'flex-start',
-            color: 'var(--color-primary)',
-            fontWeight: 700,
-          }}
-        >
-          تنظیمات پیشرفته
-        </Button>
+        <Stack spacing={1.5}>
+          <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 700 }}>
+            گزینه‌های پیش‌فرض اشتراک NFS
+          </Typography>
+          {NFS_OPTION_KEYS.map((optionKey) => {
+            const label = translateDetailKey(optionKey);
+            const valueLabel = optionValues[optionKey] ? 'فعال' : 'غیرفعال';
 
-        <Collapse in={showAdvanced} unmountOnExit>
-          <Stack spacing={2}>
-            {NFS_OPTION_KEYS.map((optionKey) => {
-              const isEnabled = enabledOptions.includes(optionKey);
-              const label = translateDetailKey(optionKey);
-              const valueLabel = optionValues[optionKey] ? 'فعال' : 'غیرفعال';
-
-              return (
-                <Stack
-                  key={optionKey}
-                  direction="row"
-                  spacing={2}
-                  alignItems="center"
+            return (
+              <Stack
+                key={optionKey}
+                direction="row"
+                spacing={2}
+                alignItems="center"
+              >
+                <Typography
+                  sx={{
+                    flex: 1,
+                    color: 'var(--color-text)',
+                    fontWeight: 600,
+                  }}
                 >
+                  {label}
+                </Typography>
+                <Stack spacing={0.25} alignItems="center">
+                  <ToggleBtn
+                    id={`nfs-option-${optionKey}`}
+                    checked={optionValues[optionKey]}
+                    onChange={() => handleToggleOption(optionKey)}
+                  />
                   <Typography
+                  variant="caption"
                     sx={{
-                      flex: 1,
-                      color: 'var(--color-text)',
-                      fontWeight: 600,
+                      color: optionValues[optionKey]
+                        ? 'var(--color-success)'
+                        : 'var(--color-error)',
+                      fontWeight: 700,
                     }}
                   >
-                    {label}
+                    {valueLabel}
                   </Typography>
-                  {isEnabled ? (
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Stack spacing={0.25} alignItems="center">
-                        <ToggleBtn
-                          id={`nfs-option-${optionKey}`}
-                          checked={optionValues[optionKey]}
-                          onChange={() => handleToggleOption(optionKey)}
-                        />
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: optionValues[optionKey]
-                              ? 'var(--color-success)'
-                              : 'var(--color-error)',
-                            fontWeight: 700,
-                          }}
-                        >
-                          {valueLabel}
-                        </Typography>
-                      </Stack>
-                      <IconButton
-                        aria-label={`حذف ${label}`}
-                        onClick={() => handleRemoveOption(optionKey)}
-                        size="small"
-                        sx={{ color: 'var(--color-error)' }}
-                      >
-                        <MdClose />
-                      </IconButton>
-                    </Stack>
-                  ) : (
-                    <IconButton
-                      aria-label={`افزودن ${label}`}
-                      onClick={() => handleAddOption(optionKey)}
-                      size="small"
-                      color="primary"
-                    >
-                      <MdAdd />
-                    </IconButton>
-                  )}
+                  
                 </Stack>
-              );
-            })}
-          </Stack>
-        </Collapse>
+              </Stack>
+            );
+          })}
+        </Stack>
       </Box>
     </BlurModal>
   );

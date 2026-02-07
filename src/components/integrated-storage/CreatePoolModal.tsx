@@ -28,6 +28,7 @@ export interface DeviceOption {
   value: string;
   tooltip: string;
   wwn?: string;
+  slotNumber?: string | number | null;
 }
 
 interface CreatePoolModalProps {
@@ -342,7 +343,7 @@ const CreatePoolModal = ({
                         />
                       }
                       label={
-                        <Tooltip title={device.wwn} placement="top" arrow>
+                        <Tooltip title={`اسلات ${device.slotNumber}`} placement="top" arrow>
                           <Typography
                             component="span"
                             sx={{ color: 'var(--color-text)' }}

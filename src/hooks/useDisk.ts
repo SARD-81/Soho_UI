@@ -93,7 +93,18 @@ const fetchDiskPartitionStatus = async (diskName: string): Promise<boolean> => {
 const DEFAULT_DISK_DETAIL_ERROR_MESSAGE =
   'امکان دریافت جزئیات دیسک وجود ندارد.';
 
-const fetchDiskWwn = async (diskName: string): Promise<string | null> => {
+const normalizeWwn = (wwn: unknown) => {
+  if (typeof wwn !== 'string') {
+    return null;
+  }
+
+  const trimmed = wwn.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const fetchDiskMetadata = async (
+  diskName: string
+): Promise<{ wwn: string | null; slotNumber: string | number | null }> => {
   const endpoint = `/api/disk/${encodeURIComponent(diskName)}/`;
 
   try {
@@ -109,27 +120,25 @@ const fetchDiskWwn = async (diskName: string): Promise<string | null> => {
       throw new Error(message);
     }
 
-    const wwn = data.data?.wwn ?? data.data?.wwid ?? null;
-
-    if (typeof wwn !== 'string') {
-      return null;
-    }
-
-    const trimmed = wwn.trim();
-    return trimmed.length > 0 ? trimmed : null;
+    return {
+      wwn: normalizeWwn(data.data?.wwn ?? data.data?.wwid ?? null),
+      slotNumber: data.data?.slot_number ?? null,
+    };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
-      return null;
+      return { wwn: null, slotNumber: null };
     }
 
     throw error;
   }
+  return { wwn: null, slotNumber: null };
 };
 
 export interface PartitionedDiskInfo {
   name: string;
   path: string;
   wwn: string | null;
+  slotNumber: string | number | null;
 }
 
 const normalizeDiskPath = (diskName: string) => {
@@ -180,12 +189,13 @@ const fetchPartitionedDisks = async (): Promise<PartitionedDiskInfo[]> => {
         return;
       }
 
-      const wwn = await fetchDiskWwn(diskName);
+      const { wwn, slotNumber } = await fetchDiskMetadata(diskName);
 
       uniquePaths.set(normalizedPath, {
         name: diskName.trim(),
         path: normalizedPath,
         wwn,
+        slotNumber,
       });
     })
   );

@@ -4,18 +4,14 @@ export const NFS_OPTION_KEYS: NfsShareOptionKey[] = [
   'read_write',
   'sync',
   'root_squash',
-  'all_squash',
-  'insecure',
   'no_subtree_check',
 ];
 
 export const NFS_OPTION_DEFAULTS: NfsShareOptionValues = {
   read_write: true,
   sync: true,
-  root_squash: true,
-  all_squash: false,
-  insecure: false,
-  no_subtree_check: true,
+  root_squash: false,
+  no_subtree_check: false,
 };
 
 const resolveOptionValue = (

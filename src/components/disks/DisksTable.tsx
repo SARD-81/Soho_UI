@@ -108,7 +108,7 @@ const DisksTable = ({
       },
       {
         id: 'disk',
-        header: 'شماره اسلات دیسک',
+        header: 'شماره اسلات',
         align: 'center',
         renderCell: (disk) => (
           <Chip

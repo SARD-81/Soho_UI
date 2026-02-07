@@ -167,7 +167,7 @@ const PoolsTable = ({
       },
       {
         id: 'slots',
-        header: 'شماره اسلات دیسک‌ها',
+        header: 'شماره اسلات ‌ها',
         align: 'center',
         cellSx: { minWidth: 220 },
         renderCell: (pool) => {

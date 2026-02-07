@@ -1,9 +1,20 @@
-import { Box,Chip, CircularProgress, Stack, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Chip,
+  CircularProgress,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useEffect, useState } from 'react';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 import { useSambaUsernamesList } from '../../hooks/useSambaUsernamesList';
 import { uniqueSortedList } from '../../utils/samba';
+import {
+  removePersianCharacters,
+  validateEnglishAlphanumericName,
+} from '../../utils/text';
 
 interface SambaGroupCreateModalProps {
   open: boolean;
@@ -23,6 +34,7 @@ const SambaGroupCreateModal = ({
   const [groupname, setGroupname] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [hasPersianGroupName, setHasPersianGroupName] = useState(false);
   const sambaUsernamesQuery = useSambaUsernamesList({ enabled: open });
 
   const availableUsers = uniqueSortedList(sambaUsernamesQuery.data ?? []);
@@ -31,21 +43,36 @@ const SambaGroupCreateModal = ({
     if (!open) {
       setGroupname('');
       setNameError(null);
+      setHasPersianGroupName(false);
       setSelectedUsers([]);
     }
   }, [open]);
 
   const handleSubmit = () => {
     const trimmed = groupname.trim();
+    const validationError = validateEnglishAlphanumericName(trimmed, 'نام گروه');
 
-    if (!trimmed) {
-      setNameError('لطفاً نام گروه را وارد کنید.');
+    if (hasPersianGroupName) {
+      setNameError('استفاده از حروف فارسی در این فیلد مجاز نیست.');
+      return;
+    }
+
+    if (validationError) {
+      setNameError(validationError);
       return;
     }
 
     setNameError(null);
     onSubmit(trimmed, selectedUsers);
   };
+  const trimmedGroupName = groupname.trim();
+  const hasOnlyEnglishAlphanumeric =
+    trimmedGroupName.length === 0 || /^[A-Za-z0-9]+$/.test(trimmedGroupName);
+  const startsWithNumber =
+    trimmedGroupName.length > 0 && /^[0-9]/.test(trimmedGroupName);
+  const showFormatError =
+    (!hasOnlyEnglishAlphanumeric && trimmedGroupName.length > 0) ||
+    startsWithNumber;
 
   return (
     <BlurModal
@@ -66,10 +93,27 @@ const SambaGroupCreateModal = ({
         <TextField
           label="نام گروه"
           value={groupname}
-          onChange={(event) => setGroupname(event.target.value)}
+          onChange={(event) => {
+            const { value } = event.target;
+            const sanitizedValue = removePersianCharacters(value);
+            setHasPersianGroupName(sanitizedValue !== value);
+            setGroupname(sanitizedValue);
+            if (nameError) {
+              setNameError(null);
+            }
+          }}
           fullWidth
-          error={Boolean(nameError)}
-          helperText={nameError}
+          error={Boolean(nameError) || hasPersianGroupName || showFormatError}
+          helperText={
+            (hasPersianGroupName &&
+              'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
+            nameError ||
+            (!hasOnlyEnglishAlphanumeric &&
+              trimmedGroupName.length > 0 &&
+              'نام گروه باید فقط شامل حروف انگلیسی و اعداد باشد.') ||
+            (startsWithNumber && 'نام گروه نمی‌تواند با عدد شروع شود.') ||
+            undefined
+          }
           sx={{
                 '& .MuiInputBase-input': {
                   color: 'var(--color-text)',
