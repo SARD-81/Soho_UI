@@ -21,7 +21,7 @@ interface SnmpOverviewProps {
 }
 
 const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
-  <Stack spacing={0.5} sx={{display:"flex ", minWidth: 0, position: 'relative'}}>
+  <Stack spacing={0.5} sx={{ display: 'flex', minWidth: 0, position: 'relative' }}>
     <Typography
       variant="body2"
       sx={{ 
@@ -67,6 +67,34 @@ const DetailItem = ({ label, value }: { label: string; value: React.ReactNode })
   </Stack>
 );
 
+const createCardSx = (accentColor: string) => ({
+  p: { xs: 2.5, md: 3 },
+  borderRadius: 2.5,
+  border: '1px solid var(--color-border)',
+  backgroundColor: 'var(--color-card-bg)',
+  position: 'relative',
+  overflow: 'hidden',
+  transition: 'all 0.3s ease',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '3px',
+    background: `linear-gradient(90deg, ${accentColor} 0%, transparent 100%)`,
+    opacity: 0.4,
+  },
+  '&:hover': {
+    boxShadow: '0 12px 32px rgba(0,0,0,0.1)',
+    borderColor: accentColor,
+    transform: 'translateY(-2px)',
+    '&::before': {
+      opacity: 0.8,
+    },
+  },
+});
+
 const SnmpOverview = ({ data, isLoading, error }: SnmpOverviewProps) => {
   if (isLoading) {
     if (!Skeleton) {
@@ -80,28 +108,7 @@ const SnmpOverview = ({ data, isLoading, error }: SnmpOverviewProps) => {
     return (
       <Stack spacing={2.5}>
         {[0, 1].map((card) => (
-          <Card
-            key={card}
-            elevation={0}
-            sx={{
-              p: { xs: 2.5, md: 3 },
-              borderRadius: 2.5,
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-card-bg)',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '3px',
-                background: 'linear-gradient(90deg, var(--color-primary) 0%, transparent 100%)',
-                opacity: 0.2,
-              }
-            }}
-          >
+          <Card key={card} elevation={0} sx={createCardSx('var(--color-primary)')}>
             <CardHeader
               title={<Skeleton width={160} height={30} sx={{ borderRadius: 1 }} />}
               action={<Skeleton variant="rectangular" width={92} height={28} sx={{ borderRadius: 1.5 }} />}
@@ -185,36 +192,9 @@ const SnmpOverview = ({ data, isLoading, error }: SnmpOverviewProps) => {
     <Stack spacing={2.5}>
       <Card
         elevation={0}
-        sx={{
-          p: { xs: 2.5, md: 3 },
-          borderRadius: 2.5,
-          border: '1px solid var(--color-border)',
-          backgroundColor: 'var(--color-card-bg)',
-          position: 'relative',
-          overflow: 'hidden',
-          transition: 'all 0.3s ease',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '3px',
-            background: data.enabled 
-              ? 'linear-gradient(90deg, var(--color-primary) 0%, transparent 100%)' 
-              : 'linear-gradient(90deg, #9e9e9e 0%, transparent 100%)',
-            opacity: 0.4,
-            transition: 'all 0.3s ease',
-          },
-          '&:hover': {
-            boxShadow: '0 12px 32px rgba(0,0,0,0.1)',
-            borderColor: data.enabled ? 'var(--color-primary)' : '#9e9e9e',
-            transform: 'translateY(-2px)',
-            '&::before': {
-              opacity: 0.8,
-            }
-          },
-        }}
+        sx={createCardSx(
+          data.enabled ? 'var(--color-primary)' : 'rgba(130, 130, 130, 0.8)'
+        )}
       >
         <CardHeader
           title={
@@ -272,24 +252,26 @@ const SnmpOverview = ({ data, isLoading, error }: SnmpOverviewProps) => {
             <DetailItem label="نام سیستم" value={data.sys_name || '—'} />
             <DetailItem label="آی‌پی بایند" value={data.bind_ip || '—'} />
           </Stack>
+        </CardContent>
+      </Card>
 
-          <Divider sx={{ 
-            my: 2.5, 
-            borderColor: 'var(--color-border)',
-            opacity: 0.6,
-            position: 'relative',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              left: 0,
-              top: '-1px',
-              width: 40,
-              height: '2px',
-              backgroundColor: 'var(--color-primary)',
-              borderRadius: '0 2px 2px 0',
-            }
-          }} />
-
+      <Card
+        elevation={0}
+        sx={createCardSx('#2196f3')}
+      >
+        <CardHeader
+          title={
+            <Typography variant="h6" sx={{ 
+              color: '#2196f3', 
+              fontWeight: 800,
+              fontSize: '1.1rem',
+            }}>
+              کنترل دسترسی
+            </Typography>
+          }
+          sx={{ p: 0, mb: 2.5 }}
+        />
+        <CardContent sx={{ p: 0 }}>
           <Stack spacing={1.2}>
             <Typography
               variant="body2"
@@ -334,7 +316,8 @@ const SnmpOverview = ({ data, isLoading, error }: SnmpOverviewProps) => {
                     px: 1.5,
                     color: 'var(--color-text)',
                     borderColor: 'var(--color-border)',
-                    backgroundColor: ip !== '—' ? 'rgba(var(--color-primary-rgb), 0.05)' : 'transparent',
+                    backgroundColor:
+                      ip !== '—' ? 'rgba(var(--color-primary-rgb), 0.05)' : 'transparent',
                     '&:hover': {
                       borderColor: 'var(--color-primary)',
                       backgroundColor: 'rgba(var(--color-primary-rgb), 0.1)',
@@ -367,43 +350,13 @@ const SnmpOverview = ({ data, isLoading, error }: SnmpOverviewProps) => {
         </CardContent>
       </Card>
 
-      <Card
-        elevation={0}
-        sx={{
-          p: { xs: 2.5, md: 3 },
-          borderRadius: 2.5,
-          border: '1px solid var(--color-border)',
-          backgroundColor: 'var(--color-card-bg)',
-          position: 'relative',
-          overflow: 'hidden',
-          transition: 'all 0.3s ease',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '3px',
-            background: 'linear-gradient(90deg, #2196f3 0%, transparent 100%)',
-            opacity: 0.4,
-          },
-          '&:hover': {
-            boxShadow: '0 12px 32px rgba(0,0,0,0.1)',
-            borderColor: '#2196f3',
-            transform: 'translateY(-2px)',
-            '&::before': {
-              opacity: 0.8,
-            }
-          },
-        }}
-      >
+      <Card elevation={0} sx={createCardSx('#6c5ce7')}>
         <CardHeader
           title={
-            <Typography variant="h6" sx={{ 
-              color: '#2196f3', 
-              fontWeight: 800,
-              fontSize: '1.1rem',
-            }}>
+            <Typography
+              variant="h6"
+              sx={{ color: '#6c5ce7', fontWeight: 800, fontSize: '1.1rem' }}
+            >
               جزئیات تماس و شناسایی
             </Typography>
           }
