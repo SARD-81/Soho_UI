@@ -26,6 +26,7 @@ import IPv4AddressInput from '../common/IPv4AddressInput';
 import ModalActionButtons from '../common/ModalActionButtons';
 import { useServiceAction } from '../../hooks/useServiceAction';
 import { toast } from 'react-hot-toast';
+import { useNfsShareDetails } from '../../hooks/useNfsShareDetails';
 
 interface NfsShareModalProps {
   open: boolean;
@@ -93,8 +94,13 @@ const NfsShareModal = ({
   const [client, setClient] = useState('');
   const [optionValues, setOptionValues] = useState(NFS_OPTION_DEFAULTS);
   const [formError, setFormError] = useState<string | null>(null);
+  const [hasAdjustedOptions, setHasAdjustedOptions] = useState(false);
 
   const isEditMode = mode === 'edit';
+  const { data: remoteShare } = useNfsShareDetails({
+    path,
+    enabled: isEditMode && open,
+  });
 
   useEffect(() => {
     if (!open) {
@@ -117,8 +123,21 @@ const NfsShareModal = ({
       setOptionValues({ ...NFS_OPTION_DEFAULTS });
     }
 
+    setHasAdjustedOptions(false);
     setFormError(null);
   }, [initialShare, isEditMode, open]);
+
+  useEffect(() => {
+    if (!isEditMode || !open || hasAdjustedOptions) {
+      return;
+    }
+
+    const remoteOptions = remoteShare?.clients?.[0]?.options;
+
+    if (remoteOptions) {
+      setOptionValues(resolveOptionValues(remoteOptions));
+    }
+  }, [hasAdjustedOptions, isEditMode, open, remoteShare]);
 
   const selectableMountpoints = useMemo(
     () => mountpointOptions.filter(Boolean),
@@ -142,6 +161,7 @@ const NfsShareModal = ({
   };
 
   const handleToggleOption = (key: NfsShareOptionKey) => {
+    setHasAdjustedOptions(true);
     setOptionValues((prev) => ({
       ...prev,
       [key]: !prev[key],
@@ -183,22 +203,22 @@ const NfsShareModal = ({
     event.preventDefault();
     setFormError(null);
 
+    if (!path.trim()) {
+      setFormError('لطفاً مسیر اشتراک را انتخاب کنید.');
+      return;
+    }
+
+    if (!client.trim()) {
+      setFormError('لطفاً آی‌پی کلاینت را وارد کنید.');
+      return;
+    }
+
+    if (!isCompleteIPv4Address(client.trim())) {
+      setFormError('آی‌پی وارد شده معتبر نیست.');
+      return;
+    }
+
     if (!isEditMode) {
-      if (!path.trim()) {
-        setFormError('لطفاً مسیر اشتراک را انتخاب کنید.');
-        return;
-      }
-
-      if (!client.trim()) {
-        setFormError('لطفاً آی‌پی کلاینت را وارد کنید.');
-        return;
-      }
-
-      if (!isCompleteIPv4Address(client.trim())) {
-        setFormError('آی‌پی وارد شده معتبر نیست.');
-        return;
-      }
-
       handleRestartNFS()
     }
 
@@ -213,8 +233,9 @@ const NfsShareModal = ({
 
   const isConfirmDisabled =
     isSubmitting ||
-    (!isEditMode &&
-      (!path.trim() || !client.trim() || !isCompleteIPv4Address(client.trim())));
+    !path.trim() ||
+    !client.trim() ||
+    !isCompleteIPv4Address(client.trim());
 
   return (
     <BlurModal
@@ -284,24 +305,12 @@ const NfsShareModal = ({
           />
         )}
 
-        {isEditMode ? (
-          <TextField
-            label="کلاینت"
-            value={client}
-            fullWidth
-            size="small"
-            InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
-            InputProps={{ sx: inputBaseSx }}
-            disabled
-          />
-        ) : (
-          <IPv4AddressInput
-            label="آی‌پی کلاینت"
-            value={client}
-            onChange={setClient}
-            required
-          />
-        )}
+        <IPv4AddressInput
+          label="آی‌پی کلاینت"
+          value={client}
+          onChange={setClient}
+          required
+        />
 
         <Divider />
 
