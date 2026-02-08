@@ -441,10 +441,10 @@ const ServicesTable = ({
         const overflowActions = getOverflowActions(status, enabled, masked);
         const toggleAction: ServiceActionType = enabled ? 'disable' : 'enable';
         const ToggleIcon = actionIcons[toggleAction];
-        const toggleLabel = enabled ? 'غیر فعال سازی' : 'فعالسازی';
+        const toggleLabel = enabled ? 'فعال سازی' : 'غیر فعال سازی';
         const toggleTooltip = enabled
-          ? 'غیر فعال سازی در زمان راه اندازی سیستم'
-          : 'فعال سازی در زمان راه اندازی سیستم';
+          ? 'فعال سازی در زمان راه اندازی سیستم'
+          : 'غیر فعال سازی در زمان راه اندازی سیستم';
         const toggleColor = toggleAction === 'enable' ? 'primary' : 'warning';
 
         const handlePrimaryClick = () => {
