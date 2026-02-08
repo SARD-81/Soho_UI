@@ -439,6 +439,10 @@ const ServicesTable = ({
         const primaryDisabled =
           isPending || (primaryAction === 'start' && masked);
         const overflowActions = getOverflowActions(status, enabled, masked);
+        const toggleAction: ServiceActionType = enabled ? 'disable' : 'enable';
+        const ToggleIcon = actionIcons[toggleAction];
+        const toggleLabel = actionLabels[toggleAction];
+        const toggleColor = toggleAction === 'enable' ? 'primary' : 'warning';
 
         const handlePrimaryClick = () => {
           if (['stop', 'restart'].includes(primaryAction)) {
@@ -502,7 +506,28 @@ const ServicesTable = ({
                 </Button>
               </span>
             </Tooltip>
-            
+            <Button
+              size="small"
+              variant="outlined"
+              color={toggleColor}
+              onClick={() => onAction(row.name, toggleAction)}
+              disabled={isPending}
+              startIcon={
+                isPending ? (
+                  <CircularProgress color="inherit" size={14} />
+                ) : (
+                  <ToggleIcon size={16} />
+                )
+              }
+              sx={{
+                fontWeight: 700,
+                '&.Mui-disabled': {
+                  opacity: 0.6,
+                },
+              }}
+            >
+              {toggleLabel}
+            </Button>
 
             {/* <IconButton
               aria-label={`اقدامات بیشتر برای ${row.label}`}

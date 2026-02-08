@@ -247,8 +247,11 @@ const NfsShareModal = ({
           confirmLabel={isEditMode ? 'ثبت تغییرات' : 'ایجاد اشتراک'}
           loadingLabel="در حال ارسال..."
           isLoading={isSubmitting}
-          disabled={isConfirmDisabled}
-          confirmProps={{ type: 'submit', form: 'nfs-share-form' }}
+          confirmProps={{
+            type: 'submit',
+            form: 'nfs-share-form',
+            disabled: isConfirmDisabled,
+          }}
           onCancel={onClose}
         />
       }
