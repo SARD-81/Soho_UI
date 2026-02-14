@@ -20,6 +20,7 @@ import { useZpool } from '../../hooks/useZpool';
 import axiosInstance from '../../lib/axiosInstance';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
+import { ensureLeadingSlash } from '../../utils/detailValues';
 
 interface CreateShareModalProps {
   controller: UseCreateShareReturn;
@@ -314,11 +315,11 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
             options={filteredMountpointOptions}
             value={fullPath}
             onChange={(_event, newValue) => {
-              setFullPath(newValue ?? '');
+              setFullPath(ensureLeadingSlash(newValue ?? '') ?? '');
             }}
             onInputChange={(_event, newInputValue, reason) => {
               if (reason === 'input' || reason === 'clear' || reason === 'reset') {
-                setFullPath(newInputValue ?? '');
+                setFullPath(ensureLeadingSlash(newInputValue ?? '') ?? '');
               }
             }}
             fullWidth

@@ -11,3 +11,8 @@ export const omitNullishEntries = (
         value !== 'none'
     )
   );
+
+export const ensureLeadingSlash = (value : string) => {
+  if (!value) return ''; // یا '/' اگر می‌خواهید مقدار خالی هم به اسلش تبدیل شود
+  return value.startsWith('/') ? value : `/${value}`;
+};

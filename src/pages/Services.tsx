@@ -7,6 +7,7 @@ import ServicesTable from '../components/services/ServicesTable';
 import { getServiceLabel } from '../constants/serviceLabels';
 import { useServiceAction } from '../hooks/useServiceAction';
 import { useServices } from '../hooks/useServices';
+import { useServiceStatuses } from '../hooks/useServiceStatuses';
 
 const actionLabels: Record<ServiceActionType, string> = {
   start: 'شروع',
@@ -35,6 +36,8 @@ const Services = () => {
     },
   });
 
+  const statusMap = useServiceStatuses(servicesQuery.data?.data ?? []);
+
   const services = useMemo(
     () =>
       (servicesQuery.data?.data ?? []).map((details) => {
@@ -48,6 +51,11 @@ const Services = () => {
             : undefined;
 
         const name = details.unit;
+        const enabledStatus = statusMap.get(name);
+
+        if (enabledStatus !== undefined) {
+          normalizedDetails.enabled = enabledStatus;
+        }
 
         return {
           name,
@@ -55,7 +63,7 @@ const Services = () => {
           details: normalizedDetails,
         };
       }),
-    [servicesQuery.data?.data]
+    [servicesQuery.data?.data, statusMap]
   );
 
   const handleAction = useCallback(

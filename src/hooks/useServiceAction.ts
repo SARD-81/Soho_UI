@@ -89,6 +89,12 @@ export const useServiceAction = (options: UseServiceActionOptions = {}) => {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: servicesQueryKey });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'services' &&
+          query.queryKey[1] === 'status',
+      });
       options.onSuccess?.(variables);
     },
     onError: (error, variables) => {

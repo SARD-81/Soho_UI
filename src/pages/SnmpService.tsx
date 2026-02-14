@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import PageContainer from '../components/PageContainer';
@@ -26,43 +26,67 @@ const SnmpService = () => {
 
   return (
     <PageContainer>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          flexWrap="wrap"
-          gap={2}
+      <Stack spacing={3}>
+        <Card
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            border: '1px solid var(--color-border)',
+            background: 'linear-gradient(135deg, rgba(31, 182, 255, 0.12), transparent)',
+          }}
         >
-          <Typography variant="h5" sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>
-            سرویس SNMP
-          </Typography>
+          <CardContent>
+            <Stack
+              direction={{ xs: 'column', md: 'row' }}
+              alignItems={{ xs: 'flex-start', md: 'center' }}
+              justifyContent="space-between"
+              spacing={2}
+            >
+              <Box>
+                <Typography
+                  variant="h5"
+                  sx={{ color: 'var(--color-primary)', fontWeight: 800 }}
+                >
+                  سرویس SNMP
+                </Typography>
+                <Typography
+                  sx={{
+                    color: 'var(--color-secondary)',
+                    mt: 0.5,
+                    fontSize: '0.95rem',
+                  }}
+                >
+                  مدیریت وضعیت و تنظیمات سرویس مانیتورینگ شبکه با نمایی سازمانی.
+                </Typography>
+              </Box>
 
-          <Button
-            onClick={() => setIsConfigModalOpen(true)}
-            variant="contained"
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: '3px',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              background:
-                'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-              color: 'var(--color-bg)',
-              boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-            }}
-          >
-            تنظیمات
-          </Button>
-        </Stack>
+              <Button
+                onClick={() => setIsConfigModalOpen(true)}
+                variant="contained"
+                sx={{
+                  px: 3,
+                  py: 1.25,
+                  borderRadius: '6px',
+                  fontWeight: 700,
+                  fontSize: '0.95rem',
+                  background:
+                    'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+                  color: 'var(--color-bg)',
+                  boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+                }}
+              >
+                تنظیمات سرویس
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
 
         <SnmpOverview
           data={snmpInfoQuery.data}
           isLoading={snmpInfoQuery.isLoading}
           error={snmpInfoQuery.error ?? null}
         />
-      </Box>
+      </Stack>
 
       <SnmpConfigModal
         open={isConfigModalOpen}
