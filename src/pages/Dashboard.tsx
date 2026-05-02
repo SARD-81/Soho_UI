@@ -17,6 +17,7 @@ import Cpu from '../components/Cpu';
 // import Disk from '../components/Disk';
 import Memory from '../components/Memory';
 import Network from '../components/Network';
+import ServerSlots3DWidget from '../components/dashboard/server-3d/ServerSlots3DWidget';
 // import SystemInfo from '../components/SystemInfo';
 import { TransitionGroup } from 'react-transition-group';
 import DashboardLayoutPanel, {
@@ -203,6 +204,30 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
       },
     ],
   },
+  {
+  id: 'server-3d-slots',
+  title: 'نمای سه‌بعدی سرور',
+  description: 'مدل تعاملی اسلات‌های سرور و نمایش جزئیات دیسک هر اسلات',
+  component: ServerSlots3DWidget,
+  columns: { xs: 12, md: 12, xl: 12 },
+  minHeight: 560,
+  layoutOptions: [
+    {
+      id: 'server-3d-compact',
+      label: 'چیدمان فشرده',
+      description: 'نمای مناسب برای داشبوردهای شلوغ‌تر',
+      columns: { xs: 12, md: 8, xl: 8 },
+      minHeight: 520,
+    },
+    {
+      id: 'server-3d-wide',
+      label: 'نمای کامل',
+      description: 'مدل سه‌بعدی و پنل جزئیات کنار هم',
+      columns: { xs: 12, md: 12, xl: 12 },
+      minHeight: 560,
+    },
+  ],
+},
   // {
   //   id: 'disk',
   //   title: 'سلامت دیسک‌ها',
