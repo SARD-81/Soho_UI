@@ -1,5 +1,5 @@
 import { Html, RoundedBox } from '@react-three/drei';
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import type { ServerSlotHealth, ServerSlotViewModel } from './serverSlotModel';
 
 export interface ServerSceneColors {
@@ -62,6 +62,10 @@ const ServerBay = ({
 }: ServerBayProps) => {
   const [hovered, setHovered] = useState(false);
 
+  useEffect(() => () => {
+    document.body.style.cursor = 'default';
+  }, []);
+
   const ledColor = useMemo(
     () => resolveLedColor(bay.health, selected, colors),
     [bay.health, colors, selected]
@@ -104,6 +108,12 @@ const ServerBay = ({
           event.stopPropagation();
           setHovered(false);
           document.body.style.cursor = 'default';
+        }}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+        }}
+        onPointerUp={(event) => {
+          event.stopPropagation();
         }}
       >
         <meshStandardMaterial
