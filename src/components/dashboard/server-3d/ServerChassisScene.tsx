@@ -11,7 +11,15 @@ interface ServerChassisSceneProps {
   onSelectSlot: (slotNumber: number) => void;
 }
 
-const BAY_X_POSITIONS = [-1.35, -0.45, 0.45, 1.35] as const;
+const BAY_PANEL_CENTER_X = 0.72;
+const BAY_SPACING = 0.9;
+
+const BAY_X_POSITIONS = [
+  BAY_PANEL_CENTER_X - BAY_SPACING * 1.5,
+  BAY_PANEL_CENTER_X - BAY_SPACING * 0.5,
+  BAY_PANEL_CENTER_X + BAY_SPACING * 0.5,
+  BAY_PANEL_CENTER_X + BAY_SPACING * 1.5,
+] as const;
 
 const ServerChassisModel = ({
   slots,
@@ -22,7 +30,7 @@ const ServerChassisModel = ({
   return (
     <group rotation={[0, 0, 0]} position={[0, -0.05, 0]}>
       <RoundedBox
-        args={[5.25, 3.55, 0.62]}
+        args={[6.25, 3.55, 0.62]}
         radius={0.16}
         smoothness={8}
         position={[0, 0, -0.18]}
@@ -35,7 +43,7 @@ const ServerChassisModel = ({
       </RoundedBox>
 
       <RoundedBox
-        args={[5.05, 3.34, 0.12]}
+        args={[6.05, 3.34, 0.12]}
         radius={0.11}
         smoothness={7}
         position={[0, 0, 0.17]}
@@ -108,11 +116,11 @@ const ServerChassisModel = ({
       </RoundedBox>
 
       <RoundedBox
-        args={[3.82, 3.05, 0.2]}
-        radius={0.06}
-        smoothness={6}
-        position={[0.72, -0.03, 0.29]}
-      >
+  args={[3.9, 3.08, 0.2]}
+  radius={0.065}
+  smoothness={7}
+  position={[BAY_PANEL_CENTER_X, -0.03, 0.29]}
+>
         <meshStandardMaterial
           color="#05070c"
           roughness={0.75}
@@ -132,7 +140,7 @@ const ServerChassisModel = ({
       ))}
 
       <mesh position={[-0.02, 1.63, 0.37]}>
-        <boxGeometry args={[4.15, 0.03, 0.04]} />
+        <boxGeometry args={[5.15, 0.03, 0.04]} />
         <meshStandardMaterial color={colors.chassisEdge} roughness={0.55} />
       </mesh>
 

@@ -139,8 +139,8 @@ const ServerBay = ({
         </mesh>
       ))}
 
-      <mesh position={[0, -0.18, 0.225]}>
-        <circleGeometry args={[0.115, 32]} />
+      <mesh position={[0, -0.12, 0.235]}>
+  <circleGeometry args={[0.105, 32]} />
         <meshStandardMaterial
           color={accentColor}
           emissive={accentColor}
@@ -150,11 +150,11 @@ const ServerBay = ({
       </mesh>
 
       <RoundedBox
-        args={[0.28, 0.09, 0.045]}
-        radius={0.025}
-        smoothness={4}
-        position={[0, -0.55, 0.235]}
-      >
+  args={[0.34, 0.075, 0.05]}
+  radius={0.022}
+  smoothness={4}
+  position={[0, -0.5, 0.245]}
+>
         <meshStandardMaterial
           color={accentColor}
           emissive={accentColor}
@@ -202,30 +202,32 @@ const ServerBay = ({
         </RoundedBox>
       )}
 
-      <Html position={[0, -1.52, 0.35]} center>
+      <Html position={[0.65, -1.43, 0.42]} center zIndexRange={[20, 0]}>
         <div
           style={{
-            minWidth: 58,
-            padding: '3px 8px',
-            borderRadius: 999,
-            direction: 'rtl',
-            textAlign: 'center',
-            fontFamily: 'var(--font-vazir)',
-            fontSize: 11,
-            fontWeight: 800,
-            color: 'var(--color-text)',
-            background: selected
-              ? 'linear-gradient(135deg, rgba(0,198,169,0.34), rgba(35,167,213,0.26))'
-              : 'rgba(15,23,42,0.56)',
-            border: selected
-              ? '1px solid rgba(0,198,169,0.75)'
-              : '1px solid rgba(148,163,184,0.24)',
-            boxShadow: selected
-              ? '0 12px 32px rgba(0,198,169,0.18)'
-              : '0 8px 20px rgba(0,0,0,0.18)',
-            userSelect: 'none',
-            pointerEvents: 'none',
-          }}
+  minWidth: 64,
+  padding: '4px 10px',
+  borderRadius: 999,
+  direction: 'rtl',
+  textAlign: 'center',
+  fontFamily: 'var(--font-vazir)',
+  fontSize: 11,
+  lineHeight: '16px',
+  fontWeight: 900,
+  color: 'var(--color-text)',
+  background: selected
+    ? 'linear-gradient(135deg, rgba(0,198,169,0.42), rgba(35,167,213,0.3))'
+    : 'linear-gradient(135deg, rgba(15,23,42,0.72), rgba(15,23,42,0.48))',
+  border: selected
+    ? '1px solid rgba(0,198,169,0.82)'
+    : '1px solid rgba(148,163,184,0.28)',
+  boxShadow: selected
+    ? '0 10px 26px rgba(0,198,169,0.24), inset 0 1px 0 rgba(255,255,255,0.12)'
+    : '0 8px 18px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)',
+  backdropFilter: 'blur(8px)',
+  userSelect: 'none',
+  pointerEvents: 'none',
+}}
         >
           اسلات {bay.slotNumber}
         </div>
