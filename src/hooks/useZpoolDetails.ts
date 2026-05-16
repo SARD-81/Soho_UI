@@ -9,10 +9,13 @@ export const zpoolDetailQueryKey = (poolName: string) => [
 ];
 
 export const fetchZpoolDetails = async (
-  poolName: string
+  poolName: string,
+  signal?: AbortSignal
 ): Promise<ZpoolDetailEntry | null> => {
   const endpoint = `/api/zpool/${encodeURIComponent(poolName)}/`;
-  const { data } = await axiosInstance.get<ZpoolDetailResponse>(endpoint);
+  const { data } = await axiosInstance.get<ZpoolDetailResponse>(endpoint, {
+    signal,
+  });
 
   if (!data || !Array.isArray(data.data)) {
     return null;
@@ -50,9 +53,11 @@ export const useZpoolDetails = (
 ) => {
   return useQuery<ZpoolDetailEntry | null, Error>({
     queryKey: zpoolDetailQueryKey(poolName),
-    queryFn: () => fetchZpoolDetails(poolName),
+    queryFn: ({ signal }) => fetchZpoolDetails(poolName, signal),
     enabled: options?.enabled ?? true,
-    // تغییر از ۱ ثانیه به ۱۰ ثانیه برای جلوگیری از قفل شدن مرورگر
-    refetchInterval: options?.enabled ? 10000 : undefined,
+    refetchInterval: options?.enabled ? 30000 : undefined,
+    staleTime: 25000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };

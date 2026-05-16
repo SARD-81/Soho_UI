@@ -70,9 +70,27 @@ const normalizeWwn = (value: unknown) => {
   return normalized.length > 0 ? normalized : null;
 };
 
-const fetchPoolDevices = async (poolName: string) => {
+const createAbortError = () => {
+  const error = new Error('Pool device slot request was aborted.');
+  error.name = 'AbortError';
+  return error;
+};
+
+const throwIfAborted = (signal?: AbortSignal) => {
+  if (signal?.aborted) {
+    throw createAbortError();
+  }
+};
+
+const fetchPoolDevices = async (poolName: string, signal?: AbortSignal) => {
+  throwIfAborted(signal);
+
   const endpoint = `/api/zpool/${encodeURIComponent(poolName)}/devices/`;
-  const { data } = await axiosInstance.get<ZpoolDeviceResponse>(endpoint);
+  const { data } = await axiosInstance.get<ZpoolDeviceResponse>(endpoint, {
+    signal,
+  });
+
+  throwIfAborted(signal);
 
   if (data.ok === false) {
     throw new Error(
@@ -84,15 +102,20 @@ const fetchPoolDevices = async (poolName: string) => {
 };
 
 const buildPoolSlotEntry = async (
-  device: ZpoolDeviceEntry
+  device: ZpoolDeviceEntry,
+  signal?: AbortSignal
 ): Promise<PoolDiskSlot | null> => {
+  throwIfAborted(signal);
+
   const diskName = normalizeDiskName(device);
 
   if (!diskName) {
     return null;
   }
 
-  const detail = await fetchDiskDetail(diskName);
+  const detail = await fetchDiskDetail(diskName, { signal });
+
+  throwIfAborted(signal);
 
   if (!detail) {
     return null;
@@ -117,7 +140,8 @@ const buildPoolSlotEntry = async (
 };
 
 const fetchPoolDeviceSlots = async (
-  poolNames: string[]
+  poolNames: string[],
+  signal?: AbortSignal
 ): Promise<PoolDeviceSlotsResult> => {
   const uniquePoolNames = Array.from(
     new Set(poolNames.map((pool) => pool.trim()).filter(Boolean))
@@ -133,21 +157,32 @@ const fetchPoolDeviceSlots = async (
   await Promise.all(
     uniquePoolNames.map(async (poolName) => {
       try {
-        const devices = await fetchPoolDevices(poolName);
+        throwIfAborted(signal);
+
+        const devices = await fetchPoolDevices(poolName, signal);
         const diskDevices = devices.filter(
           (device) => !device.type || device.type?.toLowerCase() === 'disk'
         );
 
-        const slots = await Promise.all(diskDevices.map(buildPoolSlotEntry));
+        const slots = await Promise.all(
+          diskDevices.map((device) => buildPoolSlotEntry(device, signal))
+        );
+
+        throwIfAborted(signal);
 
         slotsByPool[poolName] = slots.filter((slot): slot is PoolDiskSlot =>
           Boolean(slot)
         );
       } catch (error) {
+        if (signal?.aborted) {
+          throw error;
+        }
+
         const message =
           error instanceof Error
             ? error.message
             : DEFAULT_POOL_DEVICE_ERROR_MESSAGE;
+
         errorsByPool[poolName] = message;
         slotsByPool[poolName] = [];
       }
@@ -167,11 +202,12 @@ export const usePoolDeviceSlots = (
   options?: UsePoolDeviceSlotsOptions
 ) =>
   useQuery<PoolDeviceSlotsResult, Error>({
-    queryKey: ['zpool', 'devices', 'slots', poolNames.join(',')], // کلید ثابت‌تر برای جلوگیری از ری‌رندر
-    queryFn: () => fetchPoolDeviceSlots(poolNames),
+    queryKey: ['zpool', 'devices', 'slots', poolNames.join(',')],
+    queryFn: ({ signal }) => fetchPoolDeviceSlots(poolNames, signal),
     enabled: (options?.enabled ?? true) && poolNames.length > 0,
-    refetchInterval: options?.refetchInterval ?? 30000, // افزایش به ۳۰ ثانیه
-    staleTime: 20000, // داده‌ها تا ۲۰ ثانیه معتبر بمانند و Fetch مجدد نشوند
-    gcTime: 60000,
+    refetchInterval: options?.refetchInterval ?? 30000,
+    staleTime: 25000,
+    gcTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });

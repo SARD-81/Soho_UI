@@ -1,6 +1,6 @@
 import { Box, Button, Tooltip, Typography } from '@mui/material';
-import { useQueries } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
@@ -173,6 +173,7 @@ const mapPartitionedDisksToDeviceOptions = (
 };
 
 const IntegratedStorage = () => {
+  const queryClient = useQueryClient();
   const createPool = useCreatePool({
     onSuccess: (poolName) => {
       toast.success(`فضای یکپارچه ${poolName} با موفقیت ایجاد شد.`);
@@ -269,14 +270,36 @@ const IntegratedStorage = () => {
     }
   }, [activeItemId, pinnedItemIds, pools, setActiveItemId, unpinItem]);
 
+  useEffect(() => {
+  return () => {
+    void queryClient.cancelQueries({
+      predicate: (query) => {
+        const key = query.queryKey;
+
+        if (!Array.isArray(key)) {
+          return false;
+        }
+
+        const isPoolDeviceSlotsQuery =
+          key[0] === 'zpool' && key[1] === 'devices' && key[2] === 'slots';
+
+        const isPoolDetailQuery =
+          key[0] === 'zpool' && typeof key[1] === 'string' && key[2] === 'details';
+
+        return isPoolDeviceSlotsQuery || isPoolDetailQuery;
+      },
+    });
+  };
+}, [queryClient]);
+
   const {
     data: poolDevices,
     isLoading: isPoolDeviceLoading,
-    isFetching: isPoolDeviceFetching,
+    // isFetching: isPoolDeviceFetching,
     refetch: refetchPoolSlots,
   } = usePoolDeviceSlots(poolNames, {
     enabled: pools.length > 0,
-    refetchInterval: 5 * 1000,
+    refetchInterval: 30 * 1000,
   });
 
   const addPoolDevices = useAddPoolDevices({
@@ -381,7 +404,7 @@ const IntegratedStorage = () => {
     [replaceDisk, replacePoolName]
   );
 
-  const isSlotLoading = isPoolDeviceLoading || isPoolDeviceFetching;
+  const isSlotLoading = isPoolDeviceLoading;
 
   const selectedPoolSlots = replacePoolName
     ? poolDevices?.slotsByPool[replacePoolName] ?? []
@@ -402,13 +425,16 @@ const IntegratedStorage = () => {
   }, [activeItemId, pinnedItemIds]);
 
   const poolDetailQueries = useQueries({
-    queries: poolDetailIds.map((poolName) => ({
-      queryKey: zpoolDetailQueryKey(poolName),
-      queryFn: () => fetchZpoolDetails(poolName),
-      enabled: poolDetailIds.length > 0,
-      refetchInterval: 10000,
-    })),
-  });
+  queries: poolDetailIds.map((poolName) => ({
+    queryKey: zpoolDetailQueryKey(poolName),
+    queryFn: ({ signal }) => fetchZpoolDetails(poolName, signal),
+    enabled: Boolean(poolName),
+    refetchInterval: 30 * 1000,
+    staleTime: 25 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })),
+});
 
   const selectedPoolDetailItems = useMemo(
     () =>

@@ -1,4 +1,4 @@
-import { ContactShadows, Environment, OrbitControls, RoundedBox } from '@react-three/drei';
+import { ContactShadows, OrbitControls, RoundedBox } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { Suspense } from 'react';
 import ServerBay, { type ServerSceneColors } from './ServerBay';
@@ -155,36 +155,39 @@ const ServerChassisModel = ({
 const ServerChassisScene = (props: ServerChassisSceneProps) => {
   return (
     <Canvas
-      dpr={[1, 2]}
-      frameloop="demand"
-      camera={{ position: [0, 0.15, 7.15], fov: 36 }}
-      gl={{ antialias: true, alpha: true }}
-      style={{ width: '100%', height: '100%' }}
-    >
-      <Suspense fallback={null}>
-        <ambientLight intensity={0.85} />
-        <directionalLight position={[3, 4, 5]} intensity={1.25} />
-        <directionalLight position={[-4, 2, 3]} intensity={0.35} />
-        <ServerChassisModel {...props} />
-        <ContactShadows
-          position={[0, -2.02, -0.8]}
-          opacity={0.24}
-          scale={6}
-          blur={2.4}
-          far={3.5}
-        />
-        <Environment preset="city" />
-        <OrbitControls
-          enablePan={false}
-          enableZoom={false}
-          minPolarAngle={Math.PI / 2.35}
-          maxPolarAngle={Math.PI / 1.9}
-          minAzimuthAngle={-0.22}
-          maxAzimuthAngle={0.22}
-          rotateSpeed={0.45}
-        />
-      </Suspense>
-    </Canvas>
+  dpr={[1, 2]}
+  frameloop="demand"
+  camera={{ position: [0, 0.15, 7.15], fov: 36 }}
+  gl={{ antialias: true, alpha: true }}
+  style={{ width: '100%', height: '100%' }}
+>
+  <Suspense fallback={null}>
+    <ambientLight intensity={1.05} />
+    <hemisphereLight intensity={0.65} groundColor="#020617" />
+    <directionalLight position={[3, 4, 5]} intensity={1.35} />
+    <directionalLight position={[-4, 2, 3]} intensity={0.45} />
+
+    <ServerChassisModel {...props} />
+
+    <ContactShadows
+      position={[0, -2.02, -0.8]}
+      opacity={0.24}
+      scale={6}
+      blur={2.4}
+      far={3.5}
+    />
+
+    <OrbitControls
+      enablePan={false}
+      enableZoom={false}
+      minPolarAngle={Math.PI / 2.35}
+      maxPolarAngle={Math.PI / 1.9}
+      minAzimuthAngle={-0.22}
+      maxAzimuthAngle={0.22}
+      rotateSpeed={0.45}
+    />
+  </Suspense>
+</Canvas>
   );
 };
 

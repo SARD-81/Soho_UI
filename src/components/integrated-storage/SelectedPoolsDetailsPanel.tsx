@@ -1,4 +1,3 @@
-import type { ZpoolDetailEntry } from '../../@types/zpool';
 import DetailComparisonPanel, {
   type DetailComparisonColumn,
   type DetailComparisonStatus,
@@ -7,10 +6,7 @@ import SingleDetailView from '../common/SingleDetailView';
 import TinyComparisonTable from '../common/TinyComparisonTable';
 import { isNestedDetailTableData } from '../../@types/detailComparison';
 import formatDetailValue from '../../utils/formatDetailValue';
-import {
-  POOL_DISK_ATTRIBUTE_SORT,
-  buildPoolDetailValues,
-} from '../../utils/poolDetails';
+import { POOL_DISK_ATTRIBUTE_SORT } from '../../utils/poolDetails';
 import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
 import { isValidElement, useMemo } from 'react';
 import { POOL_DETAIL_LAYOUT } from '../../config/detailLayouts';
@@ -20,7 +16,7 @@ import { filterDetailValuesByLayout } from '../../utils/detailLayouts';
 
 interface PoolDetailItem {
   poolName: string;
-  detail: ZpoolDetailEntry | null;
+  detail: Record<string, unknown> | null;
   isLoading: boolean;
   error: Error | null;
 }
@@ -103,9 +99,9 @@ const SelectedPoolsDetailsPanel = ({
       title: poolName,
       onRemove: isPinned ? () => onRemove(poolName) : undefined,
       values: filterDetailValuesByLayout(
-        buildPoolDetailValues(detail),
-        POOL_DETAIL_LAYOUT
-      ),
+  detail ?? {},
+  POOL_DETAIL_LAYOUT
+),
       status,
       pinToggle: {
         isPinned,
@@ -133,14 +129,14 @@ const SelectedPoolsDetailsPanel = ({
     pinnedColumns.length > 1 ? 'مقایسه جزئیات فضاهای یکپارچه' : 'جزئیات فضاهای یکپارچه';
 
   const comparisonValues =
-    shouldShowSingle && activeItem
-      ? [
-          filterDetailValuesByLayout(
-            buildPoolDetailValues(activeItem.detail),
-            POOL_DETAIL_LAYOUT
-          ),
-        ]
-      : comparisonColumns.map(({ values }) => values);
+  shouldShowSingle && activeItem
+    ? [
+        filterDetailValuesByLayout(
+          activeItem.detail ?? {},
+          POOL_DETAIL_LAYOUT
+        ),
+      ]
+    : comparisonColumns.map(({ values }) => values);
 
   const attributeSort = useMemo(
     () =>
@@ -158,9 +154,9 @@ const SelectedPoolsDetailsPanel = ({
         title={title}
         sections={sections}
         values={filterDetailValuesByLayout(
-          buildPoolDetailValues(activeItem.detail),
-          POOL_DETAIL_LAYOUT
-        )}
+  activeItem.detail ?? {},
+  POOL_DETAIL_LAYOUT
+)}
         status={buildColumn(activeItem, false).status}
         formatValue={formatValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."

@@ -23,7 +23,8 @@ export const fetchDiskInventory = async (): Promise<DiskInventoryItem[]> => {
 };
 
 export const fetchDiskDetail = async (
-  diskName: string
+  diskName: string,
+  options?: { signal?: AbortSignal }
 ): Promise<DiskInventoryItem | null> => {
   const normalizedDiskName = diskName.trim();
 
@@ -32,11 +33,14 @@ export const fetchDiskDetail = async (
   }
 
   const { data } = await axiosInstance.get<DiskDetailResponse>(
-    `/api/disk/${encodeURIComponent(normalizedDiskName)}/`
+    `/api/disk/${encodeURIComponent(normalizedDiskName)}/`,
+    { signal: options?.signal }
   );
 
   if (data.ok === false) {
-    throw new Error(normalizeErrorMessage(data.error, DEFAULT_DETAIL_ERROR_MESSAGE));
+    throw new Error(
+      normalizeErrorMessage(data.error, DEFAULT_DETAIL_ERROR_MESSAGE)
+    );
   }
 
   return data.data ?? null;
