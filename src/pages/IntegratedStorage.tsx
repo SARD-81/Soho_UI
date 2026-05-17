@@ -35,6 +35,7 @@ import { selectDetailViewState, useDetailSplitViewStore } from '../stores/detail
 const MAX_COMPARISON_ITEMS = 4;
 const POOL_DETAIL_VIEW_ID = 'pools';
 
+// Pool properties rendered as interactive toggles inside the detail comparison panel.
 const INTERACTIVE_POOL_PROPERTIES = [
   'autoexpand',
   'autoreplace',
@@ -43,11 +44,13 @@ const INTERACTIVE_POOL_PROPERTIES = [
   'multihost',
 ] as const;
 
+// Normalizes disk identifiers so /dev paths and raw disk names can be matched consistently.
 const normalizeDiskIdentifier = (value: unknown) => {
   const normalized = String(value ?? '').replace(/^\/dev\//, '').trim();
   return normalized.length > 0 ? normalized : null;
 };
 
+// Builds a quick lookup from disk name to physical slot metadata.
 const buildDiskSlotLookup = (slots: PoolDiskSlot[]) => {
   const lookup = new Map<string, PoolDiskSlot>();
 
@@ -60,6 +63,7 @@ const buildDiskSlotLookup = (slots: PoolDiskSlot[]) => {
   return lookup;
 };
 
+// Enriches pool disk records with slot numbers when matching slot data is available.
 const attachSlotNumbersToDisks = (
   disks: unknown,
   slots: PoolDiskSlot[]
@@ -90,6 +94,7 @@ const attachSlotNumbersToDisks = (
   });
 };
 
+// Converts raw pool details into display values and injects interactive controls where needed.
 const buildPoolDetailValues = (
   detail: ZpoolDetailEntry | null,
   poolName: string,
@@ -118,6 +123,7 @@ const buildPoolDetailValues = (
   return localizedValues;
 };
 
+// Converts available partitioned disks into unique selectable device options for pool actions.
 const mapPartitionedDisksToDeviceOptions = (
   partitionedDisks?: PartitionedDiskInfo[] | null
 ): DeviceOption[] => {
@@ -125,7 +131,8 @@ const mapPartitionedDisksToDeviceOptions = (
     return [];
   }
 
-  const buildDeviceIdentifier = (devicePath: string | null, wwn: string | null) => {
+  // Prefer stable by-id paths when WWN data exists, otherwise fall back to the device path.
+const buildDeviceIdentifier = (devicePath: string | null, wwn: string | null) => {
     const trimmedPath = devicePath?.trim();
 
     if (wwn) {
@@ -224,7 +231,8 @@ const IntegratedStorage = () => {
     data,
     isLoading: isPoolsLoading,
     error: zpoolError,
-  } = useZpool({
+  } // Poll pool capacity data periodically because storage status can change outside the UI.
+= useZpool({
     refetchInterval: 1 * 60 * 1000,
   });
 
@@ -297,7 +305,8 @@ const IntegratedStorage = () => {
     isLoading: isPoolDeviceLoading,
     // isFetching: isPoolDeviceFetching,
     refetch: refetchPoolSlots,
-  } = usePoolDeviceSlots(poolNames, {
+  } // Polls physical slot mapping separately from pool capacity data for fresher disk placement info.
+= usePoolDeviceSlots(poolNames, {
     enabled: pools.length > 0,
     refetchInterval: 30 * 1000,
   });
@@ -317,7 +326,8 @@ const IntegratedStorage = () => {
     isLoading: isPartitionedDiskLoading,
     isFetching: isPartitionedDiskFetching,
     error: partitionedDiskError,
-  } = usePartitionedDisks({
+  } // Fetches candidate disks only while a modal needs them to avoid unnecessary polling.
+= usePartitionedDisks({
     enabled: createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen,
     refetchInterval:
       createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen
@@ -343,7 +353,8 @@ const IntegratedStorage = () => {
 
   const diskError = partitionedDiskError ?? null;
 
-  const replaceDisk = useReplacePoolDisk({
+  // Keeps replacement side effects here so the modal stays focused on user input.
+const replaceDisk = useReplacePoolDisk({
     onSuccess: (poolName) => {
       toast.success(`جایگزینی دیسک برای فضای ${poolName} ثبت شد.`);
       refetchPoolSlots();
@@ -412,7 +423,8 @@ const IntegratedStorage = () => {
   const selectedPoolSlotError = replacePoolName
     ? poolDevices?.errorsByPool[replacePoolName] ?? null
     : null;
-  const poolDetailIds = useMemo(() => {
+  // Limits comparison queries to the active pool plus pinned pools to keep the panel manageable.
+const poolDetailIds = useMemo(() => {
     const ids = new Set<string>();
 
     pinnedItemIds.forEach((poolName) => ids.add(poolName));
@@ -424,7 +436,8 @@ const IntegratedStorage = () => {
     return Array.from(ids).slice(0, MAX_COMPARISON_ITEMS);
   }, [activeItemId, pinnedItemIds]);
 
-  const poolDetailQueries = useQueries({
+  // Fetches details for each visible comparison item and refreshes them independently.
+const poolDetailQueries = useQueries({
   queries: poolDetailIds.map((poolName) => ({
     queryKey: zpoolDetailQueryKey(poolName),
     queryFn: ({ signal }) => fetchZpoolDetails(poolName, signal),
