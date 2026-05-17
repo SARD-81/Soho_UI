@@ -1,5 +1,5 @@
-import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import type {
   DiskDetailResponse,
   DiskNamesResponse,
@@ -28,19 +28,23 @@ const normalizeDiskNames = (diskNames: unknown): string[] => {
     .filter((disk): disk is string => disk.length > 0);
 };
 
-const fetchWithTrailingSlashFallback = async <T>(url: string) => {
+const fetchWithTrailingSlashFallback = async <T>(
+  url: string,
+  signal?: AbortSignal
+) => {
   try {
-    const { data } = await axiosInstance.get<T>(url);
+    const { data } = await axiosInstance.get<T>(url, { signal });
     return data;
   } catch (error) {
     const isTrailingSlashRequest = url.endsWith('/');
+
     if (
       isTrailingSlashRequest &&
       axios.isAxiosError(error) &&
       error.response?.status === 404
     ) {
       const fallbackUrl = url.replace(/\/+$/, '');
-      const { data } = await axiosInstance.get<T>(fallbackUrl);
+      const { data } = await axiosInstance.get<T>(fallbackUrl, { signal });
       return data;
     }
 
@@ -48,9 +52,10 @@ const fetchWithTrailingSlashFallback = async <T>(url: string) => {
   }
 };
 
-const fetchDiskNames = async (): Promise<string[]> => {
+const fetchDiskNames = async (signal?: AbortSignal): Promise<string[]> => {
   const data = await fetchWithTrailingSlashFallback<DiskNamesResponse>(
-    '/api/disk/names/'
+    '/api/disk/names/',
+    signal
   );
 
   if (data.ok === false) {
@@ -64,13 +69,18 @@ const fetchDiskNames = async (): Promise<string[]> => {
   return normalizeDiskNames(data.data?.disk_names);
 };
 
-const fetchDiskPartitionStatus = async (diskName: string): Promise<boolean> => {
+const fetchDiskPartitionStatus = async (
+  diskName: string,
+  signal?: AbortSignal
+): Promise<boolean> => {
   const endpoint = `/api/disk/${encodeURIComponent(diskName)}/has-partitions/`;
 
   try {
-    const data = await fetchWithTrailingSlashFallback<DiskPartitionStatusResponse>(
-      endpoint
-    );
+    const data =
+      await fetchWithTrailingSlashFallback<DiskPartitionStatusResponse>(
+        endpoint,
+        signal
+      );
 
     if (data.ok === false) {
       const message =
@@ -103,13 +113,15 @@ const normalizeWwn = (wwn: unknown) => {
 };
 
 const fetchDiskMetadata = async (
-  diskName: string
+  diskName: string,
+  signal?: AbortSignal
 ): Promise<{ wwn: string | null; slotNumber: string | number | null }> => {
   const endpoint = `/api/disk/${encodeURIComponent(diskName)}/`;
 
   try {
     const data = await fetchWithTrailingSlashFallback<DiskDetailResponse>(
-      endpoint
+      endpoint,
+      signal
     );
 
     if (data.ok === false) {
@@ -150,8 +162,10 @@ const normalizeDiskPath = (diskName: string) => {
   return trimmedName.startsWith('/dev/') ? trimmedName : `/dev/${trimmedName}`;
 };
 
-const fetchPartitionedDisks = async (): Promise<PartitionedDiskInfo[]> => {
-  const diskNames = await fetchDiskNames();
+const fetchPartitionedDisks = async (
+  signal?: AbortSignal
+): Promise<PartitionedDiskInfo[]> => {
+  const diskNames = await fetchDiskNames(signal);
 
   if (diskNames.length === 0) {
     return [];
@@ -160,7 +174,7 @@ const fetchPartitionedDisks = async (): Promise<PartitionedDiskInfo[]> => {
   const disksWithPartitions = await Promise.all(
     diskNames.map(async (diskName) => {
       try {
-        const hasPartitions = await fetchDiskPartitionStatus(diskName);
+        const hasPartitions = await fetchDiskPartitionStatus(diskName, signal);
         return hasPartitions ? diskName : null;
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -189,7 +203,7 @@ const fetchPartitionedDisks = async (): Promise<PartitionedDiskInfo[]> => {
         return;
       }
 
-      const { wwn, slotNumber } = await fetchDiskMetadata(diskName);
+      const { wwn, slotNumber } = await fetchDiskMetadata(diskName, signal);
 
       uniquePaths.set(normalizedPath, {
         name: diskName.trim(),
@@ -221,10 +235,13 @@ export const useDisk = (options?: UseDiskOptions) => {
 export const usePartitionedDisks = (options?: UseDiskOptions) => {
   return useQuery<PartitionedDiskInfo[], Error>({
     queryKey: ['disk', 'partitioned'],
-    queryFn: fetchPartitionedDisks,
+    queryFn: ({ signal }) => fetchPartitionedDisks(signal),
     refetchInterval: options?.refetchInterval,
     refetchIntervalInBackground: Boolean(options?.refetchInterval),
     enabled: options?.enabled ?? true,
     refetchOnWindowFocus: false,
+    staleTime: 20_000,
+    gcTime: 2 * 60 * 1000,
+    refetchOnReconnect: false,
   });
 };

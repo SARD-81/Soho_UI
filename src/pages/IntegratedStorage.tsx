@@ -1,36 +1,52 @@
 import { Box, Button, Tooltip, Typography } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useLocation } from 'react-router-dom';
 import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
+import AddPoolDiskModal from '../components/integrated-storage/AddPoolDiskModal';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
+import ConfirmExportPoolModal from '../components/integrated-storage/ConfirmExportPoolModal';
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
 import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
+import ImportPoolModal from '../components/integrated-storage/ImportPoolModal';
 import PoolDiskDetailModal from '../components/integrated-storage/PoolDiskDetailModal';
-import AddPoolDiskModal from '../components/integrated-storage/AddPoolDiskModal';
+import PoolPropertyToggle from '../components/integrated-storage/PoolPropertyToggle';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
 import ReplaceDiskModal from '../components/integrated-storage/ReplaceDiskModal';
-import PageContainer from '../components/PageContainer';
 import SelectedPoolsDetailsPanel from '../components/integrated-storage/SelectedPoolsDetailsPanel';
-import PoolPropertyToggle from '../components/integrated-storage/PoolPropertyToggle';
+import PageContainer from '../components/PageContainer';
 import { useAddPoolDevices } from '../hooks/useAddPoolDevices';
 import { useCreatePool } from '../hooks/useCreatePool';
 import { useDeleteZpool } from '../hooks/useDeleteZpool';
-import ConfirmExportPoolModal from '../components/integrated-storage/ConfirmExportPoolModal';
-import ImportPoolModal from '../components/integrated-storage/ImportPoolModal';
-import { type PartitionedDiskInfo, usePartitionedDisks } from '../hooks/useDisk';
-import { type PoolDiskSlot, usePoolDeviceSlots } from '../hooks/usePoolDeviceSlots';
-import { type ReplaceDevicePayload, useReplacePoolDisk } from '../hooks/useReplacePoolDisk';
-import { useZpool } from '../hooks/useZpool';
+import {
+  type PartitionedDiskInfo,
+  usePartitionedDisks,
+} from '../hooks/useDisk';
 import { useExportPool } from '../hooks/useExportPool';
 import { useImportPool } from '../hooks/useImportPool';
-import { fetchZpoolDetails, zpoolDetailQueryKey } from '../hooks/useZpoolDetails';
+import {
+  type PoolDiskSlot,
+  usePoolDeviceSlots,
+} from '../hooks/usePoolDeviceSlots';
+import {
+  type ReplaceDevicePayload,
+  useReplacePoolDisk,
+} from '../hooks/useReplacePoolDisk';
+import { useZpool } from '../hooks/useZpool';
+import {
+  fetchZpoolDetails,
+  zpoolDetailQueryKey,
+} from '../hooks/useZpoolDetails';
+import {
+  selectDetailViewState,
+  useDetailSplitViewStore,
+} from '../stores/detailSplitViewStore';
 import {
   localizeDetailEntries,
   translateDetailKey,
 } from '../utils/detailLabels';
 import { createPoolDisksTable } from '../utils/poolDetails';
-import { selectDetailViewState, useDetailSplitViewStore } from '../stores/detailSplitViewStore';
 
 const MAX_COMPARISON_ITEMS = 4;
 const POOL_DETAIL_VIEW_ID = 'pools';
@@ -46,7 +62,9 @@ const INTERACTIVE_POOL_PROPERTIES = [
 
 // Normalizes disk identifiers so /dev paths and raw disk names can be matched consistently.
 const normalizeDiskIdentifier = (value: unknown) => {
-  const normalized = String(value ?? '').replace(/^\/dev\//, '').trim();
+  const normalized = String(value ?? '')
+    .replace(/^\/dev\//, '')
+    .trim();
   return normalized.length > 0 ? normalized : null;
 };
 
@@ -64,10 +82,7 @@ const buildDiskSlotLookup = (slots: PoolDiskSlot[]) => {
 };
 
 // Enriches pool disk records with slot numbers when matching slot data is available.
-const attachSlotNumbersToDisks = (
-  disks: unknown,
-  slots: PoolDiskSlot[]
-) => {
+const attachSlotNumbersToDisks = (disks: unknown, slots: PoolDiskSlot[]) => {
   if (!Array.isArray(disks) || slots.length === 0) {
     return disks;
   }
@@ -103,9 +118,8 @@ const buildPoolDetailValues = (
   const localizedValues = localizeDetailEntries(detail);
   const disksWithSlots = attachSlotNumbersToDisks(detail?.disks, slots);
 
-  localizedValues[translateDetailKey('disks')] = createPoolDisksTable(
-    disksWithSlots
-  );
+  localizedValues[translateDetailKey('disks')] =
+    createPoolDisksTable(disksWithSlots);
 
   INTERACTIVE_POOL_PROPERTIES.forEach((propertyKey) => {
     const label = translateDetailKey(propertyKey);
@@ -132,7 +146,10 @@ const mapPartitionedDisksToDeviceOptions = (
   }
 
   // Prefer stable by-id paths when WWN data exists, otherwise fall back to the device path.
-const buildDeviceIdentifier = (devicePath: string | null, wwn: string | null) => {
+  const buildDeviceIdentifier = (
+    devicePath: string | null,
+    wwn: string | null
+  ) => {
     const trimmedPath = devicePath?.trim();
 
     if (wwn) {
@@ -181,6 +198,36 @@ const buildDeviceIdentifier = (devicePath: string | null, wwn: string | null) =>
 
 const IntegratedStorage = () => {
   const queryClient = useQueryClient();
+  const location = useLocation();
+
+  const isIntegratedStorageRoute =
+    location.pathname.toLowerCase() === '/integrated-space';
+  const cancelIntegratedStorageQueries = useCallback(() => {
+    void queryClient.cancelQueries({
+      predicate: (query) => {
+        const key = query.queryKey;
+
+        if (!Array.isArray(key)) {
+          return false;
+        }
+
+        const isPoolDeviceSlotsQuery =
+          key[0] === 'zpool' && key[1] === 'devices' && key[2] === 'slots';
+
+        const isPoolDetailQuery =
+          key[0] === 'zpool' &&
+          typeof key[1] === 'string' &&
+          key[2] === 'details';
+
+        const isPartitionedDiskQuery =
+          key[0] === 'disk' && key[1] === 'partitioned';
+
+        return (
+          isPoolDeviceSlotsQuery || isPoolDetailQuery || isPartitionedDiskQuery
+        );
+      },
+    });
+  }, [queryClient]);
   const createPool = useCreatePool({
     onSuccess: (poolName) => {
       toast.success(`فضای یکپارچه ${poolName} با موفقیت ایجاد شد.`);
@@ -202,10 +249,8 @@ const IntegratedStorage = () => {
         return;
       }
 
-      toast.error(
-        `حذف فضای یکپارچه ${poolName} با خطا مواجه شد`
-      );
-      console.log(error.message)
+      toast.error(`حذف فضای یکپارچه ${poolName} با خطا مواجه شد`);
+      console.log(error.message);
     },
   });
 
@@ -214,7 +259,9 @@ const IntegratedStorage = () => {
       toast.success(`آزادسازی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
     },
     onError: (error, poolName) => {
-      toast.error(`آزادسازی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`);
+      toast.error(
+        `آزادسازی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`
+      );
     },
   });
 
@@ -223,7 +270,9 @@ const IntegratedStorage = () => {
       toast.success(`فراخوانی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
     },
     onError: (error, poolName) => {
-      toast.error(`فراخوانی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`);
+      toast.error(
+        `فراخوانی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`
+      );
     },
   });
 
@@ -231,8 +280,8 @@ const IntegratedStorage = () => {
     data,
     isLoading: isPoolsLoading,
     error: zpoolError,
-  } // Poll pool capacity data periodically because storage status can change outside the UI.
-= useZpool({
+  } = useZpool({
+    enabled: isIntegratedStorageRoute,
     refetchInterval: 1 * 60 * 1000,
   });
 
@@ -253,11 +302,14 @@ const IntegratedStorage = () => {
   const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
     selectDetailViewState(POOL_DETAIL_VIEW_ID)
   );
-  const setActiveItemId = useDetailSplitViewStore((state) => state.setActiveItemId);
+  const setActiveItemId = useDetailSplitViewStore(
+    (state) => state.setActiveItemId
+  );
   const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
-  const [selectedSlot, setSelectedSlot] = useState<
-    { poolName: string; slot: PoolDiskSlot } | null
-  >(null);
+  const [selectedSlot, setSelectedSlot] = useState<{
+    poolName: string;
+    slot: PoolDiskSlot;
+  } | null>(null);
 
   useEffect(() => {
     const validPools = new Set(pools.map((pool) => pool.name));
@@ -268,46 +320,38 @@ const IntegratedStorage = () => {
       }
     });
 
-    if (!activeItemId && pools.length > 0) {
-      setActiveItemId(POOL_DETAIL_VIEW_ID, pools[0].name);
-      return;
-    }
-
     if (activeItemId && !validPools.has(activeItemId)) {
-      setActiveItemId(POOL_DETAIL_VIEW_ID, pools[0]?.name ?? null);
+      setActiveItemId(POOL_DETAIL_VIEW_ID, null);
     }
   }, [activeItemId, pinnedItemIds, pools, setActiveItemId, unpinItem]);
 
   useEffect(() => {
-  return () => {
-    void queryClient.cancelQueries({
-      predicate: (query) => {
-        const key = query.queryKey;
+    if (isIntegratedStorageRoute) {
+      return;
+    }
 
-        if (!Array.isArray(key)) {
-          return false;
-        }
+    cancelIntegratedStorageQueries();
+    setActiveItemId(POOL_DETAIL_VIEW_ID, null);
+    setSelectedSlot(null);
+    setReplacePoolName(null);
+  }, [
+    isIntegratedStorageRoute,
+    cancelIntegratedStorageQueries,
+    setActiveItemId,
+  ]);
 
-        const isPoolDeviceSlotsQuery =
-          key[0] === 'zpool' && key[1] === 'devices' && key[2] === 'slots';
-
-        const isPoolDetailQuery =
-          key[0] === 'zpool' && typeof key[1] === 'string' && key[2] === 'details';
-
-        return isPoolDeviceSlotsQuery || isPoolDetailQuery;
-      },
-    });
-  };
-}, [queryClient]);
+  useEffect(() => {
+    return () => {
+      cancelIntegratedStorageQueries();
+    };
+  }, [cancelIntegratedStorageQueries]);
 
   const {
     data: poolDevices,
     isLoading: isPoolDeviceLoading,
-    // isFetching: isPoolDeviceFetching,
     refetch: refetchPoolSlots,
-  } // Polls physical slot mapping separately from pool capacity data for fresher disk placement info.
-= usePoolDeviceSlots(poolNames, {
-    enabled: pools.length > 0,
+  } = usePoolDeviceSlots(poolNames, {
+    enabled: isIntegratedStorageRoute && pools.length > 0,
     refetchInterval: 30 * 1000,
   });
 
@@ -320,19 +364,18 @@ const IntegratedStorage = () => {
       toast.error(`افزودن دیسک به ${poolName} با خطا مواجه شد: ${message}`);
     },
   });
+  const shouldFetchPartitionedDisks =
+    isIntegratedStorageRoute &&
+    (createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen);
 
   const {
     data: partitionedDisks,
     isLoading: isPartitionedDiskLoading,
     isFetching: isPartitionedDiskFetching,
     error: partitionedDiskError,
-  } // Fetches candidate disks only while a modal needs them to avoid unnecessary polling.
-= usePartitionedDisks({
-    enabled: createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen,
-    refetchInterval:
-      createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen
-        ? 5000
-        : undefined,
+  } = usePartitionedDisks({
+    enabled: shouldFetchPartitionedDisks,
+    refetchInterval: shouldFetchPartitionedDisks ? 5000 : undefined,
   });
 
   const deviceOptions = useMemo<DeviceOption[]>(() => {
@@ -341,12 +384,14 @@ const IntegratedStorage = () => {
 
   const isDiskLoading =
     isPartitionedDiskLoading ||
-    ((createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen) &&
+    (shouldFetchPartitionedDisks &&
       isPartitionedDiskFetching &&
       !partitionedDisks);
+
   const isReplaceDiskLoading =
     isPartitionedDiskLoading ||
     (isReplaceModalOpen && isPartitionedDiskFetching && !partitionedDisks);
+
   const isAddDiskLoading =
     isPartitionedDiskLoading ||
     (addPoolDevices.isOpen && isPartitionedDiskFetching && !partitionedDisks);
@@ -354,7 +399,7 @@ const IntegratedStorage = () => {
   const diskError = partitionedDiskError ?? null;
 
   // Keeps replacement side effects here so the modal stays focused on user input.
-const replaceDisk = useReplacePoolDisk({
+  const replaceDisk = useReplacePoolDisk({
     onSuccess: (poolName) => {
       toast.success(`جایگزینی دیسک برای فضای ${poolName} ثبت شد.`);
       refetchPoolSlots();
@@ -366,7 +411,7 @@ const replaceDisk = useReplacePoolDisk({
   });
 
   const handleEdit = useCallback((pool: ZpoolCapacityEntry) => {
-    console.log(pool)
+    console.log(pool);
   }, []);
 
   const handleOpenCreate = useCallback(() => {
@@ -391,9 +436,12 @@ const replaceDisk = useReplacePoolDisk({
     [addPoolDevices]
   );
 
-  const handleSlotClick = useCallback((poolName: string, slot: PoolDiskSlot) => {
-    setSelectedSlot({ poolName, slot });
-  }, []);
+  const handleSlotClick = useCallback(
+    (poolName: string, slot: PoolDiskSlot) => {
+      setSelectedSlot({ poolName, slot });
+    },
+    []
+  );
 
   const handleCloseSlotModal = useCallback(() => {
     setSelectedSlot(null);
@@ -410,7 +458,10 @@ const replaceDisk = useReplacePoolDisk({
         return;
       }
 
-      replaceDisk.mutate({ poolName: replacePoolName, replacements: [payload] });
+      replaceDisk.mutate({
+        poolName: replacePoolName,
+        replacements: [payload],
+      });
     },
     [replaceDisk, replacePoolName]
   );
@@ -418,13 +469,13 @@ const replaceDisk = useReplacePoolDisk({
   const isSlotLoading = isPoolDeviceLoading;
 
   const selectedPoolSlots = replacePoolName
-    ? poolDevices?.slotsByPool[replacePoolName] ?? []
+    ? (poolDevices?.slotsByPool[replacePoolName] ?? [])
     : [];
   const selectedPoolSlotError = replacePoolName
-    ? poolDevices?.errorsByPool[replacePoolName] ?? null
+    ? (poolDevices?.errorsByPool[replacePoolName] ?? null)
     : null;
   // Limits comparison queries to the active pool plus pinned pools to keep the panel manageable.
-const poolDetailIds = useMemo(() => {
+  const poolDetailIds = useMemo(() => {
     const ids = new Set<string>();
 
     pinnedItemIds.forEach((poolName) => ids.add(poolName));
@@ -437,17 +488,17 @@ const poolDetailIds = useMemo(() => {
   }, [activeItemId, pinnedItemIds]);
 
   // Fetches details for each visible comparison item and refreshes them independently.
-const poolDetailQueries = useQueries({
-  queries: poolDetailIds.map((poolName) => ({
-    queryKey: zpoolDetailQueryKey(poolName),
-    queryFn: ({ signal }) => fetchZpoolDetails(poolName, signal),
-    enabled: Boolean(poolName),
-    refetchInterval: 30 * 1000,
-    staleTime: 25 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  })),
-});
+  const poolDetailQueries = useQueries({
+    queries: poolDetailIds.map((poolName) => ({
+      queryKey: zpoolDetailQueryKey(poolName),
+      queryFn: ({ signal }) => fetchZpoolDetails(poolName, signal),
+      enabled: isIntegratedStorageRoute && Boolean(poolName),
+      refetchInterval: 30 * 1000,
+      staleTime: 25 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    })),
+  });
 
   const selectedPoolDetailItems = useMemo(
     () =>
@@ -473,7 +524,7 @@ const poolDetailQueries = useQueries({
 
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 , mb: -5 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: -5 }}>
         <Box
           sx={{
             display: 'flex',
@@ -491,22 +542,22 @@ const poolDetailQueries = useQueries({
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Tooltip title=" فراخوانی فضای یکپارچه آزاد شده از سیستم‌"> 
-            <Button
-              onClick={poolImport.openModal}
-              variant="outlined"
-              sx={{
-                px: 2.5,
-                py: 1,
-                borderRadius: '3px',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                color: 'var(--color-primary)',
-                borderColor: 'rgba(31, 182, 255, 0.5)',
-              }}
-            >
-فراخوانی            
-            </Button>
+            <Tooltip title=" فراخوانی فضای یکپارچه آزاد شده از سیستم‌">
+              <Button
+                onClick={poolImport.openModal}
+                variant="outlined"
+                sx={{
+                  px: 2.5,
+                  py: 1,
+                  borderRadius: '3px',
+                  fontWeight: 700,
+                  fontSize: '0.95rem',
+                  color: 'var(--color-primary)',
+                  borderColor: 'rgba(31, 182, 255, 0.5)',
+                }}
+              >
+                فراخوانی
+              </Button>
             </Tooltip>
             <Button
               onClick={handleOpenCreate}
