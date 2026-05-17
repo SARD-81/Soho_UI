@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { DiskInventoryItem } from '../@types/disk';
 import type { ZpoolDeviceEntry, ZpoolDeviceResponse } from '../@types/zpool';
 import axiosInstance from '../lib/axiosInstance';
-import { normalizeErrorMessage } from '../lib/diskApi';
+import { fetchDiskInventory, normalizeErrorMessage } from '../lib/diskApi';
 
 const DEFAULT_POOL_DEVICE_ERROR_MESSAGE =
   'امکان دریافت دستگاه‌های فضای یکپارچه وجود ندارد.';

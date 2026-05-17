@@ -468,9 +468,6 @@ const IntegratedStorage = () => {
 
   const isSlotLoading = isPoolDeviceLoading;
 
-  const shouldRenderPoolDetails =
-    isIntegratedStorageRoute && selectedPoolDetailItems.length > 0;
-
   const selectedPoolSlots = replacePoolName
     ? (poolDevices?.slotsByPool[replacePoolName] ?? [])
     : [];
@@ -528,6 +525,9 @@ const IntegratedStorage = () => {
       }),
     [poolByName, poolDetailIds, poolDetailQueries, poolDevices?.slotsByPool]
   );
+
+  const shouldRenderPoolDetails =
+    isIntegratedStorageRoute && selectedPoolDetailItems.length > 0;
 
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
