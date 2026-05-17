@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Chip,
   CircularProgress,
   IconButton,
@@ -34,6 +35,8 @@ interface PoolsTableProps {
   slotMap?: PoolSlotMap;
   slotErrors?: Record<string, string>;
   isSlotLoading?: boolean;
+  slotsEnabled?: boolean;
+  onLoadSlots?: () => void;
   onSlotClick?: (poolName: string, slot: PoolDiskSlot) => void;
 }
 
@@ -67,6 +70,8 @@ const PoolsTable = ({
   slotMap = {},
   slotErrors = {},
   isSlotLoading = false,
+  slotsEnabled = false,
+  onLoadSlots,
   onSlotClick,
 }: PoolsTableProps) => {
   const handleRowClick = useCallback(
@@ -171,6 +176,28 @@ const PoolsTable = ({
         align: 'center',
         cellSx: { minWidth: 220 },
         renderCell: (pool) => {
+          if (!slotsEnabled) {
+            return (
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onLoadSlots?.();
+                }}
+                sx={{
+                  borderRadius: '999px',
+                  fontWeight: 800,
+                  color: 'var(--color-primary)',
+                  borderColor: 'rgba(0,198,169,0.35)',
+                  px: 1.5,
+                }}
+              >
+                نمایش اسلات‌ها
+              </Button>
+            );
+          }
+
           const poolSlots = slotMap[pool.name] ?? [];
           const poolError = slotErrors[pool.name];
 
@@ -382,6 +409,8 @@ const PoolsTable = ({
       onExport,
       onReplace,
       onSlotClick,
+      onLoadSlots,
+      slotsEnabled,
       slotErrors,
       slotMap,
     ]

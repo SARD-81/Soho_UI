@@ -288,6 +288,8 @@ const IntegratedStorage = () => {
   const [replacePoolName, setReplacePoolName] = useState<string | null>(null);
   const isReplaceModalOpen = Boolean(replacePoolName);
 
+  const [shouldLoadPoolSlots, setShouldLoadPoolSlots] = useState(false);
+
   const pools = useMemo(() => data?.pools ?? [], [data?.pools]);
   const poolByName = useMemo(
     () => Object.fromEntries(pools.map((pool) => [pool.name, pool])),
@@ -334,6 +336,7 @@ const IntegratedStorage = () => {
     setActiveItemId(POOL_DETAIL_VIEW_ID, null);
     setSelectedSlot(null);
     setReplacePoolName(null);
+    setShouldLoadPoolSlots(false);
   }, [
     isIntegratedStorageRoute,
     cancelIntegratedStorageQueries,
@@ -346,14 +349,26 @@ const IntegratedStorage = () => {
     };
   }, [cancelIntegratedStorageQueries]);
 
+  const shouldFetchPoolSlots =
+    isIntegratedStorageRoute && shouldLoadPoolSlots && pools.length > 0;
+
   const {
     data: poolDevices,
     isLoading: isPoolDeviceLoading,
     refetch: refetchPoolSlots,
   } = usePoolDeviceSlots(poolNames, {
-    enabled: isIntegratedStorageRoute && pools.length > 0,
-    refetchInterval: 30 * 1000,
+    enabled: shouldFetchPoolSlots,
+    refetchInterval: shouldFetchPoolSlots ? 60 * 1000 : undefined,
   });
+
+  const handleLoadPoolSlots = useCallback(() => {
+    if (!shouldLoadPoolSlots) {
+      setShouldLoadPoolSlots(true);
+      return;
+    }
+
+    void refetchPoolSlots();
+  }, [refetchPoolSlots, shouldLoadPoolSlots]);
 
   const addPoolDevices = useAddPoolDevices({
     onSuccess: (poolName) => {
@@ -426,6 +441,7 @@ const IntegratedStorage = () => {
   );
 
   const handleOpenReplace = useCallback((pool: ZpoolCapacityEntry) => {
+    setShouldLoadPoolSlots(true);
     setReplacePoolName(pool.name);
   }, []);
 
@@ -466,7 +482,7 @@ const IntegratedStorage = () => {
     [replaceDisk, replacePoolName]
   );
 
-  const isSlotLoading = isPoolDeviceLoading;
+  const isSlotLoading = shouldFetchPoolSlots && isPoolDeviceLoading;
 
   const selectedPoolSlots = replacePoolName
     ? (poolDevices?.slotsByPool[replacePoolName] ?? [])
@@ -476,6 +492,10 @@ const IntegratedStorage = () => {
     : null;
   // Limits comparison queries to the active pool plus pinned pools to keep the panel manageable.
   const poolDetailIds = useMemo(() => {
+    if (!isIntegratedStorageRoute) {
+      return [];
+    }
+
     const ids = new Set<string>();
 
     pinnedItemIds.forEach((poolName) => ids.add(poolName));
@@ -485,7 +505,7 @@ const IntegratedStorage = () => {
     }
 
     return Array.from(ids).slice(0, MAX_COMPARISON_ITEMS);
-  }, [activeItemId, pinnedItemIds]);
+  }, [activeItemId, isIntegratedStorageRoute, pinnedItemIds]);
 
   // Fetches details for each visible comparison item and refreshes them independently.
   const poolDetailQueries = useQueries({
@@ -609,6 +629,8 @@ const IntegratedStorage = () => {
         slotMap={poolDevices?.slotsByPool}
         slotErrors={poolDevices?.errorsByPool}
         isSlotLoading={isSlotLoading}
+        slotsEnabled={shouldLoadPoolSlots}
+        onLoadSlots={handleLoadPoolSlots}
         onSlotClick={handleSlotClick}
       />
 
