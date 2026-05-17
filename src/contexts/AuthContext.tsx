@@ -24,6 +24,7 @@ interface AuthContextType {
   username: string | null;
 }
 
+// Provides the authenticated session state and actions to the React tree.
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
@@ -97,6 +98,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const storedRefresh = tokenStorage.getRefreshToken();
       const savedUsername = tokenStorage.getUsername();
 
+      // Use the existing access token when it is still valid to avoid unnecessary refresh calls.
       if (storedAccess) {
         try {
           await verifyAccessToken(storedAccess);
@@ -111,6 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
 
+      // Without a refresh token there is no safe way to restore the session.
       if (!storedRefresh) {
         clearAuthState();
         setIsAuthLoading(false);

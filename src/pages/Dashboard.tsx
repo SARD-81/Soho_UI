@@ -28,6 +28,7 @@ import PageContainer from '../components/PageContainer';
 import Zpool from '../components/Zpool';
 import { useAuth } from '../contexts/AuthContext';
 
+// Versioned base key used to persist each user's dashboard layout separately.
 const LAYOUT_STORAGE_BASE_KEY = 'dashboard-layout.v2';
 
 type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -65,6 +66,7 @@ const BREAKPOINT_ORDER: BreakpointKey[] = ['xs', 'sm', 'md', 'lg', 'xl'];
 const FULL_WIDTH_COLUMNS = 12;
 const DEFAULT_ROW_SPAN = 1;
 
+// Keeps generated CSS grid spans valid even when a layout preset provides unsafe values.
 const clampSpan = (value: number, max: number) => {
   if (!Number.isFinite(value)) {
     return 1;
@@ -74,6 +76,7 @@ const clampSpan = (value: number, max: number) => {
   return Math.min(Math.max(rounded, 1), max);
 };
 
+// Builds responsive CSS grid spans, carrying the previous breakpoint value forward when needed.
 const createResponsiveSpan = (
   spans: ResponsiveSpanConfig | undefined,
   defaultSpan: number,
@@ -101,6 +104,7 @@ const createResponsiveSpan = (
   );
 };
 
+// Central registry for dashboard widgets, their default grid spans, and optional layout presets.
 const dashboardWidgets: DashboardWidgetDefinition[] = [
   // {
   //   id: 'system-info',
@@ -260,6 +264,7 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
   },
 ];
 
+// Safely reads persisted layout data and ignores missing or malformed localStorage entries.
 const loadStoredLayout = (storageKey: string): Partial<LayoutState> | null => {
   if (typeof window === 'undefined') {
     return null;
@@ -273,6 +278,7 @@ const loadStoredLayout = (storageKey: string): Partial<LayoutState> | null => {
   }
 };
 
+// Compares layout states deeply enough to avoid redundant React state updates.
 const areLayoutStatesEqual = (a: LayoutState, b: LayoutState) => {
   if (a.order.length !== b.order.length) {
     return false;
@@ -313,6 +319,7 @@ const areLayoutStatesEqual = (a: LayoutState, b: LayoutState) => {
   return true;
 };
 
+// Creates a shallow-safe copy so draft edits do not mutate persisted layout state.
 const cloneLayoutState = (state: LayoutState): LayoutState => ({
   order: [...state.order],
   hidden: [...state.hidden],
@@ -321,6 +328,7 @@ const cloneLayoutState = (state: LayoutState): LayoutState => ({
 
 const Dashboard = () => {
   const { username } = useAuth();
+  // Scopes saved dashboard layouts per username, with a stable guest fallback.
   const layoutStorageKey = useMemo(() => {
     const normalizedUsername = username?.trim().toLowerCase();
     return normalizedUsername
@@ -339,6 +347,7 @@ const Dashboard = () => {
     []
   );
 
+  // Reconciles stored layout data with the current widget registry and drops invalid entries.
   const createNormalizedState = useCallback(
     (raw?: Partial<LayoutState> | null): LayoutState => {
       const providedOrder = Array.isArray(raw?.order) ? (raw?.order ?? []) : [];
@@ -417,9 +426,11 @@ const Dashboard = () => {
       return;
     }
 
+    // Persist only committed layout changes; draft customization stays in memory until saved.
     localStorage.setItem(layoutStorageKey, JSON.stringify(persistedLayout));
   }, [layoutStorageKey, persistedLayout]);
 
+  // Reloads layout when the storage key changes, such as after switching users.
   useEffect(() => {
     setPersistedLayout((prev) => {
       const stored = loadStoredLayout(layoutStorageKey);
@@ -429,6 +440,7 @@ const Dashboard = () => {
     setDraftLayout(null);
   }, [createNormalizedState, layoutStorageKey]);
 
+  // Keeps persisted layout compatible when widgets are added, removed, or renamed.
   useEffect(() => {
     setPersistedLayout((prev) => {
       const normalized = createNormalizedState(prev);
@@ -436,6 +448,7 @@ const Dashboard = () => {
     });
   }, [createNormalizedState]);
 
+  // Keeps the active draft valid while customization mode is open.
   useEffect(() => {
     if (!isCustomizing) {
       return;
@@ -453,6 +466,7 @@ const Dashboard = () => {
     });
   }, [createNormalizedState, isCustomizing]);
 
+  // Adds the default widget layout as a selectable option next to custom presets.
   const getWidgetLayoutOptions = useCallback(
     (widget: DashboardWidgetDefinition): DashboardWidgetLayoutOption[] => {
       const baseOption: DashboardWidgetLayoutOption = {
@@ -475,6 +489,7 @@ const Dashboard = () => {
     [layoutState.order, layoutState.hidden]
   );
 
+  // Orders panel rows with visible widgets first so hidden widgets remain easy to restore.
   const panelWidgets = useMemo<DashboardLayoutPanelWidget[]>(() => {
     const orderedForPanel = [
       ...layoutState.order.filter((id) => !layoutState.hidden.includes(id)),
@@ -519,6 +534,7 @@ const Dashboard = () => {
     widgetMap,
   ]);
 
+  // Reorders only visible widgets while preserving hidden widget positions in the layout state.
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       if (!isCustomizing) {
@@ -566,6 +582,7 @@ const Dashboard = () => {
     [isCustomizing]
   );
 
+  // Hides or restores a widget without removing it from the saved ordering.
   const handleToggleWidget = useCallback(
     (widgetId: string) => {
       if (!isCustomizing || !widgetMap.has(widgetId)) {
@@ -619,6 +636,7 @@ const Dashboard = () => {
     });
   }, [isCustomizing]);
 
+  // Stores only validated custom layout presets; selecting default removes the override.
   const handleSelectLayout = useCallback(
     (widgetId: string, optionId: string) => {
       if (!isCustomizing) {
@@ -662,6 +680,7 @@ const Dashboard = () => {
     [getWidgetLayoutOptions, isCustomizing, widgetMap]
   );
 
+  // Resets the draft to the normalized default layout for the current widget registry.
   const handleResetLayout = useCallback(() => {
     if (!isCustomizing) {
       return;
@@ -678,6 +697,7 @@ const Dashboard = () => {
     });
   }, [createNormalizedState, isCustomizing]);
 
+  // Starts customization from a cloned persisted layout so edits can be cancelled safely.
   const handleOpenPanel = useCallback(() => {
     if (!isCustomizing) {
       setDraftLayout(cloneLayoutState(persistedLayout));
@@ -699,6 +719,7 @@ const Dashboard = () => {
     setIsPanelOpen(false);
   }, []);
 
+  // Normalizes the draft before committing it as the persisted dashboard layout.
   const handleSaveCustomize = useCallback(() => {
     if (!draftLayout) {
       return;
@@ -721,6 +742,7 @@ const Dashboard = () => {
     [draftLayout, persistedLayout]
   );
 
+  // Resolves the effective grid config by applying the selected preset over widget defaults.
   const resolveLayoutConfig = useCallback(
     (widget: DashboardWidgetDefinition): WidgetLayoutConfig => {
       const options = getWidgetLayoutOptions(widget);
