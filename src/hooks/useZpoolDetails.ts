@@ -57,7 +57,11 @@ export const useZpoolDetails = (
     enabled: options?.enabled ?? true,
     refetchInterval: options?.enabled ? 30000 : undefined,
     staleTime: 25000,
+    retry: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    meta: {
+      skipGlobalLoader: true,
+    },
   });
 };

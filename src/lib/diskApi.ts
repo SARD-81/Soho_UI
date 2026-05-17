@@ -12,11 +12,20 @@ export const normalizeErrorMessage = (
   return normalized.length > 0 ? normalized : fallback;
 };
 
-export const fetchDiskInventory = async (): Promise<DiskInventoryItem[]> => {
-  const { data } = await axiosInstance.get<DiskInventoryResponse>('/api/disk/');
+export const fetchDiskInventory = async (options?: {
+  signal?: AbortSignal;
+}): Promise<DiskInventoryItem[]> => {
+  const { data } = await axiosInstance.get<DiskInventoryResponse>(
+    '/api/disk/',
+    {
+      signal: options?.signal,
+    }
+  );
 
   if (data.ok === false) {
-    throw new Error(normalizeErrorMessage(data.error, DEFAULT_INVENTORY_ERROR_MESSAGE));
+    throw new Error(
+      normalizeErrorMessage(data.error, DEFAULT_INVENTORY_ERROR_MESSAGE)
+    );
   }
 
   return Array.isArray(data.data) ? data.data : [];

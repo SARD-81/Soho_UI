@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import type { DiskInventoryItem } from '../@types/disk';
 import type { ZpoolDeviceEntry, ZpoolDeviceResponse } from '../@types/zpool';
-import { fetchDiskDetail, normalizeErrorMessage } from '../lib/diskApi';
 import axiosInstance from '../lib/axiosInstance';
+import { normalizeErrorMessage } from '../lib/diskApi';
 
-const DEFAULT_POOL_DEVICE_ERROR_MESSAGE = 'امکان دریافت دستگاه‌های فضای یکپارچه وجود ندارد.';
+const DEFAULT_POOL_DEVICE_ERROR_MESSAGE =
+  'امکان دریافت دستگاه‌های فضای یکپارچه وجود ندارد.';
 
 export interface PoolDiskSlot {
   diskName: string;
@@ -21,11 +22,87 @@ export interface PoolDeviceSlotsResult {
   errorsByPool: Record<string, string>;
 }
 
-const normalizeDiskName = (device: ZpoolDeviceEntry) => {
-  const candidates = [device.disk_name, device.full_disk_name, device.full_path_name];
+const normalizeLookupKey = (value: unknown) => {
+  const normalized = String(value ?? '')
+    .replace(/^\/dev\//, '')
+    .trim();
+
+  return normalized.length > 0 ? normalized : null;
+};
+
+const addInventoryLookupEntry = (
+  lookup: Map<string, DiskInventoryItem>,
+  key: unknown,
+  disk: DiskInventoryItem
+) => {
+  const normalizedKey = normalizeLookupKey(key);
+
+  if (normalizedKey && !lookup.has(normalizedKey)) {
+    lookup.set(normalizedKey, disk);
+  }
+};
+
+const buildDiskInventoryLookup = (inventory: DiskInventoryItem[]) => {
+  const lookup = new Map<string, DiskInventoryItem>();
+
+  inventory.forEach((disk) => {
+    addInventoryLookupEntry(lookup, disk.name, disk);
+    addInventoryLookupEntry(lookup, disk.device_path, disk);
+    addInventoryLookupEntry(lookup, disk.wwn, disk);
+    addInventoryLookupEntry(lookup, disk.wwid, disk);
+
+    disk.partitions?.forEach((partition) => {
+      addInventoryLookupEntry(lookup, partition.name, disk);
+      addInventoryLookupEntry(lookup, partition.path, disk);
+    });
+  });
+
+  return lookup;
+};
+
+const resolveDiskDetailFromInventory = (
+  diskName: string,
+  device: ZpoolDeviceEntry,
+  inventoryLookup: Map<string, DiskInventoryItem>
+) => {
+  const candidates = [
+    diskName,
+    device.disk_name,
+    device.full_disk_name,
+    device.full_path_name,
+    device.wwn,
+    device.full_disk_wwn,
+    device.full_path_wwn,
+  ];
 
   for (const candidate of candidates) {
-    const normalized = String(candidate ?? '').replace(/^\/dev\//, '').trim();
+    const key = normalizeLookupKey(candidate);
+
+    if (!key) {
+      continue;
+    }
+
+    const matched = inventoryLookup.get(key);
+
+    if (matched) {
+      return matched;
+    }
+  }
+
+  return null;
+};
+
+const normalizeDiskName = (device: ZpoolDeviceEntry) => {
+  const candidates = [
+    device.disk_name,
+    device.full_disk_name,
+    device.full_path_name,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = String(candidate ?? '')
+      .replace(/^\/dev\//, '')
+      .trim();
     if (normalized) {
       return normalized;
     }
@@ -101,10 +178,11 @@ const fetchPoolDevices = async (poolName: string, signal?: AbortSignal) => {
   return Array.isArray(data.data) ? data.data : [];
 };
 
-const buildPoolSlotEntry = async (
+const buildPoolSlotEntry = (
   device: ZpoolDeviceEntry,
+  inventoryLookup: Map<string, DiskInventoryItem>,
   signal?: AbortSignal
-): Promise<PoolDiskSlot | null> => {
+): PoolDiskSlot | null => {
   throwIfAborted(signal);
 
   const diskName = normalizeDiskName(device);
@@ -113,17 +191,15 @@ const buildPoolSlotEntry = async (
     return null;
   }
 
-  const detail = await fetchDiskDetail(diskName, { signal });
-
-  throwIfAborted(signal);
-
-  if (!detail) {
-    return null;
-  }
+  const detail = resolveDiskDetailFromInventory(
+    diskName,
+    device,
+    inventoryLookup
+  );
 
   const wwn =
-    normalizeWwn(detail.wwn) ||
-    normalizeWwn(detail.wwid) ||
+    normalizeWwn(detail?.wwn) ||
+    normalizeWwn(detail?.wwid) ||
     normalizeWwn(device.full_disk_wwn) ||
     normalizeWwn(device.wwn) ||
     normalizeWwn(device.full_path_wwn);
@@ -132,7 +208,7 @@ const buildPoolSlotEntry = async (
 
   return {
     diskName,
-    slotNumber: detail.slot_number ?? null,
+    slotNumber: detail?.slot_number ?? null,
     wwn,
     path,
     detail,
@@ -151,6 +227,11 @@ const fetchPoolDeviceSlots = async (
     return { slotsByPool: {}, errorsByPool: {} };
   }
 
+  throwIfAborted(signal);
+
+  const inventory = await fetchDiskInventory({ signal });
+  const inventoryLookup = buildDiskInventoryLookup(inventory);
+
   const slotsByPool: PoolSlotMap = {};
   const errorsByPool: Record<string, string> = {};
 
@@ -164,15 +245,9 @@ const fetchPoolDeviceSlots = async (
           (device) => !device.type || device.type?.toLowerCase() === 'disk'
         );
 
-        const slots = await Promise.all(
-          diskDevices.map((device) => buildPoolSlotEntry(device, signal))
-        );
-
-        throwIfAborted(signal);
-
-        slotsByPool[poolName] = slots.filter((slot): slot is PoolDiskSlot =>
-          Boolean(slot)
-        );
+        slotsByPool[poolName] = diskDevices
+          .map((device) => buildPoolSlotEntry(device, inventoryLookup, signal))
+          .filter((slot): slot is PoolDiskSlot => Boolean(slot));
       } catch (error) {
         if (signal?.aborted) {
           throw error;
@@ -208,6 +283,10 @@ export const usePoolDeviceSlots = (
     refetchInterval: options?.refetchInterval ?? 30000,
     staleTime: 25000,
     gcTime: 2 * 60 * 1000,
+    retry: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    meta: {
+      skipGlobalLoader: true,
+    },
   });

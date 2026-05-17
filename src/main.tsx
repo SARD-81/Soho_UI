@@ -8,8 +8,20 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import './index.css';
 import { rtlCache } from './rtl-cache';
 
-const queryClient = new QueryClient();
-
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 10_000,
+      gcTime: 5 * 60 * 1000,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>

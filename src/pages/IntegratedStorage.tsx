@@ -468,6 +468,9 @@ const IntegratedStorage = () => {
 
   const isSlotLoading = isPoolDeviceLoading;
 
+  const shouldRenderPoolDetails =
+    isIntegratedStorageRoute && selectedPoolDetailItems.length > 0;
+
   const selectedPoolSlots = replacePoolName
     ? (poolDevices?.slotsByPool[replacePoolName] ?? [])
     : [];
@@ -495,8 +498,12 @@ const IntegratedStorage = () => {
       enabled: isIntegratedStorageRoute && Boolean(poolName),
       refetchInterval: 30 * 1000,
       staleTime: 25 * 1000,
+      retry: false,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
+      meta: {
+        skipGlobalLoader: true,
+      },
     })),
   });
 
@@ -625,7 +632,7 @@ const IntegratedStorage = () => {
         apiError={replaceDisk.error?.message ?? null}
       />
 
-      {selectedPoolDetailItems.length > 0 && (
+      {shouldRenderPoolDetails && (
         <SelectedPoolsDetailsPanel
           items={selectedPoolDetailItems}
           onRemove={(poolName) => unpinItem(POOL_DETAIL_VIEW_ID, poolName)}
