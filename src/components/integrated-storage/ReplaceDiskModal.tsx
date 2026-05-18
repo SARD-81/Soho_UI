@@ -27,9 +27,6 @@ interface ReplaceDiskModalProps {
   apiError?: string | null;
 }
 
-const poolSlots : PoolDiskSlot[] = []
-console.log(poolSlots)
-
 const selectBaseStyles = {
   backgroundColor: 'var(--color-input-bg)',
   '& .MuiOutlinedInput-notchedOutline': {
@@ -70,11 +67,11 @@ const buildOldDeviceOptions = (slots: PoolDiskSlot[]) =>
       value: basePath,
       label,
       key: `${slot.diskName}-${index}`,
-      show: `دیسک ${slot.diskName} ( اسلات ${slot.slotNumber})`
+      show: `دیسک ${slot.diskName} ( اسلات ${slot.slotNumber})`,
     };
   });
 
-  const formatNewDiskLabel = (option: DeviceOption) => {
+const formatNewDiskLabel = (option: DeviceOption) => {
   const slotLabel = option.slotNumber ?? 'نامشخص';
   return `دیسک ${option.label} ( اسلات ${slotLabel})`;
 };
@@ -95,7 +92,6 @@ const ReplaceDiskModal = ({
   const [oldDevice, setOldDevice] = useState('');
   const [newDevice, setNewDevice] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
-  console.log(slots)
 
   useEffect(() => {
     if (open) {
@@ -260,7 +256,6 @@ const ReplaceDiskModal = ({
                   {oldDeviceOptions.map((option) => (
                     <MenuItem key={option.key} value={option.value}>
                       {option.show}
-
                     </MenuItem>
                   ))}
                 </Select>

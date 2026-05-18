@@ -1,19 +1,19 @@
 import { Box, Button, Tooltip, Typography } from '@mui/material';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { toast } from 'react-hot-toast';
-// import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
-import AddPoolDiskModal from '../components/integrated-storage/AddPoolDiskModal';
-import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
-import ConfirmExportPoolModal from '../components/integrated-storage/ConfirmExportPoolModal';
 import type { DeviceOption } from '../components/integrated-storage/CreatePoolModal';
-import CreatePoolModal from '../components/integrated-storage/CreatePoolModal';
-import ImportPoolModal from '../components/integrated-storage/ImportPoolModal';
-import PoolDiskDetailModal from '../components/integrated-storage/PoolDiskDetailModal';
 import PoolPropertyToggle from '../components/integrated-storage/PoolPropertyToggle';
 import PoolsTable from '../components/integrated-storage/PoolsTable';
-import ReplaceDiskModal from '../components/integrated-storage/ReplaceDiskModal';
 import SelectedPoolsDetailsPanel from '../components/integrated-storage/SelectedPoolsDetailsPanel';
 import PageContainer from '../components/PageContainer';
 import { useAddPoolDevices } from '../hooks/useAddPoolDevices';
@@ -59,6 +59,34 @@ const INTERACTIVE_POOL_PROPERTIES = [
   'listsnapshots',
   'multihost',
 ] as const;
+
+const CreatePoolModal = lazy(
+  () => import('../components/integrated-storage/CreatePoolModal')
+);
+
+const AddPoolDiskModal = lazy(
+  () => import('../components/integrated-storage/AddPoolDiskModal')
+);
+
+const ReplaceDiskModal = lazy(
+  () => import('../components/integrated-storage/ReplaceDiskModal')
+);
+
+const ImportPoolModal = lazy(
+  () => import('../components/integrated-storage/ImportPoolModal')
+);
+
+const ConfirmDeletePoolModal = lazy(
+  () => import('../components/integrated-storage/ConfirmDeletePoolModal')
+);
+
+const ConfirmExportPoolModal = lazy(
+  () => import('../components/integrated-storage/ConfirmExportPoolModal')
+);
+
+const PoolDiskDetailModal = lazy(
+  () => import('../components/integrated-storage/PoolDiskDetailModal')
+);
 
 // Normalizes disk identifiers so /dev paths and raw disk names can be matched consistently.
 const normalizeDiskIdentifier = (value: unknown) => {
@@ -198,7 +226,7 @@ const mapPartitionedDisksToDeviceOptions = (
 
 const IntegratedStorage = () => {
   const queryClient = useQueryClient();
-  // const location = useLocation();
+  const location = useLocation();
 
   const isIntegratedStorageRoute =
     location.pathname.toLowerCase() === '/integrated-space';
@@ -281,7 +309,7 @@ const IntegratedStorage = () => {
     isLoading: isPoolsLoading,
     error: zpoolError,
   } = useZpool({
-    enabled: true,
+    enabled: isIntegratedStorageRoute,
     refetchInterval: 1 * 60 * 1000,
   });
 
@@ -364,7 +392,8 @@ const IntegratedStorage = () => {
     },
   });
   const shouldFetchPartitionedDisks =
-    createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen;
+    isIntegratedStorageRoute &&
+    (createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen);
 
   const {
     data: partitionedDisks,
@@ -388,7 +417,7 @@ const IntegratedStorage = () => {
 
   const isReplaceDiskLoading =
     isPartitionedDiskLoading ||
-    (isReplaceModalOpen && isPartitionedDiskFetching && !partitionedDisks);
+    (isPartitionedDiskFetching && !partitionedDisks);
 
   const isAddDiskLoading =
     isPartitionedDiskLoading ||
@@ -475,6 +504,10 @@ const IntegratedStorage = () => {
     : null;
   // Limits comparison queries to the active pool plus pinned pools to keep the panel manageable.
   const poolDetailIds = useMemo(() => {
+    if (!isIntegratedStorageRoute) {
+      return [];
+    }
+
     const ids = new Set<string>();
 
     pinnedItemIds.forEach((poolName) => ids.add(poolName));
@@ -484,14 +517,14 @@ const IntegratedStorage = () => {
     }
 
     return Array.from(ids).slice(0, MAX_COMPARISON_ITEMS);
-  }, [activeItemId, pinnedItemIds]);
+  }, [activeItemId, isIntegratedStorageRoute, pinnedItemIds]);
 
   // Fetches details for each visible comparison item and refreshes them independently.
   const poolDetailQueries = useQueries({
     queries: poolDetailIds.map((poolName) => ({
       queryKey: zpoolDetailQueryKey(poolName),
       queryFn: ({ signal }) => fetchZpoolDetails(poolName, signal),
-      enabled: Boolean(poolName),
+      enabled: isIntegratedStorageRoute && Boolean(poolName),
       refetchInterval: 30 * 1000,
       staleTime: 25 * 1000,
       retry: false,
@@ -525,7 +558,8 @@ const IntegratedStorage = () => {
     [poolByName, poolDetailIds, poolDetailQueries, poolDevices?.slotsByPool]
   );
 
-  const shouldRenderPoolDetails = selectedPoolDetailItems.length > 0;
+  const shouldRenderPoolDetails =
+    isIntegratedStorageRoute && selectedPoolDetailItems.length > 0;
 
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
@@ -585,70 +619,86 @@ const IntegratedStorage = () => {
         </Box>
       </Box>
 
-      <CreatePoolModal
-        controller={createPool}
-        deviceOptions={deviceOptions}
-        isDiskLoading={isDiskLoading}
-        diskError={diskError}
-        existingPoolNames={poolNames}
-      />
+      <Suspense fallback={null}>
+        {createPool.isOpen && (
+          <CreatePoolModal
+            controller={createPool}
+            deviceOptions={deviceOptions}
+            isDiskLoading={isDiskLoading}
+            diskError={diskError}
+            existingPoolNames={poolNames}
+          />
+        )}
 
-      <PoolsTable
-        detailViewId={POOL_DETAIL_VIEW_ID}
-        pools={pools}
-        isLoading={isPoolsLoading}
-        error={zpoolError ?? null}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onReplace={handleOpenReplace}
-        onAddDevices={handleOpenAddDevices}
-        onExport={poolExport.requestExport}
-        isDeleteDisabled={poolDeletion.isDeleting}
-        slotMap={poolDevices?.slotsByPool}
-        slotErrors={poolDevices?.errorsByPool}
-        isSlotLoading={isSlotLoading}
-        slotsEnabled={shouldLoadPoolSlots}
-        onLoadSlots={handleLoadPoolSlots}
-        onSlotClick={handleSlotClick}
-      />
-
-      <AddPoolDiskModal
-        controller={addPoolDevices}
-        deviceOptions={deviceOptions}
-        isDiskLoading={isAddDiskLoading}
-        diskError={diskError}
-      />
-
-      <ReplaceDiskModal
-        open={isReplaceModalOpen}
-        poolName={replacePoolName}
-        slots={selectedPoolSlots}
-        newDiskOptions={deviceOptions}
-        onClose={handleCloseReplace}
-        onSubmit={handleSubmitReplacement}
-        isSubmitting={replaceDisk.isPending}
-        slotError={selectedPoolSlotError}
-        isNewDiskLoading={isReplaceDiskLoading}
-        apiError={replaceDisk.error?.message ?? null}
-      />
-
-      {shouldRenderPoolDetails && (
-        <SelectedPoolsDetailsPanel
-          items={selectedPoolDetailItems}
-          onRemove={(poolName) => unpinItem(POOL_DETAIL_VIEW_ID, poolName)}
-          viewId={POOL_DETAIL_VIEW_ID}
+        <PoolsTable
+          detailViewId={POOL_DETAIL_VIEW_ID}
+          pools={pools}
+          isLoading={isPoolsLoading}
+          error={zpoolError ?? null}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onReplace={handleOpenReplace}
+          onAddDevices={handleOpenAddDevices}
+          onExport={poolExport.requestExport}
+          isDeleteDisabled={poolDeletion.isDeleting}
+          slotMap={poolDevices?.slotsByPool}
+          slotErrors={poolDevices?.errorsByPool}
+          isSlotLoading={isSlotLoading}
+          slotsEnabled={shouldLoadPoolSlots}
+          onLoadSlots={handleLoadPoolSlots}
+          onSlotClick={handleSlotClick}
         />
-      )}
 
-      <ConfirmDeletePoolModal controller={poolDeletion} />
-      <ConfirmExportPoolModal controller={poolExport} />
-      <PoolDiskDetailModal
-        open={Boolean(selectedSlot)}
-        onClose={handleCloseSlotModal}
-        slot={selectedSlot?.slot ?? null}
-        poolName={selectedSlot?.poolName ?? null}
-      />
-      <ImportPoolModal controller={poolImport} />
+        {addPoolDevices.isOpen && (
+          <AddPoolDiskModal
+            controller={addPoolDevices}
+            deviceOptions={deviceOptions}
+            isDiskLoading={isAddDiskLoading}
+            diskError={diskError}
+          />
+        )}
+
+        {isReplaceModalOpen && (
+          <ReplaceDiskModal
+            open={isReplaceModalOpen}
+            poolName={replacePoolName}
+            slots={selectedPoolSlots}
+            newDiskOptions={deviceOptions}
+            onClose={handleCloseReplace}
+            onSubmit={handleSubmitReplacement}
+            isSubmitting={replaceDisk.isPending}
+            slotError={selectedPoolSlotError}
+            isNewDiskLoading={isReplaceDiskLoading}
+            apiError={replaceDisk.error?.message ?? null}
+          />
+        )}
+
+        {shouldRenderPoolDetails && (
+          <SelectedPoolsDetailsPanel
+            items={selectedPoolDetailItems}
+            onRemove={(poolName) => unpinItem(POOL_DETAIL_VIEW_ID, poolName)}
+            viewId={POOL_DETAIL_VIEW_ID}
+          />
+        )}
+
+        {poolDeletion.isOpen && (
+          <ConfirmDeletePoolModal controller={poolDeletion} />
+        )}
+
+        {poolExport.isOpen && (
+          <ConfirmExportPoolModal controller={poolExport} />
+        )}
+        {selectedSlot && (
+          <PoolDiskDetailModal
+            open
+            onClose={handleCloseSlotModal}
+            slot={selectedSlot.slot}
+            poolName={selectedSlot.poolName}
+          />
+        )}
+
+        {poolImport.isOpen && <ImportPoolModal controller={poolImport} />}
+      </Suspense>
     </PageContainer>
   );
 };

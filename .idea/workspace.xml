@@ -6,7 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="95e40a03-5bf4-4297-ab36-5ae654809190" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/mock/setupMocks.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/mock/setupMocks.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/integrated-storage/ReplaceDiskModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/integrated-storage/ReplaceDiskModal.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pages/IntegratedStorage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/IntegratedStorage.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -81,7 +81,8 @@
       <workItem from="1778993159078" duration="1199000" />
       <workItem from="1778994487623" duration="1207000" />
       <workItem from="1778996435640" duration="16236000" />
-      <workItem from="1779086196220" duration="3135000" />
+      <workItem from="1779086196220" duration="3746000" />
+      <workItem from="1779102479076" duration="2023000" />
     </task>
     <servers />
   </component>
