@@ -1,10 +1,30 @@
-import type {
-  CreateDirectoryPermissionsPayload,
-  CreateSambaSharePayload,
-  CreateShareWithPermissionsPayload,
-  SetDirectoryPermissionsPayload,
-} from '../@types/samba';
 import axiosInstance from './axiosInstance';
+
+interface CreateDirectoryPermissionsPayload {
+  path: string;
+  mode?: string;
+  owner: string;
+  group: string;
+}
+
+interface CreateSambaSharePayload {
+  full_path: string;
+  valid_users: string;
+}
+
+interface SetDirectoryPermissionsPayload {
+  path: string;
+  mode: string;
+  owner: string;
+  group: string;
+  recursive: 'True' | 'False';
+}
+
+interface CreateShareWithPermissionsPayload {
+  full_path: string;
+  valid_users: string;
+  mode?: string;
+}
 
 export const DEFAULT_SHARE_DIRECTORY_MODE = '0700';
 

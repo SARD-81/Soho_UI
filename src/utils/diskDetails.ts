@@ -1,5 +1,6 @@
 import type { DiskInventoryItem } from '../@types/disk';
 import type { NestedDetailTableData } from '../@types/detailComparison';
+import type { ReactNode } from 'react';
 import { formatBytes } from './formatters';
 
 export const formatNullableString = (value: unknown) => {
@@ -62,13 +63,22 @@ export const createPartitionsTable = (
   ];
 
   const columns = partitions.map((partition, index) => {
-    const values: Record<string, unknown> = {};
+    const values: Record<string, ReactNode> = {};
 
     rows.forEach((row) => {
       const rawValue = partition?.[row.key];
 
       if (row.key === 'size_bytes') {
-        values[row.label] = formatBytes(rawValue, { fallback: '-' });
+        const sizeValue =
+          typeof rawValue === 'number'
+            ? rawValue
+            : rawValue == null
+              ? null
+              : Number(rawValue);
+        values[row.label] = formatBytes(
+          Number.isFinite(sizeValue) ? sizeValue : null,
+          { fallback: '-' }
+        );
         return;
       }
 

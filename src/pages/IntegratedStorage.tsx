@@ -47,7 +47,6 @@ import {
   translateDetailKey,
 } from '../utils/detailLabels';
 import { createPoolDisksTable } from '../utils/poolDetails';
-import { markPerf } from '../utils/perfProbe';
 
 const MAX_COMPARISON_ITEMS = 4;
 const POOL_DETAIL_VIEW_ID = 'pools';
@@ -336,14 +335,6 @@ const IntegratedStorage = () => {
     };
   }, [setActiveItemId]);
 
-  useEffect(() => {
-  markPerf('IntegratedStorage:mounted');
-
-  return () => {
-    markPerf('IntegratedStorage:unmounted');
-  };
-}, []);
-
   const shouldFetchPoolSlots =
     isIntegratedStorageRoute && shouldLoadPoolSlots && pools.length > 0;
 
@@ -514,7 +505,8 @@ const IntegratedStorage = () => {
   const poolDetailQueries = useQueries({
     queries: poolDetailIds.map((poolName) => ({
       queryKey: zpoolDetailQueryKey(poolName),
-      queryFn: ({ signal }) => fetchZpoolDetails(poolName, signal),
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        fetchZpoolDetails(poolName, signal),
       enabled: isIntegratedStorageRoute && Boolean(poolName),
       refetchInterval: 30 * 1000,
       staleTime: 25 * 1000,

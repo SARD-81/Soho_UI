@@ -22,6 +22,7 @@ import {
   MdKeyboardArrowUp,
 } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
+import type { MouseEvent } from 'react';
 import type {
   NavigationDrawerProps,
   NavigationItem,
@@ -168,7 +169,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
               <ListItemButton
                 component={hasChildren ? 'div' : Link}
                 to={!hasChildren && hasPath ? item.path : undefined}
-                onClick={(event) => {
+                onClick={(event: MouseEvent<HTMLAnchorElement | HTMLDivElement>) => {
                 if (hasChildren) {
                   event.preventDefault();
                   event.stopPropagation();

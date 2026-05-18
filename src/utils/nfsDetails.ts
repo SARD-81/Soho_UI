@@ -1,5 +1,6 @@
 import type { NestedDetailTableData } from '../@types/detailComparison';
 import type { NfsShareClientEntry, NfsShareEntry } from '../@types/nfs';
+import type { ReactNode } from 'react';
 import { translateDetailKey } from './detailLabels';
 
 const buildClientTitle = (client: NfsShareClientEntry, index: number) => {
@@ -17,7 +18,7 @@ const buildOptionRows = (options: Record<string, unknown> | undefined) => {
       translateDetailKey(key),
       value,
     ])
-  );
+  ) as Record<string, ReactNode>;
 };
 
 export const createNfsOptionsTable = (
