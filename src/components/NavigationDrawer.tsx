@@ -13,11 +13,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
-import {
-  cancelIntegratedStorageQueries,
-  isIntegratedStoragePath,
-} from '../utils/cancelIntegratedStorageQueries';
 import type { CSSObject, Theme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import React from 'react';
@@ -106,21 +101,6 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const location = useLocation();
-  const queryClient = useQueryClient();
-
-const handleBeforeNavigate = (targetPath?: string) => {
-  if (!targetPath) {
-    return;
-  }
-
-  const isLeavingIntegratedStorage =
-    isIntegratedStoragePath(location.pathname) &&
-    !isIntegratedStoragePath(targetPath);
-
-  if (isLeavingIntegratedStorage) {
-    void cancelIntegratedStorageQueries(queryClient);
-  }
-};
   const [expandedItems, setExpandedItems] = React.useState<
     Record<string, boolean>
   >({});
@@ -197,9 +177,8 @@ const handleBeforeNavigate = (targetPath?: string) => {
                     [itemKey]: !(prev[itemKey] ?? false),
                   }));
                 } else if (hasPath) {
-  handleBeforeNavigate(item.path);
-  handleItemClick();
-}
+                  handleItemClick();
+                }
               }}
               selected={isActive}
                 sx={(theme) => ({

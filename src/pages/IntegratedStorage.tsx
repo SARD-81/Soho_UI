@@ -48,6 +48,7 @@ import {
   translateDetailKey,
 } from '../utils/detailLabels';
 import { createPoolDisksTable } from '../utils/poolDetails';
+import { markPerf } from '../utils/perfProbe';
 
 const MAX_COMPARISON_ITEMS = 4;
 const POOL_DETAIL_VIEW_ID = 'pools';
@@ -337,6 +338,14 @@ const IntegratedStorage = () => {
     };
   }, [setActiveItemId]);
 
+  useEffect(() => {
+  markPerf('IntegratedStorage:mounted');
+
+  return () => {
+    markPerf('IntegratedStorage:unmounted');
+  };
+}, []);
+
   const shouldFetchPoolSlots =
     isIntegratedStorageRoute && shouldLoadPoolSlots && pools.length > 0;
 
@@ -387,8 +396,10 @@ const IntegratedStorage = () => {
 
   useEffect(() => {
   return () => {
-    void cancelIntegratedStorageQueries(queryClient);
-    setActiveItemId(POOL_DETAIL_VIEW_ID, null);
+    window.setTimeout(() => {
+      void cancelIntegratedStorageQueries(queryClient);
+      setActiveItemId(POOL_DETAIL_VIEW_ID, null);
+    }, 0);
   };
 }, [queryClient, setActiveItemId]);
 

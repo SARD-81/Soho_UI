@@ -32,6 +32,10 @@ import NavigationDrawer from './NavigationDrawer';
 import PowerActionConfirmDialog from './PowerActionConfirmDialog';
 import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';
 import QuickActionsMenu from './QuickActionsMenu';
+import {
+  markRoutePathChanged,
+  markRoutePainted,
+} from '../utils/perfProbe';
 
 const MainLayout: React.FC = () => {
   const Navigate = useNavigate();
@@ -152,15 +156,28 @@ const MainLayout: React.FC = () => {
   const previousPath = previousPathRef.current;
   const currentPath = location.pathname;
 
+  previousPathRef.current = currentPath;
+
   if (
     isIntegratedStoragePath(previousPath) &&
     !isIntegratedStoragePath(currentPath)
   ) {
-    void cancelIntegratedStorageQueries(queryClient);
+    const cleanupTimer = window.setTimeout(() => {
+      void cancelIntegratedStorageQueries(queryClient);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(cleanupTimer);
+    };
   }
 
-  previousPathRef.current = currentPath;
+  return undefined;
 }, [location.pathname, queryClient]);
+
+useEffect(() => {
+  markRoutePathChanged(location.pathname);
+  markRoutePainted(location.pathname);
+}, [location.pathname]);
 
   return (
     <Box
