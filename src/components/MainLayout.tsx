@@ -14,11 +14,6 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import {
-  cancelIntegratedStorageQueries,
-  isIntegratedStoragePath,
-} from '../utils/cancelIntegratedStorageQueries';
 import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import { LuMoon, LuSun } from 'react-icons/lu';
@@ -32,16 +27,10 @@ import NavigationDrawer from './NavigationDrawer';
 import PowerActionConfirmDialog from './PowerActionConfirmDialog';
 import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';
 import QuickActionsMenu from './QuickActionsMenu';
-import {
-  markRoutePathChanged,
-  markRoutePainted,
-} from '../utils/perfProbe';
 
 const MainLayout: React.FC = () => {
   const Navigate = useNavigate();
   const location = useLocation();
-  const queryClient = useQueryClient();
-  const previousPathRef = useRef(location.pathname);
   const { username } = useAuth();
   const { logout: triggerLogout, isLoggingOut } = useLogout();
   const [drawerOpen, setDrawerOpen] = useState(true);
@@ -151,33 +140,6 @@ const MainLayout: React.FC = () => {
   const handleUserMenuClose = () => {
     setUserMenuAnchorEl(null);
   };
-
-  useEffect(() => {
-  const previousPath = previousPathRef.current;
-  const currentPath = location.pathname;
-
-  previousPathRef.current = currentPath;
-
-  if (
-    isIntegratedStoragePath(previousPath) &&
-    !isIntegratedStoragePath(currentPath)
-  ) {
-    const cleanupTimer = window.setTimeout(() => {
-      void cancelIntegratedStorageQueries(queryClient);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(cleanupTimer);
-    };
-  }
-
-  return undefined;
-}, [location.pathname, queryClient]);
-
-useEffect(() => {
-  markRoutePathChanged(location.pathname);
-  markRoutePainted(location.pathname);
-}, [location.pathname]);
 
   return (
     <Box

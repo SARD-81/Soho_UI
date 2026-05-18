@@ -1,5 +1,5 @@
 import { Box, Button, Tooltip, Typography } from '@mui/material';
-import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import {
   lazy,
   Suspense,
@@ -8,7 +8,6 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { cancelIntegratedStorageQueries } from '../utils/cancelIntegratedStorageQueries';
 import { toast } from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
 import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
@@ -227,7 +226,6 @@ const mapPartitionedDisksToDeviceOptions = (
 };
 
 const IntegratedStorage = () => {
-  const queryClient = useQueryClient();
   const location = useLocation();
 
   const isIntegratedStorageRoute =
@@ -367,6 +365,14 @@ const IntegratedStorage = () => {
     void refetchPoolSlots();
   }, [refetchPoolSlots, shouldLoadPoolSlots]);
 
+  useEffect(() => {
+  return () => {
+    window.setTimeout(() => {
+      setActiveItemId(POOL_DETAIL_VIEW_ID, null);
+    }, 0);
+  };
+}, [setActiveItemId]);
+
   const addPoolDevices = useAddPoolDevices({
     onSuccess: (poolName) => {
       toast.success(`افزودن دیسک به ${poolName} ثبت شد.`);
@@ -393,15 +399,6 @@ const IntegratedStorage = () => {
   const deviceOptions = useMemo<DeviceOption[]>(() => {
     return mapPartitionedDisksToDeviceOptions(partitionedDisks);
   }, [partitionedDisks]);
-
-  useEffect(() => {
-  return () => {
-    window.setTimeout(() => {
-      void cancelIntegratedStorageQueries(queryClient);
-      setActiveItemId(POOL_DETAIL_VIEW_ID, null);
-    }, 0);
-  };
-}, [queryClient, setActiveItemId]);
 
   const isDiskLoading =
     isPartitionedDiskLoading ||
