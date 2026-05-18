@@ -1,60 +1,54 @@
-import { Suspense, lazy, type ReactNode } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import LoadingComponent from '../components/LoadingComponent.tsx';
+import MainLayout from '../components/MainLayout.tsx';
 import ProtectedRoute from '../routes/ProtectedRoute.tsx';
 
-const MainLayout = lazy(() => import('../components/MainLayout.tsx'));
-const BlockStorage = lazy(() => import('../pages/BlockStorage.tsx'));
-const Dashboard = lazy(() => import('../pages/Dashboard.tsx'));
-const Disks = lazy(() => import('../pages/Disks.tsx'));
-const FileSystem = lazy(() => import('../pages/FileSystem.tsx'));
-const History = lazy(() => import('../pages/History.tsx'));
-const IntegratedStorage = lazy(() => import('../pages/IntegratedStorage.tsx'));
-const LoginPage = lazy(() => import('../pages/LoginPage.tsx'));
-const NotFoundPage = lazy(() => import('../pages/NotFoundPage.tsx'));
-const Services = lazy(() => import('../pages/Services.tsx'));
-const Settings = lazy(() => import('../pages/Settings.tsx'));
-const Share = lazy(() => import('../pages/Share.tsx'));
-const Users = lazy(() => import('../pages/Users.tsx'));
-const SnmpService = lazy(() => import('../pages/SnmpService.tsx'));
-const ShareNfs = lazy(() => import('../pages/ShareNfs.tsx'));
-
-const withSuspense = (node: ReactNode) => (
-  <Suspense fallback={<LoadingComponent />}>{node}</Suspense>
-);
+import BlockStorage from '../pages/BlockStorage.tsx';
+import Dashboard from '../pages/Dashboard.tsx';
+import Disks from '../pages/Disks.tsx';
+import FileSystem from '../pages/FileSystem.tsx';
+import History from '../pages/History.tsx';
+import IntegratedStorage from '../pages/IntegratedStorage.tsx';
+import LoginPage from '../pages/LoginPage.tsx';
+import NotFoundPage from '../pages/NotFoundPage.tsx';
+import Services from '../pages/Services.tsx';
+import Settings from '../pages/Settings.tsx';
+import Share from '../pages/Share.tsx';
+import ShareNfs from '../pages/ShareNfs.tsx';
+import SnmpService from '../pages/SnmpService.tsx';
+import Users from '../pages/Users.tsx';
 
 const router = createBrowserRouter([
   {
     path: '/login',
-    element: withSuspense(<LoginPage />),
+    element: <LoginPage />,
   },
   {
     path: '/',
     element: (
       <ProtectedRoute>
-        {withSuspense(<MainLayout />)}
+        <MainLayout />
       </ProtectedRoute>
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
-      { path: 'dashboard', element: withSuspense(<Dashboard />) },
-      { path: 'disks', element: withSuspense(<Disks />) },
-      { path: 'Integrated-space', element: withSuspense(<IntegratedStorage />) },
-      { path: 'block-space', element: withSuspense(<BlockStorage />) },
-      { path: 'file-system', element: withSuspense(<FileSystem />) },
-      { path: 'services', element: withSuspense(<Services />) },
-      { path: 'users', element: withSuspense(<Users />) },
-      { path: 'settings', element: withSuspense(<Settings />) },
-      { path: 'share', element: withSuspense(<Share />) },
-      { path: 'history', element: withSuspense(<History />) },
-      { path: 'snmp-service', element: withSuspense(<SnmpService />) },
-      { path: 'share-nfs', element: withSuspense(<ShareNfs />) },
-      { path: '*', element: withSuspense(<NotFoundPage />) },
+      { path: 'dashboard', element: <Dashboard /> },
+      { path: 'disks', element: <Disks /> },
+      { path: 'Integrated-space', element: <IntegratedStorage /> },
+      { path: 'block-space', element: <BlockStorage /> },
+      { path: 'file-system', element: <FileSystem /> },
+      { path: 'services', element: <Services /> },
+      { path: 'users', element: <Users /> },
+      { path: 'settings', element: <Settings /> },
+      { path: 'share', element: <Share /> },
+      { path: 'history', element: <History /> },
+      { path: 'snmp-service', element: <SnmpService /> },
+      { path: 'share-nfs', element: <ShareNfs /> },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
   {
     path: '*',
-    element: withSuspense(<NotFoundPage />),
+    element: <NotFoundPage />,
   },
 ]);
 

@@ -16,21 +16,21 @@ import { alpha } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
-import { MdClose, MdLogout, MdMenu } from 'react-icons/md';
 import { LuMoon, LuSun } from 'react-icons/lu';
-import { Outlet, useNavigate } from 'react-router';
+import { MdClose, MdLogout, MdMenu } from 'react-icons/md';
+import { Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme as useThemeContext } from '../contexts/ThemeContext';
-import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
 import useLogout from '../hooks/useLogout';
+import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
 import NavigationDrawer from './NavigationDrawer';
 import PowerActionConfirmDialog from './PowerActionConfirmDialog';
 import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';
 import QuickActionsMenu from './QuickActionsMenu';
 
-
 const MainLayout: React.FC = () => {
   const Navigate = useNavigate();
+  const location = useLocation();
   const { username } = useAuth();
   const { logout: triggerLogout, isLoggingOut } = useLogout();
   const [drawerOpen, setDrawerOpen] = useState(true);
@@ -43,9 +43,7 @@ const MainLayout: React.FC = () => {
     null
   );
   const [secondsRemaining, setSecondsRemaining] = useState(5);
-  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(
-    null
-  );
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<null | HTMLElement>(
@@ -233,7 +231,8 @@ const MainLayout: React.FC = () => {
                   fontWeight: 500,
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.12)',
-                  transition: 'background-color 0.2s ease, border-color 0.2s ease',
+                  transition:
+                    'background-color 0.2s ease, border-color 0.2s ease',
                   '&:hover': {
                     backgroundColor: 'rgba(255, 255, 255, 0.12)',
                     borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -336,9 +335,10 @@ const MainLayout: React.FC = () => {
                     <LuMoon size={20} color="var(--color-bg-primary)" />
                   )}
                 </ListItemIcon>
-                <ListItemText sx={{color : "var(--color-text)"}} primary={`تغییر به ${
-                  isDark ? 'حالت روشن' : 'حالت تیره'
-                }`} />
+                <ListItemText
+                  sx={{ color: 'var(--color-text)' }}
+                  primary={`تغییر به ${isDark ? 'حالت روشن' : 'حالت تیره'}`}
+                />
               </MenuItem>
               <MenuItem
                 disabled={isLoggingOut}
@@ -358,7 +358,10 @@ const MainLayout: React.FC = () => {
                 <ListItemIcon sx={{ minWidth: 36 }}>
                   <MdLogout />
                 </ListItemIcon>
-                <ListItemText sx={{color : "var(--color-text)"}} primary="خروج" />
+                <ListItemText
+                  sx={{ color: 'var(--color-text)' }}
+                  primary="خروج"
+                />
               </MenuItem>
             </Menu>
             <QuickActionsMenu
@@ -387,7 +390,9 @@ const MainLayout: React.FC = () => {
         })}
       >
         <Toolbar />
-        <Outlet />
+        <Box key={location.pathname}>
+          <Outlet />
+        </Box>
       </Box>
       <PowerActionConfirmDialog
         open={isConfirmationOpen}
