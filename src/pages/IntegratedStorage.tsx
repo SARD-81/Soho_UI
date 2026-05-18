@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { cancelIntegratedStorageQueries } from '../utils/cancelIntegratedStorageQueries';
 import { toast } from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
 import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
@@ -230,32 +231,7 @@ const IntegratedStorage = () => {
 
   const isIntegratedStorageRoute =
     location.pathname.toLowerCase() === '/integrated-space';
-  const cancelIntegratedStorageQueries = useCallback(() => {
-    void queryClient.cancelQueries({
-      predicate: (query) => {
-        const key = query.queryKey;
 
-        if (!Array.isArray(key)) {
-          return false;
-        }
-
-        const isPoolDeviceSlotsQuery =
-          key[0] === 'zpool' && key[1] === 'devices' && key[2] === 'slots';
-
-        const isPoolDetailQuery =
-          key[0] === 'zpool' &&
-          typeof key[1] === 'string' &&
-          key[2] === 'details';
-
-        const isPartitionedDiskQuery =
-          key[0] === 'disk' && key[1] === 'partitioned';
-
-        return (
-          isPoolDeviceSlotsQuery || isPoolDetailQuery || isPartitionedDiskQuery
-        );
-      },
-    });
-  }, [queryClient]);
   const createPool = useCreatePool({
     onSuccess: (poolName) => {
       toast.success(`فضای یکپارچه ${poolName} با موفقیت ایجاد شد.`);
@@ -408,6 +384,13 @@ const IntegratedStorage = () => {
   const deviceOptions = useMemo<DeviceOption[]>(() => {
     return mapPartitionedDisksToDeviceOptions(partitionedDisks);
   }, [partitionedDisks]);
+
+  useEffect(() => {
+  return () => {
+    void cancelIntegratedStorageQueries(queryClient);
+    setActiveItemId(POOL_DETAIL_VIEW_ID, null);
+  };
+}, [queryClient, setActiveItemId]);
 
   const isDiskLoading =
     isPartitionedDiskLoading ||

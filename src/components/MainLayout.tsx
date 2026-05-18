@@ -14,6 +14,11 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  cancelIntegratedStorageQueries,
+  isIntegratedStoragePath,
+} from '../utils/cancelIntegratedStorageQueries';
 import { toast } from 'react-hot-toast';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import { LuMoon, LuSun } from 'react-icons/lu';
@@ -31,6 +36,8 @@ import QuickActionsMenu from './QuickActionsMenu';
 const MainLayout: React.FC = () => {
   const Navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
+  const previousPathRef = useRef(location.pathname);
   const { username } = useAuth();
   const { logout: triggerLogout, isLoggingOut } = useLogout();
   const [drawerOpen, setDrawerOpen] = useState(true);
@@ -140,6 +147,20 @@ const MainLayout: React.FC = () => {
   const handleUserMenuClose = () => {
     setUserMenuAnchorEl(null);
   };
+
+  useEffect(() => {
+  const previousPath = previousPathRef.current;
+  const currentPath = location.pathname;
+
+  if (
+    isIntegratedStoragePath(previousPath) &&
+    !isIntegratedStoragePath(currentPath)
+  ) {
+    void cancelIntegratedStorageQueries(queryClient);
+  }
+
+  previousPathRef.current = currentPath;
+}, [location.pathname, queryClient]);
 
   return (
     <Box
