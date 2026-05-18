@@ -2,7 +2,7 @@ import { Box, Button, Tooltip, Typography } from '@mui/material';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { useLocation } from 'react-router-dom';
+// import { useLocation } from 'react-router-dom';
 import type { ZpoolCapacityEntry, ZpoolDetailEntry } from '../@types/zpool';
 import AddPoolDiskModal from '../components/integrated-storage/AddPoolDiskModal';
 import ConfirmDeletePoolModal from '../components/integrated-storage/ConfirmDeletePoolModal';
@@ -198,7 +198,7 @@ const mapPartitionedDisksToDeviceOptions = (
 
 const IntegratedStorage = () => {
   const queryClient = useQueryClient();
-  const location = useLocation();
+  // const location = useLocation();
 
   const isIntegratedStorageRoute =
     location.pathname.toLowerCase() === '/integrated-space';
@@ -281,7 +281,7 @@ const IntegratedStorage = () => {
     isLoading: isPoolsLoading,
     error: zpoolError,
   } = useZpool({
-    enabled: isIntegratedStorageRoute,
+    enabled: true,
     refetchInterval: 1 * 60 * 1000,
   });
 
@@ -328,26 +328,10 @@ const IntegratedStorage = () => {
   }, [activeItemId, pinnedItemIds, pools, setActiveItemId, unpinItem]);
 
   useEffect(() => {
-    if (isIntegratedStorageRoute) {
-      return;
-    }
-
-    cancelIntegratedStorageQueries();
-    setActiveItemId(POOL_DETAIL_VIEW_ID, null);
-    setSelectedSlot(null);
-    setReplacePoolName(null);
-    setShouldLoadPoolSlots(false);
-  }, [
-    isIntegratedStorageRoute,
-    cancelIntegratedStorageQueries,
-    setActiveItemId,
-  ]);
-
-  useEffect(() => {
     return () => {
-      cancelIntegratedStorageQueries();
+      setActiveItemId(POOL_DETAIL_VIEW_ID, null);
     };
-  }, [cancelIntegratedStorageQueries]);
+  }, [setActiveItemId]);
 
   const shouldFetchPoolSlots =
     isIntegratedStorageRoute && shouldLoadPoolSlots && pools.length > 0;
@@ -380,8 +364,7 @@ const IntegratedStorage = () => {
     },
   });
   const shouldFetchPartitionedDisks =
-    isIntegratedStorageRoute &&
-    (createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen);
+    createPool.isOpen || isReplaceModalOpen || addPoolDevices.isOpen;
 
   const {
     data: partitionedDisks,
@@ -492,10 +475,6 @@ const IntegratedStorage = () => {
     : null;
   // Limits comparison queries to the active pool plus pinned pools to keep the panel manageable.
   const poolDetailIds = useMemo(() => {
-    if (!isIntegratedStorageRoute) {
-      return [];
-    }
-
     const ids = new Set<string>();
 
     pinnedItemIds.forEach((poolName) => ids.add(poolName));
@@ -505,14 +484,14 @@ const IntegratedStorage = () => {
     }
 
     return Array.from(ids).slice(0, MAX_COMPARISON_ITEMS);
-  }, [activeItemId, isIntegratedStorageRoute, pinnedItemIds]);
+  }, [activeItemId, pinnedItemIds]);
 
   // Fetches details for each visible comparison item and refreshes them independently.
   const poolDetailQueries = useQueries({
     queries: poolDetailIds.map((poolName) => ({
       queryKey: zpoolDetailQueryKey(poolName),
       queryFn: ({ signal }) => fetchZpoolDetails(poolName, signal),
-      enabled: isIntegratedStorageRoute && Boolean(poolName),
+      enabled: Boolean(poolName),
       refetchInterval: 30 * 1000,
       staleTime: 25 * 1000,
       retry: false,
@@ -546,8 +525,7 @@ const IntegratedStorage = () => {
     [poolByName, poolDetailIds, poolDetailQueries, poolDevices?.slotsByPool]
   );
 
-  const shouldRenderPoolDetails =
-    isIntegratedStorageRoute && selectedPoolDetailItems.length > 0;
+  const shouldRenderPoolDetails = selectedPoolDetailItems.length > 0;
 
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
