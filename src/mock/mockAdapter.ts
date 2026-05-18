@@ -4,14 +4,15 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
 } from 'axios';
+import type { MockState } from './mockState';
 export interface MockRouteContext {
   config: AxiosRequestConfig;
   path: string;
   method: string;
   query: URLSearchParams;
-  body: unknown;
+  body: Record<string, unknown>;
   params: Record<string, string>;
-  state: unknown;
+  state: MockState;
 }
 export interface MockRouteResult {
   status?: number;
@@ -29,12 +30,11 @@ export interface MockRoute {
 
 const wait = (
   ms: number,
-  signal: AbortSignal | undefined,
-  config: AxiosRequestConfig
+  signal: AbortSignal | undefined
 ) =>
   new Promise<void>((resolve, reject) => {
     if (signal?.aborted) {
-      reject(new axios.CanceledError('Mock request canceled', config));
+      reject(new axios.CanceledError('Mock request canceled'));
       return;
     }
 
@@ -46,7 +46,7 @@ const wait = (
     const handleAbort = () => {
       window.clearTimeout(timeoutId);
       signal?.removeEventListener('abort', handleAbort);
-      reject(new axios.CanceledError('Mock request canceled', config));
+      reject(new axios.CanceledError('Mock request canceled'));
     };
 
     signal?.addEventListener('abort', handleAbort);
@@ -74,7 +74,7 @@ const parseBody = (data: unknown) => {
 };
 
 export const createMockAdapter =
-  (routes: MockRoute[], state: unknown, delay = 120): AxiosAdapter =>
+  (routes: MockRoute[], state: MockState, delay = 120): AxiosAdapter =>
   async (config) => {
     const fullUrl = new URL(
       config.url ?? '',
@@ -88,7 +88,7 @@ export const createMockAdapter =
     const route = routes.find(
       (r) => r.method === method && r.pattern.test(path)
     );
-    await wait(delay, config.signal, config);
+    await wait(delay, config.signal as AbortSignal | undefined);
     const makeResponse = (status: number, data: unknown): AxiosResponse => ({
       data,
       status,

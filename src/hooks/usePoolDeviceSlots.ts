@@ -46,7 +46,7 @@ const buildDiskInventoryLookup = (inventory: DiskInventoryItem[]) => {
   const lookup = new Map<string, DiskInventoryItem>();
 
   inventory.forEach((disk) => {
-    addInventoryLookupEntry(lookup, disk.name, disk);
+    addInventoryLookupEntry(lookup, disk.disk, disk);
     addInventoryLookupEntry(lookup, disk.device_path, disk);
     addInventoryLookupEntry(lookup, disk.wwn, disk);
     addInventoryLookupEntry(lookup, disk.wwid, disk);

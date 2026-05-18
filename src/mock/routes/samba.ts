@@ -9,7 +9,7 @@ export default [
 {method:'DELETE',pattern:/^\/api\/samba\/groups\/(?<name>[^/]+)\/?$/,handler:({state,params})=>{const n=decodeURIComponent(params.name);state.sambaGroups=state.sambaGroups.filter((g:Record<string, unknown>)=>g.name!==n);return {data:ok(null)}}},
 {method:'PUT',pattern:/^\/api\/samba\/groups\/(?<name>[^/]+)\/update\/?$/,handler:()=>({data:ok(null)})},
 {method:'GET',pattern:/^\/api\/samba\/sharepoints\/?$/,handler:({state})=>({data:ok(state.sambaShares)})},
-{method:'POST',pattern:/^\/api\/samba\/(sharepoints|config\/append)\/?$/,handler:({state,body})=>{state.sambaShares.push({name:body.name??body.full_path?.split('/').pop()??'share-new',...body});return {status:201,data:ok(null)}}},
+{method:'POST',pattern:/^\/api\/samba\/(sharepoints|config\/append)\/?$/,handler:({state,body})=>{const fullPath=typeof body.full_path==='string'?body.full_path:'';const inferredName=typeof body.name==='string'?body.name:fullPath.split('/').pop()??'share-new';state.sambaShares.push({name:inferredName,...body});return {status:201,data:ok(null)}}},
 {method:'DELETE',pattern:/^\/api\/samba\/sharepoints\/(?<name>[^/]+)\/?$/,handler:({state,params})=>{const n=decodeURIComponent(params.name);state.sambaShares=state.sambaShares.filter((s:Record<string, unknown>)=>s.name!==n);return {data:ok(null)}}},
 {method:'PUT',pattern:/^\/api\/samba\/sharepoints\/(?<name>[^/]+)\/update\/?$/,handler:()=>({data:ok(null)})},
 {method:'POST',pattern:/^\/api\/dir\/(create|set)\/permissions\/?$/,handler:()=>({data:ok(null)})},

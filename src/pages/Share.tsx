@@ -838,7 +838,7 @@ const Share = () => {
 
               <SelectedSharesDetailsPanel
                 items={comparisonItems}
-                viewId={SHARE_DETAIL_VIEW_ID}
+                onRemove={(shareName) => unpinItem(SHARE_DETAIL_VIEW_ID, shareName)}
               />
             </Box>
           </TabPanel>

@@ -227,6 +227,10 @@ const NfsShareModal = ({
       save_to_db: !isEditMode,
       path: path.trim(),
       clients: client.trim(),
+      sync: Boolean(optionValues.sync),
+      read_write: Boolean(optionValues.read_write),
+      root_squash: Boolean(optionValues.root_squash),
+      no_subtree_check: Boolean(optionValues.no_subtree_check),
       ...(optionValues as Record<string, boolean>),
     });
   };

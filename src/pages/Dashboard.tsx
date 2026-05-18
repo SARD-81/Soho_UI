@@ -4,7 +4,6 @@ import {
   arrayMove,
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
-import { markPerf } from '../utils/perfProbe';
 import { Box, Button, Grow, Stack, Tooltip, Typography } from '@mui/material';
 import type { ComponentType } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -466,14 +465,6 @@ const Dashboard = () => {
         : cloneLayoutState(normalized);
     });
   }, [createNormalizedState, isCustomizing]);
-
-  useEffect(() => {
-  markPerf('Dashboard:mounted');
-
-  return () => {
-    markPerf('Dashboard:unmounted');
-  };
-}, []);
 
   // Adds the default widget layout as a selectable option next to custom presets.
   const getWidgetLayoutOptions = useCallback(
