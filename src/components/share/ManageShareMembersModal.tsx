@@ -55,19 +55,36 @@ const chipStyles = {
 
 const modalCopy: Record<
   ManageShareMembersType,
-  {type: string, title: string; addLabel: string; empty: string }
+  {
+    type: string;
+    title: string;
+    addLabel: string;
+    empty: string;
+    currentTitle: string;
+    currentUnit: string;
+    availableHelper: string;
+    currentHelper: string;
+  }
 > = {
   users: {
     type: 'user',
     title: 'مدیریت کاربران اشتراک',
     addLabel: 'کاربران خارج از اشتراک',
     empty: 'هیچ کاربری برای این اشتراک ثبت نشده است.',
+    currentTitle: 'کاربران فعلی اشتراک',
+    currentUnit: 'کاربر',
+    availableHelper: 'کاربرانی که می‌توانید به اشتراک اضافه کنید.',
+    currentHelper: 'کاربران فعال این اشتراک در این بخش نمایش داده می‌شوند.',
   },
   groups: {
     type: 'group',
     title: 'مدیریت گروه‌های اشتراک',
     addLabel: 'گروه‌های خارج از اشتراک',
     empty: 'هیچ گروهی برای این اشتراک ثبت نشده است.',
+    currentTitle: 'گروه‌های فعلی اشتراک',
+    currentUnit: 'گروه',
+    availableHelper: 'گروه‌هایی که می‌توانید به اشتراک اضافه کنید.',
+    currentHelper: 'گروه‌های فعال این اشتراک در این بخش نمایش داده می‌شوند.',
   },
 };
 
@@ -308,6 +325,9 @@ const ManageShareMembersModal = ({
       }
     >
       <Stack spacing={2} sx={{ mt: 1 }}>
+        <Typography sx={{ color: 'var(--color-primary)', fontWeight: 900, fontSize: '1.02rem' }}>
+          {copy.title}
+        </Typography>
         {updateSharepoint.isError ? (
           <Typography sx={{ color: 'var(--color-error)', fontWeight: 600 }}>
             {updateSharepoint.error?.message}
@@ -319,34 +339,104 @@ const ManageShareMembersModal = ({
             <CircularProgress size={28} />
           </Box>
         ) : (
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={2}
+            sx={{ alignItems: 'stretch' }}
+          >
             <Stack
-              spacing={1}
+              spacing={1.25}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={handleDropToMembers}
               sx={{
                 flex: 1,
-                border: '1px solid rgba(255, 255, 255, 0.5)',
-                borderRadius: 2,
-                p: 1.5,
-                width: '200px',
-                // backgroundColor: "red"
-                // backgroundColor: 'rgba(31, 182, 255, 0.05)',
-                // width:"2px"
+                width: '100%',
+                minWidth: 0,
+                order: { xs: 1, md: 1 },
+                p: 1.75,
+                borderRadius: '13px',
+                border: '1px solid rgba(31, 182, 255, 0.24)',
+                background:
+                  'linear-gradient(180deg, rgba(31, 182, 255, 0.08), rgba(31, 182, 255, 0.03))',
               }}
             >
-              <Typography sx={{ color: 'var(--color-text)', fontWeight: 700 }}>
-                {copy.addLabel}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
+                <Typography sx={{ color: 'var(--color-primary)', fontWeight: 900 }}>
+                  {copy.currentTitle}
+                </Typography>
+                <Chip
+                  label={`${stagedMembers.length} ${copy.currentUnit}`}
+                  size="small"
+                  sx={{
+                    fontWeight: 800,
+                    color: 'var(--color-primary)',
+                    backgroundColor: 'rgba(31, 182, 255, 0.12)',
+                    border: '1px solid rgba(31, 182, 255, 0.24)',
+                  }}
+                />
+              </Box>
+              <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 500, fontSize: '0.8rem' }}>
+                {copy.currentHelper}
               </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexWrap: 'nowrap',
-                  flexDirection: 'column',
-                  gap: 1,
-                  alignItems: 'stretch',
-                }}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={handleDropToAvailable}
-              >
+              <Divider sx={{ borderColor: 'rgba(31, 182, 255, 0.2)' }} />
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 260, overflowY: 'auto', alignContent: 'flex-start' }}>
+                {hasMembers ? (
+                  stagedMembers.map((member) => (
+                    <Chip
+                      key={member}
+                      label={member}
+                      onDelete={() => handleRemoveMember(member)}
+                      disabled={isSubmitting || !hasRemovableMembers}
+                      sx={{
+                        ...chipStyles.remove,
+                        color: 'var(--color-text)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.72)',
+                        border: '1px solid rgba(31, 182, 255, 0.2)',
+                        '& .MuiChip-deleteIcon': { color: 'var(--color-error)' },
+                      }}
+                      draggable
+                      onDragStart={(event) =>
+                        handleDragStart(event, { member, source: 'members' })
+                      }
+                    />
+                  ))
+                ) : (
+                  <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
+                    {copy.empty}
+                  </Typography>
+                )}
+              </Box>
+            </Stack>
+
+            <Divider flexItem orientation="vertical" sx={{ display: { xs: 'none', md: 'block' } }} />
+
+            <Stack
+              spacing={1.25}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={handleDropToAvailable}
+              sx={{
+                flex: 1,
+                width: '100%',
+                minWidth: 0,
+                order: { xs: 2, md: 2 },
+                p: 1.75,
+                borderRadius: '13px',
+                border: '1px solid rgba(255, 255, 255, 0.5)',
+                background:
+                  'linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.06))',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
+                <Typography sx={{ color: 'var(--color-text)', fontWeight: 800 }}>
+                  {copy.addLabel}
+                </Typography>
+                <Chip label={`${availableCandidates.length} ${copy.currentUnit}`} size="small" sx={{ fontWeight: 700 }} />
+              </Box>
+              <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 500, fontSize: '0.8rem' }}>
+                {copy.availableHelper}
+              </Typography>
+              <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.35)' }} />
+              <Box sx={{ display: 'flex', flexWrap: 'nowrap', flexDirection: 'column', gap: 1, alignItems: 'stretch', maxHeight: 260, overflowY: 'auto' }}>
                 {availableCandidates.length ? (
                   availableCandidates.map((candidate) => (
                     <Chip
@@ -355,148 +445,18 @@ const ManageShareMembersModal = ({
                       clickable
                       onClick={() => handleAddMember(candidate)}
                       disabled={isSubmitting}
-                      sx={{
-                        ...chipStyles.add,
-                        width: '100%',
-                        justifyContent: 'flex-start',
-                      }}
+                      sx={{ ...chipStyles.add, width: '100%', justifyContent: 'flex-start' }}
                       draggable
-                      onDragStart={(event) =>
-                        handleDragStart(event, {
-                          member: candidate,
-                          source: 'available',
-                        })
-                      }
+                      onDragStart={(event) => handleDragStart(event, { member: candidate, source: 'available' })}
                     />
                   ))
                 ) : (
-                  <Typography
-                    sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}
-                  >
+                  <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
                     گزینه‌ای برای افزودن وجود ندارد.
                   </Typography>
                 )}
               </Box>
             </Stack>
-
-            <Divider
-              flexItem
-              orientation="vertical"
-              sx={{ display: { xs: 'none', md: 'block' } }}
-            />
-
-            <Box
-              sx={{
-                flex: 1,
-                position: 'relative',
-                borderRadius: 3,
-                backgroundColor: 'rgba(31, 182, 255, 0.05)',
-                p: 1.2,
-
-                border: '1px solid rgba(131, 182, 255, 0.24)',
-                // boxShadow: '0 22px 46px rgba(255, 99, 132, 0.26)',
-              }}
-            >
-              <Stack
-                spacing={1.5}
-                sx={{
-                  position: 'relative',
-                  borderRadius: 2.5,
-                  width: '260px',
-                  //   background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 245, 247, 0.96))',
-
-                  // boxShadow: '0 10px 14px rgba(255, 99, 132, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.65)',
-                  p: 2,
-                  overflow: 'hidden',
-                }}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={handleDropToMembers}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 1,
-                    flexWrap: 'wrap',
-                    position: 'relative',
-                  }}
-                >
-                  <Box
-                    sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}
-                  >
-                    {/* <Box
-                      sx={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: '50%',
-                        display: 'grid',
-                        placeItems: 'center',
-                        background: 'linear-gradient(145deg, rgba(255, 238, 240, 0.9), rgba(255, 217, 224, 0.95))',
-                        boxShadow: '0 6px 14px rgba(255, 99, 132, 0.28)',
-                        border: '1px solid rgba(255, 99, 132, 0.25)',
-                      }}
-                    >
-                      <Typography sx={{ color: 'var(--color-error)', fontWeight: 900, fontSize: 18 }}>
-                        ★
-                      </Typography>
-                    </Box> */}
-                    <Box>
-                      <Typography
-                        sx={{
-                          color: 'var(--color-error)',
-                          fontWeight: 900,
-                          letterSpacing: 0.5,
-                        }}
-                      >
-                        {copy.type === 'user'
-                          ? `کاربران فعلی اشتراک (${stagedMembers.length} کاربر)`
-                          : `گروه های فعلی اشتراک (${stagedMembers.length} گروه)`}
-                      </Typography>
-                      {/* <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600, fontSize: 12 }}>
-                        اعضای تایید شده این اشتراک در این بخش نمایش داده می‌شوند.
-                      </Typography> */}
-                    </Box>
-                  </Box>
-                  {/* <Chip
-                    label={`${stagedMembers.length} عضو`}
-                    size="small"
-                    sx={{
-                      fontWeight: 800,
-                      background: 'rgba(255, 99, 132, 0.12)',
-                      color: 'var(--color-error)',
-                      border: '1px solid rgba(255, 99, 132, 0.35)',
-                      borderRadius: '12px',
-                      px: 1,
-                    }}
-                  /> */}
-                </Box>
-                <Divider sx={{ borderColor: 'rgba(255, 99, 132, 0.3)' }} />
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {hasMembers ? (
-                    stagedMembers.map((member) => (
-                      <Chip
-                        key={member}
-                        label={member}
-                        onDelete={() => handleRemoveMember(member)}
-                        disabled={isSubmitting || !hasRemovableMembers}
-                        sx={chipStyles.remove}
-                        draggable
-                        onDragStart={(event) =>
-                          handleDragStart(event, { member, source: 'members' })
-                        }
-                      />
-                    ))
-                  ) : (
-                    <Typography
-                      sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}
-                    >
-                      {copy.empty}
-                    </Typography>
-                  )}
-                </Box>
-              </Stack>
-            </Box>
           </Stack>
         )}
       </Stack>
