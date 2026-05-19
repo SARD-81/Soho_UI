@@ -205,16 +205,16 @@ const ServerSlots3DWidget = () => {
       ) : null}
 
       <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 380px' },
-          gap: 2,
-          alignItems: 'stretch',
-          minHeight: { xs: 680, lg: 390 },
-        }}
-      >
+  sx={{
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 380px' },
+    gap: 2,
+    alignItems: { xs: 'stretch', lg: 'start' },
+  }}
+>
         <Box
           sx={{
+            height: { xs: 340, md: 390 },
             minHeight: { xs: 340, md: 390 },
             borderRadius: '14px',
             overflow: 'hidden',
@@ -267,8 +267,15 @@ const ServerSlots3DWidget = () => {
           </Box>
         </Box>
 
-        <DiskSlotDetailsPanel selectedBay={selectedBay} />
-      </Box>
+<Box
+  sx={{
+    height: { xs: 'auto', lg: 390 },
+    minHeight: { xs: 280, lg: 390 },
+    minWidth: 0,
+  }}
+>
+  <DiskSlotDetailsPanel selectedBay={selectedBay} />
+</Box>      </Box>
     </Box>
   );
 };
