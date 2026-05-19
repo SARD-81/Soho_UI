@@ -93,6 +93,29 @@ const membersProperty: Record<ManageShareMembersType, string> = {
   groups: 'valid groups',
 };
 
+const memberPanelBaseSx = {
+  flex: 1,
+  width: '100%',
+  minWidth: 0,
+  p: 1.75,
+  borderRadius: '13px',
+  boxShadow: '0 18px 40px -34px rgba(15, 23, 42, 0.35)',
+} as const;
+
+const currentPanelSx = {
+  ...memberPanelBaseSx,
+  border: '1px solid rgba(0, 198, 169, 0.24)',
+  background:
+    'linear-gradient(145deg, var(--color-card-bg) 0%, rgba(0, 198, 169, 0.045) 100%)',
+} as const;
+
+const availablePanelSx = {
+  ...memberPanelBaseSx,
+  border: '1px solid rgba(148, 163, 184, 0.22)',
+  background:
+    'linear-gradient(145deg, var(--color-card-bg) 0%, rgba(148, 163, 184, 0.045) 100%)',
+} as const;
+
 const ManageShareMembersModal = ({
   open,
   shareName,
@@ -349,15 +372,8 @@ const ManageShareMembersModal = ({
               onDragOver={(event) => event.preventDefault()}
               onDrop={handleDropToMembers}
               sx={{
-                flex: 1,
-                width: '100%',
-                minWidth: 0,
+                ...currentPanelSx,
                 order: { xs: 1, md: 1 },
-                p: 1.75,
-                borderRadius: '13px',
-                border: '1px solid rgba(31, 182, 255, 0.24)',
-                background:
-                  'linear-gradient(180deg, rgba(31, 182, 255, 0.08), rgba(31, 182, 255, 0.03))',
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
@@ -370,15 +386,15 @@ const ManageShareMembersModal = ({
                   sx={{
                     fontWeight: 800,
                     color: 'var(--color-primary)',
-                    backgroundColor: 'rgba(31, 182, 255, 0.12)',
-                    border: '1px solid rgba(31, 182, 255, 0.24)',
+                    backgroundColor: 'rgba(0, 198, 169, 0.09)',
+                    border: '1px solid rgba(0, 198, 169, 0.22)',
                   }}
                 />
               </Box>
-              <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 500, fontSize: '0.8rem' }}>
+              <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 500, fontSize: '0.82rem' }}>
                 {copy.currentHelper}
               </Typography>
-              <Divider sx={{ borderColor: 'rgba(31, 182, 255, 0.2)' }} />
+              <Divider sx={{ borderColor: 'rgba(0, 198, 169, 0.2)' }} />
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 260, overflowY: 'auto', alignContent: 'flex-start' }}>
                 {hasMembers ? (
                   stagedMembers.map((member) => (
@@ -390,8 +406,8 @@ const ManageShareMembersModal = ({
                       sx={{
                         ...chipStyles.remove,
                         color: 'var(--color-text)',
-                        backgroundColor: 'rgba(255, 255, 255, 0.72)',
-                        border: '1px solid rgba(31, 182, 255, 0.2)',
+                        backgroundColor: 'var(--color-card-bg)',
+                        border: '1px solid rgba(0, 198, 169, 0.22)',
                         '& .MuiChip-deleteIcon': { color: 'var(--color-error)' },
                       }}
                       draggable
@@ -415,27 +431,20 @@ const ManageShareMembersModal = ({
               onDragOver={(event) => event.preventDefault()}
               onDrop={handleDropToAvailable}
               sx={{
-                flex: 1,
-                width: '100%',
-                minWidth: 0,
+                ...availablePanelSx,
                 order: { xs: 2, md: 2 },
-                p: 1.75,
-                borderRadius: '13px',
-                border: '1px solid rgba(255, 255, 255, 0.5)',
-                background:
-                  'linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.06))',
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
                 <Typography sx={{ color: 'var(--color-text)', fontWeight: 800 }}>
                   {copy.addLabel}
                 </Typography>
-                <Chip label={`${availableCandidates.length} ${copy.currentUnit}`} size="small" sx={{ fontWeight: 700 }} />
+                <Chip label={`${availableCandidates.length} ${copy.currentUnit}`} size="small" sx={{ fontWeight: 700, border: '1px solid rgba(148, 163, 184, 0.25)' }} />
               </Box>
-              <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 500, fontSize: '0.8rem' }}>
+              <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 500, fontSize: '0.82rem' }}>
                 {copy.availableHelper}
               </Typography>
-              <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.35)' }} />
+              <Divider sx={{ borderColor: 'rgba(148, 163, 184, 0.24)' }} />
               <Box sx={{ display: 'flex', flexWrap: 'nowrap', flexDirection: 'column', gap: 1, alignItems: 'stretch', maxHeight: 260, overflowY: 'auto' }}>
                 {availableCandidates.length ? (
                   availableCandidates.map((candidate) => (

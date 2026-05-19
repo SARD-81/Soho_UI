@@ -6,6 +6,11 @@ export const DEFAULT_CLEAR_DISK_ERROR_MESSAGE =
 export const DEFAULT_WIPE_DISK_ERROR_MESSAGE =
   'امکان پاکسازی دیسک متصل به فضای یکپارچه وجود ندارد.';
 
+export interface CleanupDiskResult {
+  clearZfsSucceeded: boolean;
+  clearZfsError?: string;
+}
+
 export const clearDiskZfs = async (diskName: string) => {
   const encodedDiskName = encodeURIComponent(diskName);
 
@@ -30,7 +35,21 @@ export const wipeDisk = async (diskName: string) => {
   }
 };
 
-export const cleanupDisk = async (diskName: string) => {
-  await clearDiskZfs(diskName);
+export const cleanupDisk = async (
+  diskName: string
+): Promise<CleanupDiskResult> => {
+  let clearZfsError: string | undefined;
+
+  try {
+    await clearDiskZfs(diskName);
+  } catch (error) {
+    clearZfsError = error instanceof Error ? error.message : String(error);
+  }
+
   await wipeDisk(diskName);
+
+  return {
+    clearZfsSucceeded: !clearZfsError,
+    clearZfsError,
+  };
 };

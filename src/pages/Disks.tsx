@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { DiskInventoryItem } from '../@types/disk';
 import PageContainer from '../components/PageContainer';
 import DisksTable from '../components/disks/DisksTable';
+import ConfirmWipeDiskModal from '../components/disks/ConfirmWipeDiskModal';
 import SelectedDisksDetailsPanel from '../components/disks/SelectedDisksDetailsPanel';
 import { useDiskDetails, useDiskInventory } from '../hooks/useDiskInventory';
 import usePoolDeviceNames from '../hooks/usePoolDeviceNames';
@@ -17,6 +18,7 @@ const DISK_DETAIL_VIEW_ID = 'disks';
 
 const Disks = () => {
   const [wipingDisks, setWipingDisks] = useState<Record<string, boolean>>({});
+  const [wipeTargetDisk, setWipeTargetDisk] = useState<DiskInventoryItem | null>(null);
   const queryClient = useQueryClient();
   const { data: disks = [], isLoading, error } = useDiskInventory();
   const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
@@ -78,9 +80,13 @@ const Disks = () => {
     }
   }, [activeItemId, disks, pinnedItemIds, setActiveItemId, unpinItem]);
 
-  const handleWipeDisk = useCallback(
-    async (disk: DiskInventoryItem) => {
-      const diskName = disk.disk;
+  const handleCloseWipeModal = useCallback(() => {
+    setWipeTargetDisk(null);
+  }, []);
+
+  const handleConfirmWipeDisk = useCallback(async () => {
+      if (!wipeTargetDisk) return;
+      const diskName = wipeTargetDisk.disk;
       const toastId = toast.loading(`در حال پاکسازی دیسک ${diskName}...`);
 
       setWipingDisks((prev) => ({ ...prev, [diskName]: true }));
@@ -90,6 +96,7 @@ const Disks = () => {
         toast.success(`دیسک ${diskName} پاکسازی شد.`, { id: toastId });
         queryClient.invalidateQueries({ queryKey: ['disk', 'inventory'] });
         queryClient.invalidateQueries({ queryKey: ['disk', 'partition-count', diskName] });
+        setWipeTargetDisk(null);
       } catch (error) {
         toast.error(
           extractApiErrorMessage(error, 'پاکسازی دیسک با خطا مواجه شد.'),
@@ -103,7 +110,7 @@ const Disks = () => {
         });
       }
     },
-    [queryClient]
+    [queryClient, wipeTargetDisk]
   );
 
   const activeWipingDisks = useMemo(
@@ -132,7 +139,7 @@ const Disks = () => {
             disks={disks}
             isLoading={isLoading}
             error={error ?? null}
-            onWipe={handleWipeDisk}
+            onWipe={setWipeTargetDisk}
             disabledDiskNames={poolDeviceNames}
             wipingDiskNames={activeWipingDisks}
             areActionsLoading={isPoolDevicesLoading}
@@ -150,6 +157,13 @@ const Disks = () => {
           />
         </Box>
       </Stack>
+      <ConfirmWipeDiskModal
+        open={Boolean(wipeTargetDisk)}
+        disk={wipeTargetDisk}
+        onClose={handleCloseWipeModal}
+        onConfirm={handleConfirmWipeDisk}
+        isWiping={Boolean(wipeTargetDisk && wipingDisks[wipeTargetDisk.disk])}
+      />
     </PageContainer>
   );
 };
