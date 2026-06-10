@@ -16,7 +16,7 @@ import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useUpdateSharepoint } from '../../hooks/useUpdateSharepoint';
 import axiosInstance from '../../lib/axiosInstance';
-import { parseDelimitedList, uniqueSortedList } from '../../utils/samba';
+import { getShareGroupMembers, getShareUserMembers, mergeShareAccessMembers, parseDelimitedList, uniqueSortedList } from '../../utils/samba';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -52,6 +52,8 @@ const chipStyles = {
     '&:hover': { backgroundColor: 'rgba(255, 99, 132, 0.15)' },
   },
 } as const;
+
+const SHARE_ACCESS_PROPERTY = 'valid users';
 
 const modalCopy: Record<
   ManageShareMembersType,
@@ -130,22 +132,36 @@ const ManageShareMembersModal = ({
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const membersQuery = useQuery<string[]>({
-    queryKey: ['samba', 'sharepoints', shareName, propertyKey],
-    queryFn: async () => {
-      if (!shareName) return [];
-      const encodedName = encodeURIComponent(shareName);
-      const response = await axiosInstance.get(
-        `/api/samba/sharepoints/${encodedName}/`,
-        {
-          params: { only_active: false, property: propertyKey },
-        }
-      );
+  queryKey: ['samba', 'sharepoints', shareName, SHARE_ACCESS_PROPERTY],
+  queryFn: async () => {
+    if (!shareName) return [];
 
-      const rawMembers = response.data?.data?.[propertyKey];
-      return parseDelimitedList(rawMembers);
-    },
-    enabled: open && Boolean(shareName),
-  });
+    const encodedName = encodeURIComponent(shareName);
+    const response = await axiosInstance.get(
+      `/api/samba/sharepoints/${encodedName}/`,
+      {
+        params: { only_active: false, property: SHARE_ACCESS_PROPERTY },
+      }
+    );
+
+    return parseDelimitedList(response.data?.data?.[SHARE_ACCESS_PROPERTY]);
+  },
+  enabled: open && Boolean(shareName),
+});
+
+const currentAccessMembers = membersQuery.data ?? [];
+
+const currentUsers = useMemo(
+  () => getShareUserMembers(currentAccessMembers),
+  [currentAccessMembers]
+);
+
+const currentGroups = useMemo(
+  () => getShareGroupMembers(currentAccessMembers),
+  [currentAccessMembers]
+);
+
+const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
 
   const availableQuery = useQuery<string[]>({
     queryKey: [
@@ -213,6 +229,12 @@ const ManageShareMembersModal = ({
       setIsConfirmOpen(false);
     }
   }, [open]);
+
+  useEffect(() => {
+  if (open) {
+    setStagedMembers(uniqueSortedList(currentTypedMembers));
+  }
+}, [currentTypedMembers, open]);
 
   const isSubmitting = updateSharepoint.isPending;
   const hasMembers = stagedMembers.length > 0;
@@ -302,8 +324,17 @@ const ManageShareMembersModal = ({
       return;
     }
 
+    const nextValidUsers = mergeShareAccessMembers({
+  users: type === 'users' ? stagedMembers : currentUsers,
+  groups: type === 'groups' ? stagedMembers : currentGroups,
+});
+
     updateSharepoint.mutate(
-      { shareName, updates: { [propertyKey]: stagedMembers }, saveToDb: true },
+      {
+    shareName,
+    updates: { [SHARE_ACCESS_PROPERTY]: nextValidUsers },
+    saveToDb: true,
+  },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({
