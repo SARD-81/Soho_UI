@@ -14,7 +14,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
-import { FaEye, FaEyeSlash, FaLock, FaShieldAlt, FaUser } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaLock, FaUser } from 'react-icons/fa';
 import { LuLogIn } from 'react-icons/lu';
 import { useNavigate } from 'react-router-dom';
 import { loginTextFieldSx } from '../constants/loginForm';
@@ -67,6 +67,14 @@ function LoginForm() {
     }
   }, [isSuccess, isError, error]);
 
+  const fieldLabelSx = {
+    pr: 1,
+    color: 'var(--color-secondary)',
+    fontSize: 12.5,
+    fontWeight: 800,
+    lineHeight: 1,
+  };
+
   return (
     <Box
       component="form"
@@ -75,101 +83,111 @@ function LoginForm() {
       sx={{ width: '100%' }}
     >
       <Stack spacing={2.1}>
-        <Controller
-          name="username"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="نام کاربری"
-              placeholder="نام کاربری مدیریتی"
-              autoComplete="username"
-              fullWidth
-              error={!!errors.username}
-              helperText={errors.username?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Box
-                        sx={{
-                          width: 34,
-                          height: 34,
-                          display: 'grid',
-                          placeItems: 'center',
-                          borderRadius: '12px',
-                          color: 'var(--color-primary)',
-                          background: 'rgba(99, 182, 219, 0.12)',
-                        }}
-                      >
-                        <FaUser size={15} />
-                      </Box>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={loginTextFieldSx}
-            />
-          )}
-        />
+        <Stack spacing={0.8}>
+          <Typography component="label" sx={fieldLabelSx}>
+            نام کاربری
+          </Typography>
 
-        <Controller
-          name="password"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="رمز عبور"
-              placeholder="رمز عبور حساب"
-              fullWidth
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Box
-                        sx={{
-                          width: 34,
-                          height: 34,
-                          display: 'grid',
-                          placeItems: 'center',
-                          borderRadius: '12px',
-                          color: 'var(--color-primary)',
-                          background: 'rgba(99, 182, 219, 0.12)',
-                        }}
-                      >
-                        <FaLock size={15} />
-                      </Box>
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label={showPassword ? 'مخفی کردن رمز' : 'نمایش رمز'}
-                        onClick={() => setShowPassword((s) => !s)}
-                        edge="end"
-                        size="small"
-                        sx={{
-                          color: 'var(--color-secondary)',
-                          '&:hover': {
+          <Controller
+            name="username"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                placeholder="نام کاربری مدیریتی"
+                autoComplete="username"
+                fullWidth
+                error={!!errors.username}
+                helperText={errors.username?.message}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Box
+                          sx={{
+                            width: 34,
+                            height: 34,
+                            display: 'grid',
+                            placeItems: 'center',
+                            borderRadius: '12px',
                             color: 'var(--color-primary)',
-                            backgroundColor: 'rgba(99, 182, 219, 0.1)',
-                          },
-                        }}
-                      >
-                        {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={loginTextFieldSx}
-            />
-          )}
-        />
+                            background: 'rgba(99, 182, 219, 0.12)',
+                          }}
+                        >
+                          <FaUser size={15} />
+                        </Box>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={loginTextFieldSx}
+              />
+            )}
+          />
+        </Stack>
+
+        <Stack spacing={0.8}>
+          <Typography component="label" sx={fieldLabelSx}>
+            رمز عبور
+          </Typography>
+
+          <Controller
+            name="password"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                placeholder="رمز عبور حساب"
+                fullWidth
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                error={!!errors.password}
+                helperText={errors.password?.message}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Box
+                          sx={{
+                            width: 34,
+                            height: 34,
+                            display: 'grid',
+                            placeItems: 'center',
+                            borderRadius: '12px',
+                            color: 'var(--color-primary)',
+                            background: 'rgba(99, 182, 219, 0.12)',
+                          }}
+                        >
+                          <FaLock size={15} />
+                        </Box>
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label={showPassword ? 'مخفی کردن رمز' : 'نمایش رمز'}
+                          onClick={() => setShowPassword((s) => !s)}
+                          edge="end"
+                          size="small"
+                          sx={{
+                            color: 'var(--color-secondary)',
+                            '&:hover': {
+                              color: 'var(--color-primary)',
+                              backgroundColor: 'rgba(99, 182, 219, 0.1)',
+                            },
+                          }}
+                        >
+                          {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={loginTextFieldSx}
+              />
+            )}
+          />
+        </Stack>
 
         <Controller
           name="rememberMe"
@@ -259,29 +277,8 @@ function LoginForm() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            flexWrap: 'wrap',
-            gap: 1,
           }}
         >
-          <Box
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 0.7,
-              px: 1.4,
-              py: 0.7,
-              borderRadius: '999px',
-              color: 'var(--color-secondary)',
-              border: '1px solid var(--color-input-border)',
-              backgroundColor: 'var(--color-input-bg)',
-              fontSize: 12,
-              fontWeight: 700,
-            }}
-          >
-            <FaShieldAlt size={12} />
-            اتصال امن
-          </Box>
-
           <Typography
             variant="body2"
             sx={{
