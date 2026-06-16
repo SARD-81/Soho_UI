@@ -1,6 +1,8 @@
-import { Box, CircularProgress, IconButton, Stack, Switch, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
+import ToggleBtn from '../ToggleBtn';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { FileSystemEntry } from '../../@types/filesystem';
 import DataTable from '../DataTable';
@@ -44,37 +46,31 @@ const FileSystemsTable = ({
   isKeyUnloading = false,
   isSettingCanmount = false,
 }: FileSystemsTableProps) => {
+  const theme = useTheme();
 
-  const getCanmountValue = (filesystem: FileSystemEntry): 'on' | 'off' => {
+  const getCanmountValue = (filesystem: FileSystemEntry): boolean => {
     const val = filesystem.attributeMap?.canmount || filesystem.attributeMap?.['canmount'];
     if (typeof val === 'string') {
       const lower = val.toLowerCase().trim();
-      if (lower === 'on' || lower === 'yes' || lower === 'true' || lower === '1') return 'on';
-    }
-    return 'off';
-  };
-
-  // Determine if filesystem is currently mounted
-  const getMountedValue = (filesystem: FileSystemEntry): boolean => {
-    const val = filesystem.attributeMap?.mounted || filesystem.attributeMap?.['mounted'] || filesystem.attributeMap?.mountpoint;
-    if (typeof val === 'string') {
-      const lower = val.toLowerCase().trim();
-      return lower === 'yes' || lower === 'on' || lower === 'true' || lower === 'mounted' || lower.length > 0;
+      return lower === 'on' || lower === 'yes' || lower === 'true' || lower === '1';
     }
     return false;
   };
 
-  // Determine if encryption key is loaded
-  const getKeyLoadedValue = (filesystem: FileSystemEntry): boolean => {
-    const val = filesystem.attributeMap?.keystatus || filesystem.attributeMap?.['keystatus'] || filesystem.attributeMap?.encryption;
+  const getMountedValue = (filesystem: FileSystemEntry): boolean => {
+    const val = filesystem.attributeMap?.mounted || filesystem.attributeMap?.['mounted'];
     if (typeof val === 'string') {
       const lower = val.toLowerCase().trim();
-      return lower === 'available' || lower === 'loaded' || lower === 'on' || lower === 'yes';
+      return lower === 'yes' || lower === 'on' || lower === 'true' || lower === 'mounted';
     }
-    // If encryption property exists and is 'on', assume key might be needed
-    const enc = filesystem.attributeMap?.encryption || filesystem.attributeMap?.['encryption'];
-    if (typeof enc === 'string' && enc.toLowerCase() === 'on') {
-      return false; // default to not loaded if we don't have keystatus
+    return false;
+  };
+
+  const getKeyLoadedValue = (filesystem: FileSystemEntry): boolean => {
+    const val = filesystem.attributeMap?.keystatus || filesystem.attributeMap?.['keystatus'];
+    if (typeof val === 'string') {
+      const lower = val.toLowerCase().trim();
+      return lower === 'available' || lower === 'loaded' || lower === 'on';
     }
     return false;
   };
@@ -82,152 +78,16 @@ const FileSystemsTable = ({
   const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
     const getAttributeValue = (filesystem: FileSystemEntry, key: string) => {
       if (!filesystem.attributeMap) return '—';
-      const directValue = filesystem.attributeMap[key];
-      if (directValue != null) return directValue;
-      return filesystem.attributeMap[key.toLowerCase()] ?? '—';
+      const direct = filesystem.attributeMap[key];
+      return direct != null ? String(direct) : filesystem.attributeMap[key.toLowerCase()] ?? '—';
     };
 
     const baseColumns: DataTableColumn<FileSystemEntry>[] = [
-      {
-        id: 'filesystem',
-        header: 'نام فضای فایلی',
-        align: 'left',
-        renderCell: (filesystem) => (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-            <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {filesystem.filesystemName}
-            </Typography>
-          </Box>
-        ),
-      },
-      {
-        id: 'mountpoint',
-        header: 'نقطه اتصال',
-        align: 'left',
-        renderCell: (filesystem) => (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-            <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {filesystem.mountpoint}
-            </Typography>
-          </Box>
-        ),
-      },
-      {
-        id: 'used',
-        header: 'فضای استفاده‌شده',
-        align: 'left',
-        renderCell: (filesystem) => (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-            <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {getAttributeValue(filesystem, 'used')}
-            </Typography>
-          </Box>
-        ),
-      },
-      {
-        id: 'available',
-        header: 'فضای در دسترس',
-        align: 'left',
-        renderCell: (filesystem) => (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-            <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {getAttributeValue(filesystem, 'available')}
-            </Typography>
-          </Box>
-        ),
-      },
-      {
-        id: 'referenced',
-        header: 'فضای ارجاع‌شده',
-        align: 'left',
-        renderCell: (filesystem) => (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-            <Typography sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
-              {getAttributeValue(filesystem, 'referenced')}
-            </Typography>
-          </Box>
-        ),
-      },
-      // === CANMOUNT TOGGLE ===
-      {
-        id: 'canmount',
-        header: 'مانت خودکار',
-        align: 'center',
-        renderCell: (filesystem) => {
-          const isOn = getCanmountValue(filesystem) === 'on';
-          return (
-            <Tooltip title={isOn ? 'غیرفعال کردن مانت خودکار' : 'فعال کردن مانت خودکار'}>
-              <span>
-                <Switch
-                  checked={isOn}
-                  onChange={(e) => onSetCanmount && onSetCanmount(filesystem, e.target.checked ? 'on' : 'off')}
-                  disabled={!onSetCanmount || isSettingCanmount}
-                  color="success"
-                  size="small"
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': { color: 'var(--color-success)' },
-                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'var(--color-success)' },
-                  }}
-                />
-              </span>
-            </Tooltip>
-          );
-        },
-      },
-      // === MOUNTED STATUS TOGGLE ===
-      {
-        id: 'mounted',
-        header: 'وضعیت مانت',
-        align: 'center',
-        renderCell: (filesystem) => {
-          const isMounted = getMountedValue(filesystem);
-          const isPending = isMounting || isUnmounting;
-
-          return (
-            <Tooltip title={isMounted ? 'آنمانت کردن' : 'مانت کردن'}>
-              <span>
-                <Switch
-                  checked={isMounted}
-                  onChange={(e) => {
-                    if (e.target.checked && onMount) onMount(filesystem);
-                    else if (!e.target.checked && onUnmount) onUnmount(filesystem);
-                  }}
-                  disabled={!onMount || !onUnmount || isPending}
-                  color="primary"
-                  size="small"
-                />
-              </span>
-            </Tooltip>
-          );
-        },
-      },
-      // === ENCRYPTION KEY STATUS TOGGLE ===
-      {
-        id: 'key',
-        header: 'کلید رمزنگاری',
-        align: 'center',
-        renderCell: (filesystem) => {
-          const isKeyLoaded = getKeyLoadedValue(filesystem);
-          const isPending = isKeyLoading || isKeyUnloading;
-
-          return (
-            <Tooltip title={isKeyLoaded ? 'آنلود کلید' : 'لود کلید'}>
-              <span>
-                <Switch
-                  checked={isKeyLoaded}
-                  onChange={(e) => {
-                    if (e.target.checked && onLoadKey) onLoadKey(filesystem);
-                    else if (!e.target.checked && onUnloadKey) onUnloadKey(filesystem);
-                  }}
-                  disabled={!onLoadKey || !onUnloadKey || isPending}
-                  color="secondary"
-                  size="small"
-                />
-              </span>
-            </Tooltip>
-          );
-        },
-      },
+      { id: 'filesystem', header: 'نام فضای فایلی', align: 'left', renderCell: (fs) => <Typography sx={{ fontWeight: 700 }}>{fs.filesystemName}</Typography> },
+      { id: 'mountpoint', header: 'نقطه اتصال', align: 'left', renderCell: (fs) => <Typography>{fs.mountpoint}</Typography> },
+      { id: 'used', header: 'فضای استفاده‌شده', align: 'left', renderCell: (fs) => <Typography>{getAttributeValue(fs, 'used')}</Typography> },
+      { id: 'available', header: 'فضای در دسترس', align: 'left', renderCell: (fs) => <Typography>{getAttributeValue(fs, 'available')}</Typography> },
+      { id: 'referenced', header: 'فضای ارجاع‌شده', align: 'left', renderCell: (fs) => <Typography>{getAttributeValue(fs, 'referenced')}</Typography> },
     ];
 
     const actionColumn: DataTableColumn<FileSystemEntry> = {
@@ -235,17 +95,95 @@ const FileSystemsTable = ({
       header: 'عملیات',
       align: 'center',
       renderCell: (filesystem) => {
-        const isAnyActionPending = isMounting || isUnmounting || isKeyLoading || isKeyUnloading || isSettingCanmount;
+        const isMounted = getMountedValue(filesystem);
+        const isKeyLoaded = getKeyLoadedValue(filesystem);
+        const isCanmountOn = getCanmountValue(filesystem);
+
+        const isAnyPending = isMounting || isUnmounting || isKeyLoading || isKeyUnloading || isSettingCanmount;
 
         return (
-          <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
+          <Stack spacing={1.25} alignItems="center" sx={{ py: 0.5 }}>
+            {/* Mount Toggle */}
+            {(onMount || onUnmount) && (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <ToggleBtn
+                  checked={isMounted}
+                  disabled={isAnyPending || !onMount || !onUnmount}
+                  onChange={(checked) => {
+                    if (checked && onMount) onMount(filesystem);
+                    else if (!checked && onUnmount) onUnmount(filesystem);
+                  }}
+                />
+                <Chip
+                  label={isMounted ? 'مانت' : 'آنمانت'}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 700,
+                    color: isMounted ? theme.palette.success.main : theme.palette.text.secondary,
+                    borderColor: alpha(isMounted ? theme.palette.success.main : theme.palette.text.secondary, 0.4),
+                    minWidth: 78,
+                  }}
+                />
+              </Stack>
+            )}
+
+            {/* Encryption Key Toggle */}
+            {(onLoadKey || onUnloadKey) && (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <ToggleBtn
+                  checked={isKeyLoaded}
+                  disabled={isAnyPending || !onLoadKey || !onUnloadKey}
+                  onChange={(checked) => {
+                    if (checked && onLoadKey) onLoadKey(filesystem);
+                    else if (!checked && onUnloadKey) onUnloadKey(filesystem);
+                  }}
+                />
+                <Chip
+                  label={isKeyLoaded ? 'کلید لود' : 'کلید آنلود'}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 700,
+                    color: isKeyLoaded ? theme.palette.primary.main : theme.palette.text.secondary,
+                    borderColor: alpha(isKeyLoaded ? theme.palette.primary.main : theme.palette.text.secondary, 0.4),
+                    minWidth: 90,
+                  }}
+                />
+              </Stack>
+            )}
+
+            {/* Canmount Toggle (compact) */}
+            {onSetCanmount && (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <ToggleBtn
+                  checked={isCanmountOn}
+                  disabled={isAnyPending}
+                  onChange={(checked) => onSetCanmount(filesystem, checked ? 'on' : 'off')}
+                />
+                <Chip
+                  label={isCanmountOn ? 'مانت خودکار' : 'غیرفعال'}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 700,
+                    color: isCanmountOn ? theme.palette.success.main : theme.palette.text.secondary,
+                    borderColor: alpha(isCanmountOn ? theme.palette.success.main : theme.palette.text.secondary, 0.4),
+                    minWidth: 95,
+                  }}
+                />
+              </Stack>
+            )}
+
+            {/* Delete */}
             <Tooltip title="حذف فضای فایلی">
               <span>
                 <IconButton
                   size="small"
                   color="error"
                   onClick={(e) => { e.stopPropagation(); onDeleteFilesystem(filesystem); }}
-                  disabled={isDeleteDisabled || isAnyActionPending}
+                  disabled={isDeleteDisabled || isAnyPending}
+                  sx={{ mt: 0.5 }}
                 >
                   <MdDeleteOutline size={18} />
                 </IconButton>
@@ -258,19 +196,9 @@ const FileSystemsTable = ({
 
     return [...baseColumns, actionColumn];
   }, [
-    attributeKeys,
-    isDeleteDisabled,
-    onDeleteFilesystem,
-    onMount,
-    onUnmount,
-    onLoadKey,
-    onUnloadKey,
-    onSetCanmount,
-    isMounting,
-    isUnmounting,
-    isKeyLoading,
-    isKeyUnloading,
-    isSettingCanmount,
+    attributeKeys, isDeleteDisabled, onDeleteFilesystem,
+    onMount, onUnmount, onLoadKey, onUnloadKey, onSetCanmount,
+    isMounting, isUnmounting, isKeyLoading, isKeyUnloading, isSettingCanmount, theme
   ]);
 
   return (
@@ -278,28 +206,13 @@ const FileSystemsTable = ({
       detailViewId={detailViewId}
       columns={columns}
       data={filesystems}
-      getRowId={(filesystem) => filesystem.id}
+      getRowId={(fs) => fs.id}
       isLoading={isLoading}
       error={error}
       onRowClick={() => {}}
-      renderLoadingState={() => (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
-          <CircularProgress color="primary" size={32} />
-          <Typography sx={{ color: 'var(--color-secondary)' }}>
-            در حال دریافت اطلاعات فضاهای فایلی ...
-          </Typography>
-        </Box>
-      )}
-      renderErrorState={(tableError) => (
-        <Typography sx={{ color: 'var(--color-error)' }}>
-          خطا در دریافت اطلاعات فضاهای فایلی: {tableError.message}
-        </Typography>
-      )}
-      renderEmptyState={() => (
-        <Typography sx={{ color: 'var(--color-secondary)' }}>
-          هیچ فضای فایلیی برای نماش وجود ندارد.
-        </Typography>
-      )}
+      renderLoadingState={() => <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}><CircularProgress size={32} /><Typography>در حال دریافت...</Typography></Box>}
+      renderErrorState={(e) => <Typography color="error">خطا: {e.message}</Typography>}
+      renderEmptyState={() => <Typography>هیچ فضای فایلیی وجود ندارد.</Typography>}
     />
   );
 };
