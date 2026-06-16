@@ -105,7 +105,6 @@ const FileSystemsTable = ({
 
         return (
           <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
-            {/* Mount / Unmount Icon Button */}
             {(onMount && onUnmount) && (
               <Tooltip title={isMounted ? 'قطع اتصال' : 'وصل کردن'}>
                 <span>
@@ -125,9 +124,8 @@ const FileSystemsTable = ({
               </Tooltip>
             )}
 
-            {/* Load / Unload Key Icon Button */}
             {(onLoadKey && onUnloadKey) && (
-              <Tooltip title={isKeyLoaded ? 'آنلود کلید' : 'لود کلید'}>
+              <Tooltip title={isKeyLoaded ? 'تخلیه کلید' : 'بارگذاری کلید'}>
                 <span>
                   <IconButton
                     size="small"
@@ -145,7 +143,6 @@ const FileSystemsTable = ({
               </Tooltip>
             )}
 
-            {/* Delete */}
             <Tooltip title="حذف فضای فایلی">
               <span>
                 <IconButton
