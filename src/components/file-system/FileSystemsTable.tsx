@@ -1,6 +1,6 @@
 import { Box, CircularProgress, IconButton, Stack, Switch, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
-import { MdDeleteOutline, MdPlayArrow, MdStop, MdVpnKey, MdVpnKeyOff } from 'react-icons/md';
+import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { FileSystemEntry } from '../../@types/filesystem';
 import DataTable from '../DataTable';
@@ -52,6 +52,31 @@ const FileSystemsTable = ({
       if (lower === 'on' || lower === 'yes' || lower === 'true' || lower === '1') return 'on';
     }
     return 'off';
+  };
+
+  // Determine if filesystem is currently mounted
+  const getMountedValue = (filesystem: FileSystemEntry): boolean => {
+    const val = filesystem.attributeMap?.mounted || filesystem.attributeMap?.['mounted'] || filesystem.attributeMap?.mountpoint;
+    if (typeof val === 'string') {
+      const lower = val.toLowerCase().trim();
+      return lower === 'yes' || lower === 'on' || lower === 'true' || lower === 'mounted' || lower.length > 0;
+    }
+    return false;
+  };
+
+  // Determine if encryption key is loaded
+  const getKeyLoadedValue = (filesystem: FileSystemEntry): boolean => {
+    const val = filesystem.attributeMap?.keystatus || filesystem.attributeMap?.['keystatus'] || filesystem.attributeMap?.encryption;
+    if (typeof val === 'string') {
+      const lower = val.toLowerCase().trim();
+      return lower === 'available' || lower === 'loaded' || lower === 'on' || lower === 'yes';
+    }
+    // If encryption property exists and is 'on', assume key might be needed
+    const enc = filesystem.attributeMap?.encryption || filesystem.attributeMap?.['encryption'];
+    if (typeof enc === 'string' && enc.toLowerCase() === 'on') {
+      return false; // default to not loaded if we don't have keystatus
+    }
+    return false;
   };
 
   const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
@@ -123,37 +148,80 @@ const FileSystemsTable = ({
           </Box>
         ),
       },
-      // === NEW PROFESSIONAL CANMOUNT TOGGLE COLUMN ===
+      // === CANMOUNT TOGGLE ===
       {
         id: 'canmount',
         header: 'مانت خودکار',
         align: 'center',
         renderCell: (filesystem) => {
-          const currentState = getCanmountValue(filesystem);
-          const isOn = currentState === 'on';
-
+          const isOn = getCanmountValue(filesystem) === 'on';
           return (
             <Tooltip title={isOn ? 'غیرفعال کردن مانت خودکار' : 'فعال کردن مانت خودکار'}>
               <span>
                 <Switch
                   checked={isOn}
-                  onChange={(e) => {
-                    if (onSetCanmount) {
-                      const newState = e.target.checked ? 'on' : 'off';
-                      onSetCanmount(filesystem, newState);
-                    }
-                  }}
+                  onChange={(e) => onSetCanmount && onSetCanmount(filesystem, e.target.checked ? 'on' : 'off')}
                   disabled={!onSetCanmount || isSettingCanmount}
                   color="success"
                   size="small"
                   sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: 'var(--color-success)',
-                    },
-                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                      backgroundColor: 'var(--color-success)',
-                    },
+                    '& .MuiSwitch-switchBase.Mui-checked': { color: 'var(--color-success)' },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'var(--color-success)' },
                   }}
+                />
+              </span>
+            </Tooltip>
+          );
+        },
+      },
+      // === MOUNTED STATUS TOGGLE ===
+      {
+        id: 'mounted',
+        header: 'وضعیت مانت',
+        align: 'center',
+        renderCell: (filesystem) => {
+          const isMounted = getMountedValue(filesystem);
+          const isPending = isMounting || isUnmounting;
+
+          return (
+            <Tooltip title={isMounted ? 'آنمانت کردن' : 'مانت کردن'}>
+              <span>
+                <Switch
+                  checked={isMounted}
+                  onChange={(e) => {
+                    if (e.target.checked && onMount) onMount(filesystem);
+                    else if (!e.target.checked && onUnmount) onUnmount(filesystem);
+                  }}
+                  disabled={!onMount || !onUnmount || isPending}
+                  color="primary"
+                  size="small"
+                />
+              </span>
+            </Tooltip>
+          );
+        },
+      },
+      // === ENCRYPTION KEY STATUS TOGGLE ===
+      {
+        id: 'key',
+        header: 'کلید رمزنگاری',
+        align: 'center',
+        renderCell: (filesystem) => {
+          const isKeyLoaded = getKeyLoadedValue(filesystem);
+          const isPending = isKeyLoading || isKeyUnloading;
+
+          return (
+            <Tooltip title={isKeyLoaded ? 'آنلود کلید' : 'لود کلید'}>
+              <span>
+                <Switch
+                  checked={isKeyLoaded}
+                  onChange={(e) => {
+                    if (e.target.checked && onLoadKey) onLoadKey(filesystem);
+                    else if (!e.target.checked && onUnloadKey) onUnloadKey(filesystem);
+                  }}
+                  disabled={!onLoadKey || !onUnloadKey || isPending}
+                  color="secondary"
+                  size="small"
                 />
               </span>
             </Tooltip>
@@ -167,80 +235,10 @@ const FileSystemsTable = ({
       header: 'عملیات',
       align: 'center',
       renderCell: (filesystem) => {
-        const isAnyActionPending =
-          isMounting || isUnmounting || isKeyLoading || isKeyUnloading || isSettingCanmount;
+        const isAnyActionPending = isMounting || isUnmounting || isKeyLoading || isKeyUnloading || isSettingCanmount;
 
         return (
           <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
-            {/* Mount */}
-            {onMount && (
-              <Tooltip title="مانت کردن فضای فایلی">
-                <span>
-                  <IconButton
-                    size="small"
-                    color="success"
-                    onClick={(e) => { e.stopPropagation(); onMount(filesystem); }}
-                    disabled={isAnyActionPending}
-                    sx={{ '&:hover': { backgroundColor: 'rgba(46, 125, 50, 0.08)' } }}
-                  >
-                    <MdPlayArrow size={18} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )}
-
-            {/* Unmount */}
-            {onUnmount && (
-              <Tooltip title="آنمانت کردن فضای فایلی">
-                <span>
-                  <IconButton
-                    size="small"
-                    color="warning"
-                    onClick={(e) => { e.stopPropagation(); onUnmount(filesystem); }}
-                    disabled={isAnyActionPending}
-                    sx={{ '&:hover': { backgroundColor: 'rgba(237, 108, 2, 0.08)' } }}
-                  >
-                    <MdStop size={18} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )}
-
-            {/* Load Key */}
-            {onLoadKey && (
-              <Tooltip title="لود کلید رمزنگاری">
-                <span>
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={(e) => { e.stopPropagation(); onLoadKey(filesystem); }}
-                    disabled={isAnyActionPending}
-                    sx={{ '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.08)' } }}
-                  >
-                    <MdVpnKey size={17} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )}
-
-            {/* Unload Key */}
-            {onUnloadKey && (
-              <Tooltip title="آنلود کلید رمزنگاری">
-                <span>
-                  <IconButton
-                    size="small"
-                    color="secondary"
-                    onClick={(e) => { e.stopPropagation(); onUnloadKey(filesystem); }}
-                    disabled={isAnyActionPending}
-                    sx={{ '&:hover': { backgroundColor: 'rgba(156, 39, 176, 0.08)' } }}
-                  >
-                    <MdVpnKeyOff size={17} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )}
-
-            {/* Delete */}
             <Tooltip title="حذف فضای فایلی">
               <span>
                 <IconButton
