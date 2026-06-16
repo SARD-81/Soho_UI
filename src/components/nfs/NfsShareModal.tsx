@@ -119,33 +119,24 @@ const NfsShareModal = ({
       setPathInput(initialPath);
       setClient(initialClient);
       setOptionValues(resolveOptionValues(initialOptions));
+      setHasAdjustedOptions(true); // Mark as adjusted so remote data doesn't overwrite
     } else {
       setPath('');
       setPathInput('');
       setClient('');
       setOptionValues({ ...NFS_OPTION_DEFAULTS });
+      setHasAdjustedOptions(false);
     }
 
-    setHasAdjustedOptions(false);
     setFormError(null);
   }, [initialShare, isEditMode, open]);
 
-  useEffect(() => {
-    if (!isEditMode || !open || hasAdjustedOptions) {
-      return;
-    }
-
-    const remoteOptions = remoteShare?.clients?.[0]?.options;
-
-    if (remoteOptions) {
-      setOptionValues(resolveOptionValues(remoteOptions));
-    }
-  }, [hasAdjustedOptions, isEditMode, open, remoteShare]);
+  // Removed the effect that was overwriting user changes with remoteShare data
 
   const selectableMountpoints = useMemo(
     () => mountpointOptions.filter(Boolean),
     [mountpointOptions]
-  );
+    );
 
   const handlePathInputChange = (_: unknown, value: string) => {
     setPathInput(value);
@@ -215,7 +206,7 @@ const NfsShareModal = ({
       no_subtree_check: Boolean(optionValues.no_subtree_check),
       ...(optionValues as Record<string, boolean>),
     });
-  };
+    });
 
   const isConfirmDisabled =
     isSubmitting ||
@@ -336,8 +327,7 @@ const NfsShareModal = ({
                     variant="caption"
                     sx={{
                       color: optionValues[optionKey]
-                        ? 'var(--color-success)'
-                        : 'var(--color-error)',
+                        ? 'var(--color-success)' : 'var(--color-error)',
                       fontWeight: 700,
                     }}
                   >
