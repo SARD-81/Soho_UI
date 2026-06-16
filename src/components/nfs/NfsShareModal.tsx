@@ -100,10 +100,6 @@ const NfsShareModal = ({
   const [hasAdjustedOptions, setHasAdjustedOptions] = useState(false);
 
   const isEditMode = mode === 'edit';
-  const { data: remoteShare } = useNfsShareDetails({
-    path,
-    enabled: isEditMode && open,
-  });
 
   useEffect(() => {
     if (!open) {
@@ -119,7 +115,7 @@ const NfsShareModal = ({
       setPathInput(initialPath);
       setClient(initialClient);
       setOptionValues(resolveOptionValues(initialOptions));
-      setHasAdjustedOptions(true); // Mark as adjusted so remote data doesn't overwrite
+      setHasAdjustedOptions(true);
     } else {
       setPath('');
       setPathInput('');
@@ -131,12 +127,10 @@ const NfsShareModal = ({
     setFormError(null);
   }, [initialShare, isEditMode, open]);
 
-  // Removed the effect that was overwriting user changes with remoteShare data
-
   const selectableMountpoints = useMemo(
     () => mountpointOptions.filter(Boolean),
     [mountpointOptions]
-    );
+  );
 
   const handlePathInputChange = (_: unknown, value: string) => {
     setPathInput(value);
@@ -196,17 +190,16 @@ const NfsShareModal = ({
       handleRestartNFS();
     }
 
-    onSubmit({
-      save_to_db: !isEditMode,
+    // Clean payload construction
+    const basePayload = {
       path: path.trim(),
       clients: client.trim(),
-      sync: Boolean(optionValues.sync),
-      read_write: Boolean(optionValues.read_write),
-      root_squash: Boolean(optionValues.root_squash),
-      no_subtree_check: Boolean(optionValues.no_subtree_check),
-      ...(optionValues as Record<string, boolean>),
-    });
-    });
+      save_to_db: !isEditMode,
+      ...optionValues,
+    };
+
+    onSubmit(basePayload as NfsSharePayload);
+  };
 
   const isConfirmDisabled =
     isSubmitting ||
