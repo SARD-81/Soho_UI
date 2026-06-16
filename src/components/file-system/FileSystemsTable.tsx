@@ -1,4 +1,4 @@
-import { Box, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import { Box, CircularProgress, IconButton, Stack, Switch, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { MdDeleteOutline, MdPlayArrow, MdStop, MdVpnKey, MdVpnKeyOff } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
@@ -13,15 +13,16 @@ interface FileSystemsTableProps {
   error: Error | null;
   onDeleteFilesystem: (filesystem: FileSystemEntry) => void;
   isDeleteDisabled: boolean;
-  // New powerful actions
   onMount?: (filesystem: FileSystemEntry) => void;
   onUnmount?: (filesystem: FileSystemEntry) => void;
   onLoadKey?: (filesystem: FileSystemEntry) => void;
   onUnloadKey?: (filesystem: FileSystemEntry) => void;
+  onSetCanmount?: (filesystem: FileSystemEntry, state: 'on' | 'off') => void;
   isMounting?: boolean;
   isUnmounting?: boolean;
   isKeyLoading?: boolean;
   isKeyUnloading?: boolean;
+  isSettingCanmount?: boolean;
 }
 
 const FileSystemsTable = ({
@@ -36,11 +37,22 @@ const FileSystemsTable = ({
   onUnmount,
   onLoadKey,
   onUnloadKey,
+  onSetCanmount,
   isMounting = false,
   isUnmounting = false,
   isKeyLoading = false,
   isKeyUnloading = false,
+  isSettingCanmount = false,
 }: FileSystemsTableProps) => {
+
+  const getCanmountValue = (filesystem: FileSystemEntry): 'on' | 'off' => {
+    const val = filesystem.attributeMap?.canmount || filesystem.attributeMap?.['canmount'];
+    if (typeof val === 'string') {
+      const lower = val.toLowerCase().trim();
+      if (lower === 'on' || lower === 'yes' || lower === 'true' || lower === '1') return 'on';
+    }
+    return 'off';
+  };
 
   const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
     const getAttributeValue = (filesystem: FileSystemEntry, key: string) => {
@@ -111,6 +123,43 @@ const FileSystemsTable = ({
           </Box>
         ),
       },
+      // === NEW PROFESSIONAL CANMOUNT TOGGLE COLUMN ===
+      {
+        id: 'canmount',
+        header: 'مانت خودکار',
+        align: 'center',
+        renderCell: (filesystem) => {
+          const currentState = getCanmountValue(filesystem);
+          const isOn = currentState === 'on';
+
+          return (
+            <Tooltip title={isOn ? 'غیرفعال کردن مانت خودکار' : 'فعال کردن مانت خودکار'}>
+              <span>
+                <Switch
+                  checked={isOn}
+                  onChange={(e) => {
+                    if (onSetCanmount) {
+                      const newState = e.target.checked ? 'on' : 'off';
+                      onSetCanmount(filesystem, newState);
+                    }
+                  }}
+                  disabled={!onSetCanmount || isSettingCanmount}
+                  color="success"
+                  size="small"
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': {
+                      color: 'var(--color-success)',
+                    },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                      backgroundColor: 'var(--color-success)',
+                    },
+                  }}
+                />
+              </span>
+            </Tooltip>
+          );
+        },
+      },
     ];
 
     const actionColumn: DataTableColumn<FileSystemEntry> = {
@@ -118,7 +167,8 @@ const FileSystemsTable = ({
       header: 'عملیات',
       align: 'center',
       renderCell: (filesystem) => {
-        const isAnyActionPending = isMounting || isUnmounting || isKeyLoading || isKeyUnloading;
+        const isAnyActionPending =
+          isMounting || isUnmounting || isKeyLoading || isKeyUnloading || isSettingCanmount;
 
         return (
           <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
@@ -156,7 +206,7 @@ const FileSystemsTable = ({
               </Tooltip>
             )}
 
-            {/* Load Key (for encrypted) */}
+            {/* Load Key */}
             {onLoadKey && (
               <Tooltip title="لود کلید رمزنگاری">
                 <span>
@@ -217,10 +267,12 @@ const FileSystemsTable = ({
     onUnmount,
     onLoadKey,
     onUnloadKey,
+    onSetCanmount,
     isMounting,
     isUnmounting,
     isKeyLoading,
     isKeyUnloading,
+    isSettingCanmount,
   ]);
 
   return (
@@ -247,7 +299,7 @@ const FileSystemsTable = ({
       )}
       renderEmptyState={() => (
         <Typography sx={{ color: 'var(--color-secondary)' }}>
-          هیچ فضای فایلیی برای نمایش وجود ندارد.
+          هیچ فضای فایلیی برای نماش وجود ندارد.
         </Typography>
       )}
     />
