@@ -8,18 +8,18 @@ interface ApiErrorResponse {
   detail?: string;
   message?: string;
   errors?: string | string[];
+  ok?: boolean;
   [key: string]: unknown;
 }
 
 interface CreateFileSystemPayload {
+  pool_name: string;
+  fs_name: string;
   quota: string;
   reservation: string;
+  mountpoint?: string;
+  encryption?: string;
   save_to_db: boolean;
-}
-
-interface CreateFileSystemVariables extends CreateFileSystemPayload {
-  poolName: string;
-  filesystemName: string;
 }
 
 interface UseCreateFileSystemOptions {
@@ -50,7 +50,6 @@ const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
     if (Array.isArray(payload.errors)) {
       return payload.errors.join('، ');
     }
-
     if (typeof payload.errors === 'string') {
       return payload.errors;
     }
@@ -95,21 +94,15 @@ export const useCreateFileSystem = ({
     setIsOpen(false);
   }, [resetForm]);
 
-  const createFileSystemMutation = useMutation<
-    unknown,
-    AxiosError<ApiErrorResponse>,
-    CreateFileSystemVariables
-  >({
-    mutationFn: async ({ poolName, filesystemName, ...payload }) => {
-      await axiosInstance.post(
-        `/api/filesystem/filesystems/${poolName}/${filesystemName}/`,
-        payload
-      );
+  const createFileSystemMutation = useMutation<unknown, AxiosError<ApiErrorResponse>, CreateFileSystemPayload>({
+    mutationFn: async (payload) => {
+      // Real backend: POST /api/filesystem/ with body containing pool_name + fs_name
+      await axiosInstance.post('/api/filesystem/', payload);
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['filesystems'] });
       handleClose();
-      onSuccess?.(`${variables.poolName}/${variables.filesystemName}`);
+      onSuccess?.(`${variables.pool_name}/${variables.fs_name}`);
     },
     onError: (error) => {
       const message = extractApiMessage(error);
@@ -141,9 +134,7 @@ export const useCreateFileSystem = ({
         setNameError('نام فضای فایلی را وارد کنید.');
         hasError = true;
       } else if (!/^[A-Za-z0-9]+$/.test(trimmedName)) {
-        setNameError(
-          'نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.'
-        );
+        setNameError('نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.');
         hasError = true;
       } else if (/^[0-9]/.test(trimmedName)) {
         setNameError('نام فضای فایلی نمی‌تواند با عدد شروع شود.');
@@ -155,7 +146,6 @@ export const useCreateFileSystem = ({
         hasError = true;
       } else {
         const quotaValue = Number(trimmedQuota);
-
         if (!Number.isFinite(quotaValue) || quotaValue <= 0) {
           setQuotaError('حجم واردشده باید یک عدد معتبر بزرگ‌تر از صفر باشد.');
           hasError = true;
@@ -170,11 +160,12 @@ export const useCreateFileSystem = ({
       const sanitizedName = trimmedName.replace(/\s+/g, '');
       const formattedQuota = `${trimmedQuota}${quotaUnit}`;
 
-      const payload: CreateFileSystemVariables = {
-        poolName: sanitizedPool,
-        filesystemName: sanitizedName,
+      const payload: CreateFileSystemPayload = {
+        pool_name: sanitizedPool,
+        fs_name: sanitizedName,
         quota: formattedQuota,
         reservation: formattedQuota,
+        // mountpoint can be auto or provided by user in future
         save_to_db: false,
       };
 
