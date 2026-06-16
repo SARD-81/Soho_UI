@@ -279,7 +279,7 @@ function LoginForm() {
             justifyContent: 'center',
           }}
         >
-          <Typography
+          {/* <Typography
             variant="body2"
             sx={{
               px: 1.4,
@@ -293,7 +293,7 @@ function LoginForm() {
             }}
           >
             نسخه 2
-          </Typography>
+          </Typography> */}
         </Box>
       </Stack>
     </Box>

@@ -13,7 +13,6 @@ import type {
   NfsShareOptionKey,
   NfsSharePayload,
 } from '../../@types/nfs';
-import { isCompleteIPv4Address } from '../../utils/ipAddress';
 import { translateDetailKey } from '../../utils/detailLabels';
 import {
   NFS_OPTION_DEFAULTS,
@@ -27,6 +26,10 @@ import ModalActionButtons from '../common/ModalActionButtons';
 import { useServiceAction } from '../../hooks/useServiceAction';
 import { toast } from 'react-hot-toast';
 import { useNfsShareDetails } from '../../hooks/useNfsShareDetails';
+
+const DISPLAY_OPTIONS = NFS_OPTION_KEYS.filter(
+  (key) => key !== 'root_squash' && key !== 'no_subtree_check'
+);
 
 interface NfsShareModalProps {
   open: boolean;
@@ -169,35 +172,20 @@ const NfsShareModal = ({
   };
 
   const serviceAction = useServiceAction({
-        onSuccess: () => {
-          // toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
-        },
-        onError: (message, { service }) => {
-          toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
-        },
-      });
-  
-      const handleRestartNFS = useCallback(() => {
-          // if (serviceAction.isPending) {
-          //   toast(
-          //     'راه‌اندازی مجدد سرویس smbd.service در حال انجام است. لطفاً صبر کنید.'
-          //   );
-          //   return;
-          // }
-          //
-          // const toastId = toast.loading(
-          //   'در حال راه‌اندازی مجدد سرویس smbd.service...'
-          // );
-      
-          serviceAction.mutate(
-            { service: 'nfs-server.service', action: 'restart' },
-            {
-              onSettled: () => {
-                // toast.dismiss(toastId);
-              },
-            }
-          );
-        }, [serviceAction]);
+    onSuccess: () => {},
+    onError: (message, { service }) => {
+      toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const handleRestartNFS = useCallback(() => {
+    serviceAction.mutate(
+      { service: 'nfs-server.service', action: 'restart' },
+      {
+        onSettled: () => {},
+      }
+    );
+  }, [serviceAction]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -213,15 +201,9 @@ const NfsShareModal = ({
       return;
     }
 
-    if (!isCompleteIPv4Address(client.trim())) {
-      setFormError('آی‌پی وارد شده معتبر نیست.');
-      return;
-    }
-
     if (!isEditMode) {
-      handleRestartNFS()
+      handleRestartNFS();
     }
-
 
     onSubmit({
       save_to_db: !isEditMode,
@@ -238,8 +220,7 @@ const NfsShareModal = ({
   const isConfirmDisabled =
     isSubmitting ||
     !path.trim() ||
-    !client.trim() ||
-    !isCompleteIPv4Address(client.trim());
+    !client.trim();
 
   return (
     <BlurModal
@@ -325,7 +306,7 @@ const NfsShareModal = ({
           <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 700 }}>
             گزینه‌های پیش‌فرض اشتراک NFS
           </Typography>
-          {NFS_OPTION_KEYS.map((optionKey) => {
+          {DISPLAY_OPTIONS.map((optionKey) => {
             const label = translateDetailKey(optionKey);
             const valueLabel = optionValues[optionKey] ? 'فعال' : 'غیرفعال';
 
@@ -352,7 +333,7 @@ const NfsShareModal = ({
                     onChange={() => handleToggleOption(optionKey)}
                   />
                   <Typography
-                  variant="caption"
+                    variant="caption"
                     sx={{
                       color: optionValues[optionKey]
                         ? 'var(--color-success)'
@@ -362,7 +343,6 @@ const NfsShareModal = ({
                   >
                     {valueLabel}
                   </Typography>
-                  
                 </Stack>
               </Stack>
             );

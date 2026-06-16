@@ -160,7 +160,7 @@ function LoginPage() {
                   letterSpacing: 0.4,
                 }}
               >
-                کنسول مدیریت ذخیره‌ساز اداری
+                ذخیره‌ساز اداری
               </Typography>
 
               <Typography
