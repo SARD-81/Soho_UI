@@ -1,4 +1,4 @@
-import { Box, Chip, CircularProgress, IconButton, Stack, Switch, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
@@ -48,7 +48,6 @@ const FileSystemsTable = ({
 }: FileSystemsTableProps) => {
   const theme = useTheme();
 
-  // Helper functions to read current state from each row's data
   const getCanmountOn = (fs: FileSystemEntry) => {
     const v = fs.attributeMap?.canmount || fs.attributeMap?.['canmount'];
     return typeof v === 'string' && ['on','yes','true','1'].includes(v.toLowerCase().trim());
@@ -78,7 +77,7 @@ const FileSystemsTable = ({
       { id: 'referenced', header: 'فضای ارجاع‌شده', align: 'left', renderCell: (fs) => <Typography>{getAttr(fs, 'referenced')}</Typography> },
     ];
 
-    // Separate Canmount column (user wants this to stay as its own nice toggle column)
+    // Canmount column using ToggleBtn + Chip (exactly like Share user disable pattern)
     const canmountColumn: DataTableColumn<FileSystemEntry> = {
       id: 'canmount',
       header: 'مانت خودکار',
@@ -86,22 +85,28 @@ const FileSystemsTable = ({
       renderCell: (fs) => {
         const isOn = getCanmountOn(fs);
         return (
-          <Tooltip title={isOn ? 'غیرفعال کردن مانت خودکار' : 'فعال کردن مانت خودکار'}>
-            <span>
-              <Switch
-                checked={isOn}
-                onChange={(e) => onSetCanmount?.(fs, e.target.checked ? 'on' : 'off')}
-                disabled={!onSetCanmount || isSettingCanmount}
-                color="success"
-                size="small"
-              />
-            </span>
-          </Tooltip>
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+            <ToggleBtn
+              checked={isOn}
+              disabled={!onSetCanmount || isSettingCanmount}
+              onChange={(checked) => onSetCanmount?.(fs, checked ? 'on' : 'off')}
+            />
+            <Chip
+              label={isOn ? 'فعال' : 'غیرفعال'}
+              size="small"
+              variant="outlined"
+              sx={{
+                fontWeight: 700,
+                color: isOn ? theme.palette.success.main : theme.palette.text.secondary,
+                borderColor: alpha(isOn ? theme.palette.success.main : theme.palette.text.secondary, 0.35),
+                minWidth: 70,
+              }}
+            />
+          </Stack>
         );
       },
     };
 
-    // Actions column containing Mount/Key toggles (exactly like Share user disable pattern) + Delete
     const actionsColumn: DataTableColumn<FileSystemEntry> = {
       id: 'actions',
       header: 'عملیات',
@@ -113,7 +118,6 @@ const FileSystemsTable = ({
 
         return (
           <Stack spacing={1.5} alignItems="center" sx={{ py: 0.75 }}>
-            {/* Mount / Unmount Toggle - same pattern as غیرفعال‌سازی کاربر */}
             {(onMount && onUnmount) && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <ToggleBtn
@@ -138,7 +142,6 @@ const FileSystemsTable = ({
               </Stack>
             )}
 
-            {/* Load / Unload Key Toggle - same pattern */}
             {(onLoadKey && onUnloadKey) && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <ToggleBtn
@@ -163,7 +166,6 @@ const FileSystemsTable = ({
               </Stack>
             )}
 
-            {/* Delete */}
             <Tooltip title="حذف فضای فایلی">
               <span>
                 <IconButton
