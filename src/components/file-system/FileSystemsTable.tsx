@@ -1,8 +1,6 @@
-import { Box, Chip, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { Box, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
-import { MdDeleteOutline } from 'react-icons/md';
-import ToggleBtn from '../ToggleBtn';
+import { MdDeleteOutline, MdPlayArrow, MdStop, MdVpnKey, MdVpnKeyOff } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { FileSystemEntry } from '../../@types/filesystem';
 import DataTable from '../DataTable';
@@ -46,7 +44,6 @@ const FileSystemsTable = ({
   isKeyUnloading = false,
   isSettingCanmount = false,
 }: FileSystemsTableProps) => {
-  const theme = useTheme();
 
   const getCanmountOn = (fs: FileSystemEntry) => {
     const v = fs.attributeMap?.canmount || fs.attributeMap?.['canmount'];
@@ -77,7 +74,7 @@ const FileSystemsTable = ({
       { id: 'referenced', header: 'فضای ارجاع‌شده', align: 'left', renderCell: (fs) => <Typography>{getAttr(fs, 'referenced')}</Typography> },
     ];
 
-    // Canmount column - only ToggleBtn (no Chip, as requested)
+    // Canmount column - only ToggleBtn (no Chip)
     const canmountColumn: DataTableColumn<FileSystemEntry> = {
       id: 'canmount',
       header: 'مانت خودکار',
@@ -105,61 +102,49 @@ const FileSystemsTable = ({
         const isKeyLoaded = getIsKeyLoaded(fs);
         const anyPending = isMounting || isUnmounting || isKeyLoading || isKeyUnloading || isSettingCanmount;
 
-        const mountToggleId = `mount-${fs.id}`;
-        const keyToggleId = `key-${fs.id}`;
-
         return (
-          <Stack spacing={1.5} alignItems="center" sx={{ py: 0.75 }}>
+          <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
+            {/* Mount / Unmount Icon Button */}
             {(onMount && onUnmount) && (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <ToggleBtn
-                  id={mountToggleId}
-                  checked={isMounted}
-                  disabled={anyPending}
-                  onChange={(checked) => {
-                    if (checked) onMount(fs);
-                    else onUnmount(fs);
-                  }}
-                />
-                <Chip
-                  label={isMounted ? 'مانت' : 'آنمانت'}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    fontWeight: 700,
-                    color: isMounted ? theme.palette.success.main : theme.palette.text.secondary,
-                    borderColor: alpha(isMounted ? theme.palette.success.main : theme.palette.text.secondary, 0.35),
-                    minWidth: 70,
-                  }}
-                />
-              </Stack>
+              <Tooltip title={isMounted ? 'آنمانت کردن' : 'مانت کردن'}>
+                <span>
+                  <IconButton
+                    size="small"
+                    color={isMounted ? 'warning' : 'success'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isMounted) onUnmount(fs);
+                      else onMount(fs);
+                    }}
+                    disabled={anyPending}
+                  >
+                    {isMounted ? <MdStop size={18} /> : <MdPlayArrow size={18} />}
+                  </IconButton>
+                </span>
+              </Tooltip>
             )}
 
+            {/* Load / Unload Key Icon Button */}
             {(onLoadKey && onUnloadKey) && (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <ToggleBtn
-                  id={keyToggleId}
-                  checked={isKeyLoaded}
-                  disabled={anyPending}
-                  onChange={(checked) => {
-                    if (checked) onLoadKey(fs);
-                    else onUnloadKey(fs);
-                  }}
-                />
-                <Chip
-                  label={isKeyLoaded ? 'کلید لود' : 'کلید آنلود'}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    fontWeight: 700,
-                    color: isKeyLoaded ? theme.palette.primary.main : theme.palette.text.secondary,
-                    borderColor: alpha(isKeyLoaded ? theme.palette.primary.main : theme.palette.text.secondary, 0.35),
-                    minWidth: 85,
-                  }}
-                />
-              </Stack>
+              <Tooltip title={isKeyLoaded ? 'آنلود کلید' : 'لود کلید'}>
+                <span>
+                  <IconButton
+                    size="small"
+                    color={isKeyLoaded ? 'secondary' : 'primary'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isKeyLoaded) onUnloadKey(fs);
+                      else onLoadKey(fs);
+                    }}
+                    disabled={anyPending}
+                  >
+                    {isKeyLoaded ? <MdVpnKeyOff size={17} /> : <MdVpnKey size={17} />}
+                  </IconButton>
+                </span>
+              </Tooltip>
             )}
 
+            {/* Delete */}
             <Tooltip title="حذف فضای فایلی">
               <span>
                 <IconButton
@@ -181,7 +166,7 @@ const FileSystemsTable = ({
   }, [
     attributeKeys, isDeleteDisabled, onDeleteFilesystem,
     onMount, onUnmount, onLoadKey, onUnloadKey, onSetCanmount,
-    isMounting, isUnmounting, isKeyLoading, isKeyUnloading, isSettingCanmount, theme
+    isMounting, isUnmounting, isKeyLoading, isKeyUnloading, isSettingCanmount
   ]);
 
   return (
