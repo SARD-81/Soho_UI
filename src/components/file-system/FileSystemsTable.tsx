@@ -77,32 +77,21 @@ const FileSystemsTable = ({
       { id: 'referenced', header: 'فضای ارجاع‌شده', align: 'left', renderCell: (fs) => <Typography>{getAttr(fs, 'referenced')}</Typography> },
     ];
 
-    // Canmount column using ToggleBtn + Chip (exactly like Share user disable pattern)
+    // Canmount column - only ToggleBtn (no Chip, as requested)
     const canmountColumn: DataTableColumn<FileSystemEntry> = {
       id: 'canmount',
       header: 'مانت خودکار',
       align: 'center',
       renderCell: (fs) => {
         const isOn = getCanmountOn(fs);
+        const toggleId = `canmount-${fs.id}`;
         return (
-          <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-            <ToggleBtn
-              checked={isOn}
-              disabled={!onSetCanmount || isSettingCanmount}
-              onChange={(checked) => onSetCanmount?.(fs, checked ? 'on' : 'off')}
-            />
-            <Chip
-              label={isOn ? 'فعال' : 'غیرفعال'}
-              size="small"
-              variant="outlined"
-              sx={{
-                fontWeight: 700,
-                color: isOn ? theme.palette.success.main : theme.palette.text.secondary,
-                borderColor: alpha(isOn ? theme.palette.success.main : theme.palette.text.secondary, 0.35),
-                minWidth: 70,
-              }}
-            />
-          </Stack>
+          <ToggleBtn
+            id={toggleId}
+            checked={isOn}
+            disabled={!onSetCanmount || isSettingCanmount}
+            onChange={(checked) => onSetCanmount?.(fs, checked ? 'on' : 'off')}
+          />
         );
       },
     };
@@ -116,11 +105,15 @@ const FileSystemsTable = ({
         const isKeyLoaded = getIsKeyLoaded(fs);
         const anyPending = isMounting || isUnmounting || isKeyLoading || isKeyUnloading || isSettingCanmount;
 
+        const mountToggleId = `mount-${fs.id}`;
+        const keyToggleId = `key-${fs.id}`;
+
         return (
           <Stack spacing={1.5} alignItems="center" sx={{ py: 0.75 }}>
             {(onMount && onUnmount) && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <ToggleBtn
+                  id={mountToggleId}
                   checked={isMounted}
                   disabled={anyPending}
                   onChange={(checked) => {
@@ -145,6 +138,7 @@ const FileSystemsTable = ({
             {(onLoadKey && onUnloadKey) && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <ToggleBtn
+                  id={keyToggleId}
                   checked={isKeyLoaded}
                   disabled={anyPending}
                   onChange={(checked) => {
