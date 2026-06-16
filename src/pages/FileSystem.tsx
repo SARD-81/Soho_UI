@@ -49,7 +49,6 @@ const FileSystem = () => {
     },
   });
 
-  // New powerful operations
   const mountFileSystem = useMountFileSystem({
     onSuccess: (name) => toast.success(`فضای فایلی ${name} با موفقیت مانت شد.`),
     onError: (error, name) => toast.error(`مانت ${name} با خطا مواجه شد: ${error.message}`),
@@ -70,30 +69,22 @@ const FileSystem = () => {
     onError: (error, name) => toast.error(`آنلود کلید ${name} با خطا مواجه شد: ${error.message}`),
   });
 
-  const setCanmount = useSetCanmount({
-    onSuccess: (name) => toast.success(`وضعیت Canmount برای ${name} با موفقیت تغییر کرد.`),
-    onError: (error, name) => toast.error(`تغییر Canmount برای ${name} با خطا مواجه شد: ${error.message}`),
+  const setCanmountHook = useSetCanmount({
+    onSuccess: (name) => toast.success(`وضعیت مانت خودکار برای ${name} با موفقیت تغییر کرد.`),
+    onError: (error, name) => toast.error(`تغییر مانت خودکار برای ${name} با خطا مواجه شد: ${error.message}`),
   });
 
   const { data, isLoading, error: fetchError } = useFileSystems();
   const { data: poolData } = useZpool();
   const poolOptions = useMemo(
-    () =>
-      (poolData?.pools ?? [])
-        .map((pool) => pool.name)
-        .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })),
+    () => (poolData?.pools ?? []).map((pool) => pool.name).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })),
     [poolData?.pools]
   );
 
   const filesystemEntries = data?.filesystems ?? [];
 
   const filesystems = useMemo(
-    () =>
-      [...filesystemEntries].sort((a, b) =>
-        a.filesystemName.localeCompare(b.filesystemName, 'en', {
-          sensitivity: 'base',
-        })
-      ),
+    () => [...filesystemEntries].sort((a, b) => a.filesystemName.localeCompare(b.filesystemName, 'en', { sensitivity: 'base' })),
     [filesystemEntries]
   );
 
@@ -124,26 +115,14 @@ const FileSystem = () => {
   const handleOpenCreate = useCallback(() => createFileSystem.openCreateModal(), [createFileSystem]);
   const handleDelete = useCallback((fs: FileSystemEntry) => deleteFileSystem.requestDelete(fs), [deleteFileSystem]);
 
-  // New action handlers
-  const handleMount = useCallback((fs: FileSystemEntry) => {
-    mountFileSystem.mount(fs.poolName, fs.filesystemName);
-  }, [mountFileSystem]);
-
-  const handleUnmount = useCallback((fs: FileSystemEntry) => {
-    unmountFileSystem.unmount(fs.poolName, fs.filesystemName);
-  }, [unmountFileSystem]);
-
-  const handleLoadKey = useCallback((fs: FileSystemEntry) => {
-    loadKey.loadKey(fs.poolName, fs.filesystemName);
-  }, [loadKey]);
-
-  const handleUnloadKey = useCallback((fs: FileSystemEntry) => {
-    unloadKey.unloadKey(fs.poolName, fs.filesystemName);
-  }, [unloadKey]);
+  const handleMount = useCallback((fs: FileSystemEntry) => mountFileSystem.mount(fs.poolName, fs.filesystemName), [mountFileSystem]);
+  const handleUnmount = useCallback((fs: FileSystemEntry) => unmountFileSystem.unmount(fs.poolName, fs.filesystemName), [unmountFileSystem]);
+  const handleLoadKey = useCallback((fs: FileSystemEntry) => loadKey.loadKey(fs.poolName, fs.filesystemName), [loadKey]);
+  const handleUnloadKey = useCallback((fs: FileSystemEntry) => unloadKey.unloadKey(fs.poolName, fs.filesystemName), [unloadKey]);
 
   const handleSetCanmount = useCallback((fs: FileSystemEntry, state: 'on' | 'off') => {
-    setCanmount.setCanmount(fs.poolName, fs.filesystemName, state);
-  }, [setCanmount]);
+    setCanmountHook.setCanmount(fs.poolName, fs.filesystemName, state);
+  }, [setCanmountHook]);
 
   return (
     <PageContainer>
@@ -177,7 +156,6 @@ const FileSystem = () => {
           error={fetchError ?? null}
           onDeleteFilesystem={handleDelete}
           isDeleteDisabled={deleteFileSystem.isDeleting}
-          // New powerful actions
           onMount={handleMount}
           onUnmount={handleUnmount}
           onLoadKey={handleLoadKey}
@@ -187,13 +165,10 @@ const FileSystem = () => {
           isUnmounting={unmountFileSystem.isUnmounting}
           isKeyLoading={loadKey.isLoadingKey}
           isKeyUnloading={unloadKey.isUnloadingKey}
+          isSettingCanmount={setCanmountHook.isSetting}
         />
 
-        <SelectedFileSystemsDetailsPanel
-          items={filesystems}
-          viewId={FILESYSTEM_DETAIL_VIEW_ID}
-          onSetCanmount={handleSetCanmount}
-        />
+        <SelectedFileSystemsDetailsPanel items={filesystems} viewId={FILESYSTEM_DETAIL_VIEW_ID} />
       </Box>
 
       <ConfirmDeleteFileSystemModal controller={deleteFileSystem} />
