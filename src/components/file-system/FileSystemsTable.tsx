@@ -1,6 +1,7 @@
 import { Box, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { MdDeleteOutline, MdPlayArrow, MdStop, MdVpnKey, MdVpnKeyOff } from 'react-icons/md';
+import ToggleBtn from '../ToggleBtn';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { FileSystemEntry } from '../../@types/filesystem';
 import DataTable from '../DataTable';
