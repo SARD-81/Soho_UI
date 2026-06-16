@@ -78,7 +78,7 @@ const FileSystemsTable = ({
     // Canmount column - only ToggleBtn (no Chip)
     const canmountColumn: DataTableColumn<FileSystemEntry> = {
       id: 'canmount',
-      header: 'مانت خودکار',
+      header: 'اتصال خودکار',
       align: 'center',
       renderCell: (fs) => {
         const isOn = getCanmountOn(fs);
@@ -107,7 +107,7 @@ const FileSystemsTable = ({
           <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
             {/* Mount / Unmount Icon Button */}
             {(onMount && onUnmount) && (
-              <Tooltip title={isMounted ? 'آنمانت کردن' : 'مانت کردن'}>
+              <Tooltip title={isMounted ? 'قطع اتصال' : 'وصل کردن'}>
                 <span>
                   <IconButton
                     size="small"
