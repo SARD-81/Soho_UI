@@ -44,6 +44,7 @@ export const navItems: NavigationItem[] = [
     children:[
       {text:"SMB" , icon:createElement(BsFillShareFill), path:"/share"},
       {text:"NFS" , icon:createElement(MdFolderShared), path:"/share-nfs"},
+      {text:"Web Share" , icon:createElement(MdFolderShared), path:"/web-share"},
     ] 
   },
   {

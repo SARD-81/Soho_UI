@@ -14,6 +14,7 @@ import Services from '../pages/Services.tsx';
 import Settings from '../pages/Settings.tsx';
 import Share from '../pages/Share.tsx';
 import ShareNfs from '../pages/ShareNfs.tsx';
+import WebShare from '../pages/WebShare.tsx';
 import SnmpService from '../pages/SnmpService.tsx';
 import Users from '../pages/Users.tsx';
 
@@ -40,9 +41,10 @@ const router = createBrowserRouter([
       { path: 'users', element: <Users /> },
       { path: 'settings', element: <Settings /> },
       { path: 'share', element: <Share /> },
+      { path: 'share-nfs', element: <ShareNfs /> },
+      { path: 'web-share', element: <WebShare /> },
       { path: 'history', element: <History /> },
       { path: 'snmp-service', element: <SnmpService /> },
-      { path: 'share-nfs', element: <ShareNfs /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
