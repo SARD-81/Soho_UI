@@ -269,7 +269,10 @@ export const useCreateWebShare = () => {
 
   return useMutation<unknown, AxiosError<ApiErrorResponse>, WebShareCreatePayload>({
     mutationFn: async (payload) => {
-      await axiosInstance.post(WEB_SHARE_ENDPOINT, payload);
+      await axiosInstance.post(WEB_SHARE_ENDPOINT, {
+        ...payload,
+        save_to_db: false,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: webSharesQueryKey });
@@ -282,7 +285,12 @@ export const useDeleteWebShare = () => {
 
   return useMutation<unknown, AxiosError<ApiErrorResponse>, WebShareDeleteParams>({
     mutationFn: async (params) => {
-      await axiosInstance.delete(WEB_SHARE_DELETE_ENDPOINT, { params });
+      await axiosInstance.delete(WEB_SHARE_DELETE_ENDPOINT, {
+        params: {
+          ...params,
+          save_to_db: false,
+        },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: webSharesQueryKey });
