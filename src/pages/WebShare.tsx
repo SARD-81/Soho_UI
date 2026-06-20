@@ -2,25 +2,12 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControl,
   FormHelperText,
   InputLabel,
   MenuItem,
   Select,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Typography,
 } from '@mui/material';
@@ -29,7 +16,10 @@ import { useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import type { FileSystemEntry } from '../@types/filesystem';
 import type { WebShareEntry } from '../@types/webshare';
+import BlurModal from '../components/BlurModal';
+import ModalActionButtons from '../components/common/ModalActionButtons';
 import PageContainer from '../components/PageContainer';
+import WebSharesTable from '../components/webshare/WebSharesTable';
 import { useFileSystems } from '../hooks/useFileSystems';
 import {
   extractWebShareErrorMessage,
@@ -39,6 +29,7 @@ import {
   useWebShares,
 } from '../hooks/useWebShares';
 
+const WEB_SHARE_DETAIL_VIEW_ID = 'web-shares';
 const permissionPattern = /^[0-7]{3,4}$/;
 
 const createFilesystemKey = (poolName: string, fsName: string) =>
@@ -126,7 +117,9 @@ const WebShare = () => {
           toast.success('Web Share با موفقیت ایجاد شد.');
         },
         onError: (error) => {
-          toast.error(`ایجاد Web Share با خطا مواجه شد: ${extractWebShareErrorMessage(error)}`);
+          toast.error(
+            `ایجاد Web Share با خطا مواجه شد: ${extractWebShareErrorMessage(error)}`
+          );
         },
       }
     );
@@ -168,7 +161,9 @@ const WebShare = () => {
           toast.success('Permission با موفقیت به‌روزرسانی شد.');
         },
         onError: (error) => {
-          toast.error(`تغییر Permission با خطا مواجه شد: ${extractWebShareErrorMessage(error)}`);
+          toast.error(
+            `تغییر Permission با خطا مواجه شد: ${extractWebShareErrorMessage(error)}`
+          );
         },
       }
     );
@@ -198,7 +193,9 @@ const WebShare = () => {
           toast.success('Web Share با موفقیت حذف شد.');
         },
         onError: (error) => {
-          toast.error(`حذف Web Share با خطا مواجه شد: ${extractWebShareErrorMessage(error)}`);
+          toast.error(
+            `حذف Web Share با خطا مواجه شد: ${extractWebShareErrorMessage(error)}`
+          );
         },
       }
     );
@@ -209,38 +206,39 @@ const WebShare = () => {
 
   const isPermissionInvalid =
     permissionValue.length > 0 && !permissionPattern.test(permissionValue);
+  const pendingShareId = permissionShare?.id ?? deleteShare?.id ?? null;
+  const isMutating = setWebSharePermission.isPending || deleteWebShare.isPending;
 
   return (
     <PageContainer>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: -5 }}>
         <Box
           sx={{
             display: 'flex',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             justifyContent: 'space-between',
             gap: 2,
             flexWrap: 'wrap',
           }}
         >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Typography
-              variant="h5"
-              sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
-            >
-              اشتراک‌های Web Share
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'var(--color-text)' }}>
-              مدیریت Location Blockهای NGINX برای فایل‌سیستم‌ها و مسیرهای قابل
-              ارائه از طریق وب.
-            </Typography>
-          </Box>
+          <Typography
+            variant="h5"
+            sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+          >
+            اشتراک‌های Web Share
+          </Typography>
 
           <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap">
             <Button
               onClick={() => void refetchWebShares()}
               variant="outlined"
               disabled={isWebSharesFetching}
-              sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
+              sx={{
+                borderColor: 'var(--color-primary)',
+                color: 'var(--color-primary)',
+                borderRadius: '3px',
+                fontWeight: 700,
+              }}
             >
               به‌روزرسانی لیست
             </Button>
@@ -253,220 +251,136 @@ const WebShare = () => {
                 py: 1.25,
                 borderRadius: '3px',
                 fontWeight: 700,
+                fontSize: '0.95rem',
                 background:
                   'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
                 color: 'var(--color-bg)',
+                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
               }}
             >
               ایجاد Web Share
             </Button>
           </Stack>
         </Box>
-
-        <Card sx={{ backgroundColor: 'var(--color-card-bg)', color: 'var(--color-text)' }}>
-          <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Typography variant="overline" sx={{ color: 'var(--color-primary)' }}>
-              خلاصه
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 800 }}>
-              {webShares.length}
-            </Typography>
-            <Typography variant="body2">
-              API این صفحه Web Shareها را به‌صورت Location Blockهای NGINX برای
-              فایل‌سیستم‌ها مدیریت می‌کند و ایجاد/حذف این رکوردها با
-              save_to_db=false ارسال می‌شود.
-            </Typography>
-          </CardContent>
-        </Card>
-
-        {webSharesError ? (
-          <Alert severity="error">دریافت لیست Web Shareها با خطا مواجه شد.</Alert>
-        ) : null}
-
-        {filesystemsError ? (
-          <Alert severity="warning">
-            دریافت لیست فایل‌سیستم‌ها با خطا مواجه شد؛ ایجاد Web Share ممکن است
-            در دسترس نباشد.
-          </Alert>
-        ) : null}
-
-        <TableContainer
-          sx={{
-            backgroundColor: 'var(--color-card-bg)',
-            borderRadius: 2,
-            border: '1px solid rgba(148, 163, 184, 0.18)',
-          }}
-        >
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>نام Web Share</TableCell>
-                <TableCell>Pool</TableCell>
-                <TableCell>FileSystem</TableCell>
-                <TableCell>مسیر/Location</TableCell>
-                <TableCell>Permission</TableCell>
-                <TableCell align="center">عملیات</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {isWebSharesLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    <CircularProgress size={28} />
-                  </TableCell>
-                </TableRow>
-              ) : webShares.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    هیچ Web Shareای وجود ندارد.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                webShares.map((share) => (
-                  <TableRow key={share.id} hover>
-                    <TableCell>{share.targetName}</TableCell>
-                    <TableCell>{share.poolName}</TableCell>
-                    <TableCell>{share.fsName}</TableCell>
-                    <TableCell sx={{ direction: 'ltr', textAlign: 'left' }}>
-                      {share.path}
-                    </TableCell>
-                    <TableCell>{share.permission ?? '—'}</TableCell>
-                    <TableCell align="center">
-                      <Stack direction="row" spacing={1} justifyContent="center">
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => openPermissionDialog(share)}
-                          disabled={setWebSharePermission.isPending}
-                        >
-                          Permission
-                        </Button>
-                        <Button
-                          size="small"
-                          color="error"
-                          variant="outlined"
-                          onClick={() => setDeleteShare(share)}
-                          disabled={deleteWebShare.isPending}
-                        >
-                          حذف
-                        </Button>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
       </Box>
 
-      <Dialog open={isCreateOpen} onClose={closeCreateDialog} fullWidth maxWidth="sm">
-        <DialogTitle>ایجاد Web Share</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <FormControl fullWidth disabled={isFilesystemsLoading || createWebShare.isPending}>
-            <InputLabel id="webshare-filesystem-label">FileSystem</InputLabel>
-            <Select
-              labelId="webshare-filesystem-label"
-              label="FileSystem"
-              value={selectedFilesystemKey}
-              onChange={(event: SelectChangeEvent) =>
-                setSelectedFilesystemKey(event.target.value)
-              }
-            >
-              {availableFilesystems.map((filesystem) => {
-                const key = createFilesystemKey(
-                  filesystem.poolName,
-                  filesystem.filesystemName
-                );
-                return (
-                  <MenuItem key={key} value={key}>
-                    {renderFilesystemLabel(filesystem)}
-                  </MenuItem>
-                );
-              })}
-            </Select>
-            <FormHelperText>
-              {availableFilesystems.length === 0
-                ? 'همه فایل‌سیستم‌های موجود Web Share دارند یا لیست در دسترس نیست.'
-                : 'فایل‌سیستم‌های دارای Web Share تکراری نمایش داده نمی‌شوند.'}
-            </FormHelperText>
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeCreateDialog} disabled={createWebShare.isPending}>
-            انصراف
-          </Button>
-          <Button
-            onClick={handleCreateSubmit}
-            variant="contained"
-            disabled={!selectedFilesystem || createWebShare.isPending}
-          >
-            ایجاد
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {filesystemsError ? (
+        <Alert severity="warning" sx={{ mt: 3 }}>
+          دریافت لیست فایل‌سیستم‌ها با خطا مواجه شد؛ ایجاد Web Share ممکن است در
+          دسترس نباشد.
+        </Alert>
+      ) : null}
 
-      <Dialog
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 3 }}>
+        <WebSharesTable
+          detailViewId={WEB_SHARE_DETAIL_VIEW_ID}
+          shares={webShares}
+          isLoading={isWebSharesLoading}
+          error={webSharesError ?? null}
+          onDelete={setDeleteShare}
+          onPermission={openPermissionDialog}
+          pendingShareId={pendingShareId}
+          isMutating={isMutating}
+        />
+      </Box>
+
+      <BlurModal
+        open={isCreateOpen}
+        onClose={closeCreateDialog}
+        title="ایجاد Web Share"
+        maxWidth="560px"
+        actions={
+          <ModalActionButtons
+            onCancel={closeCreateDialog}
+            onConfirm={handleCreateSubmit}
+            confirmLabel="ایجاد"
+            disabled={!selectedFilesystem || createWebShare.isPending}
+            isLoading={createWebShare.isPending}
+          />
+        }
+      >
+        <FormControl fullWidth disabled={isFilesystemsLoading || createWebShare.isPending}>
+          <InputLabel id="webshare-filesystem-label">FileSystem</InputLabel>
+          <Select
+            labelId="webshare-filesystem-label"
+            label="FileSystem"
+            value={selectedFilesystemKey}
+            onChange={(event: SelectChangeEvent) =>
+              setSelectedFilesystemKey(event.target.value)
+            }
+          >
+            {availableFilesystems.map((filesystem) => {
+              const key = createFilesystemKey(
+                filesystem.poolName,
+                filesystem.filesystemName
+              );
+              return (
+                <MenuItem key={key} value={key}>
+                  {renderFilesystemLabel(filesystem)}
+                </MenuItem>
+              );
+            })}
+          </Select>
+          <FormHelperText>
+            {availableFilesystems.length === 0
+              ? 'همه فایل‌سیستم‌های موجود Web Share دارند یا لیست در دسترس نیست.'
+              : 'فایل‌سیستم‌های دارای Web Share تکراری نمایش داده نمی‌شوند.'}
+          </FormHelperText>
+        </FormControl>
+      </BlurModal>
+
+      <BlurModal
         open={Boolean(permissionShare)}
         onClose={closePermissionDialog}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>تغییر Permission</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <TextField
-            fullWidth
-            label="Permission"
-            value={permissionValue}
-            error={isPermissionInvalid}
-            helperText="نمونه معتبر: 755 یا 0755"
-            onChange={(event) => setPermissionValue(event.target.value.trim())}
-            disabled={setWebSharePermission.isPending}
-            inputProps={{ inputMode: 'numeric', dir: 'ltr' }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={closePermissionDialog}
-            disabled={setWebSharePermission.isPending}
-          >
-            انصراف
-          </Button>
-          <Button
-            onClick={handlePermissionSubmit}
-            variant="contained"
+        title="تغییر Permission"
+        maxWidth="420px"
+        actions={
+          <ModalActionButtons
+            onCancel={closePermissionDialog}
+            onConfirm={handlePermissionSubmit}
+            confirmLabel="ذخیره"
             disabled={
               !permissionPattern.test(permissionValue) ||
               setWebSharePermission.isPending
             }
-          >
-            ذخیره
-          </Button>
-        </DialogActions>
-      </Dialog>
+            isLoading={setWebSharePermission.isPending}
+          />
+        }
+      >
+        <TextField
+          fullWidth
+          label="Permission"
+          value={permissionValue}
+          error={isPermissionInvalid}
+          helperText="نمونه معتبر: 755 یا 0755"
+          onChange={(event) => setPermissionValue(event.target.value.trim())}
+          disabled={setWebSharePermission.isPending}
+          inputProps={{ inputMode: 'numeric', dir: 'ltr' }}
+        />
+      </BlurModal>
 
-      <Dialog open={Boolean(deleteShare)} onClose={closeDeleteDialog} fullWidth maxWidth="xs">
-        <DialogTitle>حذف Web Share</DialogTitle>
-        <DialogContent>
-          <Typography sx={{ color: 'var(--color-text)' }}>
-            آیا از حذف Web Share برای {deleteShare?.poolName}/{deleteShare?.fsName}
-            مطمئن هستید؟
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteDialog} disabled={deleteWebShare.isPending}>
-            انصراف
-          </Button>
-          <Button
-            onClick={handleDeleteSubmit}
-            color="error"
-            variant="contained"
+      <BlurModal
+        open={Boolean(deleteShare)}
+        onClose={closeDeleteDialog}
+        title="حذف Web Share"
+        maxWidth="420px"
+        actions={
+          <ModalActionButtons
+            onCancel={closeDeleteDialog}
+            onConfirm={handleDeleteSubmit}
+            confirmLabel="حذف"
             disabled={deleteWebShare.isPending}
-          >
-            حذف
-          </Button>
-        </DialogActions>
-      </Dialog>
+            isLoading={deleteWebShare.isPending}
+            disableConfirmGradient
+            confirmProps={{ color: 'error', variant: 'contained' }}
+          />
+        }
+      >
+        <Typography sx={{ color: 'var(--color-text)' }}>
+          آیا از حذف Web Share برای {deleteShare?.poolName}/{deleteShare?.fsName}{' '}
+          مطمئن هستید؟
+        </Typography>
+      </BlurModal>
     </PageContainer>
   );
 };
