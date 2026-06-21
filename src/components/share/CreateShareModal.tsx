@@ -336,9 +336,16 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                 error={hasPathError}
                 helperText={pathHelperText}
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
+                inputProps={{
+                  ...params.inputProps,
+                  dir: 'ltr',
+                }}
                 InputProps={{
                   ...params.InputProps,
-                  sx: inputBaseStyles,
+                  sx: {
+                    ...inputBaseStyles,
+                    '& .MuiInputBase-input': { textAlign: 'left' },
+                  },
                   endAdornment: (
                     <Fragment>
                       {pathValidationAdornment}
@@ -383,6 +390,10 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                 helperText={validUsersHelperText}
                 size="small"
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
+                inputProps={{
+                  ...params.inputProps,
+                  dir: 'ltr',
+                }}
                 InputProps={{
                   ...params.InputProps,
                   sx: inputBaseStyles,
@@ -422,6 +433,10 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                 helperText={validGroupsHelperText}
                 size="small"
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
+                inputProps={{
+                  ...params.inputProps,
+                  dir: 'ltr',
+                }}
                 InputProps={{
                   ...params.InputProps,
                   sx: inputBaseStyles,

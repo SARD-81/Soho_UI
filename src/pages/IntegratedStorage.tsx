@@ -1,5 +1,5 @@
 import { Box, Button, Tooltip, Typography } from '@mui/material';
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
 import {
   lazy,
   Suspense,
@@ -33,7 +33,7 @@ import {
   type ReplaceDevicePayload,
   useReplacePoolDisk,
 } from '../hooks/useReplacePoolDisk';
-import { useZpool } from '../hooks/useZpool';
+import { useZpool, zpoolQueryKey } from '../hooks/useZpool';
 import {
   fetchZpoolDetails,
   zpoolDetailQueryKey,
@@ -226,13 +226,35 @@ const mapPartitionedDisksToDeviceOptions = (
 
 const IntegratedStorage = () => {
   const location = useLocation();
+  const queryClient = useQueryClient();
 
   const isIntegratedStorageRoute =
     location.pathname.toLowerCase() === '/integrated-space';
 
+  const refreshIntegratedStorageData = useCallback(
+    async (poolName?: string) => {
+      if (!isIntegratedStorageRoute) {
+        return;
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: zpoolQueryKey }),
+        poolName
+          ? queryClient.invalidateQueries({
+              queryKey: zpoolDetailQueryKey(poolName),
+            })
+          : Promise.resolve(),
+        queryClient.invalidateQueries({ queryKey: ['zpool', 'devices'] }),
+        queryClient.invalidateQueries({ queryKey: ['disk', 'partitioned'] }),
+      ]);
+    },
+    [isIntegratedStorageRoute, queryClient]
+  );
+
   const createPool = useCreatePool({
     onSuccess: (poolName) => {
       toast.success(`فضای یکپارچه ${poolName} با موفقیت ایجاد شد.`);
+      void refreshIntegratedStorageData(poolName);
     },
     onError: (errorMessage: string) => {
       toast.error(`ایجاد فضای یکپارچه با خطا مواجه شد: ${errorMessage}`);
@@ -242,6 +264,7 @@ const IntegratedStorage = () => {
   const poolDeletion = useDeleteZpool({
     onSuccess: (poolName) => {
       toast.success(`فضای یکپارچه ${poolName} با موفقیت حذف شد.`);
+      void refreshIntegratedStorageData(poolName);
     },
     onError: (error, poolName) => {
       if (error.message.includes('shareConfiguration')) {
@@ -259,6 +282,7 @@ const IntegratedStorage = () => {
   const poolExport = useExportPool({
     onSuccess: (poolName) => {
       toast.success(`آزادسازی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
+      void refreshIntegratedStorageData(poolName);
     },
     onError: (error, poolName) => {
       toast.error(
@@ -270,6 +294,7 @@ const IntegratedStorage = () => {
   const poolImport = useImportPool({
     onSuccess: (poolName) => {
       toast.success(`فراخوانی فضای یکپارچه ${poolName} با موفقیت انجام شد.`);
+      void refreshIntegratedStorageData(poolName);
     },
     onError: (error, poolName) => {
       toast.error(
@@ -284,7 +309,7 @@ const IntegratedStorage = () => {
     error: zpoolError,
   } = useZpool({
     enabled: isIntegratedStorageRoute,
-    refetchInterval: 1 * 60 * 1000,
+    refetchInterval: 30 * 1000,
   });
 
   const [replacePoolName, setReplacePoolName] = useState<string | null>(null);
@@ -344,7 +369,7 @@ const IntegratedStorage = () => {
     refetch: refetchPoolSlots,
   } = usePoolDeviceSlots(poolNames, {
     enabled: shouldFetchPoolSlots,
-    refetchInterval: shouldFetchPoolSlots ? 60 * 1000 : undefined,
+    refetchInterval: shouldFetchPoolSlots ? 30 * 1000 : undefined,
   });
 
   const handleLoadPoolSlots = useCallback(() => {
@@ -367,7 +392,8 @@ const IntegratedStorage = () => {
   const addPoolDevices = useAddPoolDevices({
     onSuccess: (poolName) => {
       toast.success(`افزودن دیسک به ${poolName} ثبت شد.`);
-      refetchPoolSlots();
+      void refreshIntegratedStorageData(poolName);
+      void refetchPoolSlots();
     },
     onError: (message, poolName) => {
       toast.error(`افزودن دیسک به ${poolName} با خطا مواجه شد: ${message}`);
@@ -411,7 +437,8 @@ const IntegratedStorage = () => {
   const replaceDisk = useReplacePoolDisk({
     onSuccess: (poolName) => {
       toast.success(`جایگزینی دیسک برای فضای ${poolName} ثبت شد.`);
-      refetchPoolSlots();
+      void refreshIntegratedStorageData(poolName);
+      void refetchPoolSlots();
       setReplacePoolName(null);
     },
     onError: (message, poolName) => {
@@ -500,7 +527,6 @@ const IntegratedStorage = () => {
 
     return Array.from(ids).slice(0, MAX_COMPARISON_ITEMS);
   }, [activeItemId, isIntegratedStorageRoute, pinnedItemIds]);
-
   // Fetches details for each visible comparison item and refreshes them independently.
   const poolDetailQueries = useQueries({
     queries: poolDetailIds.map((poolName) => ({

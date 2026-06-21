@@ -56,8 +56,7 @@ export const useCreateNfsShare = ({
 
   return useMutation<unknown, AxiosError<ApiErrorResponse>, NfsSharePayload>({
     mutationFn: async (payload) => {
-      // Map frontend option to exactly match backend YML specs
-      const { no_subtree_check, ...rest } = payload as any;
+      const { no_subtree_check, ...rest } = payload;
       const apiPayload = {
         ...rest,
         subtree_check: no_subtree_check === undefined ? false : !no_subtree_check,
