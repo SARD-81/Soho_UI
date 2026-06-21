@@ -25,7 +25,6 @@ import IPv4AddressInput from '../common/IPv4AddressInput';
 import ModalActionButtons from '../common/ModalActionButtons';
 import { useServiceAction } from '../../hooks/useServiceAction';
 import { toast } from 'react-hot-toast';
-import { useNfsShareDetails } from '../../hooks/useNfsShareDetails';
 
 const DISPLAY_OPTIONS = NFS_OPTION_KEYS.filter(
   (key) => key !== 'root_squash' && key !== 'no_subtree_check'
@@ -97,7 +96,6 @@ const NfsShareModal = ({
   const [client, setClient] = useState('');
   const [optionValues, setOptionValues] = useState(NFS_OPTION_DEFAULTS);
   const [formError, setFormError] = useState<string | null>(null);
-  const [hasAdjustedOptions, setHasAdjustedOptions] = useState(false);
 
   const isEditMode = mode === 'edit';
 
@@ -115,13 +113,11 @@ const NfsShareModal = ({
       setPathInput(initialPath);
       setClient(initialClient);
       setOptionValues(resolveOptionValues(initialOptions));
-      setHasAdjustedOptions(true);
     } else {
       setPath('');
       setPathInput('');
       setClient('');
       setOptionValues({ ...NFS_OPTION_DEFAULTS });
-      setHasAdjustedOptions(false);
     }
 
     setFormError(null);
@@ -148,11 +144,10 @@ const NfsShareModal = ({
     setPathInput(nextValue);
   };
 
-  const handleToggleOption = (key: NfsShareOptionKey) => {
-    setHasAdjustedOptions(true);
+  const handleToggleOption = (key: NfsShareOptionKey, checked: boolean) => {
     setOptionValues((prev) => ({
       ...prev,
-      [key]: !prev[key],
+      [key]: checked,
     }));
   };
 
@@ -198,7 +193,7 @@ const NfsShareModal = ({
       ...optionValues,
     };
 
-    onSubmit(basePayload as NfsSharePayload);
+    onSubmit(basePayload);
   };
 
   const isConfirmDisabled =
@@ -314,7 +309,7 @@ const NfsShareModal = ({
                   <ToggleBtn
                     id={`nfs-option-${optionKey}`}
                     checked={optionValues[optionKey]}
-                    onChange={() => handleToggleOption(optionKey)}
+                    onChange={(checked) => handleToggleOption(optionKey, checked)}
                   />
                   <Typography
                     variant="caption"

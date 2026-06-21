@@ -1,5 +1,7 @@
 ﻿import {
   Box,
+  Checkbox,
+  IconButton,
   FormControl,
   FormHelperText,
   InputLabel,
@@ -12,7 +14,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import { FiAlertCircle, FiCheckCircle, FiEye, FiEyeOff } from 'react-icons/fi';
 import type { FileSystemEntry } from '../../@types/filesystem';
 import type { UseCreateFileSystemReturn } from '../../hooks/useCreateFileSystem';
 import { removePersianCharacters } from '../../utils/text';
@@ -68,11 +70,19 @@ const CreateFileSystemModal = ({
   } = controller;
   const [hasPersianName, setHasPersianName] = useState(false);
   const [hasPersianQuota, setHasPersianQuota] = useState(false);
+  const [isEncryptionEnabled, setIsEncryptionEnabled] = useState(false);
+  const [encryptionPassword, setEncryptionPassword] = useState('');
+  const [isEncryptionTouched, setIsEncryptionTouched] = useState(false);
+  const [showEncryptionPassword, setShowEncryptionPassword] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setHasPersianName(false);
       setHasPersianQuota(false);
+      setIsEncryptionEnabled(false);
+      setEncryptionPassword('');
+      setIsEncryptionTouched(false);
+      setShowEncryptionPassword(false);
     }
   }, [isOpen]);
 
@@ -97,6 +107,10 @@ const CreateFileSystemModal = ({
 
     const timeoutId = window.setTimeout(() => {
       setHasPersianQuota(false);
+      setIsEncryptionEnabled(false);
+      setEncryptionPassword('');
+      setIsEncryptionTouched(false);
+      setShowEncryptionPassword(false);
     }, 3000);
 
     return () => {
@@ -190,7 +204,28 @@ const CreateFileSystemModal = ({
       <FiCheckCircle color="var(--color-success)" size={18} />
     ) : null;
 
+  const encryptionRules = [
+    { label: 'وارد کردن رمز عبور', met: encryptionPassword.length > 0 },
+    { label: 'حداقل ۸ کاراکتر', met: encryptionPassword.length >= 8 },
+    { label: 'حداقل یک حرف انگلیسی', met: /[A-Za-z]/.test(encryptionPassword) },
+    {
+      label: 'حداقل یک عدد یا نماد',
+      met: /[0-9]|[^A-Za-z0-9؀-ۿ\s]/.test(encryptionPassword),
+    },
+    {
+      label: 'رمز نباید فقط فارسی باشد',
+      met: encryptionPassword.length === 0 || /[A-Za-z0-9]|[^؀-ۿ\s]/.test(encryptionPassword),
+    },
+  ];
+  const isEncryptionPasswordValid = encryptionRules.every((rule) => rule.met);
+
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (isEncryptionEnabled && !isEncryptionPasswordValid) {
+      event.preventDefault();
+      setIsEncryptionTouched(true);
+      return;
+    }
+
     if (!hasOnlyEnglishAlphanumeric && trimmedName.length > 0) {
       event.preventDefault();
       setNameError('نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.');
@@ -229,7 +264,7 @@ const CreateFileSystemModal = ({
           confirmLabel="ایجاد"
           loadingLabel="در حال ایجاد…"
           isLoading={isCreating}
-          disabled={isCreating}
+          disabled={isCreating || (isEncryptionEnabled && !isEncryptionPasswordValid)}
           confirmProps={{
             type: 'submit',
             form: 'create-filesystem-form',
@@ -392,6 +427,85 @@ const CreateFileSystemModal = ({
                 <MenuItem value="T">ترابایت</MenuItem>
               </Select>
             </FormControl>
+          </Box>
+
+
+          <Box
+            sx={{
+              border: '1px solid var(--color-input-border)',
+              borderRadius: '8px',
+              p: 2,
+              backgroundColor: 'rgba(31, 182, 255, 0.04)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Checkbox
+                checked={isEncryptionEnabled}
+                onChange={(event) => {
+                  setIsEncryptionEnabled(event.target.checked);
+                  setIsEncryptionTouched(false);
+                  if (!event.target.checked) {
+                    setEncryptionPassword('');
+                    setShowEncryptionPassword(false);
+                  }
+                }}
+                sx={{
+                  color: 'var(--color-secondary)',
+                  '&.Mui-checked': { color: 'var(--color-primary)' },
+                }}
+              />
+              <Typography sx={{ color: 'var(--color-text)', fontWeight: 700 }}>
+                رمز نگاری
+              </Typography>
+            </Box>
+
+            {isEncryptionEnabled && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
+                <TextField
+                  label="رمز رمزنگاری"
+                  value={encryptionPassword}
+                  onChange={(event) => setEncryptionPassword(event.target.value)}
+                  onBlur={() => setIsEncryptionTouched(true)}
+                  type={showEncryptionPassword ? 'text' : 'password'}
+                  fullWidth
+                  size="small"
+                  error={isEncryptionTouched && !isEncryptionPasswordValid}
+                  helperText="این گزینه فعلاً فقط برای تجربه کاربری است و به API ارسال نمی‌شود."
+                  InputProps={{
+                    sx: inputBaseStyles,
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setShowEncryptionPassword((value) => !value)}
+                          edge="end"
+                        >
+                          {showEncryptionPassword ? <FiEyeOff /> : <FiEye />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <Box sx={{ display: 'grid', gap: 0.75 }}>
+                  {encryptionRules.map((rule) => {
+                    const color = rule.met
+                      ? 'var(--color-success)'
+                      : isEncryptionTouched
+                        ? 'var(--color-error)'
+                        : 'var(--color-secondary)';
+
+                    return (
+                      <Box key={rule.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                        <FiCheckCircle color={color} size={16} />
+                        <Typography variant="caption" sx={{ color }}>
+                          {rule.label}
+                        </Typography>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Box>
+            )}
           </Box>
 
           {apiError && (

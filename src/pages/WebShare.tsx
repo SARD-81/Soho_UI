@@ -8,7 +8,6 @@ import {
   MenuItem,
   Select,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -30,18 +29,12 @@ import {
 } from '../hooks/useWebShares';
 
 const WEB_SHARE_DETAIL_VIEW_ID = 'web-shares';
-const permissionPattern = /^[0-7]{3,4}$/;
-
 const createFilesystemKey = (poolName: string, fsName: string) =>
   `${poolName}_${fsName}`;
 
 const WebShare = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedFilesystemKey, setSelectedFilesystemKey] = useState('');
-  const [permissionShare, setPermissionShare] = useState<WebShareEntry | null>(
-    null
-  );
-  const [permissionValue, setPermissionValue] = useState('755');
   const [deleteShare, setDeleteShare] = useState<WebShareEntry | null>(null);
 
   const {
@@ -91,7 +84,7 @@ const WebShare = () => {
   const deleteWebShare = useDeleteWebShare();
 
   const closeCreateDialog = () => {
-    if (createWebShare.isPending) {
+    if (createWebShare.isPending || setWebSharePermission.isPending) {
       return;
     }
     setIsCreateOpen(false);
@@ -112,57 +105,29 @@ const WebShare = () => {
       },
       {
         onSuccess: () => {
-          setIsCreateOpen(false);
-          setSelectedFilesystemKey('');
-          toast.success('Web Share با موفقیت ایجاد شد.');
+          setWebSharePermission.mutate(
+            {
+              pool_name: selectedFilesystem.poolName,
+              fs_name: selectedFilesystem.filesystemName,
+              permission: '777',
+            },
+            {
+              onSuccess: () => {
+                setIsCreateOpen(false);
+                setSelectedFilesystemKey('');
+                toast.success('Web Share با دسترسی 777 با موفقیت ایجاد شد.');
+              },
+              onError: (error) => {
+                toast.error(
+                  `اشتراک ایجاد شد اما تنظیم دسترسی 777 با خطا مواجه شد: ${extractWebShareErrorMessage(error)}`
+                );
+              },
+            }
+          );
         },
         onError: (error) => {
           toast.error(
             `ایجاد Web Share با خطا مواجه شد: ${extractWebShareErrorMessage(error)}`
-          );
-        },
-      }
-    );
-  };
-
-  const openPermissionDialog = (share: WebShareEntry) => {
-    setPermissionShare(share);
-    setPermissionValue(share.permission ?? '755');
-  };
-
-  const closePermissionDialog = () => {
-    if (setWebSharePermission.isPending) {
-      return;
-    }
-    setPermissionShare(null);
-    setPermissionValue('755');
-  };
-
-  const handlePermissionSubmit = () => {
-    if (!permissionShare) {
-      return;
-    }
-
-    if (!permissionPattern.test(permissionValue)) {
-      toast.error('Permission باید یک عدد سه یا چهار رقمی در مبنای هشت باشد.');
-      return;
-    }
-
-    setWebSharePermission.mutate(
-      {
-        pool_name: permissionShare.poolName,
-        fs_name: permissionShare.fsName,
-        permission: permissionValue,
-      },
-      {
-        onSuccess: () => {
-          setPermissionShare(null);
-          setPermissionValue('755');
-          toast.success('Permission با موفقیت به‌روزرسانی شد.');
-        },
-        onError: (error) => {
-          toast.error(
-            `تغییر Permission با خطا مواجه شد: ${extractWebShareErrorMessage(error)}`
           );
         },
       }
@@ -204,10 +169,10 @@ const WebShare = () => {
   const renderFilesystemLabel = (filesystem: FileSystemEntry) =>
     `${filesystem.poolName}/${filesystem.filesystemName}`;
 
-  const isPermissionInvalid =
-    permissionValue.length > 0 && !permissionPattern.test(permissionValue);
-  const pendingShareId = permissionShare?.id ?? deleteShare?.id ?? null;
-  const isMutating = setWebSharePermission.isPending || deleteWebShare.isPending;
+  const pendingShareId = deleteShare?.id ?? null;
+  const isMutating = deleteWebShare.isPending;
+  const webShareHost = window.location.hostname;
+  const isCreateMutating = createWebShare.isPending || setWebSharePermission.isPending;
 
   return (
     <PageContainer>
@@ -245,7 +210,7 @@ const WebShare = () => {
             <Button
               onClick={() => setIsCreateOpen(true)}
               variant="contained"
-              disabled={createWebShare.isPending}
+              disabled={isCreateMutating}
               sx={{
                 px: 3,
                 py: 1.25,
@@ -278,7 +243,7 @@ const WebShare = () => {
           isLoading={isWebSharesLoading}
           error={webSharesError ?? null}
           onDelete={setDeleteShare}
-          onPermission={openPermissionDialog}
+          host={webShareHost}
           pendingShareId={pendingShareId}
           isMutating={isMutating}
         />
@@ -294,12 +259,12 @@ const WebShare = () => {
             onCancel={closeCreateDialog}
             onConfirm={handleCreateSubmit}
             confirmLabel="ایجاد"
-            disabled={!selectedFilesystem || createWebShare.isPending}
-            isLoading={createWebShare.isPending}
+            disabled={!selectedFilesystem || isCreateMutating}
+            isLoading={isCreateMutating}
           />
         }
       >
-        <FormControl fullWidth disabled={isFilesystemsLoading || createWebShare.isPending}>
+        <FormControl fullWidth disabled={isFilesystemsLoading || isCreateMutating}>
           <InputLabel id="webshare-filesystem-label">FileSystem</InputLabel>
           <Select
             labelId="webshare-filesystem-label"
@@ -327,36 +292,6 @@ const WebShare = () => {
               : 'فایل‌سیستم‌های دارای Web Share تکراری نمایش داده نمی‌شوند.'}
           </FormHelperText>
         </FormControl>
-      </BlurModal>
-
-      <BlurModal
-        open={Boolean(permissionShare)}
-        onClose={closePermissionDialog}
-        title="تغییر Permission"
-        maxWidth="420px"
-        actions={
-          <ModalActionButtons
-            onCancel={closePermissionDialog}
-            onConfirm={handlePermissionSubmit}
-            confirmLabel="ذخیره"
-            disabled={
-              !permissionPattern.test(permissionValue) ||
-              setWebSharePermission.isPending
-            }
-            isLoading={setWebSharePermission.isPending}
-          />
-        }
-      >
-        <TextField
-          fullWidth
-          label="Permission"
-          value={permissionValue}
-          error={isPermissionInvalid}
-          helperText="نمونه معتبر: 755 یا 0755"
-          onChange={(event) => setPermissionValue(event.target.value.trim())}
-          disabled={setWebSharePermission.isPending}
-          inputProps={{ inputMode: 'numeric', dir: 'ltr' }}
-        />
       </BlurModal>
 
       <BlurModal

@@ -1,6 +1,5 @@
 import {
   Box,
-  Chip,
   CircularProgress,
   IconButton,
   Stack,
@@ -8,7 +7,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
-import { MdDeleteOutline, MdLockReset } from 'react-icons/md';
+import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { WebShareEntry } from '../../@types/webshare';
 import DataTable from '../DataTable';
@@ -19,7 +18,7 @@ interface WebSharesTableProps {
   isLoading: boolean;
   error: Error | null;
   onDelete: (share: WebShareEntry) => void;
-  onPermission: (share: WebShareEntry) => void;
+  host: string;
   pendingShareId?: string | null;
   isMutating?: boolean;
 }
@@ -30,7 +29,7 @@ const WebSharesTable = ({
   isLoading,
   error,
   onDelete,
-  onPermission,
+  host,
   pendingShareId = null,
   isMutating = false,
 }: WebSharesTableProps) => {
@@ -91,23 +90,38 @@ const WebSharesTable = ({
         ),
       },
       {
-        id: 'permission',
-        header: 'Permission',
+        id: 'links',
+        header: 'لینک ها',
         align: 'center',
-        renderCell: (share) =>
-          share.permission ? (
-            <Chip
-              label={share.permission}
-              size="small"
-              sx={{
-                fontWeight: 700,
-                color: 'var(--color-primary)',
-                backgroundColor: 'rgba(0, 198, 169, 0.12)',
-              }}
-            />
-          ) : (
-            <Typography sx={{ color: 'var(--color-secondary)' }}>—</Typography>
-          ),
+        renderCell: (share) => {
+          const link = `http://${host}/${share.poolName}/${share.targetName}/`;
+
+          return (
+            <Tooltip title={link}>
+              <Typography
+                component="a"
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
+                sx={{
+                  color: 'var(--color-primary)',
+                  direction: 'ltr',
+                  display: 'inline-block',
+                  fontWeight: 700,
+                  maxWidth: 260,
+                  overflow: 'hidden',
+                  textDecoration: 'none',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                {link}
+              </Typography>
+            </Tooltip>
+          );
+        },
       },
       {
         id: 'actions',
@@ -119,21 +133,6 @@ const WebSharesTable = ({
 
           return (
             <Stack direction="row" spacing={0.5} justifyContent="center">
-              <Tooltip title="تغییر Permission">
-                <span>
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onPermission(share);
-                    }}
-                    disabled={isShareMutating}
-                  >
-                    <MdLockReset size={18} />
-                  </IconButton>
-                </span>
-              </Tooltip>
               <Tooltip title="حذف Web Share">
                 <span>
                   <IconButton
@@ -154,7 +153,7 @@ const WebSharesTable = ({
         },
       },
     ],
-    [isMutating, onDelete, onPermission, pendingShareId]
+    [host, isMutating, onDelete, pendingShareId]
   );
 
   return (
