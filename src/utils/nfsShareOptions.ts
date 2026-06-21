@@ -23,8 +23,27 @@ const resolveOptionValue = (
   }
 
   if (key === 'read_write') {
-    const value = options.read_write ?? options.rw;
-    return typeof value === 'boolean' ? value : undefined;
+    if (typeof options.read_write === 'boolean') {
+      return options.read_write;
+    }
+
+    if (typeof options.rw === 'boolean' && options.rw) {
+      return true;
+    }
+
+    if (typeof options.ro === 'boolean' && options.ro) {
+      return false;
+    }
+
+    if (typeof options.rw === 'boolean') {
+      return options.rw;
+    }
+
+    if (typeof options.ro === 'boolean') {
+      return !options.ro;
+    }
+
+    return undefined;
   }
 
   if (key === 'sync') {

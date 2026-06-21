@@ -2,6 +2,10 @@ import type { NestedDetailTableData } from '../@types/detailComparison';
 import type { NfsShareClientEntry, NfsShareEntry } from '../@types/nfs';
 import type { ReactNode } from 'react';
 import { translateDetailKey } from './detailLabels';
+import {
+  resolveEnabledOptionKeys,
+  resolveOptionValues,
+} from './nfsShareOptions';
 
 const buildClientTitle = (client: NfsShareClientEntry, index: number) => {
   const trimmed = typeof client.client === 'string' ? client.client.trim() : '';
@@ -13,10 +17,12 @@ const buildOptionRows = (options: Record<string, unknown> | undefined) => {
     return {};
   }
 
+  const optionValues = resolveOptionValues(options);
+
   return Object.fromEntries(
-    Object.entries(options).map(([key, value]) => [
+    resolveEnabledOptionKeys(options).map((key) => [
       translateDetailKey(key),
-      value,
+      optionValues[key],
     ])
   ) as Record<string, ReactNode>;
 };
