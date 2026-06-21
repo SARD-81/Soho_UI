@@ -34,7 +34,7 @@ export const isLowercaseEnglishAlphabet = (value: string) =>
 export const lowercaseEnglishWarningMessage =
   'نام کاربری فقط می‌تواند شامل حروف انگلیسی کوچک و اعداد باشد و نباید با عدد شروع شود.';
 
-  export const validateEnglishAlphanumericName = (
+export const validateEnglishAlphanumericName = (
   trimmedName: string,
   label: string
 ): string | null => {
@@ -48,6 +48,22 @@ export const lowercaseEnglishWarningMessage =
 
   if (/^[0-9]/.test(trimmedName)) {
     return `${label} نمی‌تواند با عدد شروع شود.`;
+  }
+
+  return null;
+};
+
+
+export const validateEnglishStorageName = (
+  trimmedName: string,
+  label: string
+): string | null => {
+  if (!trimmedName) {
+    return `لطفاً ${label} را وارد کنید.`;
+  }
+
+  if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(trimmedName)) {
+    return `${label} باید فقط شامل حروف انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد و با حرف انگلیسی شروع شود.`;
   }
 
   return null;

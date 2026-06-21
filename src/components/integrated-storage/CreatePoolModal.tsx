@@ -122,12 +122,12 @@ const CreatePoolModal = ({
   const isDuplicate =
     trimmedPoolName.length > 0 &&
     normalizedExistingNames.includes(normalizedPoolName);
-  const hasOnlyEnglishAlphanumeric =
-    trimmedPoolName.length === 0 || /^[A-Za-z0-9]+$/.test(trimmedPoolName);
-  const startsWithNumber =
-    trimmedPoolName.length > 0 && /^[0-9]/.test(trimmedPoolName);
+  const hasValidEnglishStorageName =
+    trimmedPoolName.length === 0 || /^[A-Za-z][A-Za-z0-9_-]*$/.test(trimmedPoolName);
+  const startsWithInvalidCharacter =
+    trimmedPoolName.length > 0 && /^[0-9_-]/.test(trimmedPoolName);
   const isNameFormatValid =
-    trimmedPoolName.length === 0 || (hasOnlyEnglishAlphanumeric && !startsWithNumber);
+    trimmedPoolName.length === 0 || (hasValidEnglishStorageName && !startsWithInvalidCharacter);
   const shouldShowSuccess =
     trimmedPoolName.length > 0 && isNameFormatValid && !isDuplicate;
 
@@ -155,17 +155,17 @@ const CreatePoolModal = ({
   };
 
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
-    if (!hasOnlyEnglishAlphanumeric && trimmedPoolName.length > 0) {
+    if (!hasValidEnglishStorageName && trimmedPoolName.length > 0) {
       event.preventDefault();
       setPoolNameError(
-        'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.'
+        'نام فضای یکپارچه باید فقط شامل حروف انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد و با حرف انگلیسی شروع شود.'
       );
       return;
     }
 
-    if (startsWithNumber) {
+    if (startsWithInvalidCharacter) {
       event.preventDefault();
-      setPoolNameError('نام فضای یکپارچه نمی‌تواند با عدد شروع شود.');
+      setPoolNameError('نام فضای یکپارچه باید با حرف انگلیسی شروع شود.');
       return;
     }
 
@@ -219,8 +219,8 @@ const CreatePoolModal = ({
             size="small"
             error={
               Boolean(poolNameError) ||
-              (!hasOnlyEnglishAlphanumeric && trimmedPoolName.length > 0) ||
-              startsWithNumber ||
+              (!hasValidEnglishStorageName && trimmedPoolName.length > 0) ||
+              startsWithInvalidCharacter ||
               isDuplicate ||
               hasPersianPoolName
             }
@@ -228,11 +228,11 @@ const CreatePoolModal = ({
               (hasPersianPoolName &&
                 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
               poolNameError ||
-              (!hasOnlyEnglishAlphanumeric &&
+              (!hasValidEnglishStorageName &&
                 trimmedPoolName.length > 0 &&
-                'نام فضای یکپارچه باید فقط شامل حروف انگلیسی و اعداد باشد.') ||
-              (startsWithNumber &&
-                'نام فضای یکپارچه نمی‌تواند با عدد شروع شود.') ||
+                'نام فضای یکپارچه باید فقط شامل حروف انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد و با حرف انگلیسی شروع شود.') ||
+              (startsWithInvalidCharacter &&
+                'نام فضای یکپارچه باید با حرف انگلیسی شروع شود.') ||
               (isDuplicate && 'فضای یکپارچه‌ای با این نام از قبل وجود دارد.') ||
               undefined
             }

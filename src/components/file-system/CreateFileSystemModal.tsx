@@ -1,4 +1,4 @@
-﻿import {
+import {
   Box,
   Checkbox,
   IconButton,
@@ -107,10 +107,6 @@ const CreateFileSystemModal = ({
 
     const timeoutId = window.setTimeout(() => {
       setHasPersianQuota(false);
-      setIsEncryptionEnabled(false);
-      setEncryptionPassword('');
-      setIsEncryptionTouched(false);
-      setShowEncryptionPassword(false);
     }, 3000);
 
     return () => {
@@ -184,12 +180,12 @@ const CreateFileSystemModal = ({
     trimmedPool.length > 0 &&
     trimmedName.length > 0 &&
     trimmedName.toLowerCase() === normalizedPool;
-  const hasOnlyEnglishAlphanumeric =
-    trimmedName.length === 0 || /^[A-Za-z0-9]+$/.test(trimmedName);
-  const startsWithNumber =
-    trimmedName.length > 0 && /^[0-9]/.test(trimmedName);
+  const hasValidEnglishStorageName =
+    trimmedName.length === 0 || /^[A-Za-z][A-Za-z0-9_-]*$/.test(trimmedName);
+  const startsWithInvalidCharacter =
+    trimmedName.length > 0 && /^[0-9_-]/.test(trimmedName);
   const isNameFormatValid =
-    trimmedName.length === 0 || (hasOnlyEnglishAlphanumeric && !startsWithNumber);
+    trimmedName.length === 0 || (hasValidEnglishStorageName && !startsWithInvalidCharacter);
   const shouldShowSuccess =
     trimmedPool.length > 0 &&
     trimmedName.length > 0 &&
@@ -226,15 +222,15 @@ const CreateFileSystemModal = ({
       return;
     }
 
-    if (!hasOnlyEnglishAlphanumeric && trimmedName.length > 0) {
+    if (!hasValidEnglishStorageName && trimmedName.length > 0) {
       event.preventDefault();
-      setNameError('نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.');
+      setNameError('نام فضای فایلی باید فقط شامل حروف انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد و با حرف انگلیسی شروع شود.');
       return;
     }
 
-    if (startsWithNumber) {
+    if (startsWithInvalidCharacter) {
       event.preventDefault();
-      setNameError('نام فضای فایلی نمی‌تواند با عدد شروع شود.');
+      setNameError('نام فضای فایلی باید با حرف انگلیسی شروع شود.');
       return;
     }
 
@@ -341,8 +337,8 @@ const CreateFileSystemModal = ({
             placeholder="نامی یکتا برای فضای فایلی وارد کنید."
             error={
               Boolean(nameError) ||
-              (!hasOnlyEnglishAlphanumeric && trimmedName.length > 0) ||
-              startsWithNumber ||
+              (!hasValidEnglishStorageName && trimmedName.length > 0) ||
+              startsWithInvalidCharacter ||
               isDuplicate ||
               isSameAsPool ||
               hasPersianName
@@ -351,11 +347,11 @@ const CreateFileSystemModal = ({
               (hasPersianName &&
                 'استفاده از حروف فارسی در این فیلد مجاز نیست.') ||
               nameError ||
-              (!hasOnlyEnglishAlphanumeric &&
+              (!hasValidEnglishStorageName &&
                 trimmedName.length > 0 &&
-                'نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.') ||
-              (startsWithNumber &&
-                'نام فضای فایلی نمی‌تواند با عدد شروع شود.') ||
+                'نام فضای فایلی باید فقط شامل حروف انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد و با حرف انگلیسی شروع شود.') ||
+              (startsWithInvalidCharacter &&
+                'نام فضای فایلی باید با حرف انگلیسی شروع شود.') ||
               (isDuplicate &&
                 'فضای فایلی با این نام در این فضای یکپارچه وجود دارد.') ||
               (isSameAsPool &&

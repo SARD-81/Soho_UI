@@ -3,7 +3,7 @@ import type { AxiosError } from 'axios';
 import type { FormEvent } from 'react';
 import { useCallback, useState } from 'react';
 import axiosInstance from '../lib/axiosInstance';
-import { validateEnglishAlphanumericName } from '../utils/text';
+import { validateEnglishStorageName } from '../utils/text';
 
 interface ApiErrorResponse {
   detail?: string;
@@ -22,7 +22,7 @@ interface CreatePoolPayload {
 export type VdevType = 'disk' | 'mirror' | 'raidz' | '';
 
 const validatePoolName = (trimmedName: string): string | null =>
-  validateEnglishAlphanumericName(trimmedName, 'نام فضای یکپارچه');
+  validateEnglishStorageName(trimmedName, 'نام فضای یکپارچه');
 
 const vdevSpecificDeviceRules: Record<Exclude<VdevType, ''>, (count: number) => string | null> = {
   disk: () => null,

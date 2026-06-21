@@ -133,11 +133,11 @@ export const useCreateFileSystem = ({
       if (!trimmedName) {
         setNameError('نام فضای فایلی را وارد کنید.');
         hasError = true;
-      } else if (!/^[A-Za-z0-9]+$/.test(trimmedName)) {
-        setNameError('نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.');
+      } else if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(trimmedName)) {
+        setNameError('نام فضای فایلی باید فقط شامل حروف انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد و با حرف انگلیسی شروع شود.');
         hasError = true;
-      } else if (/^[0-9]/.test(trimmedName)) {
-        setNameError('نام فضای فایلی نمی‌تواند با عدد شروع شود.');
+      } else if (/^[0-9_-]/.test(trimmedName)) {
+        setNameError('نام فضای فایلی باید با حرف انگلیسی شروع شود.');
         hasError = true;
       }
 
