@@ -1,9 +1,9 @@
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
+import { setupAxiosMockAdapter } from '../mocks/setupMocks';
+import { logApiErrorDetails } from '../utils/apiError';
 import { refreshAccessToken } from './authApi';
 import { emitSessionCleared, emitTokenRefreshed } from './authEvents';
 import tokenStorage from './tokenStorage';
-import { setupAxiosMockAdapter } from '../mocks/setupMocks';
-import { logApiErrorDetails } from '../utils/apiError';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -64,9 +64,7 @@ const processQueue = (error: unknown, token: string | null) => {
       };
     }
 
-    axiosInstance(config)
-      .then(resolve)
-      .catch(reject);
+    axiosInstance(config).then(resolve).catch(reject);
   }
 };
 
@@ -76,14 +74,23 @@ axiosInstance.interceptors.response.use(
     logApiErrorDetails(error);
 
     const status = error.response?.status;
-    const originalRequest = error.config as (AxiosRequestConfig & {
-      _retry?: boolean;
-    }) | undefined;
+    const originalRequest = error.config as
+      | (AxiosRequestConfig & {
+          _retry?: boolean;
+        })
+      | undefined;
 
     if (status === 401 && originalRequest && !originalRequest._retry) {
+      if (import.meta.env.DEV) {
+        console.warn('[auth] 401 received', originalRequest.url);
+      }
+
       const refresh = tokenStorage.getRefreshToken();
 
       if (!refresh) {
+        if (import.meta.env.DEV) {
+          console.warn('[auth] refresh token missing; clearing session');
+        }
         tokenStorage.clear();
         emitSessionCleared();
         return Promise.reject(error);
@@ -112,6 +119,12 @@ axiosInstance.interceptors.response.use(
             return axiosInstance(originalRequest).then(resolve).catch(reject);
           })
           .catch((refreshError) => {
+            if (import.meta.env.DEV) {
+              console.warn(
+                '[auth] refresh failed; clearing session',
+                refreshError
+              );
+            }
             processQueue(refreshError, null);
             tokenStorage.clear();
             emitSessionCleared();

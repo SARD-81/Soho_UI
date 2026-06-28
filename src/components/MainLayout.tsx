@@ -23,6 +23,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import useLogout from '../hooks/useLogout';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
+import { useSessionActivityTimeout } from '../hooks/useSessionActivityTimeout';
 import NavigationDrawer from './NavigationDrawer';
 import NotificationBell from './notifications/NotificationBell';
 import NotificationBootstrapper from './notifications/NotificationBootstrapper';
@@ -33,7 +34,7 @@ import QuickActionsMenu from './QuickActionsMenu';
 const MainLayout: React.FC = () => {
   const Navigate = useNavigate();
   const location = useLocation();
-  const { username } = useAuth();
+  const { logout, username } = useAuth();
   const { logout: triggerLogout, isLoggingOut } = useLogout();
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [activePowerAction, setActivePowerAction] =
@@ -57,6 +58,24 @@ const MainLayout: React.FC = () => {
 
   const displayUsername = username || 'admin';
   const notificationUserKey = username || undefined;
+
+  useSessionActivityTimeout({
+    enabled: true,
+    onTimeout: async () => {
+      try {
+        await logout();
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn('[auth] idle timeout logout request failed', error);
+        }
+      } finally {
+        toast.error(
+          'نشست شما به دلیل عدم فعالیت منقضی شد. لطفاً دوباره وارد شوید.'
+        );
+        Navigate('/login', { replace: true });
+      }
+    },
+  });
 
   const { mutate: triggerPowerAction, isPending: isPowerActionPending } =
     usePowerAction({
