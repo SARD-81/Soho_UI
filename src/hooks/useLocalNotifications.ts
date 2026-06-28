@@ -68,8 +68,17 @@ export const useLocalNotifications = (userKey?: string) => {
       }
     };
 
+    const handleNotificationChange = () => {
+      refreshNotifications();
+    };
+
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    window.addEventListener('soho:notifications:capacity-summary', handleNotificationChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('soho:notifications:capacity-summary', handleNotificationChange);
+    };
   }, [refreshNotifications, userKey]);
 
   const unreadCount = useMemo(

@@ -24,6 +24,8 @@ import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 import useLogout from '../hooks/useLogout';
 import { usePowerAction, type PowerAction } from '../hooks/usePowerAction';
 import NavigationDrawer from './NavigationDrawer';
+import NotificationBell from './notifications/NotificationBell';
+import NotificationBootstrapper from './notifications/NotificationBootstrapper';
 import PowerActionConfirmDialog from './PowerActionConfirmDialog';
 import PowerActionCountdownOverlay from './PowerActionCountdownOverlay';
 import QuickActionsMenu from './QuickActionsMenu';
@@ -54,6 +56,7 @@ const MainLayout: React.FC = () => {
   const { isDark, toggleTheme } = useThemeContext();
 
   const displayUsername = username || 'admin';
+  const notificationUserKey = username || undefined;
 
   const { mutate: triggerPowerAction, isPending: isPowerActionPending } =
     usePowerAction({
@@ -151,6 +154,7 @@ const MainLayout: React.FC = () => {
         backgroundSize: '400% 400%',
       }}
     >
+      <NotificationBootstrapper userKey={notificationUserKey} />
       <AppBar
         position="fixed"
         sx={{
@@ -206,6 +210,7 @@ const MainLayout: React.FC = () => {
               order: { xs: 3, sm: 'initial' },
             }}
           >
+            <NotificationBell userKey={notificationUserKey} />
             {isMobile ? (
               <IconButton
                 aria-label="منوی کاربر"
