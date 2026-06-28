@@ -218,8 +218,8 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                 bottom: 8,
                 left: 11,
                 width: 1,
-                background:
-                  'linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-primary) 24%, var(--color-input-border) 76%), transparent)',
+                backgroundColor:
+                  'color-mix(in srgb, var(--color-input-border) 72%, transparent)',
               },
             }
           : {}),
@@ -251,14 +251,14 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
             }}
             selected={isActive}
             sx={(theme) => ({
-              minHeight: open ? (depth > 0 ? 38 : 44) : 48,
+              minHeight: open ? (depth > 0 ? 34 : 44) : 48,
               position: 'relative',
               overflow: 'hidden',
               justifyContent: open ? 'initial' : 'center',
-              px: open ? 1.5 : 0,
-              mx: open ? 0.5 : 0.75,
-              my: open ? 0.35 : 0.65,
-              borderRadius: open ? 2.25 : 2.5,
+              px: open ? (depth > 0 ? 1.25 : 1.5) : 0,
+              mx: open ? (depth > 0 ? 1.25 : 0.5) : 0.75,
+              my: open ? (depth > 0 ? 0.25 : 0.35) : 0.65,
+              borderRadius: depth > 0 ? 999 : open ? 2.25 : 2.5,
               color: 'var(--color-text)',
               cursor: 'pointer',
               transition: theme.transitions.create(
@@ -268,6 +268,8 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                   easing: theme.transitions.easing.easeInOut,
                 }
               ),
+              border: '1px solid transparent',
+              backgroundColor: 'transparent',
               '&::before': {
                 content: '""',
                 position: 'absolute',
@@ -276,27 +278,29 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                 left: 0,
                 width: 3,
                 borderRadius: 6,
-                background:
-                  'linear-gradient(180deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 55%, var(--color-secondary) 45%))',
+                backgroundColor: 'var(--color-primary)',
                 opacity: 0,
-                boxShadow: '0 0 12px color-mix(in srgb, var(--color-primary) 60%, transparent)',
+                boxShadow:
+                  '0 0 12px color-mix(in srgb, var(--color-primary) 55%, transparent)',
               },
               '&:hover': {
-                background:
-                  'linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 10%, var(--color-card-bg) 90%) 0%, color-mix(in srgb, var(--color-card-bg) 94%, transparent) 100%)',
-                transform: open ? 'translateX(2px)' : 'none',
+                backgroundColor:
+                  'color-mix(in srgb, var(--color-primary) 5%, var(--color-card-bg) 95%)',
+                transform: open && depth === 0 ? 'translateX(2px)' : 'none',
               },
               '&.Mui-selected': {
-                background:
-                  'linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 17%, var(--color-card-bg) 83%) 0%, color-mix(in srgb, var(--color-card-bg) 92%, var(--color-background) 8%) 72%, color-mix(in srgb, var(--color-secondary) 5%, transparent) 100%)',
+                backgroundColor:
+                  'color-mix(in srgb, var(--color-primary) 7%, var(--color-card-bg) 93%)',
+                border:
+                  '1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-input-border) 78%)',
                 boxShadow:
-                  'inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 24%, var(--color-input-border) 76%), 0 10px 22px rgba(0,0,0,0.14)',
+                  'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 18px rgba(0,0,0,0.14)',
                 color: 'var(--color-text)',
               },
               '&.Mui-selected::before': { opacity: 1 },
               '&.Mui-selected:hover': {
-                background:
-                  'linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 20%, var(--color-card-bg) 80%) 0%, color-mix(in srgb, var(--color-card-bg) 90%, var(--color-background) 10%) 72%, color-mix(in srgb, var(--color-secondary) 6%, transparent) 100%)',
+                backgroundColor:
+                  'color-mix(in srgb, var(--color-primary) 7%, var(--color-card-bg) 93%)',
               },
             })}
           >
