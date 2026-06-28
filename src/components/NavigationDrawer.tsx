@@ -38,7 +38,7 @@ const drawerPaperLayout = (theme: Theme): CSSObject => {
     flexDirection: 'column',
     overflow: 'hidden',
     background:
-      'linear-gradient(180deg, color-mix(in srgb, var(--color-card-bg) 96%, var(--color-primary) 4%) 0%, var(--color-card-bg) 50%, color-mix(in srgb, var(--color-background) 84%, var(--color-card-bg) 16%) 100%)',
+      'linear-gradient(180deg, color-mix(in srgb, var(--color-card-bg) 98%, var(--color-primary) 2%) 0%, var(--color-card-bg) 54%, color-mix(in srgb, var(--color-background) 88%, var(--color-card-bg) 12%) 100%)',
     backdropFilter: 'saturate(150%) blur(14px)',
     borderRight:
       '1px solid color-mix(in srgb, var(--color-input-border) 70%, transparent)',
@@ -64,8 +64,8 @@ const closedMixin = (theme: Theme): CSSObject => ({
     duration: theme.transitions.duration.leavingScreen,
   }),
   overflowX: 'hidden',
-  width: `calc(${theme.spacing(7)} + 1px)`,
-  [theme.breakpoints.up('sm')]: { width: `calc(${theme.spacing(8)} + 1px)` },
+  width: 82,
+  [theme.breakpoints.up('sm')]: { width: 88 },
 });
 
 const StyledDrawer = styled(MuiDrawer, {
@@ -105,8 +105,8 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     (item: NavigationItem): boolean => {
       const matchesCurrentPath = Boolean(
         item.path &&
-        (location.pathname === item.path ||
-          location.pathname.startsWith(`${item.path}/`))
+          (location.pathname === item.path ||
+            location.pathname.startsWith(`${item.path}/`))
       );
       return (
         matchesCurrentPath ||
@@ -123,8 +123,9 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         items.forEach((item) => {
           if (item.children?.length) {
             const itemKey = getItemKey(item);
-            if (isItemActive(item) && next[itemKey] === undefined)
+            if (isItemActive(item) && next[itemKey] === undefined) {
               next[itemKey] = true;
+            }
             ensureActiveParentsExpanded(item.children);
           }
         });
@@ -138,55 +139,58 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     <Box
       sx={{
         px: open ? 1.5 : 1,
-        py: 1.25,
-        mx: 1,
-        mb: 1,
+        py: open ? 1.2 : 1,
+        mx: open ? 1.2 : 1.05,
+        mb: open ? 1.15 : 1.35,
         mt: isDesktop ? 0 : 1,
-        borderRadius: 3,
+        minHeight: open ? 58 : 54,
+        borderRadius: open ? 3 : 2.4,
         display: 'flex',
         alignItems: 'center',
         justifyContent: open ? 'flex-start' : 'center',
         gap: 1.25,
         background:
-          'linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 16%, transparent), color-mix(in srgb, var(--color-secondary) 8%, transparent))',
+          'linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 18%, var(--color-card-bg) 82%) 0%, color-mix(in srgb, var(--color-card-bg) 88%, var(--color-background) 12%) 58%, color-mix(in srgb, var(--color-secondary) 8%, var(--color-card-bg) 92%) 100%)',
         border:
-          '1px solid color-mix(in srgb, var(--color-input-border) 58%, transparent)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+          '1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-input-border) 78%)',
+        boxShadow:
+          'inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 28px rgba(0,0,0,0.16)',
       }}
     >
       <Box
         component="img"
         src="/logo/Logo.png"
-        alt="SOHO"
+        alt="سوهو"
         sx={{
-          width: 34,
-          height: 34,
+          width: open ? 34 : 36,
+          height: open ? 34 : 36,
           objectFit: 'contain',
           filter: 'drop-shadow(0 8px 14px rgba(0,0,0,0.22))',
         }}
       />
       {open && (
-        <Box sx={{ overflow: 'hidden' }}>
+        <Box sx={{ overflow: 'hidden', minWidth: 0 }}>
           <Typography
             sx={{
               color: 'var(--color-text)',
-              fontFamily: 'var(--font-didot)',
-              fontSize: 20,
+              fontFamily: 'var(--font-vazir)',
+              fontSize: 17.5,
               fontWeight: 900,
-              lineHeight: 1,
+              lineHeight: 1.25,
             }}
           >
-            SOHO
+            سوهو
           </Typography>
           <Typography
             sx={{
               color: 'var(--color-secondary)',
               fontSize: 11.5,
-              letterSpacing: '.08em',
-              textTransform: 'uppercase',
+              fontWeight: 700,
+              letterSpacing: 0,
+              lineHeight: 1.6,
             }}
           >
-            Storage Operations
+            عملیات ذخیره‌سازی
           </Typography>
         </Box>
       )}
@@ -200,8 +204,8 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     <List
       disablePadding={depth > 0}
       sx={{
-        px: depth === 0 ? 0.75 : 0,
-        py: depth === 0 ? 0.5 : 0,
+        px: depth === 0 ? (open ? 0.9 : 0.8) : 0,
+        py: depth === 0 ? 0.45 : 0,
         position: 'relative',
         ...(open && depth > 0
           ? {
@@ -210,12 +214,12 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
               '&::before': {
                 content: '""',
                 position: 'absolute',
-                top: 4,
+                top: 6,
                 bottom: 8,
                 left: 11,
                 width: 1,
                 background:
-                  'linear-gradient(180deg, transparent, var(--color-input-border), transparent)',
+                  'linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-primary) 24%, var(--color-input-border) 76%), transparent)',
               },
             }
           : {}),
@@ -247,14 +251,14 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
             }}
             selected={isActive}
             sx={(theme) => ({
-              minHeight: depth > 0 ? 38 : 44,
+              minHeight: open ? (depth > 0 ? 38 : 44) : 48,
               position: 'relative',
               overflow: 'hidden',
               justifyContent: open ? 'initial' : 'center',
               px: open ? 1.5 : 0,
-              mx: open ? 0.5 : 0.65,
-              my: 0.35,
-              borderRadius: 2.25,
+              mx: open ? 0.5 : 0.75,
+              my: open ? 0.35 : 0.65,
+              borderRadius: open ? 2.25 : 2.5,
               color: 'var(--color-text)',
               cursor: 'pointer',
               transition: theme.transitions.create(
@@ -267,39 +271,43 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
               '&::before': {
                 content: '""',
                 position: 'absolute',
-                top: 7,
-                bottom: 7,
+                top: open ? 7 : 10,
+                bottom: open ? 7 : 10,
                 left: 0,
                 width: 3,
                 borderRadius: 6,
                 background:
-                  'linear-gradient(180deg, var(--color-primary), var(--color-secondary))',
+                  'linear-gradient(180deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 55%, var(--color-secondary) 45%))',
                 opacity: 0,
-                boxShadow: '0 0 14px var(--color-primary)',
+                boxShadow: '0 0 12px color-mix(in srgb, var(--color-primary) 60%, transparent)',
               },
               '&:hover': {
-                backgroundColor:
-                  'color-mix(in srgb, var(--color-primary) 10%, transparent)',
+                background:
+                  'linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 10%, var(--color-card-bg) 90%) 0%, color-mix(in srgb, var(--color-card-bg) 94%, transparent) 100%)',
                 transform: open ? 'translateX(2px)' : 'none',
               },
               '&.Mui-selected': {
                 background:
-                  'linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 24%, transparent), color-mix(in srgb, var(--color-secondary) 10%, transparent))',
+                  'linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 17%, var(--color-card-bg) 83%) 0%, color-mix(in srgb, var(--color-card-bg) 92%, var(--color-background) 8%) 72%, color-mix(in srgb, var(--color-secondary) 5%, transparent) 100%)',
                 boxShadow:
-                  'inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 30%, transparent)',
+                  'inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 24%, var(--color-input-border) 76%), 0 10px 22px rgba(0,0,0,0.14)',
                 color: 'var(--color-text)',
               },
               '&.Mui-selected::before': { opacity: 1 },
               '&.Mui-selected:hover': {
                 background:
-                  'linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 28%, transparent), color-mix(in srgb, var(--color-secondary) 12%, transparent))',
+                  'linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 20%, var(--color-card-bg) 80%) 0%, color-mix(in srgb, var(--color-card-bg) 90%, var(--color-background) 10%) 72%, color-mix(in srgb, var(--color-secondary) 6%, transparent) 100%)',
               },
             })}
           >
             <ListItemIcon
               sx={{
                 minWidth: 0,
-                mr: open ? 1.2 : 'auto',
+                mr: open ? 1.2 : 0,
+                width: open ? 'auto' : 40,
+                height: open ? 'auto' : 40,
+                borderRadius: open ? 0 : 2.25,
+                alignItems: 'center',
                 justifyContent: 'center',
                 color: isActive
                   ? 'var(--color-primary)'
