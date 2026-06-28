@@ -70,9 +70,28 @@ export const useSessionActivityTimeout = ({
     let intervalId: number | null = null;
     let listenersActive = true;
 
-    const recordActivity = (timestamp = getCurrentTimestamp()) => {
+    const recordActivity = (timestamp: number) => {
       lastActivityWriteRef.current = timestamp;
       writeLastActivityAt(timestamp);
+    };
+
+    const isPastIdleTimeout = (
+      previousLastActivityAt: number,
+      timestamp: number
+    ) => timestamp - previousLastActivityAt >= SESSION_IDLE_TIMEOUT_MS;
+
+    const recordActivityUnlessTimedOut = (timestamp: number) => {
+      const previousLastActivityAt = readLastActivityAt();
+
+      if (
+        previousLastActivityAt !== null &&
+        isPastIdleTimeout(previousLastActivityAt, timestamp)
+      ) {
+        handleTimeout();
+        return;
+      }
+
+      recordActivity(timestamp);
     };
 
     const handleActivity = () => {
@@ -85,7 +104,7 @@ export const useSessionActivityTimeout = ({
         return;
       }
 
-      recordActivity(now);
+      recordActivityUnlessTimedOut(now);
     };
 
     const stopTracking = () => {
@@ -104,6 +123,7 @@ export const useSessionActivityTimeout = ({
       window.removeEventListener('touchstart', handleActivity);
       window.removeEventListener('pointerdown', handleActivity);
       window.removeEventListener('focus', handleActivity);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       listenersActive = false;
     };
 
@@ -124,19 +144,24 @@ export const useSessionActivityTimeout = ({
 
       const lastActivityAt = readLastActivityAt();
       const now = getCurrentTimestamp();
-      const effectiveLastActivityAt = lastActivityAt ?? now;
 
-      if (!lastActivityAt) {
+      if (lastActivityAt === null) {
         recordActivity(now);
         return;
       }
 
-      if (now - effectiveLastActivityAt >= SESSION_IDLE_TIMEOUT_MS) {
+      if (isPastIdleTimeout(lastActivityAt, now)) {
         handleTimeout();
       }
     };
 
-    recordActivity(getCurrentTimestamp());
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkIdleTimeout();
+      }
+    };
+
+    recordActivityUnlessTimedOut(getCurrentTimestamp());
 
     window.addEventListener('click', handleActivity);
     window.addEventListener('keydown', handleActivity);
@@ -144,6 +169,7 @@ export const useSessionActivityTimeout = ({
     window.addEventListener('touchstart', handleActivity, { passive: true });
     window.addEventListener('pointerdown', handleActivity, { passive: true });
     window.addEventListener('focus', handleActivity);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     intervalId = window.setInterval(
       checkIdleTimeout,
