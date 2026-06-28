@@ -178,64 +178,138 @@ const MainLayout: React.FC = () => {
         position="fixed"
         sx={{
           zIndex: (theme) => theme.zIndex.drawer + 1,
-          backgroundColor: 'var(--color-card-bg)',
-          backdropFilter: 'saturate(140%) blur(8px)',
+          background:
+            'linear-gradient(90deg, color-mix(in srgb, var(--color-card-bg) 94%, var(--color-primary) 6%), var(--color-card-bg))',
+          backdropFilter: 'saturate(155%) blur(14px)',
+          borderBottom:
+            '1px solid color-mix(in srgb, var(--color-input-border) 68%, transparent)',
           boxShadow: (theme) =>
-            `0 4px 20px ${
-              theme.palette.mode === 'dark' ? '#00000066' : '#00000022'
-            }`,
+            `0 14px 34px ${alpha(
+              theme.palette.common.black,
+              theme.palette.mode === 'dark' ? 0.24 : 0.08
+            )}, inset 0 -1px 0 ${alpha(theme.palette.common.white, 0.05)}`,
         }}
       >
         <Toolbar
           variant="dense"
           sx={{
-            gap: { xs: 1, sm: 3 },
-            // minHeight: '50px',
-            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+            gap: { xs: 1, sm: 1.5 },
+            minHeight: { xs: 58, sm: 62 },
+            flexWrap: 'nowrap',
             alignItems: 'center',
             width: '100%',
+            px: { xs: 1, sm: 2 },
           }}
         >
-          <IconButton
-            onClick={() => setDrawerOpen((prev) => !prev)}
-            sx={{ color: 'var(--color-bg-primary)' }}
-          >
-            {drawerOpen ? <MdClose /> : <MdMenu />}
-          </IconButton>
-          <Box
-            component="img"
-            src="/logo/Logo.png"
-            alt="لوگو"
-            sx={{ height: 30 }}
-          />
-
-          <Typography
-            variant="h4"
-            component="div"
-            sx={{
-              color: 'var(--color-primary)',
-              flexShrink: 0,
-              fontFamily: 'var(--font-didot)',
-            }}
-          >
-            StoreX
-          </Typography>
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: { xs: 1, sm: 4 },
-              ml: 'auto',
-              order: { xs: 3, sm: 'initial' },
+              gap: { xs: 1, sm: 1.5 },
+              minWidth: 0,
             }}
           >
-            <NotificationBell userKey={notificationUserKey} />
+            <IconButton
+              aria-label={
+                drawerOpen ? 'بستن منوی کناری' : 'باز کردن منوی کناری'
+              }
+              onClick={() => setDrawerOpen((prev) => !prev)}
+              sx={{
+                color: 'var(--color-text)',
+                border:
+                  '1px solid color-mix(in srgb, var(--color-input-border) 62%, transparent)',
+                backgroundColor:
+                  'color-mix(in srgb, var(--color-background) 54%, transparent)',
+                '&:hover': {
+                  backgroundColor:
+                    'color-mix(in srgb, var(--color-primary) 14%, transparent)',
+                },
+              }}
+            >
+              {drawerOpen ? <MdClose /> : <MdMenu />}
+            </IconButton>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                minWidth: 0,
+              }}
+            >
+              <Box
+                component="img"
+                src="/logo/Logo.png"
+                alt="لوگو"
+                sx={{
+                  height: 32,
+                  width: 32,
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 8px 14px rgba(0,0,0,0.22))',
+                }}
+              />
+              <Box sx={{ minWidth: 0, display: { xs: 'none', sm: 'block' } }}>
+                <Typography
+                  variant="h5"
+                  component="div"
+                  sx={{
+                    color: 'var(--color-primary)',
+                    flexShrink: 0,
+                    fontFamily: 'var(--font-didot)',
+                    fontWeight: 900,
+                    lineHeight: 1,
+                  }}
+                >
+                  StoreX
+                </Typography>
+                <Typography
+                  component="div"
+                  sx={{
+                    color: 'var(--color-secondary)',
+                    fontSize: 11,
+                    letterSpacing: '.08em',
+                    lineHeight: 1.4,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  SOHO Command Console
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: { xs: 0.75, sm: 1.25 },
+              ml: 'auto',
+              minWidth: 0,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: 999,
+                border:
+                  '1px solid color-mix(in srgb, var(--color-input-border) 54%, transparent)',
+                backgroundColor:
+                  'color-mix(in srgb, var(--color-background) 48%, transparent)',
+              }}
+            >
+              <NotificationBell userKey={notificationUserKey} />
+            </Box>
             {isMobile ? (
               <IconButton
                 aria-label="منوی کاربر"
                 onClick={handleUserMenuOpen}
                 size="small"
-                sx={{ color: 'var(--color-bg-primary)' }}
+                sx={{
+                  color: 'var(--color-text)',
+                  border:
+                    '1px solid color-mix(in srgb, var(--color-input-border) 58%, transparent)',
+                  backgroundColor:
+                    'color-mix(in srgb, var(--color-background) 50%, transparent)',
+                }}
               >
                 <IoPersonCircleOutline size={24} />
               </IconButton>
@@ -244,34 +318,37 @@ const MainLayout: React.FC = () => {
                 onClick={handleUserMenuOpen}
                 endIcon={<IoPersonCircleOutline size={24} />}
                 sx={{
-                  color: 'var(--color-bg-primary)',
+                  color: 'var(--color-text)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1,
                   px: 1.5,
-                  py: 0.75,
-                  borderRadius: 2,
+                  py: 0.7,
+                  borderRadius: 999,
                   fontFamily: 'var(--font-vazir)',
                   fontWeight: 500,
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  backgroundColor:
+                    'color-mix(in srgb, var(--color-background) 50%, transparent)',
+                  border:
+                    '1px solid color-mix(in srgb, var(--color-input-border) 58%, transparent)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
                   transition:
-                    'background-color 0.2s ease, border-color 0.2s ease',
+                    'background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
                   '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    backgroundColor:
+                      'color-mix(in srgb, var(--color-primary) 12%, transparent)',
+                    borderColor:
+                      'color-mix(in srgb, var(--color-primary) 38%, var(--color-input-border))',
+                    transform: 'translateY(-1px)',
                   },
                 }}
               >
                 <Typography
                   component="span"
                   sx={{
-                    fontSize: '0.9rem',
+                    fontSize: '0.82rem',
                     fontWeight: 400,
-                    color: (theme) =>
-                      theme.palette.mode === 'dark'
-                        ? 'rgba(255, 255, 255, 0.7)'
-                        : 'rgba(0, 0, 0, 0.7)',
+                    color: 'var(--color-secondary)',
                   }}
                 >
                   خوش آمدید،
@@ -279,11 +356,11 @@ const MainLayout: React.FC = () => {
                 <Typography
                   component="span"
                   sx={{
-                    fontSize: '1rem',
+                    fontSize: '0.95rem',
                     fontFamily: 'var(--font-didot)',
                     fontWeight: 900,
                     letterSpacing: '0.05em',
-                    color: 'var(--color-primary-light)',
+                    color: 'var(--color-primary)',
                   }}
                 >
                   {displayUsername}
