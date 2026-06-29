@@ -17,15 +17,32 @@ interface CreateFileSystemPayload {
   fs_name: string;
   quota: string;
   reservation: string;
-  mountpoint?: string;
-  encryption?: string;
+  mountpoint: string;
+  encryption: 'on' | 'off';
+  passphrase: string;
   save_to_db: boolean;
+}
+
+interface CreateFileSystemSubmitOptions {
+  encryptionEnabled?: boolean;
+  encryptionPassphrase?: string;
 }
 
 interface UseCreateFileSystemOptions {
   onSuccess?: (filesystemName: string) => void;
   onError?: (errorMessage: string) => void;
 }
+
+const encodePassphraseToBase64 = (passphrase: string) => {
+  const bytes = new TextEncoder().encode(passphrase);
+  let binaryValue = '';
+
+  bytes.forEach((byte) => {
+    binaryValue += String.fromCharCode(byte);
+  });
+
+  return window.btoa(binaryValue);
+};
 
 const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
   const payload = error.response?.data;
@@ -94,10 +111,15 @@ export const useCreateFileSystem = ({
     setIsOpen(false);
   }, [resetForm]);
 
-  const createFileSystemMutation = useMutation<unknown, AxiosError<ApiErrorResponse>, CreateFileSystemPayload>({
+  const createFileSystemMutation = useMutation<
+    unknown,
+    AxiosError<ApiErrorResponse>,
+    CreateFileSystemPayload
+  >({
     mutationFn: async (payload) => {
-      // Real backend: POST /api/filesystem/ with body containing pool_name + fs_name
-      await axiosInstance.post('/api/filesystem/', payload);
+      await axiosInstance.post('/api/filesystem/', payload, {
+        params: { save_to_db: true },
+      });
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['filesystems'] });
@@ -112,7 +134,10 @@ export const useCreateFileSystem = ({
   });
 
   const handleSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
+    (
+      event: FormEvent<HTMLFormElement>,
+      options: CreateFileSystemSubmitOptions = {}
+    ) => {
       event.preventDefault();
       setPoolError(null);
       setNameError(null);
@@ -122,6 +147,8 @@ export const useCreateFileSystem = ({
       const trimmedPool = selectedPool.trim();
       const trimmedName = filesystemName.trim();
       const trimmedQuota = quotaAmount.trim();
+      const encryptionEnabled = Boolean(options.encryptionEnabled);
+      const encryptionPassphrase = options.encryptionPassphrase ?? '';
 
       let hasError = false;
 
@@ -159,14 +186,19 @@ export const useCreateFileSystem = ({
       const sanitizedPool = trimmedPool.replace(/\s+/g, '');
       const sanitizedName = trimmedName.replace(/\s+/g, '');
       const formattedQuota = `${trimmedQuota}${quotaUnit}`;
+      const mountpoint = `/${sanitizedPool}/${sanitizedName}`;
 
       const payload: CreateFileSystemPayload = {
         pool_name: sanitizedPool,
         fs_name: sanitizedName,
         quota: formattedQuota,
         reservation: formattedQuota,
-        // mountpoint can be auto or provided by user in future
-        save_to_db: false,
+        mountpoint,
+        encryption: encryptionEnabled ? 'on' : 'off',
+        passphrase: encryptionEnabled
+          ? encodePassphraseToBase64(encryptionPassphrase)
+          : '',
+        save_to_db: true,
       };
 
       createFileSystemMutation.mutate(payload);
