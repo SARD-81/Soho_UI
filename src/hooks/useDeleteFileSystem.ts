@@ -21,7 +21,7 @@ const DEFAULT_DELETE_FILESYSTEM_ERROR_MESSAGE = 'امکان حذف فضای فا
 
 const extractDeleteFileSystemErrorMessage = (error: unknown, fallback: string) => {
   if (isAxiosError(error)) {
-    const responseData = error.response?.data as any;
+    const responseData = error.response?.data;
     if (responseData && typeof responseData === 'object') {
       if (typeof responseData.detail === 'string' && responseData.detail.trim().length > 0) {
         return responseData.detail;

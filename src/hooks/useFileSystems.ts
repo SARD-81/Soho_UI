@@ -73,7 +73,7 @@ const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
   });
 
   const payload = listResponse.data;
-  let rawList: any[] = [];
+  let rawList: unknown[] = [];
 
   if (Array.isArray(payload?.data)) {
     rawList = payload.data;
@@ -83,15 +83,26 @@ const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
   }
 
   const filesystems: FileSystemEntry[] = rawList
-    .map((item: any, index: number) => {
+    .map((item, index) => {
       if (typeof item === 'string') {
         // If only names returned, we still need detail call (rare now)
         return null;
       }
-      const fullName = item.fullName || item.name || `${item.pool_name || item.pool || 'unknown'}/${item.fs_name || item.name || index}`;
+      const rawItem = ensureObject(item);
+      const itemFullName = rawItem.fullName;
+      const itemName = rawItem.name;
+      const itemPoolName = rawItem.pool_name;
+      const itemPool = rawItem.pool;
+      const itemFileSystemName = rawItem.fs_name;
+      const fullName =
+        (typeof itemFullName === 'string' && itemFullName.trim().length > 0 && itemFullName) ||
+        (typeof itemName === 'string' && itemName.trim().length > 0 && itemName) ||
+        `${typeof itemPoolName === 'string' ? itemPoolName : typeof itemPool === 'string' ? itemPool : 'unknown'}/${
+          typeof itemFileSystemName === 'string' ? itemFileSystemName : typeof itemName === 'string' ? itemName : index
+        }`;
       const { poolName, filesystemName } = deriveNameParts(fullName, index);
 
-      const rawDetail = ensureObject(item);
+      const rawDetail = rawItem;
       const { entries, attributeMap } = normalizeAttributes(rawDetail, fullName);
       const mountpoint = extractMountpoint(rawDetail, attributeMap);
 
@@ -110,7 +121,7 @@ const fetchFileSystems = async (): Promise<FileSystemQueryResult> => {
 
   // If list only returned names (old behavior), fallback to detail calls
   if (filesystems.length === 0 && Array.isArray(payload?.data) && typeof payload.data[0] === 'string') {
-    const names: string[] = payload.data.filter((x: any) => typeof x === 'string');
+    const names = payload.data.filter((x): x is string => typeof x === 'string');
     const detailResults = await Promise.all(
       names.map(async (name, idx) => {
         try {
