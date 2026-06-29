@@ -1,5 +1,5 @@
 import { Box, Button, Typography } from '@mui/material';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import type {
   FileSystemAttributeEntry,
@@ -8,8 +8,10 @@ import type {
 import PageContainer from '../components/PageContainer';
 import ConfirmDeleteFileSystemModal from '../components/file-system/ConfirmDeleteFileSystemModal';
 import CreateFileSystemModal from '../components/file-system/CreateFileSystemModal';
+import FileSystemPassphraseModal from '../components/file-system/FileSystemPassphraseModal';
 import FileSystemsTable from '../components/file-system/FileSystemsTable';
 import SelectedFileSystemsDetailsPanel from '../components/file-system/SelectedFileSystemsDetailsPanel';
+import { useChangeFileSystemPassphrase } from '../hooks/useChangeFileSystemPassphrase';
 import { useCreateFileSystem } from '../hooks/useCreateFileSystem';
 import { useDeleteFileSystem } from '../hooks/useDeleteFileSystem';
 import { useFileSystems } from '../hooks/useFileSystems';
@@ -27,6 +29,12 @@ import {
 const FILESYSTEM_DETAIL_VIEW_ID = 'filesystems';
 
 const FileSystem = () => {
+  const [loadKeyTarget, setLoadKeyTarget] = useState<FileSystemEntry | null>(
+    null
+  );
+  const [changePassphraseTarget, setChangePassphraseTarget] =
+    useState<FileSystemEntry | null>(null);
+
   const createFileSystem = useCreateFileSystem({
     onSuccess: (filesystemName) => {
       toast.success(`فضای فایلی ${filesystemName} با موفقیت ایجاد شد.`);
@@ -60,13 +68,24 @@ const FileSystem = () => {
   });
 
   const loadKey = useLoadKey({
-    onSuccess: (name) => toast.success(`کلید رمزنگاری ${name} با موفقیت لود شد.`),
+    onSuccess: (name) => {
+      setLoadKeyTarget(null);
+      toast.success(`کلید رمزنگاری ${name} با موفقیت لود شد.`);
+    },
     onError: (error, name) => toast.error(`لود کلید ${name} با خطا مواجه شد: ${error.message}`),
   });
 
   const unloadKey = useUnloadKey({
     onSuccess: (name) => toast.success(`کلید رمزنگاری ${name} با موفقیت آنلود شد.`),
     onError: (error, name) => toast.error(`آنلود کلید ${name} با خطا مواجه شد: ${error.message}`),
+  });
+
+  const changePassphrase = useChangeFileSystemPassphrase({
+    onSuccess: (name) => {
+      setChangePassphraseTarget(null);
+      toast.success(`رمز فایل سیستم ${name} با موفقیت تغییر کرد.`);
+    },
+    onError: (error, name) => toast.error(`تغییر رمز فایل سیستم ${name} با خطا مواجه شد: ${error.message}`),
   });
 
   const setCanmountHook = useSetCanmount({
@@ -117,8 +136,37 @@ const FileSystem = () => {
 
   const handleMount = useCallback((fs: FileSystemEntry) => mountFileSystem.mount(fs.poolName, fs.filesystemName), [mountFileSystem]);
   const handleUnmount = useCallback((fs: FileSystemEntry) => unmountFileSystem.unmount(fs.poolName, fs.filesystemName), [unmountFileSystem]);
-  const handleLoadKey = useCallback((fs: FileSystemEntry) => loadKey.loadKey(fs.poolName, fs.filesystemName), [loadKey]);
+  const handleLoadKey = useCallback((fs: FileSystemEntry) => setLoadKeyTarget(fs), []);
   const handleUnloadKey = useCallback((fs: FileSystemEntry) => unloadKey.unloadKey(fs.poolName, fs.filesystemName), [unloadKey]);
+  const handleChangePassphrase = useCallback((fs: FileSystemEntry) => setChangePassphraseTarget(fs), []);
+
+  const handleConfirmLoadKey = useCallback(
+    (passphrase: string) => {
+      if (!loadKeyTarget) {
+        return;
+      }
+      loadKey.loadKey(
+        loadKeyTarget.poolName,
+        loadKeyTarget.filesystemName,
+        passphrase
+      );
+    },
+    [loadKey, loadKeyTarget]
+  );
+
+  const handleConfirmChangePassphrase = useCallback(
+    (newPassphrase: string) => {
+      if (!changePassphraseTarget) {
+        return;
+      }
+      changePassphrase.changePassphrase(
+        changePassphraseTarget.poolName,
+        changePassphraseTarget.filesystemName,
+        newPassphrase
+      );
+    },
+    [changePassphrase, changePassphraseTarget]
+  );
 
   const handleSetCanmount = useCallback((fs: FileSystemEntry, state: 'on' | 'off') => {
     setCanmountHook.setCanmount(fs.poolName, fs.filesystemName, state);
@@ -146,6 +194,22 @@ const FileSystem = () => {
       </Box>
 
       <CreateFileSystemModal controller={createFileSystem} poolOptions={poolOptions} existingFilesystems={filesystems} />
+      <FileSystemPassphraseModal
+        mode="load-key"
+        open={Boolean(loadKeyTarget)}
+        targetFileSystem={loadKeyTarget}
+        isLoading={loadKey.isLoadingKey}
+        onClose={() => setLoadKeyTarget(null)}
+        onConfirm={handleConfirmLoadKey}
+      />
+      <FileSystemPassphraseModal
+        mode="change-passphrase"
+        open={Boolean(changePassphraseTarget)}
+        targetFileSystem={changePassphraseTarget}
+        isLoading={changePassphrase.isChangingPassphrase}
+        onClose={() => setChangePassphraseTarget(null)}
+        onConfirm={handleConfirmChangePassphrase}
+      />
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <FileSystemsTable
@@ -160,11 +224,13 @@ const FileSystem = () => {
           onUnmount={handleUnmount}
           onLoadKey={handleLoadKey}
           onUnloadKey={handleUnloadKey}
+          onChangePassphrase={handleChangePassphrase}
           onSetCanmount={handleSetCanmount}
           isMounting={mountFileSystem.isMounting}
           isUnmounting={unmountFileSystem.isUnmounting}
           isKeyLoading={loadKey.isLoadingKey}
           isKeyUnloading={unloadKey.isUnloadingKey}
+          isChangingPassphrase={changePassphrase.isChangingPassphrase}
           isSettingCanmount={setCanmountHook.isSetting}
         />
 
