@@ -1,6 +1,9 @@
 export type LocalNotificationSeverity = 'info' | 'warning' | 'critical';
 
-export type LocalNotificationSource = 'startup-capacity-check' | 'user-action';
+export type LocalNotificationSource =
+  | 'startup-capacity-check'
+  | 'resource-status-change-check'
+  | 'user-action';
 
 export type LocalNotificationEntityType =
   | 'pool'
