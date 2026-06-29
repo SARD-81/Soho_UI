@@ -14,7 +14,7 @@ const resolveAccountStatus = (
   }
 
   const normalizedFlags = accountFlags
-    .replace(/[\[\]\s]/g, '')
+    .replace(/[[\]\s]/g, '')
     .toUpperCase();
 
   if (normalizedFlags.includes('D')) {

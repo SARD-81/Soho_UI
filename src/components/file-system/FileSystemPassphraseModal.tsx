@@ -85,7 +85,7 @@ const FileSystemPassphraseModal = ({
       return;
     }
 
-    onConfirm(trimmedPassphrase);
+    onConfirm(passphrase);
   };
 
   return (

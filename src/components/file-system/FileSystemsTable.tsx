@@ -31,7 +31,6 @@ interface FileSystemsTableProps {
 const FileSystemsTable = ({
   detailViewId,
   filesystems,
-  attributeKeys,
   isLoading,
   error,
   onDeleteFilesystem,
@@ -62,7 +61,7 @@ const FileSystemsTable = ({
 
   const getIsKeyLoaded = (fs: FileSystemEntry) => {
     const v = fs.attributeMap?.keystatus || fs.attributeMap?.['keystatus'];
-    return typeof v === 'string' && ['available','loaded','on','yes'].includes(v.toLowerCase().trim());
+    return typeof v === 'string' && ['available','loaded','on','yes','true'].includes(v.toLowerCase().trim());
   };
 
   const getCanShowEncryptionActions = (fs: FileSystemEntry) => {
@@ -72,7 +71,7 @@ const FileSystemsTable = ({
       fs.attributeMap?.['رمزگذاری'];
 
     if (typeof value !== 'string') {
-      return true;
+      return false;
     }
 
     const normalized = value.toLowerCase().trim();
@@ -199,7 +198,7 @@ const FileSystemsTable = ({
 
     return [...dataColumns, canmountColumn, actionsColumn];
   }, [
-    attributeKeys, isDeleteDisabled, onDeleteFilesystem,
+    isDeleteDisabled, onDeleteFilesystem,
     onMount, onUnmount, onLoadKey, onUnloadKey, onChangePassphrase, onSetCanmount,
     isMounting, isUnmounting, isKeyLoading, isKeyUnloading, isChangingPassphrase, isSettingCanmount
   ]);
