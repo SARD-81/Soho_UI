@@ -1,3 +1,4 @@
+import { useResourceStatusChangeNotifications } from '../../hooks/useResourceStatusChangeNotifications';
 import { useStartupNotificationChecks } from '../../hooks/useStartupNotificationChecks';
 
 type NotificationBootstrapperProps = {
@@ -6,6 +7,7 @@ type NotificationBootstrapperProps = {
 
 const NotificationBootstrapper = ({ userKey }: NotificationBootstrapperProps) => {
   useStartupNotificationChecks(userKey);
+  useResourceStatusChangeNotifications(userKey);
 
   return null;
 };
