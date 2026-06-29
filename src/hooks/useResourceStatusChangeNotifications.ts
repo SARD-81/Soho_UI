@@ -115,12 +115,15 @@ export const useResourceStatusChangeNotifications = (
   const checkedDataSignatureRef = useRef<string | null>(null);
 
   const buildCurrentSnapshot = useCallback(() => {
-    const poolItems = zpoolQuery.data?.pools
+    const pools = Array.isArray(zpoolQuery.data?.pools) ? zpoolQuery.data.pools : [];
+    const disks = Array.isArray(diskQuery.data?.disks) ? diskQuery.data.disks : [];
+
+    const poolItems = pools
       .map(createPoolSnapshotItem)
-      .filter((item): item is ResourceStatusSnapshotItem => item != null) ?? [];
-    const diskItems = diskQuery.data?.disks
+      .filter((item): item is ResourceStatusSnapshotItem => item != null);
+    const diskItems = disks
       .map(createDiskSnapshotItem)
-      .filter((item): item is ResourceStatusSnapshotItem => item != null) ?? [];
+      .filter((item): item is ResourceStatusSnapshotItem => item != null);
 
     return [...poolItems, ...diskItems];
   }, [diskQuery.data, zpoolQuery.data]);
