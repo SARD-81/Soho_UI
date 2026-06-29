@@ -74,10 +74,12 @@ export const useLocalNotifications = (userKey?: string) => {
 
     window.addEventListener('storage', handleStorage);
     window.addEventListener('soho:notifications:capacity-summary', handleNotificationChange);
+    window.addEventListener('soho:notifications:status-change-summary', handleNotificationChange);
 
     return () => {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('soho:notifications:capacity-summary', handleNotificationChange);
+      window.removeEventListener('soho:notifications:status-change-summary', handleNotificationChange);
     };
   }, [refreshNotifications, userKey]);
 
