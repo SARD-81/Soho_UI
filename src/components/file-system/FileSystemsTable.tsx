@@ -1,6 +1,6 @@
 import { Box, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
-import { MdDeleteOutline, MdPlayArrow, MdStop, MdVpnKey, MdVpnKeyOff } from 'react-icons/md';
+import { MdDeleteOutline, MdEdit, MdPlayArrow, MdStop, MdVpnKey, MdVpnKeyOff } from 'react-icons/md';
 import ToggleBtn from '../ToggleBtn';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { FileSystemEntry } from '../../@types/filesystem';
@@ -18,11 +18,13 @@ interface FileSystemsTableProps {
   onUnmount?: (filesystem: FileSystemEntry) => void;
   onLoadKey?: (filesystem: FileSystemEntry) => void;
   onUnloadKey?: (filesystem: FileSystemEntry) => void;
+  onChangePassphrase?: (filesystem: FileSystemEntry) => void;
   onSetCanmount?: (filesystem: FileSystemEntry, state: 'on' | 'off') => void;
   isMounting?: boolean;
   isUnmounting?: boolean;
   isKeyLoading?: boolean;
   isKeyUnloading?: boolean;
+  isChangingPassphrase?: boolean;
   isSettingCanmount?: boolean;
 }
 
@@ -38,11 +40,13 @@ const FileSystemsTable = ({
   onUnmount,
   onLoadKey,
   onUnloadKey,
+  onChangePassphrase,
   onSetCanmount,
   isMounting = false,
   isUnmounting = false,
   isKeyLoading = false,
   isKeyUnloading = false,
+  isChangingPassphrase = false,
   isSettingCanmount = false,
 }: FileSystemsTableProps) => {
 
@@ -59,6 +63,20 @@ const FileSystemsTable = ({
   const getIsKeyLoaded = (fs: FileSystemEntry) => {
     const v = fs.attributeMap?.keystatus || fs.attributeMap?.['keystatus'];
     return typeof v === 'string' && ['available','loaded','on','yes'].includes(v.toLowerCase().trim());
+  };
+
+  const getCanShowEncryptionActions = (fs: FileSystemEntry) => {
+    const value =
+      fs.attributeMap?.encryption ??
+      fs.attributeMap?.encrypted ??
+      fs.attributeMap?.['رمزگذاری'];
+
+    if (typeof value !== 'string') {
+      return true;
+    }
+
+    const normalized = value.toLowerCase().trim();
+    return !['off', 'false', 'no', 'disabled', 'none', '—', '-', ''].includes(normalized);
   };
 
   const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
@@ -101,7 +119,8 @@ const FileSystemsTable = ({
       renderCell: (fs) => {
         const isMounted = getIsMounted(fs);
         const isKeyLoaded = getIsKeyLoaded(fs);
-        const anyPending = isMounting || isUnmounting || isKeyLoading || isKeyUnloading || isSettingCanmount;
+        const canShowEncryptionActions = getCanShowEncryptionActions(fs);
+        const anyPending = isMounting || isUnmounting || isKeyLoading || isKeyUnloading || isChangingPassphrase || isSettingCanmount;
 
         return (
           <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
@@ -124,7 +143,7 @@ const FileSystemsTable = ({
               </Tooltip>
             )}
 
-            {(onLoadKey && onUnloadKey) && (
+            {canShowEncryptionActions && (onLoadKey && onUnloadKey) && (
               <Tooltip title={isKeyLoaded ? 'تخلیه کلید' : 'بارگذاری کلید'}>
                 <span>
                   <IconButton
@@ -138,6 +157,24 @@ const FileSystemsTable = ({
                     disabled={anyPending}
                   >
                     {isKeyLoaded ? <MdVpnKeyOff size={17} /> : <MdVpnKey size={17} />}
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
+
+            {canShowEncryptionActions && onChangePassphrase && (
+              <Tooltip title={isKeyLoaded ? 'تغییر رمز فایل سیستم' : 'برای تغییر رمز، ابتدا کلید را بارگذاری کنید'}>
+                <span>
+                  <IconButton
+                    size="small"
+                    color="info"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChangePassphrase(fs);
+                    }}
+                    disabled={anyPending || !isKeyLoaded}
+                  >
+                    <MdEdit size={17} />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -163,8 +200,8 @@ const FileSystemsTable = ({
     return [...dataColumns, canmountColumn, actionsColumn];
   }, [
     attributeKeys, isDeleteDisabled, onDeleteFilesystem,
-    onMount, onUnmount, onLoadKey, onUnloadKey, onSetCanmount,
-    isMounting, isUnmounting, isKeyLoading, isKeyUnloading, isSettingCanmount
+    onMount, onUnmount, onLoadKey, onUnloadKey, onChangePassphrase, onSetCanmount,
+    isMounting, isUnmounting, isKeyLoading, isKeyUnloading, isChangingPassphrase, isSettingCanmount
   ]);
 
   return (
