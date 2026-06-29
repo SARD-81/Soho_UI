@@ -161,7 +161,10 @@ export const useSessionActivityTimeout = ({
       }
     };
 
-    recordActivityUnlessTimedOut(getCurrentTimestamp());
+    // A successful authenticated mount should start a fresh activity window.
+    // Without this, a stale timestamp from a previous session can immediately
+    // trigger the idle-timeout logout right after a new login.
+    recordActivity(getCurrentTimestamp());
 
     window.addEventListener('click', handleActivity);
     window.addEventListener('keydown', handleActivity);
