@@ -185,7 +185,8 @@ const CreateFileSystemModal = ({
   const startsWithInvalidCharacter =
     trimmedName.length > 0 && /^[0-9_-]/.test(trimmedName);
   const isNameFormatValid =
-    trimmedName.length === 0 || (hasValidEnglishStorageName && !startsWithInvalidCharacter);
+    trimmedName.length === 0 ||
+    (hasValidEnglishStorageName && !startsWithInvalidCharacter);
   const shouldShowSuccess =
     trimmedPool.length > 0 &&
     trimmedName.length > 0 &&
@@ -210,7 +211,9 @@ const CreateFileSystemModal = ({
     },
     {
       label: 'رمز نباید فقط فارسی باشد',
-      met: encryptionPassword.length === 0 || /[A-Za-z0-9]|[^؀-ۿ\s]/.test(encryptionPassword),
+      met:
+        encryptionPassword.length === 0 ||
+        /[A-Za-z0-9]|[^؀-ۿ\s]/.test(encryptionPassword),
     },
   ];
   const isEncryptionPasswordValid = encryptionRules.every((rule) => rule.met);
@@ -246,7 +249,10 @@ const CreateFileSystemModal = ({
       return;
     }
 
-    handleSubmit(event);
+    handleSubmit(event, {
+      encryptionEnabled: isEncryptionEnabled,
+      encryptionPassphrase: encryptionPassword,
+    });
   };
 
   return (
@@ -466,7 +472,7 @@ const CreateFileSystemModal = ({
                   fullWidth
                   size="small"
                   error={isEncryptionTouched && !isEncryptionPasswordValid}
-                  helperText="این گزینه فعلاً فقط برای تجربه کاربری است و به API ارسال نمی‌شود."
+                  helperText="در صورت فعال بودن رمزنگاری، این رمز به صورت Base64 در درخواست ایجاد فضای فایلی ارسال می‌شود."
                   InputProps={{
                     sx: inputBaseStyles,
                     endAdornment: (
