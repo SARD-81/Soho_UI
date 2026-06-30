@@ -246,6 +246,7 @@ const fetchZpools = async (
 ): Promise<ZpoolQueryResult> => {
   const { data: listResponse } =
     await axiosInstance.get<ZpoolListResponse>(ZPOOL_LIST_ENDPOINT, {
+      params: { save_to_db: true },
       signal,
     });
 
@@ -288,7 +289,7 @@ export const useZpool = (options?: UseZpoolOptions) => {
     queryKey: zpoolQueryKey,
     queryFn: ({ signal }) => fetchZpools(signal),
     enabled: options?.enabled ?? true,
-    refetchInterval: options?.refetchInterval ?? 1 * 60 * 1000,
+    refetchInterval: options?.refetchInterval ?? 30 * 1000,
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,

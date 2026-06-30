@@ -95,16 +95,49 @@ const flattenPoolSlots = (slotMap?: PoolSlotMap) => {
   return rows;
 };
 
+const getDiskIdentity = (slot: PoolDiskSlot) => {
+  const candidates = [slot.diskName, slot.wwn, slot.path];
+
+  for (const candidate of candidates) {
+    const normalized = String(candidate ?? '').trim();
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return null;
+};
+
+export const resolveServerSlotCount = (slotMap?: PoolSlotMap) => {
+  let maxSlotNumber = 0;
+  const seenDisks = new Set<string>();
+
+  flattenPoolSlots(slotMap).forEach(({ slot }) => {
+    const diskKey = getDiskIdentity(slot);
+
+    if (diskKey) {
+      seenDisks.add(diskKey);
+    }
+
+    const parsedSlotNumber = parseSlotNumber(slot.slotNumber);
+    if (parsedSlotNumber != null && parsedSlotNumber > maxSlotNumber) {
+      maxSlotNumber = parsedSlotNumber;
+    }
+  });
+
+  return Math.max(DEFAULT_SERVER_SLOT_COUNT, maxSlotNumber, seenDisks.size);
+};
+
 export const buildServerSlots = (
   slotMap?: PoolSlotMap,
-  slotCount = DEFAULT_SERVER_SLOT_COUNT
+  slotCount = resolveServerSlotCount(slotMap)
 ): ServerSlotViewModel[] => {
   const bySlotNumber = new Map<number, { poolName: string; slot: PoolDiskSlot }>();
   const unplacedSlots: Array<{ poolName: string; slot: PoolDiskSlot }> = [];
   const seenDisks = new Set<string>();
 
   flattenPoolSlots(slotMap).forEach((entry) => {
-    const diskKey = entry.slot.diskName?.trim();
+    const diskKey = getDiskIdentity(entry.slot);
 
     if (!diskKey || seenDisks.has(diskKey)) {
       return;

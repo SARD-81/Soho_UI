@@ -14,7 +14,11 @@ import { FaUserGroup } from 'react-icons/fa6';
 import { MdDeleteOutline } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { SambaShareEntry } from '../../@types/samba';
-import { parseDelimitedList } from '../../utils/samba';
+import {
+  getShareGroupMembers,
+  getShareUserMembers,
+  parseDelimitedList,
+} from '../../utils/samba';
 import DataTable from '../DataTable';
 
 interface SharesTableProps {
@@ -52,27 +56,22 @@ const SharesTable = ({
       return rawPath ?? '-';
     };
 
-    const resolveValidUsers = (share: SambaShareEntry) => {
+    const resolveAccessMembers = (share: SambaShareEntry) => {
       const { details } = share;
       const value =
-        (typeof details.valid_users === 'string' &&
-          details.valid_users.trim()) ||
-        (typeof details['valid users'] === 'string' &&
-          (details['valid users'] as string).trim());
+        details.valid_users ??
+        details['valid users'] ??
+        details.valid_groups ??
+        details['valid groups'];
 
       return parseDelimitedList(value);
     };
 
-    const resolveValidGroups = (share: SambaShareEntry) => {
-      const { details } = share;
-      const value =
-        (typeof details.valid_groups === 'string' &&
-          details.valid_groups.trim()) ||
-        (typeof details['valid groups'] === 'string' &&
-          (details['valid groups'] as string).trim());
+    const resolveValidUsers = (share: SambaShareEntry) =>
+      getShareUserMembers(resolveAccessMembers(share));
 
-      return parseDelimitedList(value);
-    };
+    const resolveValidGroups = (share: SambaShareEntry) =>
+      getShareGroupMembers(resolveAccessMembers(share));
 
     return [
       {
@@ -248,7 +247,7 @@ const SharesTable = ({
         },
       },
     ];
-  }, [isDeleting, onDelete, onManageGroups, onManageUsers, pendingShareName]);
+  }, [isDeleting, onDelete, onManageGroups, onManageUsers, pendingShareName, theme.palette.primary.main, theme.palette.secondary.main]);
 
   const handleRowClick = useCallback((share: SambaShareEntry) => share, []);
 
@@ -272,7 +271,6 @@ const SharesTable = ({
             gap: 2,
             alignItems: 'center',
             py: 4,
-            
           }}
         >
           <CircularProgress color="primary" size={32} />

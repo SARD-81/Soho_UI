@@ -41,7 +41,7 @@ export const validateVdevDeviceSelection = (
   switch (normalizedType) {
     case 'disk':
       if (deviceCount !== 1) {
-        return 'برای هر دیسک جداگانه دقیقاً یک دیسک انتخاب کنید.';
+        return 'برای حالت استریپ باید در هر مرحله تنهایک دیسک انتخاب شود';
       }
       break;
     case 'mirror':

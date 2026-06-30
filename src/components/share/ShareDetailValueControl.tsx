@@ -1,5 +1,5 @@
 import { Box, IconButton, Stack, TextField, Tooltip, Typography } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FiCheck, FiEdit2, FiX } from 'react-icons/fi';
 import formatDetailValue from '../../utils/formatDetailValue';
 import ShareBooleanToggle from './ShareBooleanToggle';
@@ -15,15 +15,21 @@ interface ShareDetailValueControlProps {
 const BOOLEAN_FIELDS = new Set([
   'available',
   'read only',
+  'read_only',
   'guest ok',
+  'guest_ok',
   'browseable',
   'inherit permissions',
+  'inherit_permissions',
 ]);
 
 const EDITABLE_FIELDS = new Set([
   'max connections',
+  'max_connections',
   'create mask',
+  'create_mask',
   'directory mask',
+  'directory_mask',
 ]);
 
 const normalizeBooleanValue = (attributeKey: string, value: unknown) => {
@@ -37,8 +43,8 @@ const normalizeBooleanValue = (attributeKey: string, value: unknown) => {
 
   if (typeof value === 'string') {
     const normalized = value.trim().toLowerCase();
-    if (normalized === 'true' || normalized === 'yes') return true;
-    if (normalized === 'false' || normalized === 'no') return false;
+    if (['true', 'yes', 'on', '1'].includes(normalized)) return true;
+    if (['false', 'no', 'off', '0'].includes(normalized)) return false;
   }
 
   return null;
@@ -62,6 +68,14 @@ const ShareDetailValueControl = ({
       ? String(value)
       : formatDetailValue(value)
   );
+
+  useEffect(() => {
+    setDraft(
+      typeof value === 'string' || typeof value === 'number'
+        ? String(value)
+        : formatDetailValue(value)
+    );
+  }, [value]);
 
   const handleToggle = (checked: boolean) => {
     onSubmit(checked);

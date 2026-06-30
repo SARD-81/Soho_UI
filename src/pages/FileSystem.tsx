@@ -1,5 +1,5 @@
 import { Box, Button, Typography } from '@mui/material';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import type {
   FileSystemAttributeEntry,
@@ -8,11 +8,18 @@ import type {
 import PageContainer from '../components/PageContainer';
 import ConfirmDeleteFileSystemModal from '../components/file-system/ConfirmDeleteFileSystemModal';
 import CreateFileSystemModal from '../components/file-system/CreateFileSystemModal';
+import FileSystemPassphraseModal from '../components/file-system/FileSystemPassphraseModal';
 import FileSystemsTable from '../components/file-system/FileSystemsTable';
 import SelectedFileSystemsDetailsPanel from '../components/file-system/SelectedFileSystemsDetailsPanel';
+import { useChangeFileSystemPassphrase } from '../hooks/useChangeFileSystemPassphrase';
 import { useCreateFileSystem } from '../hooks/useCreateFileSystem';
 import { useDeleteFileSystem } from '../hooks/useDeleteFileSystem';
 import { useFileSystems } from '../hooks/useFileSystems';
+import { useLoadKey } from '../hooks/useLoadKey';
+import { useMountFileSystem } from '../hooks/useMountFileSystem';
+import { useSetCanmount } from '../hooks/useSetCanmount';
+import { useUnmountFileSystem } from '../hooks/useUnmountFileSystem';
+import { useUnloadKey } from '../hooks/useUnloadKey';
 import { useZpool } from '../hooks/useZpool';
 import {
   selectDetailViewState,
@@ -22,6 +29,12 @@ import {
 const FILESYSTEM_DETAIL_VIEW_ID = 'filesystems';
 
 const FileSystem = () => {
+  const [loadKeyTarget, setLoadKeyTarget] = useState<FileSystemEntry | null>(
+    null
+  );
+  const [changePassphraseTarget, setChangePassphraseTarget] =
+    useState<FileSystemEntry | null>(null);
+
   const createFileSystem = useCreateFileSystem({
     onSuccess: (filesystemName) => {
       toast.success(`فضای فایلی ${filesystemName} با موفقیت ایجاد شد.`);
@@ -37,126 +50,142 @@ const FileSystem = () => {
     },
     onError: (error, filesystemName) => {
       if (error.message.includes('shareConfiguration')) {
-        toast.error(
-          `حذف فضای فایلی ${filesystemName} امکان‌پذیر نیست؛ ابتدا تمام اشتراک‌های مرتبط با این فضا را حذف کنید.`
-        );
+        toast.error(`حذف فضای فایلی ${filesystemName} امکان‌پذیر نیست؛ ابتدا تمام اشتراک‌های مرتبط را حذف کنید.`);
         return;
       }
-
-      toast.error(
-        `حذف فضای فایلی ${filesystemName} با خطا مواجه شد: ${error.message}`
-      );
+      toast.error(`حذف فضای فایلی ${filesystemName} با خطا مواجه شد: ${error.message}`);
     },
   });
 
-  const { data, isLoading, error } = useFileSystems();
+  const mountFileSystem = useMountFileSystem({
+    onSuccess: (name) => toast.success(`فضای فایلی ${name} با موفقیت مانت شد.`),
+    onError: (error, name) => toast.error(`مانت ${name} با خطا مواجه شد: ${error.message}`),
+  });
+
+  const unmountFileSystem = useUnmountFileSystem({
+    onSuccess: (name) => toast.success(`فضای فایلی ${name} با موفقیت آنمانت شد.`),
+    onError: (error, name) => toast.error(`آنمانت ${name} با خطا مواجه شد: ${error.message}`),
+  });
+
+  const loadKey = useLoadKey({
+    onSuccess: (name) => {
+      setLoadKeyTarget(null);
+      toast.success(`کلید رمزنگاری ${name} با موفقیت لود شد.`);
+    },
+    onError: (error, name) => toast.error(`لود کلید ${name} با خطا مواجه شد: ${error.message}`),
+  });
+
+  const unloadKey = useUnloadKey({
+    onSuccess: (name) => toast.success(`کلید رمزنگاری ${name} با موفقیت آنلود شد.`),
+    onError: (error, name) => toast.error(`آنلود کلید ${name} با خطا مواجه شد: ${error.message}`),
+  });
+
+  const changePassphrase = useChangeFileSystemPassphrase({
+    onSuccess: (name) => {
+      setChangePassphraseTarget(null);
+      toast.success(`رمز فایل سیستم ${name} با موفقیت تغییر کرد.`);
+    },
+    onError: (error, name) => toast.error(`تغییر رمز فایل سیستم ${name} با خطا مواجه شد: ${error.message}`),
+  });
+
+  const setCanmountHook = useSetCanmount({
+    onSuccess: (name) => toast.success(`وضعیت مانت خودکار برای ${name} با موفقیت تغییر کرد.`),
+    onError: (error, name) => toast.error(`تغییر مانت خودکار برای ${name} با خطا مواجه شد: ${error.message}`),
+  });
+
+  const { data, isLoading, error: fetchError } = useFileSystems();
   const { data: poolData } = useZpool();
   const poolOptions = useMemo(
-    () =>
-      (poolData?.pools ?? [])
-        .map((pool) => pool.name)
-        .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })),
+    () => (poolData?.pools ?? []).map((pool) => pool.name).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })),
     [poolData?.pools]
   );
 
   const filesystemEntries = data?.filesystems ?? [];
 
   const filesystems = useMemo(
-    () =>
-      [...filesystemEntries].sort((a, b) =>
-        a.filesystemName.localeCompare(b.filesystemName, 'en', {
-          sensitivity: 'base',
-        })
-      ),
+    () => [...filesystemEntries].sort((a, b) => a.filesystemName.localeCompare(b.filesystemName, 'en', { sensitivity: 'base' })),
     [filesystemEntries]
   );
 
   const attributeKeys = useMemo(() => {
     const keys = new Set<string>();
-
     filesystems.forEach((filesystem) => {
       filesystem.attributes.forEach((attribute: FileSystemAttributeEntry) => {
-        if (attribute.key !== 'name') {
-          keys.add(attribute.key);
-        }
+        if (attribute.key !== 'name') keys.add(attribute.key);
       });
     });
-
-    return Array.from(keys).sort((a, b) =>
-      a.localeCompare(b, 'en', { sensitivity: 'base' })
-    );
+    return Array.from(keys).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
   }, [filesystems]);
 
-  const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
-    selectDetailViewState(FILESYSTEM_DETAIL_VIEW_ID)
-  );
-  const setActiveItemId = useDetailSplitViewStore(
-    (state) => state.setActiveItemId
-  );
+  const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(selectDetailViewState(FILESYSTEM_DETAIL_VIEW_ID));
+  const setActiveItemId = useDetailSplitViewStore((state) => state.setActiveItemId);
   const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
 
   useEffect(() => {
-    const validIds = new Set(filesystems.map((filesystem) => filesystem.id));
-
-    pinnedItemIds.forEach((filesystemId) => {
-      if (!validIds.has(filesystemId)) {
-        unpinItem(FILESYSTEM_DETAIL_VIEW_ID, filesystemId);
-      }
-    });
-
+    const validIds = new Set(filesystems.map((f) => f.id));
+    pinnedItemIds.forEach((id) => { if (!validIds.has(id)) unpinItem(FILESYSTEM_DETAIL_VIEW_ID, id); });
     if (!activeItemId && filesystems.length > 0) {
       setActiveItemId(FILESYSTEM_DETAIL_VIEW_ID, filesystems[0].id);
     } else if (activeItemId && !validIds.has(activeItemId)) {
-      setActiveItemId(
-        FILESYSTEM_DETAIL_VIEW_ID,
-        filesystems.length > 0 ? filesystems[0].id : null
-      );
+      setActiveItemId(FILESYSTEM_DETAIL_VIEW_ID, filesystems.length > 0 ? filesystems[0].id : null);
     }
   }, [activeItemId, filesystems, pinnedItemIds, setActiveItemId, unpinItem]);
 
-  const handleOpenCreate = useCallback(() => {
-    createFileSystem.openCreateModal();
-  }, [createFileSystem]);
+  const handleOpenCreate = useCallback(() => createFileSystem.openCreateModal(), [createFileSystem]);
+  const handleDelete = useCallback((fs: FileSystemEntry) => deleteFileSystem.requestDelete(fs), [deleteFileSystem]);
 
-  const handleDelete = useCallback(
-    (filesystem: FileSystemEntry) => {
-      deleteFileSystem.requestDelete(filesystem);
+  const handleMount = useCallback((fs: FileSystemEntry) => mountFileSystem.mount(fs.poolName, fs.filesystemName), [mountFileSystem]);
+  const handleUnmount = useCallback((fs: FileSystemEntry) => unmountFileSystem.unmount(fs.poolName, fs.filesystemName), [unmountFileSystem]);
+  const handleLoadKey = useCallback((fs: FileSystemEntry) => setLoadKeyTarget(fs), []);
+  const handleUnloadKey = useCallback((fs: FileSystemEntry) => unloadKey.unloadKey(fs.poolName, fs.filesystemName), [unloadKey]);
+  const handleChangePassphrase = useCallback((fs: FileSystemEntry) => setChangePassphraseTarget(fs), []);
+
+  const handleConfirmLoadKey = useCallback(
+    (passphrase: string) => {
+      if (!loadKeyTarget) {
+        return;
+      }
+      loadKey.loadKey(
+        loadKeyTarget.poolName,
+        loadKeyTarget.filesystemName,
+        passphrase
+      );
     },
-    [deleteFileSystem]
+    [loadKey, loadKeyTarget]
   );
+
+  const handleConfirmChangePassphrase = useCallback(
+    (newPassphrase: string) => {
+      if (!changePassphraseTarget) {
+        return;
+      }
+      changePassphrase.changePassphrase(
+        changePassphraseTarget.poolName,
+        changePassphraseTarget.filesystemName,
+        newPassphrase
+      );
+    },
+    [changePassphrase, changePassphraseTarget]
+  );
+
+  const handleSetCanmount = useCallback((fs: FileSystemEntry, state: 'on' | 'off') => {
+    setCanmountHook.setCanmount(fs.poolName, fs.filesystemName, state);
+  }, [setCanmountHook]);
 
   return (
     <PageContainer>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: -5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
-          >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+          <Typography variant="h5" sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>
             فضای فایلی
           </Typography>
-
           <Button
             onClick={handleOpenCreate}
             variant="contained"
             sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: '3px',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              background:
-                'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-              color: 'var(--color-bg)',
-              boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+              px: 3, py: 1.25, borderRadius: '3px', fontWeight: 700, fontSize: '0.95rem',
+              background: 'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+              color: 'var(--color-bg)', boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
             }}
           >
             ایجاد فضای فایلی
@@ -164,10 +193,22 @@ const FileSystem = () => {
         </Box>
       </Box>
 
-      <CreateFileSystemModal
-        controller={createFileSystem}
-        poolOptions={poolOptions}
-        existingFilesystems={filesystems}
+      <CreateFileSystemModal controller={createFileSystem} poolOptions={poolOptions} existingFilesystems={filesystems} />
+      <FileSystemPassphraseModal
+        mode="load-key"
+        open={Boolean(loadKeyTarget)}
+        targetFileSystem={loadKeyTarget}
+        isLoading={loadKey.isLoadingKey}
+        onClose={() => setLoadKeyTarget(null)}
+        onConfirm={handleConfirmLoadKey}
+      />
+      <FileSystemPassphraseModal
+        mode="change-passphrase"
+        open={Boolean(changePassphraseTarget)}
+        targetFileSystem={changePassphraseTarget}
+        isLoading={changePassphrase.isChangingPassphrase}
+        onClose={() => setChangePassphraseTarget(null)}
+        onConfirm={handleConfirmChangePassphrase}
       />
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -176,15 +217,24 @@ const FileSystem = () => {
           filesystems={filesystems}
           attributeKeys={attributeKeys}
           isLoading={isLoading}
-          error={error ?? null}
+          error={fetchError ?? null}
           onDeleteFilesystem={handleDelete}
           isDeleteDisabled={deleteFileSystem.isDeleting}
+          onMount={handleMount}
+          onUnmount={handleUnmount}
+          onLoadKey={handleLoadKey}
+          onUnloadKey={handleUnloadKey}
+          onChangePassphrase={handleChangePassphrase}
+          onSetCanmount={handleSetCanmount}
+          isMounting={mountFileSystem.isMounting}
+          isUnmounting={unmountFileSystem.isUnmounting}
+          isKeyLoading={loadKey.isLoadingKey}
+          isKeyUnloading={unloadKey.isUnloadingKey}
+          isChangingPassphrase={changePassphrase.isChangingPassphrase}
+          isSettingCanmount={setCanmountHook.isSetting}
         />
 
-        <SelectedFileSystemsDetailsPanel
-          items={filesystems}
-          viewId={FILESYSTEM_DETAIL_VIEW_ID}
-        />
+        <SelectedFileSystemsDetailsPanel items={filesystems} viewId={FILESYSTEM_DETAIL_VIEW_ID} />
       </Box>
 
       <ConfirmDeleteFileSystemModal controller={deleteFileSystem} />

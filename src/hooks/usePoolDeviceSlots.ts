@@ -272,12 +272,15 @@ interface UsePoolDeviceSlotsOptions {
   refetchInterval?: number;
 }
 
+export const poolDeviceSlotsQueryKey = (poolNames: string[]) =>
+  ['zpool', 'devices', 'slots', poolNames.join(',')] as const;
+
 export const usePoolDeviceSlots = (
   poolNames: string[],
   options?: UsePoolDeviceSlotsOptions
 ) =>
   useQuery<PoolDeviceSlotsResult, Error>({
-    queryKey: ['zpool', 'devices', 'slots', poolNames.join(',')],
+    queryKey: poolDeviceSlotsQueryKey(poolNames),
     queryFn: ({ signal }) => fetchPoolDeviceSlots(poolNames, signal),
     enabled: (options?.enabled ?? true) && poolNames.length > 0,
     refetchInterval: options?.refetchInterval ?? 30000,

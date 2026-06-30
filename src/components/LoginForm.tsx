@@ -67,102 +67,138 @@ function LoginForm() {
     }
   }, [isSuccess, isError, error]);
 
+  const fieldLabelSx = {
+    pr: 1,
+    color: 'var(--color-secondary)',
+    fontSize: 12.5,
+    fontWeight: 800,
+    lineHeight: 1,
+  };
+
   return (
     <Box
       component="form"
+      noValidate
       onSubmit={handleSubmit(onSubmit)}
       sx={{ width: '100%' }}
     >
-      <Stack spacing={2.25}>
-        {/* Username Field */}
-        <Controller
-          name="username"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              placeholder="نام کاربری"
-              autoComplete="username"
-              fullWidth
-              error={!!errors.username}
-              helperText={errors.username?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <FaUser size={16} color="var(--color-primary)" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={loginTextFieldSx}
-            />
-          )}
-        />
-
-        {/* Password Field */}
-        <Controller
-          name="password"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              placeholder="رمز عبور"
-              fullWidth
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <FaLock size={16} color="var(--color-primary)" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label={
-                          showPassword ? 'مخفی کردن رمز' : 'نمایش رمز'
-                        }
-                        onClick={() => setShowPassword((s) => !s)}
-                        edge="end"
-                        size="small"
-                      >
-                        {showPassword ? (
-                          <FaEyeSlash
-                            size={16}
-                            color="var(--color-secondary)"
-                          />
-                        ) : (
-                          <FaEye size={16} color="var(--color-secondary)" />
-                        )}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={loginTextFieldSx}
-            />
-          )}
-        />
-
-        <Box textAlign="center">
-          <Typography
-            variant="body2"
-            sx={{ mt: 0.5, color: 'var(--color-secondary)' }}
-          >
-            لطفا برای ادامه وارد شوید
+      <Stack spacing={2.1}>
+        <Stack spacing={0.8}>
+          <Typography component="label" sx={fieldLabelSx}>
+            نام کاربری
           </Typography>
-        </Box>
 
-        {/* Remember Me Checkbox */}
+          <Controller
+            name="username"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                placeholder="نام کاربری مدیریتی"
+                autoComplete="username"
+                fullWidth
+                error={!!errors.username}
+                helperText={errors.username?.message}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Box
+                          sx={{
+                            width: 34,
+                            height: 34,
+                            display: 'grid',
+                            placeItems: 'center',
+                            borderRadius: '12px',
+                            color: 'var(--color-primary)',
+                            background: 'rgba(99, 182, 219, 0.12)',
+                          }}
+                        >
+                          <FaUser size={15} />
+                        </Box>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={loginTextFieldSx}
+              />
+            )}
+          />
+        </Stack>
+
+        <Stack spacing={0.8}>
+          <Typography component="label" sx={fieldLabelSx}>
+            رمز عبور
+          </Typography>
+
+          <Controller
+            name="password"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                placeholder="رمز عبور حساب"
+                fullWidth
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                error={!!errors.password}
+                helperText={errors.password?.message}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Box
+                          sx={{
+                            width: 34,
+                            height: 34,
+                            display: 'grid',
+                            placeItems: 'center',
+                            borderRadius: '12px',
+                            color: 'var(--color-primary)',
+                            background: 'rgba(99, 182, 219, 0.12)',
+                          }}
+                        >
+                          <FaLock size={15} />
+                        </Box>
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label={showPassword ? 'مخفی کردن رمز' : 'نمایش رمز'}
+                          onClick={() => setShowPassword((s) => !s)}
+                          edge="end"
+                          size="small"
+                          sx={{
+                            color: 'var(--color-secondary)',
+                            '&:hover': {
+                              color: 'var(--color-primary)',
+                              backgroundColor: 'rgba(99, 182, 219, 0.1)',
+                            },
+                          }}
+                        >
+                          {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={loginTextFieldSx}
+              />
+            )}
+          />
+        </Stack>
+
         <Controller
           name="rememberMe"
           control={control}
           render={({ field }) => (
             <FormControlLabel
+              sx={{
+                width: 'fit-content',
+                mx: 0,
+                color: 'var(--color-secondary)',
+              }}
               control={
                 <Checkbox
                   {...field}
@@ -192,43 +228,72 @@ function LoginForm() {
           fullWidth
           startIcon={
             isPending ? (
-              <CircularProgress
-                size={18}
-                sx={{ color: 'var(--color-secondary)' }}
-              />
+              <CircularProgress size={18} sx={{ color: 'currentColor' }} />
             ) : (
               <LuLogIn />
             )
           }
           sx={{
-            py: 1.2,
-            borderRadius: '5px',
+            mt: 0.3,
+            py: 1.35,
+            borderRadius: '18px',
             textTransform: 'none',
-            fontWeight: 700,
+            fontWeight: 900,
             letterSpacing: 0.2,
-            boxShadow: 'none',
-            color: 'var(--color-text)',
-            background: 'var(--color-primary-light)',
+            boxShadow: '0 16px 34px rgba(35, 166, 213, 0.24)',
+            color: '#fff',
+            background: 'linear-gradient(135deg, #4f85bb 0%, #23a6d5 52%, #23d5ab 100%)',
+            overflow: 'hidden',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              transform: 'translateX(110%) skewX(-18deg)',
+              background:
+                'linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)',
+              transition: 'transform 420ms ease',
+            },
             '&:hover': {
-              boxShadow: 'none',
+              boxShadow: '0 20px 42px rgba(35, 166, 213, 0.32)',
               transform: 'translateY(-2px)',
             },
-            transition: 'transform 180ms ease',
+            '&:hover::before': {
+              transform: 'translateX(-110%) skewX(-18deg)',
+            },
+            '&.Mui-disabled': {
+              color: 'rgba(255,255,255,0.78)',
+              background: 'linear-gradient(135deg, #7ca7c7 0%, #70b9d3 100%)',
+            },
+            transition: 'transform 180ms ease, box-shadow 180ms ease',
           }}
         >
-          {isPending ? 'در حال ورود...' : 'ورود'}
+          {isPending ? 'در حال ورود...' : 'ورود به StoreX'}
         </Button>
+
         <Box
-          textAlign="center"
-          sx={{ marginTop: '25px', marginBottom: '-5px' }}
+          sx={{
+            pt: 1.2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          <Typography
-            variant="h6"
-            color="var(--color-secondary)"
-            sx={{ fontSize: 12, marginBottom: -15 }}
+          {/* <Typography
+            variant="body2"
+            sx={{
+              px: 1.4,
+              py: 0.7,
+              borderRadius: '999px',
+              color: 'var(--color-secondary)',
+              border: '1px solid var(--color-input-border)',
+              backgroundColor: 'var(--color-input-bg)',
+              fontSize: 12,
+              fontWeight: 700,
+            }}
           >
             نسخه 2
-          </Typography>
+          </Typography> */}
         </Box>
       </Stack>
     </Box>

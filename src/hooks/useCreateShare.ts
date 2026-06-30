@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import type { CreateSambaSharepointPayload } from '../@types/samba';
 import axiosInstance from '../lib/axiosInstance';
 import { sambaSharesQueryKey } from './useSambaShares';
+import { mergeShareAccessMembers } from '../utils/samba';
 
 type PathValidationStatus = 'idle' | 'valid' | 'invalid';
 
@@ -164,21 +165,25 @@ export const useCreateShare = ({
     const sharepointName =
       trimmedShareName || deriveShareDisplayName(trimmedPath);
 
-    createShareMutation.mutate({
-      sharepoint_name: sharepointName,
-      path: trimmedPath,
-      valid_users: validUsers ?? [],
-      valid_groups: validGroups ?? [],
-      available: true,
-      read_only: false,
-      guest_ok: false,
-      browseable: true,
-      max_connections: 10,
-      create_mask: '0777',
-      directory_mask: '0777',
-      inherit_permissions: false,
-      save_to_db: true,
-    });
+    const accessMembers = mergeShareAccessMembers({
+      groups: validGroups,
+  users: validUsers,
+});
+
+createShareMutation.mutate({
+  sharepoint_name: sharepointName,
+  path: trimmedPath,
+  valid_users: accessMembers,
+  available: true,
+  read_only: false,
+  guest_ok: false,
+  browseable: true,
+  max_connections: 10,
+  create_mask: '0777',
+  directory_mask: '0777',
+  inherit_permissions: false,
+  save_to_db: true,
+});
   },
   [createShareMutation, fullPath, shareName, validGroups, validUsers]
 );

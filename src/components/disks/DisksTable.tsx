@@ -203,6 +203,12 @@ const DisksTable = ({
             typeof partitionCount === 'number'
               ? partitionCount === 0
               : disk.has_partition === false;
+          const isActionDisabled =
+            isDisabled ||
+            !onWipe ||
+            isPartitionLoading ||
+            hasNoPartitions ||
+            !hasPartitions;
 
           if (disabledDisks.has(disk.disk) && hasPartitions) {
             return renderStateChip('در حال استفاده', 'error');
@@ -233,15 +239,11 @@ const DisksTable = ({
                 > */}
                 <Chip
                   label={<PiBroomFill size={18} />}
-                  clickable={
-                    isDisabled ||
-                    !onWipe ||
-                    isPartitionLoading ||
-                    hasNoPartitions ||
-                    !hasPartitions
-                  }
+                  clickable={!isActionDisabled}
+                  disabled={isActionDisabled}
                   onClick={(event) => {
                     event.stopPropagation();
+                    if (isActionDisabled) return;
                     onWipe?.(disk);
                   }}
                   color= "error"

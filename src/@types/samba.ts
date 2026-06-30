@@ -31,7 +31,6 @@ export interface CreateSambaSharepointPayload {
   sharepoint_name: string;
   path: string;
   valid_users: string[];
-  valid_groups: string[];
   available: boolean;
   read_only: boolean;
   guest_ok: boolean;

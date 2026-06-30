@@ -19,6 +19,7 @@ const HIDDEN_DETAIL_KEYS = new Set([
   'WWID',
   'UUID',
   'زمان‌بندی',
+  'شناسه WWN',
 ]);
 
 const renderDetailValue = (value: unknown): ReactNode => {
@@ -162,9 +163,8 @@ const EmptyBayState = ({ selectedBay }: { selectedBay: ServerSlotViewModel }) =>
       این اسلات خالی است
     </Typography>
     <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.9 }}>
-      برای این شماره اسلات هیچ دیسکی از APIهای فعلی دریافت نشده است. اگر دیسک فیزیکی نصب شده،
-      مقدار `slot_number` در پاسخ `/api/disk/{'{diskName}'}/` را بررسی کنید.
-    </Typography>
+  برای این اسلات هنوز دیسکی در سامانه شناسایی نشده است.
+</Typography>
   </Box>
 );
 
@@ -188,9 +188,11 @@ const DiskSlotDetailsPanel = ({ selectedBay }: DiskSlotDetailsPanelProps) => {
 
   return (
     <Box
-      sx={{
-        height: '100%',
-        minHeight: 320,
+  sx={{
+    height: '100%',
+    minHeight: 0,
+    maxHeight: { xs: 'none', lg: 390 },
+    overflow: 'hidden',
         borderRadius: '12px',
         border: (theme) =>
           `1px solid ${
@@ -294,19 +296,23 @@ const DiskSlotDetailsPanel = ({ selectedBay }: DiskSlotDetailsPanelProps) => {
 
       {detailEntries.length > 0 ? (
         <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, minmax(0, 1fr))',
-              lg: '1fr',
-              xl: 'repeat(2, minmax(0, 1fr))',
-            },
-            gap: 1.25,
-            overflowY: 'auto',
-            pr: 0.5,
-          }}
-        >
+  sx={{
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',
+      sm: 'repeat(2, minmax(0, 1fr))',
+      lg: '1fr',
+      xl: 'repeat(2, minmax(0, 1fr))',
+    },
+    gap: 1.25,
+    overflowY: 'auto',
+    pr: 0.5,
+    minHeight: 0,
+    '& > *': {
+  minWidth: 0,
+},
+  }}
+>
           {detailEntries.map(([label, value]) => (
             <InfoTile key={label} label={label} value={value} />
           ))}

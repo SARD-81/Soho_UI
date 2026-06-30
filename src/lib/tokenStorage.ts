@@ -1,43 +1,37 @@
 const REFRESH_TOKEN_KEY = 'auth:refresh-token';
 const USERNAME_KEY = 'auth:username';
 
-const getWebStorage = (): Storage | null => {
+const getSessionStorage = (): Storage | null => {
   if (typeof window === 'undefined') {
     return null;
   }
 
-  const candidates: (Storage | undefined)[] = [
-    window.sessionStorage,
-    window.localStorage,
-  ];
-
-  for (const storage of candidates) {
-    if (!storage) {
-      continue;
-    }
-
-    try {
-      const testKey = '__auth_storage_test__';
-      storage.setItem(testKey, '1');
-      storage.removeItem(testKey);
-      return storage;
-    } catch (error) {
-      console.warn('Web storage is not available, falling back to in-memory tokens.', error);
-    }
+  try {
+    const testKey = '__auth_storage_test__';
+    window.sessionStorage.setItem(testKey, '1');
+    window.sessionStorage.removeItem(testKey);
+    return window.sessionStorage;
+  } catch (error) {
+    console.warn(
+      'Session storage is not available, falling back to in-memory tokens.',
+      error
+    );
+    return null;
   }
-
-  return null;
 };
 
-const storageRef = getWebStorage();
+const storageRef = getSessionStorage();
 
-// Clean up any legacy access tokens that might have been persisted previously so
-// they are not exposed to long-lived storage and can only live in-memory.
-if (storageRef) {
+// Clean up any legacy tokens that might have been persisted previously so access
+// tokens stay memory-only and refresh tokens stay scoped to sessionStorage.
+if (typeof window !== 'undefined') {
   try {
-    storageRef.removeItem('auth:access-token');
+    window.sessionStorage.removeItem('auth:access-token');
+    window.localStorage.removeItem('auth:access-token');
+    window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+    window.localStorage.removeItem(USERNAME_KEY);
   } catch (error) {
-    console.warn('Unable to remove legacy access token from storage', error);
+    console.warn('Unable to remove legacy auth values from storage', error);
   }
 }
 

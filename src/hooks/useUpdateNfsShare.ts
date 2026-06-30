@@ -56,7 +56,13 @@ export const useUpdateNfsShare = ({
 
   return useMutation<unknown, AxiosError<ApiErrorResponse>, NfsSharePayload>({
     mutationFn: async (payload) => {
-      await axiosInstance.put('/api/nfs/shares/update/', payload);
+      const { no_subtree_check, ...rest } = payload;
+      const apiPayload = {
+        ...rest,
+        subtree_check: no_subtree_check === undefined ? false : !no_subtree_check,
+      };
+
+      await axiosInstance.put('/api/nfs/shares/update/', apiPayload);
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: nfsSharesQueryKey });

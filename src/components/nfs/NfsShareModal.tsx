@@ -13,7 +13,6 @@ import type {
   NfsShareOptionKey,
   NfsSharePayload,
 } from '../../@types/nfs';
-import { isCompleteIPv4Address } from '../../utils/ipAddress';
 import { translateDetailKey } from '../../utils/detailLabels';
 import {
   NFS_OPTION_DEFAULTS,
@@ -26,7 +25,10 @@ import IPv4AddressInput from '../common/IPv4AddressInput';
 import ModalActionButtons from '../common/ModalActionButtons';
 import { useServiceAction } from '../../hooks/useServiceAction';
 import { toast } from 'react-hot-toast';
-import { useNfsShareDetails } from '../../hooks/useNfsShareDetails';
+
+const DISPLAY_OPTIONS = NFS_OPTION_KEYS.filter(
+  (key) => key !== 'root_squash' && key !== 'no_subtree_check'
+);
 
 interface NfsShareModalProps {
   open: boolean;
@@ -94,13 +96,8 @@ const NfsShareModal = ({
   const [client, setClient] = useState('');
   const [optionValues, setOptionValues] = useState(NFS_OPTION_DEFAULTS);
   const [formError, setFormError] = useState<string | null>(null);
-  const [hasAdjustedOptions, setHasAdjustedOptions] = useState(false);
 
   const isEditMode = mode === 'edit';
-  const { data: remoteShare } = useNfsShareDetails({
-    path,
-    enabled: isEditMode && open,
-  });
 
   useEffect(() => {
     if (!open) {
@@ -123,21 +120,8 @@ const NfsShareModal = ({
       setOptionValues({ ...NFS_OPTION_DEFAULTS });
     }
 
-    setHasAdjustedOptions(false);
     setFormError(null);
   }, [initialShare, isEditMode, open]);
-
-  useEffect(() => {
-    if (!isEditMode || !open || hasAdjustedOptions) {
-      return;
-    }
-
-    const remoteOptions = remoteShare?.clients?.[0]?.options;
-
-    if (remoteOptions) {
-      setOptionValues(resolveOptionValues(remoteOptions));
-    }
-  }, [hasAdjustedOptions, isEditMode, open, remoteShare]);
 
   const selectableMountpoints = useMemo(
     () => mountpointOptions.filter(Boolean),
@@ -160,44 +144,28 @@ const NfsShareModal = ({
     setPathInput(nextValue);
   };
 
-  const handleToggleOption = (key: NfsShareOptionKey) => {
-    setHasAdjustedOptions(true);
+  const handleToggleOption = (key: NfsShareOptionKey, checked: boolean) => {
     setOptionValues((prev) => ({
       ...prev,
-      [key]: !prev[key],
+      [key]: checked,
     }));
   };
 
   const serviceAction = useServiceAction({
-        onSuccess: () => {
-          // toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
-        },
-        onError: (message, { service }) => {
-          toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
-        },
-      });
-  
-      const handleRestartNFS = useCallback(() => {
-          // if (serviceAction.isPending) {
-          //   toast(
-          //     'راه‌اندازی مجدد سرویس smbd.service در حال انجام است. لطفاً صبر کنید.'
-          //   );
-          //   return;
-          // }
-          //
-          // const toastId = toast.loading(
-          //   'در حال راه‌اندازی مجدد سرویس smbd.service...'
-          // );
-      
-          serviceAction.mutate(
-            { service: 'nfs-server.service', action: 'restart' },
-            {
-              onSettled: () => {
-                // toast.dismiss(toastId);
-              },
-            }
-          );
-        }, [serviceAction]);
+    onSuccess: () => {},
+    onError: (message, { service }) => {
+      toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
+    },
+  });
+
+  const handleRestartNFS = useCallback(() => {
+    serviceAction.mutate(
+      { service: 'nfs-server.service', action: 'restart' },
+      {
+        onSettled: () => {},
+      }
+    );
+  }, [serviceAction]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -213,33 +181,25 @@ const NfsShareModal = ({
       return;
     }
 
-    if (!isCompleteIPv4Address(client.trim())) {
-      setFormError('آی‌پی وارد شده معتبر نیست.');
-      return;
-    }
-
     if (!isEditMode) {
-      handleRestartNFS()
+      handleRestartNFS();
     }
 
-
-    onSubmit({
-      save_to_db: !isEditMode,
+    // Clean payload construction
+    const basePayload = {
       path: path.trim(),
       clients: client.trim(),
-      sync: Boolean(optionValues.sync),
-      read_write: Boolean(optionValues.read_write),
-      root_squash: Boolean(optionValues.root_squash),
-      no_subtree_check: Boolean(optionValues.no_subtree_check),
-      ...(optionValues as Record<string, boolean>),
-    });
+      save_to_db: !isEditMode,
+      ...optionValues,
+    };
+
+    onSubmit(basePayload);
   };
 
   const isConfirmDisabled =
     isSubmitting ||
     !path.trim() ||
-    !client.trim() ||
-    !isCompleteIPv4Address(client.trim());
+    !client.trim();
 
   return (
     <BlurModal
@@ -325,7 +285,7 @@ const NfsShareModal = ({
           <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 700 }}>
             گزینه‌های پیش‌فرض اشتراک NFS
           </Typography>
-          {NFS_OPTION_KEYS.map((optionKey) => {
+          {DISPLAY_OPTIONS.map((optionKey) => {
             const label = translateDetailKey(optionKey);
             const valueLabel = optionValues[optionKey] ? 'فعال' : 'غیرفعال';
 
@@ -349,20 +309,18 @@ const NfsShareModal = ({
                   <ToggleBtn
                     id={`nfs-option-${optionKey}`}
                     checked={optionValues[optionKey]}
-                    onChange={() => handleToggleOption(optionKey)}
+                    onChange={(checked) => handleToggleOption(optionKey, checked)}
                   />
                   <Typography
-                  variant="caption"
+                    variant="caption"
                     sx={{
                       color: optionValues[optionKey]
-                        ? 'var(--color-success)'
-                        : 'var(--color-error)',
+                        ? 'var(--color-success)' : 'var(--color-error)',
                       fontWeight: 700,
                     }}
                   >
                     {valueLabel}
                   </Typography>
-                  
                 </Stack>
               </Stack>
             );

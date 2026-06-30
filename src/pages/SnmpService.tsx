@@ -1,4 +1,4 @@
-import { Box, Button, Card, CardContent, Stack, Typography } from '@mui/material';
+import { Box, Button, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import PageContainer from '../components/PageContainer';
@@ -26,67 +26,66 @@ const SnmpService = () => {
 
   return (
     <PageContainer>
-      <Stack spacing={3}>
-        <Card
-          elevation={0}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: -5 }}>
+        <Box
           sx={{
-            borderRadius: 3,
-            border: '1px solid var(--color-border)',
-            background: 'linear-gradient(135deg, rgba(31, 182, 255, 0.12), transparent)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            flexWrap: 'wrap',
           }}
         >
-          <CardContent>
-            <Stack
-              direction={{ xs: 'column', md: 'row' }}
-              alignItems={{ xs: 'flex-start', md: 'center' }}
-              justifyContent="space-between"
-              spacing={2}
+          <Typography
+            variant="h5"
+            sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+          >
+            سرویس SNMP
+          </Typography>
+
+          <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap">
+            <Button
+              onClick={() => void snmpInfoQuery.refetch()}
+              variant="outlined"
+              disabled={snmpInfoQuery.isFetching}
+              sx={{
+                borderColor: 'var(--color-primary)',
+                color: 'var(--color-primary)',
+                borderRadius: '3px',
+                fontWeight: 700,
+              }}
             >
-              <Box>
-                <Typography
-                  variant="h5"
-                  sx={{ color: 'var(--color-primary)', fontWeight: 800 }}
-                >
-                  سرویس SNMP
-                </Typography>
-                <Typography
-                  sx={{
-                    color: 'var(--color-secondary)',
-                    mt: 0.5,
-                    fontSize: '0.95rem',
-                  }}
-                >
-                  مدیریت وضعیت و تنظیمات سرویس مانیتورینگ شبکه با نمایی سازمانی.
-                </Typography>
-              </Box>
+              به‌روزرسانی لیست
+            </Button>
+            <Button
+              onClick={() => setIsConfigModalOpen(true)}
+              variant="contained"
+              disabled={configureSnmp.isPending}
+              sx={{
+                px: 3,
+                py: 1.25,
+                borderRadius: '3px',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                background:
+                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+                color: 'var(--color-bg)',
+                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+              }}
+            >
+              تنظیمات سرویس
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
 
-              <Button
-                onClick={() => setIsConfigModalOpen(true)}
-                variant="contained"
-                sx={{
-                  px: 3,
-                  py: 1.25,
-                  borderRadius: '6px',
-                  fontWeight: 700,
-                  fontSize: '0.95rem',
-                  background:
-                    'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-                  color: 'var(--color-bg)',
-                  boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-                }}
-              >
-                تنظیمات سرویس
-              </Button>
-            </Stack>
-          </CardContent>
-        </Card>
-
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 3 }}>
         <SnmpOverview
           data={snmpInfoQuery.data}
           isLoading={snmpInfoQuery.isLoading}
           error={snmpInfoQuery.error ?? null}
         />
-      </Stack>
+      </Box>
 
       <SnmpConfigModal
         open={isConfigModalOpen}

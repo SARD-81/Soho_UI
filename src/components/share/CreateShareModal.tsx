@@ -62,6 +62,20 @@ const autocompletePaperSlotProps = {
 
 // const ACCESS_ERROR_MESSAGE = 'حداقل یک کاربر یا یک گروه را انتخاب کنید.';
 
+
+const normalizeSharePathForCompare = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return null;
+
+  const withSingleLeadingSlash = `/${trimmedValue.replace(/^\/+/, '')}`;
+  const collapsedSlashes = withSingleLeadingSlash.replace(/\/{2,}/g, '/');
+  const normalized = collapsedSlashes.replace(/\/+$/g, '');
+
+  return normalized || '/';
+};
+
 const CreateShareModal = ({ controller }: CreateShareModalProps) => {
   const {
     isOpen,
@@ -130,22 +144,12 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
 
   const existingSharePaths = useMemo(() => {
     const shareDetails = existingSharesQuery.data?.data ?? [];
-    const paths = new Set<string>();
 
-    shareDetails.forEach((details) => {
-      const rawPath = typeof details?.path === 'string' ? details.path : undefined;
-      if (!rawPath) return;
-
-      const trimmedPath = rawPath.trim();
-      if (!trimmedPath) return;
-
-      paths.add(trimmedPath);
-
-      const withoutTrailingSlashes = trimmedPath.replace(/\/+$/, '');
-      if (withoutTrailingSlashes) paths.add(withoutTrailingSlashes);
-    });
-
-    return paths;
+    return new Set(
+      shareDetails
+        .map((details) => normalizeSharePathForCompare(details?.path))
+        .filter((path): path is string => Boolean(path))
+    );
   }, [existingSharesQuery.data?.data]);
 
   const filesystemMountpointsQuery = useFilesystemMountpoints({
@@ -176,11 +180,8 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
         const trimmedOption = option.trim();
         if (!trimmedOption) return false;
 
-        if (existingSharePaths.has(trimmedOption)) return false;
-
-        const withoutTrailingSlashes = trimmedOption.replace(/\/+$/, '');
-        if (withoutTrailingSlashes && existingSharePaths.has(withoutTrailingSlashes))
-          return false;
+        const normalizedPath = normalizeSharePathForCompare(trimmedOption);
+        if (normalizedPath && existingSharePaths.has(normalizedPath)) return false;
 
         const normalizedOption = trimmedOption.toLowerCase();
         const normalizedOptionWithoutBoundarySlashes = normalizedOption.replace(
@@ -335,9 +336,16 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                 error={hasPathError}
                 helperText={pathHelperText}
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
+                inputProps={{
+                  ...params.inputProps,
+                  dir: 'ltr',
+                }}
                 InputProps={{
                   ...params.InputProps,
-                  sx: inputBaseStyles,
+                  sx: {
+                    ...inputBaseStyles,
+                    '& .MuiInputBase-input': { textAlign: 'left' },
+                  },
                   endAdornment: (
                     <Fragment>
                       {pathValidationAdornment}
@@ -382,6 +390,10 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                 helperText={validUsersHelperText}
                 size="small"
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
+                inputProps={{
+                  ...params.inputProps,
+                  dir: 'ltr',
+                }}
                 InputProps={{
                   ...params.InputProps,
                   sx: inputBaseStyles,
@@ -421,6 +433,10 @@ const CreateShareModal = ({ controller }: CreateShareModalProps) => {
                 helperText={validGroupsHelperText}
                 size="small"
                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
+                inputProps={{
+                  ...params.inputProps,
+                  dir: 'ltr',
+                }}
                 InputProps={{
                   ...params.InputProps,
                   sx: inputBaseStyles,

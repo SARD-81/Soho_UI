@@ -8,24 +8,41 @@ interface ApiErrorResponse {
   detail?: string;
   message?: string;
   errors?: string | string[];
+  ok?: boolean;
   [key: string]: unknown;
 }
 
 interface CreateFileSystemPayload {
+  pool_name: string;
+  fs_name: string;
   quota: string;
   reservation: string;
+  mountpoint: string;
+  encryption: 'on' | 'off';
+  passphrase: string;
   save_to_db: boolean;
 }
 
-interface CreateFileSystemVariables extends CreateFileSystemPayload {
-  poolName: string;
-  filesystemName: string;
+interface CreateFileSystemSubmitOptions {
+  encryptionEnabled?: boolean;
+  encryptionPassphrase?: string;
 }
 
 interface UseCreateFileSystemOptions {
   onSuccess?: (filesystemName: string) => void;
   onError?: (errorMessage: string) => void;
 }
+
+const encodePassphraseToBase64 = (passphrase: string) => {
+  const bytes = new TextEncoder().encode(passphrase);
+  let binaryValue = '';
+
+  bytes.forEach((byte) => {
+    binaryValue += String.fromCharCode(byte);
+  });
+
+  return window.btoa(binaryValue);
+};
 
 const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
   const payload = error.response?.data;
@@ -50,7 +67,6 @@ const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
     if (Array.isArray(payload.errors)) {
       return payload.errors.join('، ');
     }
-
     if (typeof payload.errors === 'string') {
       return payload.errors;
     }
@@ -98,18 +114,17 @@ export const useCreateFileSystem = ({
   const createFileSystemMutation = useMutation<
     unknown,
     AxiosError<ApiErrorResponse>,
-    CreateFileSystemVariables
+    CreateFileSystemPayload
   >({
-    mutationFn: async ({ poolName, filesystemName, ...payload }) => {
-      await axiosInstance.post(
-        `/api/filesystem/filesystems/${poolName}/${filesystemName}/`,
-        payload
-      );
+    mutationFn: async (payload) => {
+      await axiosInstance.post('/api/filesystem/', payload, {
+        params: { save_to_db: true },
+      });
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['filesystems'] });
       handleClose();
-      onSuccess?.(`${variables.poolName}/${variables.filesystemName}`);
+      onSuccess?.(`${variables.pool_name}/${variables.fs_name}`);
     },
     onError: (error) => {
       const message = extractApiMessage(error);
@@ -119,7 +134,10 @@ export const useCreateFileSystem = ({
   });
 
   const handleSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
+    (
+      event: FormEvent<HTMLFormElement>,
+      options: CreateFileSystemSubmitOptions = {}
+    ) => {
       event.preventDefault();
       setPoolError(null);
       setNameError(null);
@@ -129,6 +147,8 @@ export const useCreateFileSystem = ({
       const trimmedPool = selectedPool.trim();
       const trimmedName = filesystemName.trim();
       const trimmedQuota = quotaAmount.trim();
+      const encryptionEnabled = Boolean(options.encryptionEnabled);
+      const encryptionPassphrase = options.encryptionPassphrase ?? '';
 
       let hasError = false;
 
@@ -140,13 +160,11 @@ export const useCreateFileSystem = ({
       if (!trimmedName) {
         setNameError('نام فضای فایلی را وارد کنید.');
         hasError = true;
-      } else if (!/^[A-Za-z0-9]+$/.test(trimmedName)) {
-        setNameError(
-          'نام فضای فایلی باید فقط شامل حروف انگلیسی و اعداد باشد.'
-        );
+      } else if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(trimmedName)) {
+        setNameError('نام فضای فایلی باید فقط شامل حروف انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد و با حرف انگلیسی شروع شود.');
         hasError = true;
-      } else if (/^[0-9]/.test(trimmedName)) {
-        setNameError('نام فضای فایلی نمی‌تواند با عدد شروع شود.');
+      } else if (/^[0-9_-]/.test(trimmedName)) {
+        setNameError('نام فضای فایلی باید با حرف انگلیسی شروع شود.');
         hasError = true;
       }
 
@@ -155,7 +173,6 @@ export const useCreateFileSystem = ({
         hasError = true;
       } else {
         const quotaValue = Number(trimmedQuota);
-
         if (!Number.isFinite(quotaValue) || quotaValue <= 0) {
           setQuotaError('حجم واردشده باید یک عدد معتبر بزرگ‌تر از صفر باشد.');
           hasError = true;
@@ -169,13 +186,19 @@ export const useCreateFileSystem = ({
       const sanitizedPool = trimmedPool.replace(/\s+/g, '');
       const sanitizedName = trimmedName.replace(/\s+/g, '');
       const formattedQuota = `${trimmedQuota}${quotaUnit}`;
+      const mountpoint = `/${sanitizedPool}/${sanitizedName}`;
 
-      const payload: CreateFileSystemVariables = {
-        poolName: sanitizedPool,
-        filesystemName: sanitizedName,
+      const payload: CreateFileSystemPayload = {
+        pool_name: sanitizedPool,
+        fs_name: sanitizedName,
         quota: formattedQuota,
         reservation: formattedQuota,
-        save_to_db: false,
+        mountpoint,
+        encryption: encryptionEnabled ? 'on' : 'off',
+        passphrase: encryptionEnabled
+          ? encodePassphraseToBase64(encryptionPassphrase)
+          : '',
+        save_to_db: true,
       };
 
       createFileSystemMutation.mutate(payload);
