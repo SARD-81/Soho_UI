@@ -1,6 +1,6 @@
 import { ContactShadows, OrbitControls, RoundedBox } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import ServerBay, { type ServerSceneColors } from './ServerBay';
 import type { ServerSlotViewModel } from './serverSlotModel';
 
@@ -13,13 +13,32 @@ interface ServerChassisSceneProps {
 
 const BAY_PANEL_CENTER_X = 0.72;
 const BAY_SPACING = 0.9;
+const BAY_WIDTH = 0.86;
+const MIN_CHASSIS_WIDTH = 6.25;
+const MIN_BAY_PANEL_WIDTH = 3.9;
 
-const BAY_X_POSITIONS = [
-  BAY_PANEL_CENTER_X - BAY_SPACING * 1.5,
-  BAY_PANEL_CENTER_X - BAY_SPACING * 0.5,
-  BAY_PANEL_CENTER_X + BAY_SPACING * 0.5,
-  BAY_PANEL_CENTER_X + BAY_SPACING * 1.5,
-] as const;
+const resolveSceneLayout = (slotCount: number) => {
+  const safeSlotCount = Math.max(slotCount, 1);
+  const bayPanelWidth = Math.max(
+    MIN_BAY_PANEL_WIDTH,
+    BAY_WIDTH + (safeSlotCount - 1) * BAY_SPACING + 0.56
+  );
+  const chassisWidth = Math.max(MIN_CHASSIS_WIDTH, bayPanelWidth + 2.35);
+  const controlPanelX = -chassisWidth / 2 + 1.1;
+  const bayPositions = Array.from({ length: safeSlotCount }, (_, index) => {
+    const startX = BAY_PANEL_CENTER_X - ((safeSlotCount - 1) * BAY_SPACING) / 2;
+    return startX + index * BAY_SPACING;
+  });
+
+  return {
+    bayPanelWidth,
+    chassisWidth,
+    controlPanelX,
+    bayPositions,
+    cameraDistance: Math.max(7.15, chassisWidth * 0.92),
+    shadowScale: Math.max(6, chassisWidth * 0.96),
+  };
+};
 
 const ServerChassisModel = ({
   slots,
@@ -27,10 +46,12 @@ const ServerChassisModel = ({
   colors,
   onSelectSlot,
 }: ServerChassisSceneProps) => {
+  const layout = useMemo(() => resolveSceneLayout(slots.length), [slots.length]);
+
   return (
     <group rotation={[0, 0, 0]} position={[0, -0.05, 0]}>
       <RoundedBox
-        args={[6.25, 3.55, 0.62]}
+        args={[layout.chassisWidth, 3.55, 0.62]}
         radius={0.16}
         smoothness={8}
         position={[0, 0, -0.18]}
@@ -43,7 +64,7 @@ const ServerChassisModel = ({
       </RoundedBox>
 
       <RoundedBox
-        args={[6.05, 3.34, 0.12]}
+        args={[layout.chassisWidth - 0.2, 3.34, 0.12]}
         radius={0.11}
         smoothness={7}
         position={[0, 0, 0.17]}
@@ -59,7 +80,7 @@ const ServerChassisModel = ({
         args={[1.1, 3.24, 0.18]}
         radius={0.08}
         smoothness={6}
-        position={[-2.0, 0, 0.26]}
+        position={[layout.controlPanelX, 0, 0.26]}
       >
         <meshStandardMaterial
           color="#151821"
@@ -72,7 +93,7 @@ const ServerChassisModel = ({
         args={[0.43, 0.43, 0.08]}
         radius={0.075}
         smoothness={8}
-        position={[-2.0, -0.08, 0.39]}
+        position={[layout.controlPanelX, -0.08, 0.39]}
       >
         <meshStandardMaterial
           color="#1c232d"
@@ -82,7 +103,7 @@ const ServerChassisModel = ({
         />
       </RoundedBox>
 
-      <mesh position={[-2.0, -0.08, 0.445]}>
+      <mesh position={[layout.controlPanelX, -0.08, 0.445]}>
         <torusGeometry args={[0.16, 0.018, 12, 42, Math.PI * 1.55]} />
         <meshStandardMaterial
           color="#22c55e"
@@ -96,7 +117,7 @@ const ServerChassisModel = ({
         args={[0.5, 0.18, 0.07]}
         radius={0.035}
         smoothness={5}
-        position={[-2.0, -0.82, 0.39]}
+        position={[layout.controlPanelX, -0.82, 0.39]}
       >
         <meshStandardMaterial
           color="#111827"
@@ -110,17 +131,17 @@ const ServerChassisModel = ({
         args={[0.36, 0.42, 0.07]}
         radius={0.03}
         smoothness={5}
-        position={[-2.0, -1.35, 0.39]}
+        position={[layout.controlPanelX, -1.35, 0.39]}
       >
         <meshStandardMaterial color="#e5dfc8" roughness={0.45} metalness={0.2} />
       </RoundedBox>
 
       <RoundedBox
-  args={[3.9, 3.08, 0.2]}
-  radius={0.065}
-  smoothness={7}
-  position={[BAY_PANEL_CENTER_X, -0.03, 0.29]}
->
+        args={[layout.bayPanelWidth, 3.08, 0.2]}
+        radius={0.065}
+        smoothness={7}
+        position={[BAY_PANEL_CENTER_X, -0.03, 0.29]}
+      >
         <meshStandardMaterial
           color="#05070c"
           roughness={0.75}
@@ -132,7 +153,7 @@ const ServerChassisModel = ({
         <ServerBay
           key={slot.id}
           bay={slot}
-          position={[BAY_X_POSITIONS[index] ?? 0, -0.04, 0.46]}
+          position={[layout.bayPositions[index] ?? BAY_PANEL_CENTER_X, -0.04, 0.46]}
           selected={selectedSlotNumber === slot.slotNumber}
           colors={colors}
           onSelect={onSelectSlot}
@@ -140,12 +161,12 @@ const ServerChassisModel = ({
       ))}
 
       <mesh position={[-0.02, 1.63, 0.37]}>
-        <boxGeometry args={[5.15, 0.03, 0.04]} />
+        <boxGeometry args={[layout.chassisWidth - 1.1, 0.03, 0.04]} />
         <meshStandardMaterial color={colors.chassisEdge} roughness={0.55} />
       </mesh>
 
       <mesh position={[-0.02, -1.63, 0.37]}>
-        <boxGeometry args={[4.15, 0.03, 0.04]} />
+        <boxGeometry args={[layout.chassisWidth - 2.1, 0.03, 0.04]} />
         <meshStandardMaterial color={colors.chassisEdge} roughness={0.55} />
       </mesh>
     </group>
@@ -153,41 +174,43 @@ const ServerChassisModel = ({
 };
 
 const ServerChassisScene = (props: ServerChassisSceneProps) => {
+  const layout = useMemo(() => resolveSceneLayout(props.slots.length), [props.slots.length]);
+
   return (
     <Canvas
-  dpr={[1, 2]}
-  frameloop="demand"
-  camera={{ position: [0, 0.15, 7.15], fov: 36 }}
-  gl={{ antialias: true, alpha: true }}
-  style={{ width: '100%', height: '100%' }}
->
-  <Suspense fallback={null}>
-    <ambientLight intensity={1.05} />
-    <hemisphereLight intensity={0.65} groundColor="#020617" />
-    <directionalLight position={[3, 4, 5]} intensity={1.35} />
-    <directionalLight position={[-4, 2, 3]} intensity={0.45} />
+      dpr={[1, 2]}
+      frameloop="demand"
+      camera={{ position: [0, 0.15, layout.cameraDistance], fov: 36 }}
+      gl={{ antialias: true, alpha: true }}
+      style={{ width: '100%', height: '100%' }}
+    >
+      <Suspense fallback={null}>
+        <ambientLight intensity={1.05} />
+        <hemisphereLight intensity={0.65} groundColor="#020617" />
+        <directionalLight position={[3, 4, 5]} intensity={1.35} />
+        <directionalLight position={[-4, 2, 3]} intensity={0.45} />
 
-    <ServerChassisModel {...props} />
+        <ServerChassisModel {...props} />
 
-    <ContactShadows
-      position={[0, -2.02, -0.8]}
-      opacity={0.24}
-      scale={6}
-      blur={2.4}
-      far={3.5}
-    />
+        <ContactShadows
+          position={[0, -2.02, -0.8]}
+          opacity={0.24}
+          scale={layout.shadowScale}
+          blur={2.4}
+          far={3.5}
+        />
 
-    <OrbitControls
-      enablePan={false}
-      enableZoom={false}
-      minPolarAngle={Math.PI / 2.35}
-      maxPolarAngle={Math.PI / 1.9}
-      minAzimuthAngle={-0.22}
-      maxAzimuthAngle={0.22}
-      rotateSpeed={0.45}
-    />
-  </Suspense>
-</Canvas>
+        <OrbitControls
+          enablePan={false}
+          enableZoom={false}
+          minPolarAngle={Math.PI / 2.35}
+          maxPolarAngle={Math.PI / 1.9}
+          minAzimuthAngle={-0.22}
+          maxAzimuthAngle={0.22}
+          rotateSpeed={0.45}
+        />
+      </Suspense>
+    </Canvas>
   );
 };
 
