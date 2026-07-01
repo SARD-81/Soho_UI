@@ -35,3 +35,16 @@ export interface SnmpConfigResponse {
   data?: SnmpInfoData;
   [key: string]: unknown;
 }
+
+export interface SnmpTestConnectionPayload {
+  community: string;
+  host: string;
+  port: string;
+}
+
+export interface SnmpTestConnectionResponse {
+  ok?: boolean;
+  message?: string;
+  data?: unknown;
+  [key: string]: unknown;
+}
