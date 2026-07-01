@@ -27,6 +27,17 @@ interface SnmpTestConnectionModalProps {
 
 const DEFAULT_PORT = '161';
 
+const disabledTextFieldSx = {
+  '& .MuiInputBase-input.Mui-disabled': {
+    WebkitTextFillColor: 'var(--color-text)',
+    color: 'var(--color-text)',
+    opacity: 1,
+  },
+  '& .MuiInputBase-root.Mui-disabled': {
+    backgroundColor: 'rgba(148, 163, 184, 0.08)',
+  },
+};
+
 const SnmpTestConnectionModal = ({
   open,
   snmpInfo,
@@ -102,15 +113,54 @@ const SnmpTestConnectionModal = ({
             disabled
             fullWidth
             size="small"
+            sx={disabledTextFieldSx}
           />
 
-          <FormControl fullWidth size="small" disabled={testableHosts.length === 0}>
+          <FormControl
+            fullWidth
+            size="small"
+            disabled={testableHosts.length === 0}
+            sx={{
+              '& .MuiInputLabel-root': { color: 'var(--color-secondary)' },
+              '& .MuiSelect-select': {
+                color: 'var(--color-text)',
+                direction: 'ltr',
+                textAlign: 'left',
+                fontWeight: 700,
+              },
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'var(--color-input-bg)',
+              },
+            }}
+          >
             <InputLabel id="snmp-test-host-label">آی‌پی قابل تست</InputLabel>
             <Select
               labelId="snmp-test-host-label"
               label="آی‌پی قابل تست"
               value={selectedHost}
               onChange={handleHostChange}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: 'var(--color-input-bg)',
+                    color: 'var(--color-text)',
+                    border: '1px solid rgba(0,198,169,0.22)',
+                    '& .MuiMenuItem-root': {
+                      direction: 'ltr',
+                      justifyContent: 'flex-start',
+                      color: 'var(--color-text)',
+                      fontWeight: 700,
+                    },
+                    '& .MuiMenuItem-root.Mui-selected': {
+                      backgroundColor: 'rgba(0,198,169,0.18)',
+                      color: 'var(--color-text)',
+                    },
+                    '& .MuiMenuItem-root:hover': {
+                      backgroundColor: 'rgba(0,198,169,0.12)',
+                    },
+                  },
+                },
+              }}
             >
               {testableHosts.map((host) => (
                 <MenuItem key={host} value={host}>
@@ -120,7 +170,14 @@ const SnmpTestConnectionModal = ({
             </Select>
           </FormControl>
 
-          <TextField label="port" value={port} disabled fullWidth size="small" />
+          <TextField
+            label="port"
+            value={port}
+            disabled
+            fullWidth
+            size="small"
+            sx={disabledTextFieldSx}
+          />
         </Stack>
 
         {testableHosts.length === 0 ? (
