@@ -11,6 +11,8 @@ export interface ServerSceneColors {
   primaryLight: string;
   selected: string;
   empty: string;
+  free: string;
+  inactive: string;
   success: string;
   warning: string;
   error: string;
@@ -36,6 +38,14 @@ const resolveLedColor = (
 
   if (health === 'online') {
     return colors.primaryLight;
+  }
+
+  if (health === 'free') {
+    return colors.free;
+  }
+
+  if (health === 'inactive') {
+    return colors.inactive;
   }
 
   if (health === 'warning') {
@@ -71,9 +81,17 @@ const ServerBay = ({
     [bay.health, colors, selected]
   );
 
-  const trayColor = bay.isOccupied ? colors.bay : '#111827';
+  const isFreeDisk = bay.health === 'free';
+  const isInactiveDisk = bay.health === 'inactive';
+  const trayColor = isFreeDisk
+    ? '#0b1018'
+    : isInactiveDisk
+      ? '#221a13'
+      : bay.isOccupied
+        ? colors.bay
+        : '#111827';
   const accentColor = selected || hovered ? colors.selected : ledColor;
-  const emissiveIntensity = selected ? 1.8 : hovered ? 1.1 : 0.75;
+  const emissiveIntensity = selected ? 1.8 : hovered ? 1.1 : isFreeDisk ? 0.12 : 0.75;
 
   return (
     <group position={position}>
@@ -84,7 +102,7 @@ const ServerBay = ({
         position={[0, 0, 0]}
       >
         <meshStandardMaterial
-          color={selected ? '#18233a' : '#05070b'}
+          color={selected ? '#18233a' : isFreeDisk ? '#030712' : '#05070b'}
           roughness={0.55}
           metalness={0.42}
         />
@@ -118,10 +136,10 @@ const ServerBay = ({
       >
         <meshStandardMaterial
           color={hovered || selected ? '#1b2433' : trayColor}
-          roughness={0.68}
-          metalness={0.56}
-          emissive={selected ? colors.primary : '#000000'}
-          emissiveIntensity={selected ? 0.08 : 0}
+          roughness={isFreeDisk ? 0.82 : 0.68}
+          metalness={isFreeDisk ? 0.28 : 0.56}
+          emissive={selected ? colors.primary : isInactiveDisk ? colors.inactive : '#000000'}
+          emissiveIntensity={selected ? 0.08 : isInactiveDisk ? 0.04 : 0}
         />
       </RoundedBox>
 
@@ -140,25 +158,25 @@ const ServerBay = ({
       ))}
 
       <mesh position={[0, -0.12, 0.235]}>
-  <circleGeometry args={[0.105, 32]} />
+        <circleGeometry args={[0.105, 32]} />
         <meshStandardMaterial
           color={accentColor}
           emissive={accentColor}
-          emissiveIntensity={0.35}
+          emissiveIntensity={isFreeDisk ? 0.08 : 0.35}
           roughness={0.42}
         />
       </mesh>
 
       <RoundedBox
-  args={[0.34, 0.075, 0.05]}
-  radius={0.022}
-  smoothness={4}
-  position={[0, -0.5, 0.245]}
->
+        args={[0.34, 0.075, 0.05]}
+        radius={0.022}
+        smoothness={4}
+        position={[0, -0.5, 0.245]}
+      >
         <meshStandardMaterial
           color={accentColor}
           emissive={accentColor}
-          emissiveIntensity={0.28}
+          emissiveIntensity={isFreeDisk ? 0.06 : 0.28}
           roughness={0.35}
         />
       </RoundedBox>
@@ -184,9 +202,9 @@ const ServerBay = ({
         position={[0.19, -1.24, 0.245]}
       >
         <meshStandardMaterial
-          color={bay.isOccupied ? colors.primaryLight : colors.empty}
-          emissive={bay.isOccupied ? colors.primaryLight : '#000000'}
-          emissiveIntensity={bay.isOccupied ? 1.15 : 0}
+          color={bay.isOccupied && !isFreeDisk ? colors.primaryLight : colors.empty}
+          emissive={bay.isOccupied && !isFreeDisk ? colors.primaryLight : '#000000'}
+          emissiveIntensity={bay.isOccupied && !isFreeDisk ? 1.15 : 0}
           roughness={0.28}
         />
       </RoundedBox>
@@ -205,29 +223,33 @@ const ServerBay = ({
       <Html position={[0.65, -1.43, 0.42]} center zIndexRange={[20, 0]}>
         <div
           style={{
-  minWidth: 64,
-  padding: '4px 10px',
-  borderRadius: 999,
-  direction: 'rtl',
-  textAlign: 'center',
-  fontFamily: 'var(--font-vazir)',
-  fontSize: 11,
-  lineHeight: '16px',
-  fontWeight: 900,
-  color: 'var(--color-text)',
-  background: selected
-    ? 'linear-gradient(135deg, rgba(0,198,169,0.42), rgba(35,167,213,0.3))'
-    : 'linear-gradient(135deg, rgba(15,23,42,0.72), rgba(15,23,42,0.48))',
-  border: selected
-    ? '1px solid rgba(0,198,169,0.82)'
-    : '1px solid rgba(148,163,184,0.28)',
-  boxShadow: selected
-    ? '0 10px 26px rgba(0,198,169,0.24), inset 0 1px 0 rgba(255,255,255,0.12)'
-    : '0 8px 18px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)',
-  backdropFilter: 'blur(8px)',
-  userSelect: 'none',
-  pointerEvents: 'none',
-}}
+            minWidth: 64,
+            padding: '4px 10px',
+            borderRadius: 999,
+            direction: 'rtl',
+            textAlign: 'center',
+            fontFamily: 'var(--font-vazir)',
+            fontSize: 11,
+            lineHeight: '16px',
+            fontWeight: 900,
+            color: 'var(--color-text)',
+            background: selected
+              ? 'linear-gradient(135deg, rgba(0,198,169,0.42), rgba(35,167,213,0.3))'
+              : isFreeDisk
+                ? 'linear-gradient(135deg, rgba(15,23,42,0.42), rgba(15,23,42,0.28))'
+                : 'linear-gradient(135deg, rgba(15,23,42,0.72), rgba(15,23,42,0.48))',
+            border: selected
+              ? '1px solid rgba(0,198,169,0.82)'
+              : isFreeDisk
+                ? '1px solid rgba(148,163,184,0.18)'
+                : '1px solid rgba(148,163,184,0.28)',
+            boxShadow: selected
+              ? '0 10px 26px rgba(0,198,169,0.24), inset 0 1px 0 rgba(255,255,255,0.12)'
+              : '0 8px 18px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)',
+            backdropFilter: 'blur(8px)',
+            userSelect: 'none',
+            pointerEvents: 'none',
+          }}
         >
           اسلات {bay.slotNumber}
         </div>
