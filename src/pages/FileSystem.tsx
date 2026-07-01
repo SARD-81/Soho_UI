@@ -1,4 +1,4 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import type {
@@ -6,6 +6,7 @@ import type {
   FileSystemEntry,
 } from '../@types/filesystem';
 import PageContainer from '../components/PageContainer';
+import TablePageHeader from '../components/common/TablePageHeader';
 import ConfirmDeleteFileSystemModal from '../components/file-system/ConfirmDeleteFileSystemModal';
 import CreateFileSystemModal from '../components/file-system/CreateFileSystemModal';
 import FileSystemPassphraseModal from '../components/file-system/FileSystemPassphraseModal';
@@ -93,7 +94,13 @@ const FileSystem = () => {
     onError: (error, name) => toast.error(`تغییر مانت خودکار برای ${name} با خطا مواجه شد: ${error.message}`),
   });
 
-  const { data, isLoading, error: fetchError } = useFileSystems();
+  const {
+    data,
+    isLoading,
+    isFetching,
+    error: fetchError,
+    refetch,
+  } = useFileSystems();
   const { data: poolData } = useZpool();
   const poolOptions = useMemo(
     () => (poolData?.pools ?? []).map((pool) => pool.name).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })),
@@ -174,24 +181,20 @@ const FileSystem = () => {
 
   return (
     <PageContainer>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: -5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
-          <Typography variant="h5" sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>
-            فضای فایلی
-          </Typography>
-          <Button
-            onClick={handleOpenCreate}
-            variant="contained"
-            sx={{
-              px: 3, py: 1.25, borderRadius: '3px', fontWeight: 700, fontSize: '0.95rem',
-              background: 'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-              color: 'var(--color-bg)', boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-            }}
-          >
-            ایجاد فضای فایلی
-          </Button>
-        </Box>
-      </Box>
+      <TablePageHeader
+        title="فضای فایلی"
+        subtitle="مدیریت فایل‌سیستم‌ها، وضعیت مانت و عملیات رمزنگاری"
+        refreshAction={{
+          onClick: () => void refetch(),
+          disabled: isFetching,
+          isLoading: isFetching,
+          loadingLabel: 'در حال بروزرسانی...',
+        }}
+        primaryAction={{
+          label: 'ایجاد فضای فایلی',
+          onClick: handleOpenCreate,
+        }}
+      />
 
       <CreateFileSystemModal controller={createFileSystem} poolOptions={poolOptions} existingFilesystems={filesystems} />
       <FileSystemPassphraseModal
