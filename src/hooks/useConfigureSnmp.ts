@@ -6,7 +6,10 @@ import { snmpInfoQueryKey } from './useSnmpInfo';
 const configureSnmp = async (payload: SnmpConfigPayload) => {
   const { data } = await axiosInstance.post<SnmpConfigResponse>(
     '/api/snmp/config/',
-    payload
+    {
+      ...payload,
+      save_to_db: true,
+    }
   );
   return data;
 };
