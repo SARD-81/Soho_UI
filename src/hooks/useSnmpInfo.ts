@@ -28,7 +28,9 @@ const normalizeSnmpInfo = (payload?: SnmpInfoData): SnmpInfoData => {
 };
 
 const fetchSnmpInfo = async (): Promise<SnmpInfoData> => {
-  const { data } = await axiosInstance.get<SnmpInfoResponse>('/api/snmp/info/');
+  const { data } = await axiosInstance.get<SnmpInfoResponse>('/api/snmp/info/', {
+    params: { save_to_db: false },
+  });
 
   return normalizeSnmpInfo(data.data);
 };
