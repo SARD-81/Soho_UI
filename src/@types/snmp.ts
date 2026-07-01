@@ -42,9 +42,15 @@ export interface SnmpTestConnectionPayload {
   port: string;
 }
 
+export interface SnmpTestConnectionData {
+  connection_success?: boolean | string;
+  [key: string]: unknown;
+}
+
 export interface SnmpTestConnectionResponse {
   ok?: boolean;
+  connection_success?: boolean | string;
   message?: string;
-  data?: unknown;
+  data?: SnmpTestConnectionData | null;
   [key: string]: unknown;
 }
