@@ -94,7 +94,9 @@ const WebSharesTable = ({
         header: 'لینک ها',
         align: 'center',
         renderCell: (share) => {
-          const link = `http://${host}/${share.poolName}/${share.targetName}/`;
+          // const link = `http://${host}/${share.poolName}/${share.targetName}/`;
+          const link = `http://${host}/${share.targetName}/`;
+
 
           return (
             <Tooltip title={link}>

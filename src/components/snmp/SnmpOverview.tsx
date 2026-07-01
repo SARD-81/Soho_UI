@@ -120,38 +120,38 @@ const buildSnmpRows = (data?: SnmpInfoData): SnmpTableRow[] => {
       label: 'وضعیت سرویس',
       value: createStatusChip(Boolean(data.enabled)),
       description: data.enabled
-        ? 'سرویس SNMP فعال است و برای سیستم‌های مانیتورینگ قابل استفاده است.'
-        : 'سرویس SNMP غیرفعال است و سیستم‌های مانیتورینگ داده‌ای دریافت نمی‌کنند.',
+        ? 'سرویس snmp فعال است'
+        : 'سرویس snmp غیرفعال است',
     },
     {
       id: 'version',
       label: 'نسخه SNMP',
       value: createMonospaceValue(data.version),
-      description: 'نسخه پروتکل SNMP که در سمت سرویس گزارش شده است.',
+      description: 'نسخه پروتکل snmp استفاده‌شده در سرویس',
     },
     {
       id: 'community',
       label: 'Community',
       value: createMonospaceValue(maskCommunity(data.community)),
-      description: 'Community string برای امنیت بیشتر به‌صورت ماسک‌شده نمایش داده می‌شود.',
+      description: 'Community string',
     },
     {
       id: 'allowed_ips',
       label: 'Allowed IPs',
       value: createAllowedIpsValue(data.allowed_ips),
-      description: 'لیست آدرس‌هایی که اجازه دسترسی به سرویس SNMP را دارند.',
+      description: 'لیست آدرس‌های آی‌پی که اجازه دسترسی به سرویس snmp را دارند.',
     },
     {
       id: 'bind_ip',
       label: 'Bind IP',
       value: createMonospaceValue(data.bind_ip),
-      description: 'آدرسی که سرویس SNMP روی آن bind شده است.',
+      description: 'آدرسی که سرویس snmp روی آن bind شده است.',
     },
     {
       id: 'port',
       label: 'Port',
       value: createMonospaceValue(data.port),
-      description: 'پورتی که سرویس SNMP برای دریافت درخواست‌ها استفاده می‌کند.',
+      description: 'پورتی که سرویس snmp برای دریافت درخواست‌ها استفاده می‌کند.',
     },
     {
       id: 'sys_name',
@@ -163,13 +163,13 @@ const buildSnmpRows = (data?: SnmpInfoData): SnmpTableRow[] => {
       id: 'contact',
       label: 'Contact',
       value: createMonospaceValue(data.contact),
-      description: 'اطلاعات تماس مسئول یا مالک سرویس SNMP.',
+      description: 'اطلاعات تماس مسئول یا مالک سرویس',
     },
     {
       id: 'location',
       label: 'Location',
       value: createMonospaceValue(data.location),
-      description: 'موقعیت فیزیکی یا منطقی تجهیز/سرور برای مستندسازی مانیتورینگ.',
+      description: 'موقعیت فیزیکی سرور',
     },
   ];
 };
@@ -209,7 +209,7 @@ const SnmpOverview = ({ data, isLoading, error }: SnmpOverviewProps) => {
       {
         id: 'description',
         header: 'توضیحات',
-        align: 'center',
+        align: 'left',
         renderCell: (row) => (
           <Typography
             sx={{

@@ -258,21 +258,17 @@ const MainLayout: React.FC = () => {
                     fontWeight: 900,
                     lineHeight: 1,
                   }}
-                >
-                  StoreX
-                </Typography>
+                >استورکس</Typography>
                 <Typography
                   component="div"
                   sx={{
                     color: 'var(--color-secondary)',
-                    fontSize: 11,
-                    letterSpacing: '.08em',
-                    lineHeight: 1.4,
+                    fontSize: 12,
+                    letterSpacing: '0.18em',
+                    lineHeight: 2.4,
                     textTransform: 'uppercase',
                   }}
-                >
-                  SOHO Command Console
-                </Typography>
+                >ذخیره‌ساز اداری هوشمند</Typography>
               </Box>
             </Box>
           </Box>

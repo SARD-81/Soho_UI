@@ -1,4 +1,4 @@
-import {
+﻿import {
   Box,
   Checkbox,
   IconButton,
@@ -464,7 +464,7 @@ const CreateFileSystemModal = ({
             {isEncryptionEnabled && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1.5 }}>
                 <TextField
-                  label="رمز رمزنگاری"
+                  label="رمز "
                   value={encryptionPassword}
                   onChange={(event) => setEncryptionPassword(event.target.value)}
                   onBlur={() => setIsEncryptionTouched(true)}
@@ -472,7 +472,7 @@ const CreateFileSystemModal = ({
                   fullWidth
                   size="small"
                   error={isEncryptionTouched && !isEncryptionPasswordValid}
-                  helperText="در صورت فعال بودن رمزنگاری، این رمز به صورت Base64 در درخواست ایجاد فضای فایلی ارسال می‌شود."
+                  // helperText="در صورت فعال بودن رمزنگاری، این رمز به صورت Base64 در درخواست ایجاد فضای فایلی ارسال می‌شود."
                   InputProps={{
                     sx: inputBaseStyles,
                     endAdornment: (
