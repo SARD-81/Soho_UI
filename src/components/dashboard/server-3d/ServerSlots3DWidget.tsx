@@ -48,21 +48,29 @@ const ServerSlots3DWidget = () => {
     isLoading: isSlotsLoading,
     isFetching: isSlotsFetching,
   } = usePoolDeviceSlots(poolNames, {
-    enabled: poolNames.length > 0,
+    enabled: true,
     refetchInterval: 10_000,
   });
 
   const slotCount = useMemo(
-    () => resolveServerSlotCount(poolDeviceSlots?.slotsByPool),
-    [poolDeviceSlots?.slotsByPool]
+    () =>
+      resolveServerSlotCount(
+        poolDeviceSlots?.slotsByPool,
+        poolDeviceSlots?.inventory
+      ),
+    [poolDeviceSlots?.inventory, poolDeviceSlots?.slotsByPool]
   );
 
   const serverSlots = useMemo(
     () =>
       sortServerSlots(
-        buildServerSlots(poolDeviceSlots?.slotsByPool, slotCount)
+        buildServerSlots(
+          poolDeviceSlots?.slotsByPool,
+          poolDeviceSlots?.inventory,
+          slotCount
+        )
       ),
-    [poolDeviceSlots?.slotsByPool, slotCount]
+    [poolDeviceSlots?.inventory, poolDeviceSlots?.slotsByPool, slotCount]
   );
 
   const selectedBay = useMemo(
@@ -73,7 +81,9 @@ const ServerSlots3DWidget = () => {
     [selectedSlotNumber, serverSlots]
   );
 
-  const occupiedCount = serverSlots.filter((slot) => slot.isOccupied).length;
+  const discoveredDiskCount = serverSlots.filter((slot) => slot.disk).length;
+  const freeDiskCount = serverSlots.filter((slot) => slot.health === 'free').length;
+  const inactiveDiskCount = serverSlots.filter((slot) => slot.health === 'inactive').length;
   const hasSlotErrors =
     Object.keys(poolDeviceSlots?.errorsByPool ?? {}).length > 0;
 
@@ -89,6 +99,8 @@ const ServerSlots3DWidget = () => {
       primaryLight: theme.palette.primary.light,
       selected: theme.palette.primary.main,
       empty: theme.palette.mode === 'dark' ? '#475569' : '#64748b',
+      free: theme.palette.mode === 'dark' ? '#334155' : '#94a3b8',
+      inactive: theme.palette.warning.main,
       success: theme.palette.success.main,
       warning: theme.palette.warning.main,
       error: theme.palette.error.main,
@@ -97,8 +109,7 @@ const ServerSlots3DWidget = () => {
     [theme]
   );
 
-  const isInitialLoading =
-    isPoolsLoading || (poolNames.length > 0 && isSlotsLoading && !poolDeviceSlots);
+  const isInitialLoading = isPoolsLoading || (isSlotsLoading && !poolDeviceSlots);
 
   if (isInitialLoading) {
     return (
@@ -161,7 +172,7 @@ const ServerSlots3DWidget = () => {
               نمای سه‌بعدی سرور
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              مدل تعاملی اسلات‌ها و جزئیات دیسک‌ها
+              مدل تعاملی اسلات‌ها و جزئیات تمام دیسک‌های سامانه
             </Typography>
           </Box>
         </Stack>
@@ -169,7 +180,7 @@ const ServerSlots3DWidget = () => {
         <Stack direction="row" gap={1} flexWrap="wrap">
           <Chip
             icon={<MdStorage />}
-            label={`${occupiedCount} از ${slotCount} اسلات فعال`}
+            label={`${discoveredDiskCount} از ${slotCount} اسلات دارای دیسک`}
             size="small"
             sx={{
               fontWeight: 800,
@@ -178,6 +189,28 @@ const ServerSlots3DWidget = () => {
               border: '1px solid rgba(0,198,169,0.22)',
             }}
           />
+          {freeDiskCount > 0 ? (
+            <Chip
+              label={`${freeDiskCount} دیسک آزاد`}
+              size="small"
+              sx={{
+                fontWeight: 700,
+                color: 'var(--color-secondary)',
+                backgroundColor: 'rgba(148,163,184,0.1)',
+              }}
+            />
+          ) : null}
+          {inactiveDiskCount > 0 ? (
+            <Chip
+              label={`${inactiveDiskCount} دیسک غیرفعال`}
+              size="small"
+              sx={{
+                fontWeight: 700,
+                color: theme.palette.warning.main,
+                backgroundColor: 'rgba(245,158,11,0.1)',
+              }}
+            />
+          ) : null}
           {isSlotsFetching ? (
             <Chip
               label="در حال بروزرسانی"
@@ -199,13 +232,6 @@ const ServerSlots3DWidget = () => {
               {poolName}: {message}
             </Typography>
           ))}
-        </Alert>
-      ) : null}
-
-      {poolNames.length === 0 ? (
-        <Alert severity="info" sx={{ borderRadius: '10px' }}>
-          هیچ فضای یکپارچه‌ای برای استخراج اطلاعات اسلات‌ها پیدا نشد. مدل سرور به صورت
-          خالی نمایش داده می‌شود.
         </Alert>
       ) : null}
 
