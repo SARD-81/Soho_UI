@@ -20,6 +20,7 @@ export type PoolSlotMap = Record<string, PoolDiskSlot[]>;
 export interface PoolDeviceSlotsResult {
   slotsByPool: PoolSlotMap;
   errorsByPool: Record<string, string>;
+  inventory: DiskInventoryItem[];
 }
 
 const normalizeLookupKey = (value: unknown) => {
@@ -223,10 +224,6 @@ const fetchPoolDeviceSlots = async (
     new Set(poolNames.map((pool) => pool.trim()).filter(Boolean))
   );
 
-  if (uniquePoolNames.length === 0) {
-    return { slotsByPool: {}, errorsByPool: {} };
-  }
-
   throwIfAborted(signal);
 
   const inventory = await fetchDiskInventory({ signal });
@@ -234,6 +231,10 @@ const fetchPoolDeviceSlots = async (
 
   const slotsByPool: PoolSlotMap = {};
   const errorsByPool: Record<string, string> = {};
+
+  if (uniquePoolNames.length === 0) {
+    return { slotsByPool, errorsByPool, inventory };
+  }
 
   await Promise.all(
     uniquePoolNames.map(async (poolName) => {
@@ -264,7 +265,7 @@ const fetchPoolDeviceSlots = async (
     })
   );
 
-  return { slotsByPool, errorsByPool };
+  return { slotsByPool, errorsByPool, inventory };
 };
 
 interface UsePoolDeviceSlotsOptions {
@@ -282,7 +283,7 @@ export const usePoolDeviceSlots = (
   useQuery<PoolDeviceSlotsResult, Error>({
     queryKey: poolDeviceSlotsQueryKey(poolNames),
     queryFn: ({ signal }) => fetchPoolDeviceSlots(poolNames, signal),
-    enabled: (options?.enabled ?? true) && poolNames.length > 0,
+    enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? 30000,
     staleTime: 25000,
     gcTime: 2 * 60 * 1000,
