@@ -1,4 +1,3 @@
-import { Box, Button, Typography } from '@mui/material';
 import { useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import type { VolumeEntry } from '../@types/volume';
@@ -6,6 +5,7 @@ import PageContainer from '../components/PageContainer';
 import ConfirmDeleteVolumeModal from '../components/block-storage/ConfirmDeleteVolumeModal';
 import CreateVolumeModal from '../components/block-storage/CreateVolumeModal';
 import VolumesTable from '../components/block-storage/VolumesTable';
+import TablePageHeader from '../components/common/TablePageHeader';
 import { useCreateVolume } from '../hooks/useCreateVolume';
 import { useDeleteVolume } from '../hooks/useDeleteVolume';
 import { useVolumes } from '../hooks/useVolumes';
@@ -30,7 +30,13 @@ const BlockStorage = () => {
     },
   });
 
-  const { data: volumeData, isLoading, error } = useVolumes();
+  const {
+    data: volumeData,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useVolumes();
   const { data: poolData } = useZpool();
 
   const poolOptions = useMemo(
@@ -73,42 +79,20 @@ const BlockStorage = () => {
 
   return (
     <PageContainer>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 , mb: -5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
-          >
-            فضای بلاکی
-          </Typography>
-
-          <Button
-            onClick={handleOpenCreate}
-            variant="contained"
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: '3px',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              background:
-                'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-              color: 'var(--color-bg)',
-              boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-            }}
-          >
-            ایجاد Volume
-          </Button>
-        </Box>
-      </Box>
+      <TablePageHeader
+        title="فضای بلاکی"
+        subtitle="مدیریت Volumeها و فضای بلاکی روی Poolهای ذخیره‌سازی"
+        refreshAction={{
+          onClick: () => void refetch(),
+          disabled: isFetching,
+          isLoading: isFetching,
+          loadingLabel: 'در حال بروزرسانی...',
+        }}
+        primaryAction={{
+          label: 'ایجاد Volume',
+          onClick: handleOpenCreate,
+        }}
+      />
 
       <CreateVolumeModal controller={createVolume} poolOptions={poolOptions} />
 
