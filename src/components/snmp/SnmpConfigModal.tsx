@@ -48,6 +48,7 @@ const SnmpConfigModal = ({
   const [location, setLocation] = useState(DEFAULT_LOCATION);
   const [sysName, setSysName] = useState(DEFAULT_SYS_NAME);
   const [port, setPort] = useState(DEFAULT_PORT);
+  const [bindIp, setBindIp] = useState(DEFAULT_BIND_IP);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -67,6 +68,7 @@ const SnmpConfigModal = ({
       setLocation(initialValues?.location ?? DEFAULT_LOCATION);
       setSysName(initialValues?.sys_name ?? DEFAULT_SYS_NAME);
       setPort(initialValues?.port ?? DEFAULT_PORT);
+      setBindIp(initialValues?.bind_ip ?? DEFAULT_BIND_IP);
       setShowAdvanced(false);
       setLocalError(null);
     }
@@ -100,35 +102,24 @@ const SnmpConfigModal = ({
   };
 
   const serviceAction = useServiceAction({
-      onSuccess: () => {
-        // toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
-      },
-      onError: (message, { service }) => {
-        toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
-      },
-    });
+    onSuccess: () => {
+      // toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
+    },
+    onError: (message, { service }) => {
+      toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
+    },
+  });
 
-    const handleRestartSNMP = useCallback(() => {
-        // if (serviceAction.isPending) {
-        //   toast(
-        //     'راه‌اندازی مجدد سرویس smbd.service در حال انجام است. لطفاً صبر کنید.'
-        //   );
-        //   return;
-        // }
-        //
-        // const toastId = toast.loading(
-        //   'در حال راه‌اندازی مجدد سرویس smbd.service...'
-        // );
-    
-        serviceAction.mutate(
-          { service: 'snmpd.service', action: 'restart' },
-          {
-            onSettled: () => {
-              // toast.dismiss(toastId);
-            },
-          }
-        );
-      }, [serviceAction]);
+  const handleRestartSNMP = useCallback(() => {
+    serviceAction.mutate(
+      { service: 'snmpd.service', action: 'restart' },
+      {
+        onSettled: () => {
+          // noop
+        },
+      }
+    );
+  }, [serviceAction]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -136,6 +127,7 @@ const SnmpConfigModal = ({
     const cleanedIps = allowedIps
       .map((ip) => ip.trim())
       .filter((ip) => ip !== '');
+    const trimmedBindIp = bindIp.trim() || DEFAULT_BIND_IP;
 
     if (!trimmedCommunity) {
       setLocalError('مقدار جامعه الزامی است.');
@@ -148,8 +140,13 @@ const SnmpConfigModal = ({
       return;
     }
 
+    if (!isCompleteIPv4Address(trimmedBindIp)) {
+      setLocalError(`آی‌پی اتصال ${trimmedBindIp} معتبر نیست.`);
+      return;
+    }
+
     setLocalError(null);
-    handleRestartSNMP()
+    handleRestartSNMP();
 
     onSubmit({
       community: trimmedCommunity,
@@ -158,14 +155,16 @@ const SnmpConfigModal = ({
       location: location.trim() || DEFAULT_LOCATION,
       sys_name: sysName.trim() || DEFAULT_SYS_NAME,
       port: port.trim() || DEFAULT_PORT,
-      bind_ip: DEFAULT_BIND_IP,
+      bind_ip: trimmedBindIp,
+      save_to_db: true,
     });
   };
 
   const isConfirmDisabled =
     isSubmitting ||
     !community.trim() ||
-    allowedIps.some((ip) => !isCompleteIPv4Address(ip.trim()));
+    allowedIps.some((ip) => !isCompleteIPv4Address(ip.trim())) ||
+    !isCompleteIPv4Address(bindIp.trim() || DEFAULT_BIND_IP);
 
   return (
     <BlurModal
@@ -246,7 +245,6 @@ const SnmpConfigModal = ({
                   value={ip}
                   onChange={(value) => updateAllowedIp(index, value)}
                   required
-                //   helperText="مثال: 192.168.1.10"
                 />
                 {allowedIps.length > 1 ? (
                   <IconButton
@@ -340,12 +338,12 @@ const SnmpConfigModal = ({
                 }}
               />
 
-              {/* <IPv4AddressInput
+              <IPv4AddressInput
                 label="آی‌پی اتصال"
                 value={bindIp}
                 onChange={setBindIp}
                 helperText="آدرس اتصال سرویس"
-              /> */}
+              />
             </Stack>
           </Stack>
         </Collapse>
