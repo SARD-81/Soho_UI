@@ -7,7 +7,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
-import { MdDeleteOutline } from 'react-icons/md';
+import { MdDeleteOutline, MdLink } from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { WebShareEntry } from '../../@types/webshare';
 import DataTable from '../DataTable';
@@ -48,7 +48,7 @@ const WebSharesTable = ({
       },
       {
         id: 'targetName',
-        header: 'نام Web Share',
+        header: 'نام اشتراک وب',
         align: 'center',
         renderCell: (share) => (
           <Typography sx={{ color: 'var(--color-text)', fontWeight: 600 }}>
@@ -58,7 +58,7 @@ const WebSharesTable = ({
       },
       {
         id: 'poolName',
-        header: 'Pool',
+        header: 'فضای یکپارچه',
         align: 'center',
         renderCell: (share) => (
           <Typography sx={{ color: 'var(--color-text)' }}>{share.poolName}</Typography>
@@ -66,7 +66,7 @@ const WebSharesTable = ({
       },
       {
         id: 'fsName',
-        header: 'FileSystem',
+        header: 'فایل‌سیستم',
         align: 'center',
         renderCell: (share) => (
           <Typography sx={{ color: 'var(--color-text)' }}>{share.fsName}</Typography>
@@ -74,7 +74,7 @@ const WebSharesTable = ({
       },
       {
         id: 'path',
-        header: 'مسیر/Location',
+        header: 'مسیر',
         align: 'center',
         renderCell: (share) => (
           <Typography
@@ -91,15 +91,13 @@ const WebSharesTable = ({
       },
       {
         id: 'links',
-        header: 'لینک ها',
+        header: 'لینک‌ها',
         align: 'center',
         renderCell: (share) => {
-          // const link = `http://${host}/${share.poolName}/${share.targetName}/`;
           const link = `http://${host}/${share.targetName}/`;
 
-
           return (
-            <Tooltip title={link}>
+            <Tooltip title={link} arrow>
               <Typography
                 component="a"
                 href={link}
@@ -108,18 +106,16 @@ const WebSharesTable = ({
                 onClick={(event) => event.stopPropagation()}
                 sx={{
                   color: 'var(--color-primary)',
-                  direction: 'ltr',
-                  display: 'inline-block',
-                  fontWeight: 700,
-                  maxWidth: 260,
-                  overflow: 'hidden',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  fontWeight: 800,
                   textDecoration: 'none',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
                   '&:hover': { textDecoration: 'underline' },
                 }}
               >
-                {link}
+                <MdLink size={18} />
+                لینک
               </Typography>
             </Tooltip>
           );
@@ -135,7 +131,7 @@ const WebSharesTable = ({
 
           return (
             <Stack direction="row" spacing={0.5} justifyContent="center">
-              <Tooltip title="حذف Web Share">
+              <Tooltip title="حذف اشتراک وب">
                 <span>
                   <IconButton
                     size="small"
@@ -179,18 +175,18 @@ const WebSharesTable = ({
         >
           <CircularProgress color="primary" size={32} />
           <Typography sx={{ color: 'var(--color-secondary)' }}>
-            در حال دریافت Web Shareها...
+            در حال دریافت اشتراک‌های وب...
           </Typography>
         </Box>
       )}
       renderErrorState={(tableError) => (
         <Typography sx={{ color: 'var(--color-error)', py: 3 }}>
-          خطا در دریافت Web Shareها: {tableError.message}
+          خطا در دریافت اشتراک‌های وب: {tableError.message}
         </Typography>
       )}
       renderEmptyState={() => (
         <Typography sx={{ color: 'var(--color-secondary)', py: 3 }}>
-          Web Share فعالی ثبت نشده است.
+          اشتراک وب فعالی ثبت نشده است.
         </Typography>
       )}
     />
