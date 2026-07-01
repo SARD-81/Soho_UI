@@ -1,4 +1,4 @@
-import { Box, Button, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Tab, Tabs, Typography } from '@mui/material';
 import {
   type SyntheticEvent,
   useCallback,
@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import type { CreateOsUserPayload, OsUserTableItem } from '../@types/users';
 import TabPanel from '../components/TabPanel';
 import PageContainer from '../components/PageContainer';
+import TablePageHeader from '../components/common/TablePageHeader';
 import OsUserCreateModal from '../components/users/OsUserCreateModal';
 import OsUsersTable from '../components/users/OsUsersTable';
 import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
@@ -233,12 +234,21 @@ const Users = () => {
     <PageContainer
       sx={{ backgroundColor: 'var(--color-background)', minHeight: '100%' }}
     >
-      <Typography
-        variant="h5"
-        sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
-      >
-        مدیریت کاربران
-      </Typography>
+      <TablePageHeader
+        title="مدیریت کاربران"
+        subtitle="مشاهده کاربران سامانه و ساخت کاربر جدید برای دسترسی‌های سرویس‌ها"
+        refreshAction={{
+          onClick: () => void osUsersQuery.refetch(),
+          disabled: osUsersQuery.isFetching,
+          isLoading: osUsersQuery.isFetching,
+          loadingLabel: 'در حال بروزرسانی...',
+        }}
+        primaryAction={{
+          label: 'ایجاد کاربر جدید',
+          onClick: handleOpenCreateModal,
+          disabled: createOsUser.isPending,
+        }}
+      />
 
       <Tabs
         value={activeTab}
@@ -263,57 +273,6 @@ const Users = () => {
 
       <TabPanel value={USERS_TABS.os} currentValue={activeTab}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 2,
-            }}
-          >
-            {/*<FormControlLabel*/}
-            {/*  control={*/}
-            {/*    <Checkbox*/}
-            {/*      checked={includeSystem}*/}
-            {/*      onChange={handleToggleIncludeSystem}*/}
-            {/*      sx={{*/}
-            {/*        color: 'var(--color-secondary)',*/}
-            {/*        '&.Mui-checked': {*/}
-            {/*          color: 'var(--color-primary)',*/}
-            {/*        },*/}
-            {/*      }}*/}
-            {/*    />*/}
-            {/*  }*/}
-            {/*  label="نمایش کاربران سیستمی"*/}
-            {/*  sx={{*/}
-            {/*    '& .MuiTypography-root': {*/}
-            {/*      color: 'var(--color-secondary)',*/}
-            {/*      fontWeight: 600,*/}
-            {/*    },*/}
-            {/*  }}*/}
-            {/*/>*/}
-
-            <Button
-              onClick={handleOpenCreateModal}
-              variant="contained"
-              sx={{
-                alignSelf: 'flex-start',
-                px: 3,
-                py: 1.25,
-                borderRadius: '3px',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                background:
-                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-                color: 'var(--color-bg)',
-                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-              }}
-            >
-              ایجاد کاربر جدید
-            </Button>
-          </Box>
-
           <OsUsersTable
             users={osUsersWithSambaStatus}
             isLoading={osUsersQuery.isLoading || osUsersQuery.isFetching}
