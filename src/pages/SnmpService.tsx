@@ -1,11 +1,15 @@
 import { Box } from '@mui/material';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
+import type { SnmpTestConnectionPayload } from '../@types/snmp';
 import PageContainer from '../components/PageContainer';
 import TablePageHeader from '../components/common/TablePageHeader';
 import SnmpConfigModal from '../components/snmp/SnmpConfigModal';
 import SnmpOverview from '../components/snmp/SnmpOverview';
 import SnmpTestConnectionModal from '../components/snmp/SnmpTestConnectionModal';
+import SnmpTestResultModal, {
+  type SnmpTestResultState,
+} from '../components/snmp/SnmpTestResultModal';
 import { useConfigureSnmp } from '../hooks/useConfigureSnmp';
 import { useSnmpInfo } from '../hooks/useSnmpInfo';
 import { useTestSnmpConnection } from '../hooks/useTestSnmpConnection';
@@ -16,6 +20,8 @@ const SnmpService = () => {
   const testSnmpConnection = useTestSnmpConnection();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [testResult, setTestResult] = useState<SnmpTestResultState | null>(null);
 
   const handleSubmitConfig = (payload: Parameters<typeof configureSnmp.mutate>[0]) => {
     configureSnmp.mutate(payload, {
@@ -29,22 +35,62 @@ const SnmpService = () => {
     });
   };
 
-  const handleSubmitTest = (payload: Parameters<typeof testSnmpConnection.mutate>[0]) => {
+  const openTestModal = () => {
+    testSnmpConnection.reset();
+    setIsTestModalOpen(true);
+  };
+
+  const showTestResult = (result: SnmpTestResultState) => {
+    setIsTestModalOpen(false);
+    setTestResult(result);
+    setIsResultModalOpen(true);
+  };
+
+  const handleSubmitTest = (payload: SnmpTestConnectionPayload) => {
     testSnmpConnection.mutate(payload, {
       onSuccess: (response) => {
-        toast.success(response.message ?? 'تست اتصال SNMP با موفقیت انجام شد.');
+        const isSuccess = response.ok !== false;
+        const message =
+          response.message ??
+          (isSuccess
+            ? 'تست اتصال SNMP با موفقیت انجام شد.'
+            : 'تست اتصال SNMP ناموفق بود.');
+
+        showTestResult({
+          ok: isSuccess,
+          message,
+          data: response.data,
+          payload,
+        });
+
+        if (isSuccess) {
+          toast.success(message);
+          return;
+        }
+
+        toast.error(message);
       },
       onError: (error) => {
-        toast.error(`تست اتصال SNMP با خطا مواجه شد: ${error.message}`);
+        const message = `تست اتصال SNMP با خطا مواجه شد: ${error.message}`;
+        showTestResult({
+          ok: false,
+          message,
+          payload,
+        });
+        toast.error(message);
       },
     });
+  };
+
+  const handleRetest = () => {
+    setIsResultModalOpen(false);
+    openTestModal();
   };
 
   return (
     <PageContainer>
       <TablePageHeader
         title="سرویس SNMP"
-        // subtitle="مشاهده و ویرایش پیکربندی دسترسی مانیتورینگ شبکه"
         refreshAction={{
           onClick: () => void snmpInfoQuery.refetch(),
           disabled: snmpInfoQuery.isFetching,
@@ -59,7 +105,7 @@ const SnmpService = () => {
         actions={[
           {
             label: 'تست اتصال SNMP',
-            onClick: () => setIsTestModalOpen(true),
+            onClick: openTestModal,
             disabled: snmpInfoQuery.isLoading || testSnmpConnection.isPending,
           },
         ]}
@@ -89,6 +135,13 @@ const SnmpService = () => {
         onSubmit={handleSubmitTest}
         isSubmitting={testSnmpConnection.isPending}
         errorMessage={testSnmpConnection.error?.message ?? null}
+      />
+
+      <SnmpTestResultModal
+        open={isResultModalOpen}
+        result={testResult}
+        onClose={() => setIsResultModalOpen(false)}
+        onRetest={handleRetest}
       />
     </PageContainer>
   );
