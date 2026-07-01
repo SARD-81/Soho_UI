@@ -1,7 +1,10 @@
 import { Box } from '@mui/material';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import type { SnmpTestConnectionPayload } from '../@types/snmp';
+import type {
+  SnmpTestConnectionPayload,
+  SnmpTestConnectionResponse,
+} from '../@types/snmp';
 import PageContainer from '../components/PageContainer';
 import TablePageHeader from '../components/common/TablePageHeader';
 import SnmpConfigModal from '../components/snmp/SnmpConfigModal';
@@ -13,6 +16,41 @@ import SnmpTestResultModal, {
 import { useConfigureSnmp } from '../hooks/useConfigureSnmp';
 import { useSnmpInfo } from '../hooks/useSnmpInfo';
 import { useTestSnmpConnection } from '../hooks/useTestSnmpConnection';
+
+const normalizeBooleanFlag = (value: unknown) => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'on', 'success'].includes(normalized)) {
+      return true;
+    }
+
+    if (['false', '0', 'no', 'off', 'failed', 'failure'].includes(normalized)) {
+      return false;
+    }
+  }
+
+  return null;
+};
+
+const resolveConnectionSuccess = (response: SnmpTestConnectionResponse) => {
+  const directFlag = normalizeBooleanFlag(response.connection_success);
+
+  if (directFlag !== null) {
+    return directFlag;
+  }
+
+  const dataFlag = normalizeBooleanFlag(response.data?.connection_success);
+
+  if (dataFlag !== null) {
+    return dataFlag;
+  }
+
+  return response.ok === true;
+};
 
 const SnmpService = () => {
   const snmpInfoQuery = useSnmpInfo();
@@ -49,7 +87,7 @@ const SnmpService = () => {
   const handleSubmitTest = (payload: SnmpTestConnectionPayload) => {
     testSnmpConnection.mutate(payload, {
       onSuccess: (response) => {
-        const isSuccess = response.ok !== false;
+        const isSuccess = resolveConnectionSuccess(response);
         const message =
           response.message ??
           (isSuccess
@@ -59,7 +97,7 @@ const SnmpService = () => {
         showTestResult({
           ok: isSuccess,
           message,
-          data: response.data,
+          data: response.data ?? response,
           payload,
         });
 
