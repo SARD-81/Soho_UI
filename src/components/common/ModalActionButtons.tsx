@@ -101,7 +101,7 @@ const ModalActionButtons = ({
   };
 
   const confirmDisabled = Boolean(disabled || isLoading || confirmDisabledProp);
-  const cancelDisabled = Boolean(disabled || cancelDisabledProp);
+  const cancelDisabled = Boolean(cancelDisabledProp);
 
   const confirmSx = mergeSx(
     baseButtonSx,
