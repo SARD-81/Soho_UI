@@ -1,8 +1,9 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import type { NfsShareEntry, NfsSharePayload } from '../@types/nfs';
 import PageContainer from '../components/PageContainer';
+import TablePageHeader from '../components/common/TablePageHeader';
 import ConfirmDeleteNfsShareModal from '../components/nfs/ConfirmDeleteNfsShareModal';
 import NfsShareModal from '../components/nfs/NfsShareModal';
 import NfsSharesTable from '../components/nfs/NfsSharesTable';
@@ -20,7 +21,13 @@ const ShareNfs = () => {
   const [createError, setCreateError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
 
-  const { data: rawShares = [], isLoading, error } = useNfsShares();
+  const {
+    data: rawShares = [],
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useNfsShares();
   const shares = useMemo(
     () => [...rawShares].sort((a, b) => a.path.localeCompare(b.path, 'fa-IR')),
     [rawShares]
@@ -111,42 +118,20 @@ const ShareNfs = () => {
 
   return (
     <PageContainer>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: -5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
-          >
-            اشتراک‌های NFS
-          </Typography>
-
-          <Button
-            onClick={handleOpenCreate}
-            variant="contained"
-            sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: '3px',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              background:
-                'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-              color: 'var(--color-bg)',
-              boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-            }}
-          >
-            ایجاد اشتراک NFS
-          </Button>
-        </Box>
-      </Box>
+      <TablePageHeader
+        title="اشتراک‌های NFS"
+        subtitle="مدیریت مسیرهای اشتراک‌گذاری و کلاینت‌های مجاز"
+        refreshAction={{
+          onClick: () => void refetch(),
+          disabled: isFetching,
+          isLoading: isFetching,
+          loadingLabel: 'در حال بروزرسانی...',
+        }}
+        primaryAction={{
+          label: 'ایجاد اشتراک NFS',
+          onClick: handleOpenCreate,
+        }}
+      />
 
       <NfsShareModal
         open={isCreateOpen}
