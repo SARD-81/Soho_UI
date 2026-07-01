@@ -1,13 +1,11 @@
 import {
   Alert,
   Box,
-  Button,
   FormControl,
   FormHelperText,
   InputLabel,
   MenuItem,
   Select,
-  Stack,
   Typography,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -17,6 +15,7 @@ import type { FileSystemEntry } from '../@types/filesystem';
 import type { WebShareEntry } from '../@types/webshare';
 import BlurModal from '../components/BlurModal';
 import ModalActionButtons from '../components/common/ModalActionButtons';
+import TablePageHeader from '../components/common/TablePageHeader';
 import PageContainer from '../components/PageContainer';
 import WebSharesTable from '../components/webshare/WebSharesTable';
 import { useFileSystems } from '../hooks/useFileSystems';
@@ -176,58 +175,21 @@ const WebShare = () => {
 
   return (
     <PageContainer>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: -5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
-          >
-            اشتراک‌های Web Share
-          </Typography>
-
-          <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap">
-            <Button
-              onClick={() => void refetchWebShares()}
-              variant="outlined"
-              disabled={isWebSharesFetching}
-              sx={{
-                borderColor: 'var(--color-primary)',
-                color: 'var(--color-primary)',
-                borderRadius: '3px',
-                fontWeight: 700,
-              }}
-            >
-              به‌روزرسانی لیست
-            </Button>
-            <Button
-              onClick={() => setIsCreateOpen(true)}
-              variant="contained"
-              disabled={isCreateMutating}
-              sx={{
-                px: 3,
-                py: 1.25,
-                borderRadius: '3px',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                background:
-                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-                color: 'var(--color-bg)',
-                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-              }}
-            >
-              ایجاد Web Share
-            </Button>
-          </Stack>
-        </Box>
-      </Box>
+      <TablePageHeader
+        title="اشتراک‌های Web Share"
+        subtitle="مدیریت دسترسی وب برای فایل‌سیستم‌های قابل انتشار"
+        refreshAction={{
+          onClick: () => void refetchWebShares(),
+          disabled: isWebSharesFetching,
+          isLoading: isWebSharesFetching,
+          loadingLabel: 'در حال بروزرسانی...',
+        }}
+        primaryAction={{
+          label: 'ایجاد Web Share',
+          onClick: () => setIsCreateOpen(true),
+          disabled: isCreateMutating,
+        }}
+      />
 
       {filesystemsError ? (
         <Alert severity="warning" sx={{ mt: 3 }}>
