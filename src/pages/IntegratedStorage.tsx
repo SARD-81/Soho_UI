@@ -1,4 +1,3 @@
-import { Box } from '@mui/material';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
