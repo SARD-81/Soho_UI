@@ -252,7 +252,7 @@ const IntegratedStorage = () => {
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
       <TablePageHeader
         title="فضای یکپارچه"
-        subtitle="مدیریت Poolها، دیسک‌ها و عملیات نگهداری فضای ذخیره‌سازی"
+        // subtitle="مدیریت Poolها، دیسک‌ها و عملیات نگهداری فضای ذخیره‌سازی"
         refreshAction={{ onClick: handleRefreshList, disabled: isPoolsFetching, isLoading: isPoolsFetching, loadingLabel: 'در حال بروزرسانی...' }}
         primaryAction={{ label: 'ایجاد', onClick: handleOpenCreate }}
         actions={[{ label: 'فراخوانی', onClick: poolImport.openModal, tooltip: 'فراخوانی فضای یکپارچه آزاد شده از سیستم' }]}

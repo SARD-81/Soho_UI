@@ -44,7 +44,7 @@ const SnmpService = () => {
     <PageContainer>
       <TablePageHeader
         title="سرویس SNMP"
-        subtitle="مشاهده و ویرایش پیکربندی دسترسی مانیتورینگ شبکه"
+        // subtitle="مشاهده و ویرایش پیکربندی دسترسی مانیتورینگ شبکه"
         refreshAction={{
           onClick: () => void snmpInfoQuery.refetch(),
           disabled: snmpInfoQuery.isFetching,

@@ -183,7 +183,7 @@ const FileSystem = () => {
     <PageContainer>
       <TablePageHeader
         title="فضای فایلی"
-        subtitle="مدیریت فایل‌سیستم‌ها، وضعیت مانت و عملیات رمزنگاری"
+        // subtitle="مدیریت فایل‌سیستم‌ها، وضعیت مانت و عملیات رمزنگاری"
         refreshAction={{
           onClick: () => void refetch(),
           disabled: isFetching,

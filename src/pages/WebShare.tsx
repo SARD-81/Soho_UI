@@ -177,7 +177,7 @@ const WebShare = () => {
     <PageContainer>
       <TablePageHeader
         title="اشتراک‌های Web Share"
-        subtitle="مدیریت دسترسی وب برای فایل‌سیستم‌های قابل انتشار"
+        // subtitle="مدیریت دسترسی وب برای فایل‌سیستم‌های قابل انتشار"
         refreshAction={{
           onClick: () => void refetchWebShares(),
           disabled: isWebSharesFetching,

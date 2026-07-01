@@ -120,7 +120,7 @@ const ShareNfs = () => {
     <PageContainer>
       <TablePageHeader
         title="اشتراک‌های NFS"
-        subtitle="مدیریت مسیرهای اشتراک‌گذاری و کلاینت‌های مجاز"
+        // subtitle="مدیریت مسیرهای اشتراک‌گذاری و کلاینت‌های مجاز"
         refreshAction={{
           onClick: () => void refetch(),
           disabled: isFetching,

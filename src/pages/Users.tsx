@@ -236,7 +236,7 @@ const Users = () => {
     >
       <TablePageHeader
         title="مدیریت کاربران"
-        subtitle="مشاهده کاربران سامانه و ساخت کاربر جدید برای دسترسی‌های سرویس‌ها"
+        // subtitle="مشاهده کاربران سامانه و ساخت کاربر جدید برای دسترسی‌های سرویس‌ها"
         refreshAction={{
           onClick: () => void osUsersQuery.refetch(),
           disabled: osUsersQuery.isFetching,

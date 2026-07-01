@@ -41,7 +41,7 @@ const headerSx: SxProps<Theme> = {
   gap: 2,
   flexWrap: 'wrap',
   p: { xs: 1.65, md: 1.9 },
-  mb: 1.5,
+  mb: -5.5,
   borderRadius: '14px',
   position: 'relative',
   overflow: 'hidden',
@@ -161,7 +161,7 @@ const TablePageHeader = ({
           zIndex: 1,
           minWidth: 0,
           direction: 'rtl',
-          textAlign: 'right',
+          textAlign: 'left',
         }}
       >
         <Typography

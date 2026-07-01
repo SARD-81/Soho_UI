@@ -81,7 +81,7 @@ const BlockStorage = () => {
     <PageContainer>
       <TablePageHeader
         title="فضای بلاکی"
-        subtitle="مدیریت Volumeها و فضای بلاکی روی Poolهای ذخیره‌سازی"
+        // subtitle="مدیریت Volumeها و فضای بلاکی روی Poolهای ذخیره‌سازی"
         refreshAction={{
           onClick: () => void refetch(),
           disabled: isFetching,
