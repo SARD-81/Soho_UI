@@ -1,7 +1,8 @@
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import PageContainer from '../components/PageContainer';
+import TablePageHeader from '../components/common/TablePageHeader';
 import SnmpConfigModal from '../components/snmp/SnmpConfigModal';
 import SnmpOverview from '../components/snmp/SnmpOverview';
 import { useConfigureSnmp } from '../hooks/useConfigureSnmp';
@@ -26,58 +27,21 @@ const SnmpService = () => {
 
   return (
     <PageContainer>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: -5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
-          >
-            سرویس SNMP
-          </Typography>
-
-          <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap">
-            <Button
-              onClick={() => void snmpInfoQuery.refetch()}
-              variant="outlined"
-              disabled={snmpInfoQuery.isFetching}
-              sx={{
-                borderColor: 'var(--color-primary)',
-                color: 'var(--color-primary)',
-                borderRadius: '3px',
-                fontWeight: 700,
-              }}
-            >
-              به‌روزرسانی لیست
-            </Button>
-            <Button
-              onClick={() => setIsConfigModalOpen(true)}
-              variant="contained"
-              disabled={configureSnmp.isPending}
-              sx={{
-                px: 3,
-                py: 1.25,
-                borderRadius: '3px',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                background:
-                  'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-                color: 'var(--color-bg)',
-                boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-              }}
-            >
-              تنظیمات سرویس
-            </Button>
-          </Stack>
-        </Box>
-      </Box>
+      <TablePageHeader
+        title="سرویس SNMP"
+        subtitle="مشاهده و ویرایش پیکربندی دسترسی مانیتورینگ شبکه"
+        refreshAction={{
+          onClick: () => void snmpInfoQuery.refetch(),
+          disabled: snmpInfoQuery.isFetching,
+          isLoading: snmpInfoQuery.isFetching,
+          loadingLabel: 'در حال بروزرسانی...',
+        }}
+        primaryAction={{
+          label: 'تنظیمات سرویس',
+          onClick: () => setIsConfigModalOpen(true),
+          disabled: configureSnmp.isPending,
+        }}
+      />
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 3 }}>
         <SnmpOverview
