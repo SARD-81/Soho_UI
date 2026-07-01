@@ -9,7 +9,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from 'react';
 import { MdAdd, MdExpandLess, MdExpandMore, MdRemove } from 'react-icons/md';
 import type { SnmpConfigPayload, SnmpInfoData } from '../../@types/snmp';
 import { isCompleteIPv4Address } from '../../utils/ipAddress';
@@ -28,11 +34,38 @@ interface SnmpConfigModalProps {
   errorMessage: string | null;
 }
 
+const DEFAULT_COMMUNITY = 'public';
 const DEFAULT_CONTACT = 'support@storex.com';
 const DEFAULT_LOCATION = 'Storex Server Room';
 const DEFAULT_SYS_NAME = 'SohoServer';
 const DEFAULT_PORT = '161';
 const DEFAULT_BIND_IP = '0.0.0.0';
+
+const isValidIPv4Cidr = (value: string) => {
+  const [ip, prefix, ...rest] = value.split('/');
+
+  if (rest.length > 0 || prefix == null || prefix.trim() === '') {
+    return false;
+  }
+
+  const prefixNumber = Number(prefix);
+  return (
+    isCompleteIPv4Address(ip.trim()) &&
+    Number.isInteger(prefixNumber) &&
+    prefixNumber >= 0 &&
+    prefixNumber <= 32
+  );
+};
+
+const isValidAllowedIp = (value: string) => {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return false;
+  }
+
+  return isCompleteIPv4Address(normalized) || isValidIPv4Cidr(normalized);
+};
 
 const SnmpConfigModal = ({
   open,
@@ -42,8 +75,8 @@ const SnmpConfigModal = ({
   isSubmitting,
   errorMessage,
 }: SnmpConfigModalProps) => {
-  const [community, setCommunity] = useState('');
-  const [allowedIps, setAllowedIps] = useState<string[]>(['0.0.0.0']);
+  const [community, setCommunity] = useState(DEFAULT_COMMUNITY);
+  const [allowedIps, setAllowedIps] = useState<string[]>(['0.0.0.0/0']);
   const [contact, setContact] = useState(DEFAULT_CONTACT);
   const [location, setLocation] = useState(DEFAULT_LOCATION);
   const [sysName, setSysName] = useState(DEFAULT_SYS_NAME);
@@ -57,12 +90,12 @@ const SnmpConfigModal = ({
       return initialValues.allowed_ips;
     }
 
-    return ['0.0.0.0'];
+    return ['0.0.0.0/0'];
   }, [initialValues?.allowed_ips]);
 
   useEffect(() => {
     if (open) {
-      setCommunity(initialValues?.community ?? '');
+      setCommunity(initialValues?.community ?? DEFAULT_COMMUNITY);
       setAllowedIps(defaultAllowedIps);
       setContact(initialValues?.contact ?? DEFAULT_CONTACT);
       setLocation(initialValues?.location ?? DEFAULT_LOCATION);
@@ -92,7 +125,7 @@ const SnmpConfigModal = ({
   };
 
   const addAllowedIp = () => {
-    setAllowedIps((prev) => [...prev, '0.0.0.0']);
+    setAllowedIps((prev) => [...prev, '0.0.0.0/0']);
   };
 
   const removeAllowedIp = (index: number) => {
@@ -121,12 +154,19 @@ const SnmpConfigModal = ({
     );
   }, [serviceAction]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const cleanedAllowedIps = useMemo(
+    () => allowedIps.map((ip) => ip.trim()).filter((ip) => ip !== ''),
+    [allowedIps]
+  );
+
+  const invalidAllowedIp = useMemo(
+    () => cleanedAllowedIps.find((ip) => !isValidAllowedIp(ip)) ?? null,
+    [cleanedAllowedIps]
+  );
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedCommunity = community.trim();
-    const cleanedIps = allowedIps
-      .map((ip) => ip.trim())
-      .filter((ip) => ip !== '');
     const trimmedBindIp = bindIp.trim() || DEFAULT_BIND_IP;
 
     if (!trimmedCommunity) {
@@ -134,9 +174,13 @@ const SnmpConfigModal = ({
       return;
     }
 
-    const invalidIp = cleanedIps.find((ip) => !isCompleteIPv4Address(ip));
-    if (invalidIp) {
-      setLocalError(`آی‌پی ${invalidIp} معتبر نیست.`);
+    if (cleanedAllowedIps.length === 0) {
+      setLocalError('حداقل یک آی‌پی مجاز وارد کنید.');
+      return;
+    }
+
+    if (invalidAllowedIp) {
+      setLocalError(`آی‌پی ${invalidAllowedIp} معتبر نیست.`);
       return;
     }
 
@@ -150,7 +194,7 @@ const SnmpConfigModal = ({
 
     onSubmit({
       community: trimmedCommunity,
-      allowed_ips: cleanedIps,
+      allowed_ips: cleanedAllowedIps,
       contact: contact.trim() || DEFAULT_CONTACT,
       location: location.trim() || DEFAULT_LOCATION,
       sys_name: sysName.trim() || DEFAULT_SYS_NAME,
@@ -163,7 +207,8 @@ const SnmpConfigModal = ({
   const isConfirmDisabled =
     isSubmitting ||
     !community.trim() ||
-    allowedIps.some((ip) => !isCompleteIPv4Address(ip.trim())) ||
+    cleanedAllowedIps.length === 0 ||
+    Boolean(invalidAllowedIp) ||
     !isCompleteIPv4Address(bindIp.trim() || DEFAULT_BIND_IP);
 
   return (
@@ -233,30 +278,50 @@ const SnmpConfigModal = ({
           </Stack>
 
           <Stack spacing={2}>
-            {allowedIps.map((ip, index) => (
-              <Stack
-                key={`allowed-ip-${index}`}
-                direction="row"
-                spacing={1}
-                alignItems="center"
-              >
-                <IPv4AddressInput
-                  label={`آی‌پی مجاز ${index + 1}`}
-                  value={ip}
-                  onChange={(value) => updateAllowedIp(index, value)}
-                  required
-                />
-                {allowedIps.length > 1 ? (
-                  <IconButton
-                    aria-label="حذف آی‌پی"
-                    onClick={() => removeAllowedIp(index)}
-                    sx={{ mt: 3.5, color: 'var(--color-error)' }}
-                  >
-                    <MdRemove />
-                  </IconButton>
-                ) : null}
-              </Stack>
-            ))}
+            {allowedIps.map((ip, index) => {
+              const trimmedIp = ip.trim();
+              const hasError = trimmedIp.length > 0 && !isValidAllowedIp(trimmedIp);
+
+              return (
+                <Stack
+                  key={`allowed-ip-${index}`}
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                >
+                  <TextField
+                    label={`آی‌پی مجاز ${index + 1}`}
+                    value={ip}
+                    onChange={(event) => updateAllowedIp(index, event.target.value)}
+                    required
+                    fullWidth
+                    size="small"
+                    error={hasError}
+                    helperText="مثال: 192.168.1.10 یا 192.168.1.0/24"
+                    InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
+                    InputProps={{
+                      sx: {
+                        backgroundColor: 'var(--color-input-bg)',
+                        '& .MuiInputBase-input': {
+                          color: 'var(--color-text)',
+                          direction: 'ltr',
+                          textAlign: 'left',
+                        },
+                      },
+                    }}
+                  />
+                  {allowedIps.length > 1 ? (
+                    <IconButton
+                      aria-label="حذف آی‌پی"
+                      onClick={() => removeAllowedIp(index)}
+                      sx={{ color: 'var(--color-error)' }}
+                    >
+                      <MdRemove />
+                    </IconButton>
+                  ) : null}
+                </Stack>
+              );
+            })}
           </Stack>
         </Stack>
 
