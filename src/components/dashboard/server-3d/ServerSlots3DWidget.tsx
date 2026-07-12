@@ -3,20 +3,28 @@ import {
   Box,
   Chip,
   Divider,
+  IconButton,
   Skeleton,
   Stack,
+  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { MdDns, MdStorage } from 'react-icons/md';
-import { createCardSx } from '../../cardStyles';
-import DashboardWidgetHeader from '../DashboardWidgetHeader';
+import {
+  MdDns,
+  MdPowerSettingsNew,
+  MdRestartAlt,
+  MdStorage,
+} from 'react-icons/md';
+import { useSystemPowerActions } from '../../../contexts/SystemPowerActionsContext';
 import { usePoolDeviceSlots } from '../../../hooks/usePoolDeviceSlots';
 import { useZpool } from '../../../hooks/useZpool';
+import { createCardSx } from '../../cardStyles';
+import DashboardWidgetHeader from '../DashboardWidgetHeader';
 import DiskSlotDetailsPanel from './DiskSlotDetailsPanel';
-import ServerChassisScene from './ServerChassisScene';
 import type { ServerSceneColors } from './ServerBay';
+import ServerChassisScene from './ServerChassisScene';
 import {
   buildServerSlots,
   resolveServerSlotCount,
@@ -26,14 +34,17 @@ import {
 const ServerSlots3DWidget = () => {
   const theme = useTheme();
   const cardSx = createCardSx(theme);
-  const [selectedSlotNumber, setSelectedSlotNumber] = useState<number | null>(null);
+  const [selectedSlotNumber, setSelectedSlotNumber] = useState<number | null>(
+    null
+  );
+  const { requestPowerAction, isPowerActionDisabled } = useSystemPowerActions();
 
   const {
     data: zpoolData,
     isLoading: isPoolsLoading,
     error: poolsError,
   } = useZpool({
-    refetchInterval: 60_000,
+    refetchInterval: 30_000,
   });
 
   const poolNames = useMemo(
@@ -78,13 +89,18 @@ const ServerSlots3DWidget = () => {
     () =>
       selectedSlotNumber == null
         ? null
-        : serverSlots.find((slot) => slot.slotNumber === selectedSlotNumber) ?? null,
+        : (serverSlots.find((slot) => slot.slotNumber === selectedSlotNumber) ??
+          null),
     [selectedSlotNumber, serverSlots]
   );
 
   const discoveredDiskCount = serverSlots.filter((slot) => slot.disk).length;
-  const freeDiskCount = serverSlots.filter((slot) => slot.health === 'free').length;
-  const inactiveDiskCount = serverSlots.filter((slot) => slot.health === 'inactive').length;
+  const freeDiskCount = serverSlots.filter(
+    (slot) => slot.health === 'free'
+  ).length;
+  const inactiveDiskCount = serverSlots.filter(
+    (slot) => slot.health === 'inactive'
+  ).length;
   const hasSlotErrors =
     Object.keys(poolDeviceSlots?.errorsByPool ?? {}).length > 0;
 
@@ -110,7 +126,8 @@ const ServerSlots3DWidget = () => {
     [theme]
   );
 
-  const isInitialLoading = isPoolsLoading || (isSlotsLoading && !poolDeviceSlots);
+  const isInitialLoading =
+    isPoolsLoading || (isSlotsLoading && !poolDeviceSlots);
 
   if (isInitialLoading) {
     return (
@@ -128,8 +145,16 @@ const ServerSlots3DWidget = () => {
             minHeight: 380,
           }}
         >
-          <Skeleton variant="rounded" height={380} sx={{ borderRadius: '12px' }} />
-          <Skeleton variant="rounded" height={380} sx={{ borderRadius: '12px' }} />
+          <Skeleton
+            variant="rounded"
+            height={380}
+            sx={{ borderRadius: '12px' }}
+          />
+          <Skeleton
+            variant="rounded"
+            height={380}
+            sx={{ borderRadius: '12px' }}
+          />
         </Box>
       </Box>
     );
@@ -151,52 +176,82 @@ const ServerSlots3DWidget = () => {
         icon={<MdDns size={20} />}
         title="نمای سه‌بعدی سرور"
         subtitle="مدل تعاملی اسلات‌ها و جزئیات تمام دیسک‌های سامانه"
+        actions={
+          <Stack direction="row" spacing={0.5}>
+            <Tooltip title="راه‌اندازی مجدد سیستم">
+              <span>
+                <IconButton
+                  size="small"
+                  aria-label="راه‌اندازی مجدد سیستم"
+                  disabled={isPowerActionDisabled}
+                  onClick={() => requestPowerAction('reboot')}
+                  sx={{ color: 'success.main' }}
+                >
+                  <MdRestartAlt />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="خاموش کردن سیستم">
+              <span>
+                <IconButton
+                  size="small"
+                  aria-label="خاموش کردن سیستم"
+                  disabled={isPowerActionDisabled}
+                  onClick={() => requestPowerAction('poweroff')}
+                  sx={{ color: 'error.main' }}
+                >
+                  <MdPowerSettingsNew />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Stack>
+        }
         status={
           <Stack direction="row" gap={1} flexWrap="wrap">
-          <Chip
-            icon={<MdStorage />}
-            label={`${discoveredDiskCount} از ${slotCount} اسلات دارای دیسک`}
-            size="small"
-            sx={{
-              fontWeight: 800,
-              color: 'var(--color-text)',
-              backgroundColor: 'rgba(0,198,169,0.08)',
-              border: '1px solid rgba(0,198,169,0.22)',
-            }}
-          />
-          {freeDiskCount > 0 ? (
             <Chip
-              label={`${freeDiskCount} دیسک آزاد`}
+              icon={<MdStorage />}
+              label={`${discoveredDiskCount} از ${slotCount} اسلات دارای دیسک`}
               size="small"
               sx={{
-                fontWeight: 700,
-                color: 'var(--color-secondary)',
-                backgroundColor: 'rgba(148,163,184,0.1)',
+                fontWeight: 800,
+                color: 'var(--color-text)',
+                backgroundColor: 'rgba(0,198,169,0.08)',
+                border: '1px solid rgba(0,198,169,0.22)',
               }}
             />
-          ) : null}
-          {inactiveDiskCount > 0 ? (
-            <Chip
-              label={`${inactiveDiskCount} دیسک غیرفعال`}
-              size="small"
-              sx={{
-                fontWeight: 700,
-                color: theme.palette.warning.main,
-                backgroundColor: 'rgba(245,158,11,0.1)',
-              }}
-            />
-          ) : null}
-          {isSlotsFetching ? (
-            <Chip
-              label="در حال بروزرسانی"
-              size="small"
-              sx={{
-                fontWeight: 700,
-                color: 'var(--color-secondary)',
-                backgroundColor: 'rgba(163,146,75,0.09)',
-              }}
-            />
-          ) : null}
+            {freeDiskCount > 0 ? (
+              <Chip
+                label={`${freeDiskCount} دیسک آزاد`}
+                size="small"
+                sx={{
+                  fontWeight: 700,
+                  color: 'var(--color-secondary)',
+                  backgroundColor: 'rgba(148,163,184,0.1)',
+                }}
+              />
+            ) : null}
+            {inactiveDiskCount > 0 ? (
+              <Chip
+                label={`${inactiveDiskCount} دیسک غیرفعال`}
+                size="small"
+                sx={{
+                  fontWeight: 700,
+                  color: theme.palette.warning.main,
+                  backgroundColor: 'rgba(245,158,11,0.1)',
+                }}
+              />
+            ) : null}
+            {isSlotsFetching ? (
+              <Chip
+                label="در حال بروزرسانی"
+                size="small"
+                sx={{
+                  fontWeight: 700,
+                  color: 'var(--color-secondary)',
+                  backgroundColor: 'rgba(163,146,75,0.09)',
+                }}
+              />
+            ) : null}
           </Stack>
         }
       />
@@ -243,6 +298,9 @@ const ServerSlots3DWidget = () => {
             selectedSlotNumber={selectedSlotNumber}
             colors={colors}
             onSelectSlot={setSelectedSlotNumber}
+            onRequestReboot={() => requestPowerAction('reboot')}
+            onRequestPoweroff={() => requestPowerAction('poweroff')}
+            powerActionsDisabled={isPowerActionDisabled}
           />
 
           <Box
