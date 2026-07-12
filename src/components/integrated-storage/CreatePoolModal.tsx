@@ -1,7 +1,4 @@
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
   Checkbox,
   FormControl,
@@ -20,7 +17,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { FiAlertCircle, FiCheckCircle, FiChevronDown } from 'react-icons/fi';
+import { FiAlertCircle, FiCheckCircle, FiHelpCircle } from 'react-icons/fi';
 import type { UseCreatePoolReturn, VdevType } from '../../hooks/useCreatePool';
 import { removePersianCharacters } from '../../utils/text';
 import BlurModal from '../BlurModal';
@@ -247,9 +244,30 @@ const CreatePoolModal = ({
                 ) : undefined,
             }}
           />
-          <InputLabel id="vdev-type-label" sx={{ color: 'var(--color-text)' }}>
-            نوع آرایه
-          </InputLabel>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <InputLabel id="vdev-type-label" sx={{ color: 'var(--color-text)', position: 'static', transform: 'none' }}>
+              نوع آرایه
+            </InputLabel>
+            <Tooltip
+              title={(
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <span>STRIPE: هر تعداد دیسک</span>
+                  <span>MIRROR: حداقل ۲ دیسک و تعداد زوج</span>
+                  <span>RAID5: حداقل ۳ دیسک</span>
+                </Box>
+              )}
+              arrow
+            >
+              <Box
+                component="span"
+                tabIndex={0}
+                aria-label="راهنمای سازگاری نوع آرایه با تعداد دیسک‌ها"
+                sx={{ display: 'inline-flex', color: 'var(--color-secondary)', cursor: 'help' }}
+              >
+                <FiHelpCircle size={17} />
+              </Box>
+            </Tooltip>
+          </Box>
           <FormControl
             size="small"
             fullWidth
@@ -286,41 +304,6 @@ const CreatePoolModal = ({
             )}
           </FormControl>
 
-
-          <Accordion
-            disableGutters
-            sx={{
-              backgroundColor: 'rgba(31, 182, 255, 0.06)',
-              border: '1px solid rgba(31, 182, 255, 0.22)',
-              borderRadius: '8px !important',
-              boxShadow: 'none',
-              color: 'var(--color-text)',
-              '&::before': { display: 'none' },
-            }}
-          >
-            <AccordionSummary expandIcon={<FiChevronDown color="var(--color-primary)" />}>
-              <Typography sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>
-                راهنمای سازگاری تعداد دیسک‌ها
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 0 }}>
-              <Typography sx={{ color: 'var(--color-secondary)', mb: 1 }}>
-                تعداد دیسک‌ها باید با نوع آرایه دیسک سازگار باشد:
-              </Typography>
-              {[
-                ['STRIP', 'هر چند دیسک'],
-                ['MIRROR', 'حداقل ۲ دیسک (تعداد زوج)'],
-                ['RAID5', 'حداقل ۳ دیسک'],
-              ].map(([type, rule]) => (
-                <Typography key={type} sx={{ color: 'var(--color-text)', mb: 0.5 }}>
-                  <Box component="span" sx={{ color: 'var(--color-primary)', fontWeight: 800, ml: 0.75 }}>
-                    {type}:
-                  </Box>
-                  {rule}
-                </Typography>
-              ))}
-            </AccordionDetails>
-          </Accordion>
 
           <FormControl component="fieldset" error={Boolean(devicesError)}>
             <Typography

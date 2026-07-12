@@ -11,6 +11,7 @@ import {
 import { useMemo, useState } from 'react';
 import { MdDns, MdStorage } from 'react-icons/md';
 import { createCardSx } from '../../cardStyles';
+import DashboardWidgetHeader from '../DashboardWidgetHeader';
 import { usePoolDeviceSlots } from '../../../hooks/usePoolDeviceSlots';
 import { useZpool } from '../../../hooks/useZpool';
 import DiskSlotDetailsPanel from './DiskSlotDetailsPanel';
@@ -146,38 +147,12 @@ const ServerSlots3DWidget = () => {
 
   return (
     <Box sx={{ ...cardSx, width: '100%', minHeight: 520 }}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        alignItems={{ xs: 'stretch', md: 'center' }}
-        justifyContent="space-between"
-        gap={1.5}
-      >
-        <Stack direction="row" alignItems="center" gap={1.25}>
-          <Box
-            sx={{
-              width: 38,
-              height: 38,
-              borderRadius: '12px',
-              display: 'grid',
-              placeItems: 'center',
-              color: 'var(--color-primary)',
-              backgroundColor: 'rgba(0,198,169,0.1)',
-              border: '1px solid rgba(0,198,169,0.25)',
-            }}
-          >
-            <MdDns size={24} />
-          </Box>
-          <Box>
-            <Typography sx={{ fontWeight: 900, color: 'var(--color-text)' }}>
-              نمای سه‌بعدی سرور
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              مدل تعاملی اسلات‌ها و جزئیات تمام دیسک‌های سامانه
-            </Typography>
-          </Box>
-        </Stack>
-
-        <Stack direction="row" gap={1} flexWrap="wrap">
+      <DashboardWidgetHeader
+        icon={<MdDns size={20} />}
+        title="نمای سه‌بعدی سرور"
+        subtitle="مدل تعاملی اسلات‌ها و جزئیات تمام دیسک‌های سامانه"
+        status={
+          <Stack direction="row" gap={1} flexWrap="wrap">
           <Chip
             icon={<MdStorage />}
             label={`${discoveredDiskCount} از ${slotCount} اسلات دارای دیسک`}
@@ -222,8 +197,9 @@ const ServerSlots3DWidget = () => {
               }}
             />
           ) : null}
-        </Stack>
-      </Stack>
+          </Stack>
+        }
+      />
 
       {hasSlotErrors ? (
         <Alert severity="warning" sx={{ borderRadius: '10px' }}>

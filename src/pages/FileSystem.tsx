@@ -97,9 +97,7 @@ const FileSystem = () => {
   const {
     data,
     isLoading,
-    isFetching,
     error: fetchError,
-    refetch,
   } = useFileSystems();
   const { data: poolData } = useZpool();
   const poolOptions = useMemo(
@@ -127,14 +125,18 @@ const FileSystem = () => {
   const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(selectDetailViewState(FILESYSTEM_DETAIL_VIEW_ID));
   const setActiveItemId = useDetailSplitViewStore((state) => state.setActiveItemId);
   const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
+  const clearView = useDetailSplitViewStore((state) => state.clearView);
+
+  useEffect(() => {
+    clearView(FILESYSTEM_DETAIL_VIEW_ID);
+    return () => clearView(FILESYSTEM_DETAIL_VIEW_ID);
+  }, [clearView]);
 
   useEffect(() => {
     const validIds = new Set(filesystems.map((f) => f.id));
     pinnedItemIds.forEach((id) => { if (!validIds.has(id)) unpinItem(FILESYSTEM_DETAIL_VIEW_ID, id); });
-    if (!activeItemId && filesystems.length > 0) {
-      setActiveItemId(FILESYSTEM_DETAIL_VIEW_ID, filesystems[0].id);
-    } else if (activeItemId && !validIds.has(activeItemId)) {
-      setActiveItemId(FILESYSTEM_DETAIL_VIEW_ID, filesystems.length > 0 ? filesystems[0].id : null);
+    if (activeItemId && !validIds.has(activeItemId)) {
+      setActiveItemId(FILESYSTEM_DETAIL_VIEW_ID, null);
     }
   }, [activeItemId, filesystems, pinnedItemIds, setActiveItemId, unpinItem]);
 
@@ -184,12 +186,6 @@ const FileSystem = () => {
       <TablePageHeader
         title="فضای فایلی"
         // subtitle="مدیریت فایل‌سیستم‌ها، وضعیت مانت و عملیات رمزنگاری"
-        refreshAction={{
-          onClick: () => void refetch(),
-          disabled: isFetching,
-          isLoading: isFetching,
-          loadingLabel: 'در حال بروزرسانی...',
-        }}
         primaryAction={{
           label: 'ایجاد فضای فایلی',
           onClick: handleOpenCreate,
@@ -237,7 +233,9 @@ const FileSystem = () => {
           isSettingCanmount={setCanmountHook.isSetting}
         />
 
-        <SelectedFileSystemsDetailsPanel items={filesystems} viewId={FILESYSTEM_DETAIL_VIEW_ID} />
+        {(activeItemId || pinnedItemIds.length > 0) && (
+          <SelectedFileSystemsDetailsPanel items={filesystems} viewId={FILESYSTEM_DETAIL_VIEW_ID} />
+        )}
       </Box>
 
       <ConfirmDeleteFileSystemModal controller={deleteFileSystem} />
