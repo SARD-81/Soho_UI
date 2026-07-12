@@ -284,7 +284,7 @@ export const usePoolDeviceSlots = (
     queryKey: poolDeviceSlotsQueryKey(poolNames),
     queryFn: ({ signal }) => fetchPoolDeviceSlots(poolNames, signal),
     enabled: options?.enabled ?? true,
-    refetchInterval: options?.refetchInterval,
+    refetchInterval: options?.refetchInterval ?? 30_000,
     refetchIntervalInBackground: false,
     staleTime: 25000,
     gcTime: 2 * 60 * 1000,

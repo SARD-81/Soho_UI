@@ -241,14 +241,14 @@ const normalizeZpoolCapacity = (
   };
 };
 
-const fetchZpools = async (
-  signal?: AbortSignal
-): Promise<ZpoolQueryResult> => {
-  const { data: listResponse } =
-    await axiosInstance.get<ZpoolListResponse>(ZPOOL_LIST_ENDPOINT, {
+const fetchZpools = async (signal?: AbortSignal): Promise<ZpoolQueryResult> => {
+  const { data: listResponse } = await axiosInstance.get<ZpoolListResponse>(
+    ZPOOL_LIST_ENDPOINT,
+    {
       params: { save_to_db: true },
       signal,
-    });
+    }
+  );
 
   if (!Array.isArray(listResponse?.data)) {
     return { pools: [], failedPools: [] };
@@ -289,7 +289,7 @@ export const useZpool = (options?: UseZpoolOptions) => {
     queryKey: zpoolQueryKey,
     queryFn: ({ signal }) => fetchZpools(signal),
     enabled: options?.enabled ?? true,
-    refetchInterval: options?.refetchInterval,
+    refetchInterval: options?.refetchInterval ?? 30_000,
     refetchIntervalInBackground: false,
     retry: false,
     refetchOnWindowFocus: false,
