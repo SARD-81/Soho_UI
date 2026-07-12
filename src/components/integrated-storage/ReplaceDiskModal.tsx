@@ -10,6 +10,7 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import type { PoolDiskSlot } from '../../hooks/usePoolDeviceSlots';
 import type { ReplaceDevicePayload } from '../../hooks/useReplacePoolDisk';
+import { normalizeByIdDiskBase, normalizeReplacementOldDevice } from '../../utils/diskIdentifier';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 import type { DeviceOption } from './CreatePoolModal';
@@ -41,22 +42,10 @@ const selectBaseStyles = {
   color: 'var(--color-text)',
 };
 
-const normalizeOldDevice = (device: string) => {
-  const trimmed = device.trim();
-
-  if (/(-part\d+|p\d+)$/.test(trimmed)) {
-    return trimmed;
-  }
-
-  return `${trimmed}-part1`;
-};
-
 const buildOldDeviceOptions = (slots: PoolDiskSlot[]) =>
   slots.map((slot, index) => {
     const normalizedWwn = slot.wwn?.trim();
-    const wwnPath = normalizedWwn
-      ? `/dev/disk/by-id/${normalizedWwn.startsWith('wwn-') ? normalizedWwn : `wwn-${normalizedWwn}`}`
-      : null;
+    const wwnPath = normalizedWwn ? normalizeByIdDiskBase(normalizedWwn) : null;
 
     const basePath = wwnPath || slot.path?.trim() || `/dev/${slot.diskName}`;
     const label = slot.wwn
@@ -127,7 +116,7 @@ const ReplaceDiskModal = ({
     }
 
     const payload: ReplaceDevicePayload = {
-      old_device: normalizeOldDevice(oldDevice),
+      old_device: normalizeReplacementOldDevice(oldDevice),
       new_device: newDevice,
       save_to_db: true,
     };

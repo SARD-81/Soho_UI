@@ -1,6 +1,6 @@
 import { Box, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
-import { MdDeleteOutline, MdEdit, MdPlayArrow, MdStop, MdVpnKey, MdVpnKeyOff } from 'react-icons/md';
+import { MdDeleteOutline, MdLockReset, MdOutlineLink, MdOutlineLinkOff, MdVpnKey, MdVpnKeyOff } from 'react-icons/md';
 import ToggleBtn from '../ToggleBtn';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { FileSystemEntry } from '../../@types/filesystem';
@@ -124,7 +124,7 @@ const FileSystemsTable = ({
         return (
           <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
             {(onMount && onUnmount) && (
-              <Tooltip title={isMounted ? 'قطع اتصال' : 'وصل کردن'}>
+              <Tooltip title={isMounted ? 'آنمانت فضای فایلی' : 'مانت فضای فایلی'}>
                 <span>
                   <IconButton
                     size="small"
@@ -135,15 +135,16 @@ const FileSystemsTable = ({
                       else onMount(fs);
                     }}
                     disabled={anyPending}
+                    aria-label={isMounted ? 'آنمانت فضای فایلی' : 'مانت فضای فایلی'}
                   >
-                    {isMounted ? <MdStop size={18} /> : <MdPlayArrow size={18} />}
+                    {isMounted ? <MdOutlineLinkOff size={18} /> : <MdOutlineLink size={18} />}
                   </IconButton>
                 </span>
               </Tooltip>
             )}
 
             {canShowEncryptionActions && (onLoadKey && onUnloadKey) && (
-              <Tooltip title={isKeyLoaded ? 'تخلیه کلید' : 'بارگذاری کلید'}>
+              <Tooltip title={isKeyLoaded ? 'تخلیه کلید رمزنگاری' : 'بارگذاری کلید رمزنگاری'}>
                 <span>
                   <IconButton
                     size="small"
@@ -154,8 +155,9 @@ const FileSystemsTable = ({
                       else onLoadKey(fs);
                     }}
                     disabled={anyPending}
+                    aria-label={isKeyLoaded ? 'تخلیه کلید رمزنگاری' : 'بارگذاری کلید رمزنگاری'}
                   >
-                    {isKeyLoaded ? <MdVpnKeyOff size={17} /> : <MdVpnKey size={17} />}
+                    {isKeyLoaded ? <MdVpnKeyOff size={18} /> : <MdVpnKey size={18} />}
                   </IconButton>
                 </span>
               </Tooltip>
@@ -172,8 +174,9 @@ const FileSystemsTable = ({
                       onChangePassphrase(fs);
                     }}
                     disabled={anyPending || !isKeyLoaded}
+                    aria-label="تغییر گذرواژه فایل سیستم"
                   >
-                    <MdEdit size={17} />
+                    <MdLockReset size={18} />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -186,6 +189,7 @@ const FileSystemsTable = ({
                   color="error"
                   onClick={(e) => { e.stopPropagation(); onDeleteFilesystem(fs); }}
                   disabled={isDeleteDisabled || anyPending}
+                  aria-label="حذف فضای فایلی"
                 >
                   <MdDeleteOutline size={18} />
                 </IconButton>

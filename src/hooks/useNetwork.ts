@@ -224,7 +224,8 @@ export const useNetwork = (enabled = true) => {
     queryFn: () => fetchNetworkBandwidth(interfaceNames),
     enabled: enabled && Boolean(detailsQuery.data),
     refetchInterval: 2000,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
   });
 
   const mergedData = useMemo<NetworkData | undefined>(() => {

@@ -226,8 +226,8 @@ export const useDisk = (options?: UseDiskOptions) => {
   return useQuery<DiskResponse, Error>({
     queryKey: ['disk'],
     queryFn: fetchDisk,
-    refetchInterval: options?.refetchInterval ?? 2000,
-    refetchIntervalInBackground: true,
+    refetchInterval: options?.refetchInterval,
+    refetchIntervalInBackground: false,
     enabled: options?.enabled ?? true,
   });
 };
@@ -237,7 +237,7 @@ export const usePartitionedDisks = (options?: UseDiskOptions) => {
     queryKey: ['disk', 'partitioned'],
     queryFn: ({ signal }) => fetchPartitionedDisks(signal),
     refetchInterval: options?.refetchInterval,
-    refetchIntervalInBackground: Boolean(options?.refetchInterval),
+    refetchIntervalInBackground: false,
     enabled: options?.enabled ?? true,
     refetchOnWindowFocus: false,
     staleTime: 20_000,

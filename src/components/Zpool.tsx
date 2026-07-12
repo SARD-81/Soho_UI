@@ -12,6 +12,7 @@ import { SiGooglecloudstorage } from 'react-icons/si';
 import { diskPercentFormatter, tooltipMultilineSx } from '../constants/disk';
 import { useZpool } from '../hooks/useZpool';
 import { formatBytes } from '../utils/formatters';
+import DashboardWidgetHeader from './dashboard/DashboardWidgetHeader';
 import { createCardSx } from './cardStyles';
 import AppPieChart from './charts/AppPieChart';
 
@@ -192,20 +193,7 @@ const Zpool = () => {
 
   return (
     <Box sx={{ ...cardSx, width: '100%' }}>
-      <Typography
-        variant="subtitle2"
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          fontWeight: 600,
-        }}
-      >
-        <Box component="span" sx={{ fontSize: 20 }}>
-          <SiGooglecloudstorage size={30} />
-        </Box>
-        نمای کلی فضا های یکپارچه
-      </Typography>
+      <DashboardWidgetHeader icon={<SiGooglecloudstorage size={20} />} title="فضاهای یکپارچه" subtitle="سلامت و ظرفیت Poolها" />
 
       {failedPools.length > 0 && (
         <Alert

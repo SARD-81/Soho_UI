@@ -21,6 +21,7 @@ import { useZpool, zpoolQueryKey } from '../hooks/useZpool';
 import { fetchZpoolDetails, zpoolDetailQueryKey } from '../hooks/useZpoolDetails';
 import { selectDetailViewState, useDetailSplitViewStore } from '../stores/detailSplitViewStore';
 import { localizeDetailEntries, translateDetailKey } from '../utils/detailLabels';
+import { normalizeByIdDiskBase } from '../utils/diskIdentifier';
 import { createPoolDisksTable } from '../utils/poolDetails';
 
 const MAX_COMPARISON_ITEMS = 4;
@@ -79,11 +80,7 @@ const mapPartitionedDisksToDeviceOptions = (partitionedDisks?: PartitionedDiskIn
   partitionedDisks.forEach(({ name, path, wwn, slotNumber }) => {
     const trimmedWwn = wwn?.trim();
     const trimmedPath = path?.trim();
-    const identifier = trimmedWwn
-      ? trimmedWwn.startsWith('/dev/')
-        ? trimmedWwn
-        : `/dev/disk/by-id/${trimmedWwn.replace(/^\/dev\/disk\/by-id\//, '')}`
-      : trimmedPath;
+    const identifier = trimmedWwn ? normalizeByIdDiskBase(trimmedWwn) : trimmedPath;
 
     if (!identifier || uniqueValues.has(identifier)) return;
     uniqueValues.add(identifier);
@@ -120,8 +117,7 @@ const IntegratedStorage = () => {
         toast.error(`حذف فضای یکپارچه ${poolName} امکان‌پذیر نیست؛ ابتدا تمام فایل‌سیستم‌های وابسته به این فضا را حذف کنید.`);
         return;
       }
-      toast.error(`حذف فضای یکپارچه ${poolName} با خطا مواجه شد`);
-      console.log(error.message);
+      toast.error(`حذف فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`);
     },
   });
 
@@ -135,7 +131,7 @@ const IntegratedStorage = () => {
     onError: (error, poolName) => { toast.error(`فراخوانی فضای یکپارچه ${poolName} با خطا مواجه شد: ${error.message}`); },
   });
 
-  const { data, isLoading: isPoolsLoading, isFetching: isPoolsFetching, error: zpoolError, refetch: refetchPools } = useZpool({ enabled: isIntegratedStorageRoute, refetchInterval: 30 * 1000 });
+  const { data, isLoading: isPoolsLoading, error: zpoolError } = useZpool({ enabled: isIntegratedStorageRoute, refetchInterval: 30 * 1000 });
   const [replacePoolName, setReplacePoolName] = useState<string | null>(null);
   const [shouldLoadPoolSlots, setShouldLoadPoolSlots] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ poolName: string; slot: PoolDiskSlot } | null>(null);
@@ -168,12 +164,6 @@ const IntegratedStorage = () => {
     void refetchPoolSlots();
   }, [refetchPoolSlots, shouldLoadPoolSlots]);
 
-  const handleRefreshList = useCallback(() => {
-    void refetchPools();
-    void refreshIntegratedStorageData();
-    if (shouldLoadPoolSlots) void refetchPoolSlots();
-  }, [refetchPools, refetchPoolSlots, refreshIntegratedStorageData, shouldLoadPoolSlots]);
-
   const addPoolDevices = useAddPoolDevices({
     onSuccess: (poolName) => { toast.success(`افزودن دیسک به ${poolName} ثبت شد.`); void refreshIntegratedStorageData(poolName); void refetchPoolSlots(); },
     onError: (message, poolName) => { toast.error(`افزودن دیسک به ${poolName} با خطا مواجه شد: ${message}`); },
@@ -196,7 +186,7 @@ const IntegratedStorage = () => {
     onError: (message, poolName) => { toast.error(`جایگزینی دیسک برای ${poolName} با خطا مواجه شد: ${message}`); },
   });
 
-  const handleEdit = useCallback((pool: ZpoolCapacityEntry) => { console.log(pool); }, []);
+  const handleEdit = useCallback((pool: ZpoolCapacityEntry) => { void pool; }, []);
   const handleOpenCreate = useCallback(() => { createPool.openCreateModal(); }, [createPool]);
   const handleDelete = useCallback((pool: ZpoolCapacityEntry) => { poolDeletion.requestDelete(pool); }, [poolDeletion]);
   const handleOpenReplace = useCallback((pool: ZpoolCapacityEntry) => { setShouldLoadPoolSlots(true); setReplacePoolName(pool.name); }, []);
@@ -253,7 +243,6 @@ const IntegratedStorage = () => {
       <TablePageHeader
         title="فضای یکپارچه"
         // subtitle="مدیریت Poolها، دیسک‌ها و عملیات نگهداری فضای ذخیره‌سازی"
-        refreshAction={{ onClick: handleRefreshList, disabled: isPoolsFetching, isLoading: isPoolsFetching, loadingLabel: 'در حال بروزرسانی...' }}
         primaryAction={{ label: 'ایجاد', onClick: handleOpenCreate }}
         actions={[{ label: 'فراخوانی', onClick: poolImport.openModal, tooltip: 'فراخوانی فضای یکپارچه آزاد شده از سیستم' }]}
       />

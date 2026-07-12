@@ -45,5 +45,7 @@ export const useMemory = () => {
     queryKey: ['memory'],
     queryFn: fetchMemory,
     refetchInterval: 2000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
   });
 };

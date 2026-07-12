@@ -26,6 +26,7 @@ const Disks = () => {
   );
   const setActiveItemId = useDetailSplitViewStore((state) => state.setActiveItemId);
   const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
+  const clearView = useDetailSplitViewStore((state) => state.clearView);
   const detailIds = useMemo(() => {
     const ids = new Set<string>();
 
@@ -62,21 +63,15 @@ const Disks = () => {
   }, [poolDevicesError]);
 
   useEffect(() => {
-    const validDisks = new Set(disks.map((disk) => disk.disk));
+    clearView(DISK_DETAIL_VIEW_ID);
+    return () => clearView(DISK_DETAIL_VIEW_ID);
+  }, [clearView]);
 
-    pinnedItemIds.forEach((diskName) => {
-      if (!validDisks.has(diskName)) {
-        unpinItem(DISK_DETAIL_VIEW_ID, diskName);
-      }
-    });
-
-    if (!activeItemId && disks.length > 0) {
-      setActiveItemId(DISK_DETAIL_VIEW_ID, disks[0].disk);
-      return;
-    }
-
-    if (activeItemId && !validDisks.has(activeItemId)) {
-      setActiveItemId(DISK_DETAIL_VIEW_ID, disks[0]?.disk ?? null);
+  useEffect(() => {
+    const validIds = new Set(disks.map((disk) => disk.disk));
+    pinnedItemIds.forEach((id) => { if (!validIds.has(id)) unpinItem(DISK_DETAIL_VIEW_ID, id); });
+    if (activeItemId && !validIds.has(activeItemId)) {
+      setActiveItemId(DISK_DETAIL_VIEW_ID, null);
     }
   }, [activeItemId, disks, pinnedItemIds, setActiveItemId, unpinItem]);
 
@@ -147,15 +142,17 @@ const Disks = () => {
           />
         </Box>
 
-        <Box sx={{ width: { xs: '100%', xl: 'auto' } }}>
-          <SelectedDisksDetailsPanel
-            items={detailItems}
-            activeItemId={activeItemId}
-            pinnedItemIds={pinnedItemIds}
-            onUnpin={(diskName) => unpinItem(DISK_DETAIL_VIEW_ID, diskName)}
-            viewId={DISK_DETAIL_VIEW_ID}
-          />
-        </Box>
+        {(activeItemId || pinnedItemIds.length > 0) && (
+          <Box sx={{ width: { xs: '100%', xl: 'auto' } }}>
+            <SelectedDisksDetailsPanel
+              items={detailItems}
+              activeItemId={activeItemId}
+              pinnedItemIds={pinnedItemIds}
+              onUnpin={(diskName) => unpinItem(DISK_DETAIL_VIEW_ID, diskName)}
+              viewId={DISK_DETAIL_VIEW_ID}
+            />
+          </Box>
+        )}
       </Stack>
       <ConfirmWipeDiskModal
         open={Boolean(wipeTargetDisk)}

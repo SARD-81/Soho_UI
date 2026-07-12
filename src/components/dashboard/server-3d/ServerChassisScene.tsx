@@ -1,6 +1,6 @@
 import { ContactShadows, OrbitControls, RoundedBox } from '@react-three/drei';
-import { Canvas } from '@react-three/fiber';
-import { Suspense, useMemo } from 'react';
+import { Canvas, type ThreeEvent } from '@react-three/fiber';
+import { Suspense, useMemo, useState } from 'react';
 import ServerBay, { type ServerSceneColors } from './ServerBay';
 import type { ServerSlotViewModel } from './serverSlotModel';
 
@@ -9,6 +9,9 @@ interface ServerChassisSceneProps {
   selectedSlotNumber: number | null;
   colors: ServerSceneColors;
   onSelectSlot: (slotNumber: number) => void;
+  onRequestReboot: () => void;
+  onRequestPoweroff: () => void;
+  powerActionsDisabled: boolean;
 }
 
 const BAY_PANEL_CENTER_X = 0.72;
@@ -45,8 +48,51 @@ const ServerChassisModel = ({
   selectedSlotNumber,
   colors,
   onSelectSlot,
+  onRequestReboot,
+  onRequestPoweroff,
+  powerActionsDisabled,
 }: ServerChassisSceneProps) => {
-  const layout = useMemo(() => resolveSceneLayout(slots.length), [slots.length]);
+  const [hoveredControl, setHoveredControl] = useState<
+    'reboot' | 'poweroff' | null
+  >(null);
+  const layout = useMemo(
+    () => resolveSceneLayout(slots.length),
+    [slots.length]
+  );
+
+  const handleControlPointerOver = (
+    event: ThreeEvent<PointerEvent>,
+    control: 'reboot' | 'poweroff'
+  ) => {
+    event.stopPropagation();
+    setHoveredControl(control);
+    document.body.style.cursor = powerActionsDisabled
+      ? 'not-allowed'
+      : 'pointer';
+  };
+
+  const handleControlPointerOut = (event: ThreeEvent<PointerEvent>) => {
+    event.stopPropagation();
+    setHoveredControl(null);
+    document.body.style.cursor = 'auto';
+  };
+
+  const handlePowerControlClick = (
+    event: ThreeEvent<MouseEvent>,
+    action: 'reboot' | 'poweroff'
+  ) => {
+    event.stopPropagation();
+    if (powerActionsDisabled) {
+      return;
+    }
+
+    if (action === 'reboot') {
+      onRequestReboot();
+      return;
+    }
+
+    onRequestPoweroff();
+  };
 
   return (
     <group rotation={[0, 0, 0]} position={[0, -0.05, 0]}>
@@ -89,29 +135,35 @@ const ServerChassisModel = ({
         />
       </RoundedBox>
 
-      <RoundedBox
-        args={[0.43, 0.43, 0.08]}
-        radius={0.075}
-        smoothness={8}
-        position={[layout.controlPanelX, -0.08, 0.39]}
+      <group
+        onClick={(event) => handlePowerControlClick(event, 'reboot')}
+        onPointerOver={(event) => handleControlPointerOver(event, 'reboot')}
+        onPointerOut={handleControlPointerOut}
       >
-        <meshStandardMaterial
-          color="#1c232d"
-          emissive="#16a34a"
-          emissiveIntensity={0.5}
-          roughness={0.42}
-        />
-      </RoundedBox>
+        <RoundedBox
+          args={[0.43, 0.43, 0.08]}
+          radius={0.075}
+          smoothness={8}
+          position={[layout.controlPanelX, -0.08, 0.39]}
+        >
+          <meshStandardMaterial
+            color={hoveredControl === 'reboot' ? '#244033' : '#1c232d'}
+            emissive="#16a34a"
+            emissiveIntensity={hoveredControl === 'reboot' ? 0.85 : 0.5}
+            roughness={0.42}
+          />
+        </RoundedBox>
 
-      <mesh position={[layout.controlPanelX, -0.08, 0.445]}>
-        <torusGeometry args={[0.16, 0.018, 12, 42, Math.PI * 1.55]} />
-        <meshStandardMaterial
-          color="#22c55e"
-          emissive="#22c55e"
-          emissiveIntensity={1.35}
-          roughness={0.25}
-        />
-      </mesh>
+        <mesh position={[layout.controlPanelX, -0.08, 0.445]}>
+          <torusGeometry args={[0.16, 0.018, 12, 42, Math.PI * 1.55]} />
+          <meshStandardMaterial
+            color={hoveredControl === 'reboot' ? '#4ade80' : '#22c55e'}
+            emissive="#22c55e"
+            emissiveIntensity={hoveredControl === 'reboot' ? 1.75 : 1.35}
+            roughness={0.25}
+          />
+        </mesh>
+      </group>
 
       <RoundedBox
         args={[0.5, 0.18, 0.07]}
@@ -132,8 +184,17 @@ const ServerChassisModel = ({
         radius={0.03}
         smoothness={5}
         position={[layout.controlPanelX, -1.35, 0.39]}
+        onClick={(event) => handlePowerControlClick(event, 'poweroff')}
+        onPointerOver={(event) => handleControlPointerOver(event, 'poweroff')}
+        onPointerOut={handleControlPointerOut}
       >
-        <meshStandardMaterial color="#e5dfc8" roughness={0.45} metalness={0.2} />
+        <meshStandardMaterial
+          color={hoveredControl === 'poweroff' ? '#f8d7a3' : '#e5dfc8'}
+          emissive={hoveredControl === 'poweroff' ? '#ef4444' : '#000000'}
+          emissiveIntensity={hoveredControl === 'poweroff' ? 0.45 : 0}
+          roughness={0.45}
+          metalness={0.2}
+        />
       </RoundedBox>
 
       <RoundedBox
@@ -153,7 +214,11 @@ const ServerChassisModel = ({
         <ServerBay
           key={slot.id}
           bay={slot}
-          position={[layout.bayPositions[index] ?? BAY_PANEL_CENTER_X, -0.04, 0.46]}
+          position={[
+            layout.bayPositions[index] ?? BAY_PANEL_CENTER_X,
+            -0.04,
+            0.46,
+          ]}
           selected={selectedSlotNumber === slot.slotNumber}
           colors={colors}
           onSelect={onSelectSlot}
@@ -174,7 +239,10 @@ const ServerChassisModel = ({
 };
 
 const ServerChassisScene = (props: ServerChassisSceneProps) => {
-  const layout = useMemo(() => resolveSceneLayout(props.slots.length), [props.slots.length]);
+  const layout = useMemo(
+    () => resolveSceneLayout(props.slots.length),
+    [props.slots.length]
+  );
 
   return (
     <Canvas

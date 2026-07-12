@@ -6,6 +6,7 @@ export interface DetailSplitViewState {
   togglePinnedItem: (viewId: string, itemId: string) => void;
   unpinItem: (viewId: string, itemId: string) => void;
   clearPinnedItems: (viewId: string) => void;
+  clearView: (viewId: string) => void;
 }
 
 export const DEFAULT_DETAIL_VIEW_ID = 'default';
@@ -66,4 +67,6 @@ export const useDetailSplitViewStore = create<DetailSplitViewState>((set) => ({
     })),
   clearPinnedItems: (viewId) =>
     set((state) => ({ views: upsertView(state.views, viewId, { pinnedItemIds: [] }) })),
+  clearView: (viewId) =>
+    set((state) => ({ views: upsertView(state.views, viewId, { activeItemId: null, pinnedItemIds: [] }) })),
 }));

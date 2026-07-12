@@ -9,6 +9,7 @@ import { gaugeClasses } from '@mui/x-charts/Gauge';
 import { useMemo } from 'react';
 import type { RgbColor } from '../@types/cpu.ts';
 import { useCpu } from '../hooks/useCpu';
+import DashboardWidgetHeader from './dashboard/DashboardWidgetHeader';
 import { createCardSx } from './cardStyles.ts';
 import AppGauge from './charts/AppGauge';
 import { MdMemory } from "react-icons/md";
@@ -202,21 +203,7 @@ const Cpu = () => {
 
   return (
     <Box sx={{ ...cardSx, justifyContent: 'space-between' }}>
-      <Typography
-        variant="subtitle2"
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          fontWeight: 600,
-          color: 'var(--color-bg-primary)',
-        }}
-      >
-        <Box component="span" sx={{ fontSize: 20 }}>
-          <MdMemory size={35} />
-        </Box>
-        استفاده پردازنده (بر حسب درصد)
-      </Typography>
+      <DashboardWidgetHeader icon={<MdMemory size={20} />} title="پردازنده" subtitle="مصرف لحظه‌ای CPU" />
 
       <Box
         sx={{

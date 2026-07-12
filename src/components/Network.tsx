@@ -10,6 +10,7 @@ import type { History } from '../@types/network';
 import { useNetwork } from '../hooks/useNetwork';
 import { extractIPv4Info, formatInterfaceSpeed } from '../utils/networkDetails';
 import { formatBytes } from '../utils/formatters';
+import DashboardWidgetHeader from './dashboard/DashboardWidgetHeader';
 import { createCardSx } from './cardStyles.ts';
 import AppLineChart from './charts/AppLineChart';
 import ResponsiveChartContainer from './charts/ResponsiveChartContainer';
@@ -146,22 +147,7 @@ const Network = () => {
 
   return (
     <Box sx={cardSx}>
-      <Typography
-        variant="subtitle2"
-        sx={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          fontWeight: 600,
-          color: 'var(--color-bg-primary)',
-        }}
-      >
-        <Box component="span" sx={{ fontSize: 20 }}>
-          <FaNetworkWired size={30} />
-        </Box>
-        وضعیت شبکه
-      </Typography>
+      <DashboardWidgetHeader icon={<FaNetworkWired size={20} />} title="شبکه" subtitle="ترافیک و وضعیت رابط‌ها" />
       {names.length === 0 ? (
         <ResponsiveChartContainer height={chartSize}>
           {(width) => (
