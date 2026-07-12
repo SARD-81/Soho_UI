@@ -1,10 +1,4 @@
-import {
-  Alert,
-  Box,
-  Chip,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Chip, Stack, Typography } from '@mui/material';
 import { MdCheckCircle, MdErrorOutline, MdReplay } from 'react-icons/md';
 import type { SnmpTestConnectionPayload } from '../../@types/snmp';
 import BlurModal from '../BlurModal';
@@ -24,21 +18,21 @@ interface SnmpTestResultModalProps {
   onRetest: () => void;
 }
 
-const stringifyData = (value: unknown) => {
-  if (value == null) {
-    return null;
-  }
+// const stringifyData = (value: unknown) => {
+//   if (value == null) {
+//     return null;
+//   }
 
-  if (typeof value === 'string') {
-    return value;
-  }
+//   if (typeof value === 'string') {
+//     return value;
+//   }
 
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
-};
+//   try {
+//     return JSON.stringify(value, null, 2);
+//   } catch {
+//     return String(value);
+//   }
+// };
 
 const SnmpTestResultModal = ({
   open,
@@ -46,9 +40,13 @@ const SnmpTestResultModal = ({
   onClose,
   onRetest,
 }: SnmpTestResultModalProps) => {
-  const dataPreview = stringifyData(result?.data);
+  // const dataPreview = stringifyData(result?.data);
   const isSuccess = Boolean(result?.ok);
-  const icon = isSuccess ? <MdCheckCircle size={28} /> : <MdErrorOutline size={28} />;
+  const icon = isSuccess ? (
+    <MdCheckCircle size={28} />
+  ) : (
+    <MdErrorOutline size={28} />
+  );
 
   return (
     <BlurModal
@@ -86,12 +84,24 @@ const SnmpTestResultModal = ({
           </Alert>
 
           <Stack direction="row" gap={1} flexWrap="wrap">
-            <Chip label={`IP: ${result.payload.host}`} size="small" />
-            <Chip label={`Port: ${result.payload.port}`} size="small" />
-            <Chip label={`Community: ${result.payload.community}`} size="small" />
+            <Chip
+              label={`IP: ${result.payload.host}`}
+              size="small"
+              sx={{ color: 'var(--color-text)' }}
+            />
+            <Chip
+              label={`Port: ${result.payload.port}`}
+              size="small"
+              sx={{ color: 'var(--color-text)' }}
+            />
+            <Chip
+              label={`Community: ${result.payload.community}`}
+              size="small"
+              sx={{ color: 'var(--color-text)' }}
+            />
           </Stack>
 
-          {dataPreview ? (
+          {/* {dataPreview ? (
             <Box
               component="pre"
               sx={{
@@ -111,7 +121,7 @@ const SnmpTestResultModal = ({
             >
               {dataPreview}
             </Box>
-          ) : null}
+          ) : null} */}
         </Box>
       ) : null}
     </BlurModal>
