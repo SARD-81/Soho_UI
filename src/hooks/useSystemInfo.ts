@@ -13,7 +13,6 @@ export const useSystemInfo = () => {
   return useQuery<SystemInfoResponse, Error>({
     queryKey: ['system-info'],
     queryFn: fetchSystemInfo,
-    refetchInterval: 30_000,
   });
 };
 

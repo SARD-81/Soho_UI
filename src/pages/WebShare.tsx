@@ -31,6 +31,19 @@ const WEB_SHARE_DETAIL_VIEW_ID = 'web-shares';
 const createFilesystemKey = (poolName: string, fsName: string) =>
   `${poolName}_${fsName}`;
 
+const ENABLED_SHARE_VALUES = new Set(['on', 'yes', 'true', '1', 'enabled', 'available']);
+
+const isShareEnabledValue = (value: unknown) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1;
+  const normalized = String(value ?? '').trim().toLowerCase();
+  return ENABLED_SHARE_VALUES.has(normalized);
+};
+
+const hasSmbOrNfsShareEnabled = (filesystem: FileSystemEntry) =>
+  isShareEnabledValue(filesystem.attributeMap?.sharesmb) ||
+  isShareEnabledValue(filesystem.attributeMap?.sharenfs);
+
 const WebShare = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedFilesystemKey, setSelectedFilesystemKey] = useState('');
@@ -59,12 +72,21 @@ const WebShare = () => {
 
   const availableFilesystems = useMemo(
     () =>
-      (filesystemData?.filesystems ?? []).filter(
-        (filesystem) =>
-          !existingWebShareKeys.has(
-            createFilesystemKey(filesystem.poolName, filesystem.filesystemName)
+      (filesystemData?.filesystems ?? [])
+        .filter(
+          (filesystem) =>
+            hasSmbOrNfsShareEnabled(filesystem) &&
+            !existingWebShareKeys.has(
+              createFilesystemKey(filesystem.poolName, filesystem.filesystemName)
+            )
+        )
+        .sort((a, b) =>
+          `${a.poolName}/${a.filesystemName}`.localeCompare(
+            `${b.poolName}/${b.filesystemName}`,
+            'en',
+            { sensitivity: 'base' }
           )
-      ),
+        ),
     [existingWebShareKeys, filesystemData?.filesystems]
   );
 
@@ -250,8 +272,8 @@ const WebShare = () => {
           </Select>
           <FormHelperText>
             {availableFilesystems.length === 0
-              ? 'همه فایل‌سیستم‌های موجود Web Share دارند یا لیست در دسترس نیست.'
-              : 'فایل‌سیستم‌های دارای Web Share تکراری نمایش داده نمی‌شوند.'}
+              ? 'فقط فایل‌سیستم‌های دارای SMB یا NFS فعال نمایش داده می‌شوند و مورد واجد شرایطی بدون Web Share موجود نیست.'
+              : 'فقط فایل‌سیستم‌های اشتراک‌گذاری‌شده از طریق SMB یا NFS و بدون Web Share نمایش داده می‌شوند.'}
           </FormHelperText>
         </FormControl>
       </BlurModal>

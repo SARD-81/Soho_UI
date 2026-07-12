@@ -116,6 +116,7 @@ const Share = () => {
     (state) => state.setActiveItemId
   );
   const unpinItem = useDetailSplitViewStore((state) => state.unpinItem);
+  const clearView = useDetailSplitViewStore((state) => state.clearView);
 
   const shares = useMemo(
     () =>
@@ -201,6 +202,11 @@ const Share = () => {
   }, [serviceAction]);
 
   useEffect(() => {
+    clearView(SHARE_DETAIL_VIEW_ID);
+    return () => clearView(SHARE_DETAIL_VIEW_ID);
+  }, [clearView]);
+
+  useEffect(() => {
     const validShares = new Set(shares.map((share) => share.name));
 
     pinnedShareNames.forEach((shareName) => {
@@ -209,13 +215,8 @@ const Share = () => {
       }
     });
 
-    if (!activeShareName && shares.length > 0) {
-      setActiveItemId(SHARE_DETAIL_VIEW_ID, shares[0].name);
-      return;
-    }
-
     if (activeShareName && !validShares.has(activeShareName)) {
-      setActiveItemId(SHARE_DETAIL_VIEW_ID, shares[0]?.name ?? null);
+      setActiveItemId(SHARE_DETAIL_VIEW_ID, null);
     }
   }, [activeShareName, pinnedShareNames, setActiveItemId, shares, unpinItem]);
 
@@ -459,6 +460,11 @@ const Share = () => {
   );
 
   useEffect(() => {
+    clearView(SAMBA_USER_DETAIL_VIEW_ID);
+    return () => clearView(SAMBA_USER_DETAIL_VIEW_ID);
+  }, [clearView]);
+
+  useEffect(() => {
     const validUsers = new Set(sambaUsernames);
 
     pinnedSambaUsers.forEach((username) => {
@@ -467,19 +473,8 @@ const Share = () => {
       }
     });
 
-    if (!activeSambaUser && sambaUsers.length > 0) {
-      setActiveItemId(
-        SAMBA_USER_DETAIL_VIEW_ID,
-        sambaUsers[0]?.username ?? null
-      );
-      return;
-    }
-
     if (activeSambaUser && !validUsers.has(activeSambaUser)) {
-      setActiveItemId(
-        SAMBA_USER_DETAIL_VIEW_ID,
-        sambaUsers[0]?.username ?? null
-      );
+      setActiveItemId(SAMBA_USER_DETAIL_VIEW_ID, null);
     }
   }, [
     activeSambaUser,
@@ -836,10 +831,12 @@ const Share = () => {
                 isDeleting={shareDeletion.isDeleting}
               />
 
-              <SelectedSharesDetailsPanel
-                items={comparisonItems}
-                onRemove={(shareName) => unpinItem(SHARE_DETAIL_VIEW_ID, shareName)}
-              />
+              {comparisonItems.length > 0 && (
+                <SelectedSharesDetailsPanel
+                  items={comparisonItems}
+                  onRemove={(shareName) => unpinItem(SHARE_DETAIL_VIEW_ID, shareName)}
+                />
+              )}
             </Box>
           </TabPanel>
 

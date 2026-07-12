@@ -37,5 +37,7 @@ export const useCpu = () => {
     queryKey: ['cpu'],
     queryFn: fetchCpu,
     refetchInterval: 2000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
   });
 };

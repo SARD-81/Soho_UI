@@ -1,16 +1,11 @@
 import { createElement } from 'react';
 // import { BiHistory } from 'react-icons/bi';
-import { BsFillShareFill } from 'react-icons/bs';
+import { BsDeviceHdd, BsFolderSymlink, BsHddNetwork } from 'react-icons/bs';
 // import { FiUsers } from 'react-icons/fi';
 import { GrServices, GrStorage } from 'react-icons/gr';
-import {
-  MdFolderShared,
-  MdOutlineSdStorage,
-  MdSpaceDashboard,
-  MdStorage,
-} from 'react-icons/md';
-import { RiSettings3Fill } from 'react-icons/ri';
-import { TbHeartRateMonitor } from 'react-icons/tb';
+import { MdAccountTree, MdOutlinePublic, MdSpaceDashboard } from 'react-icons/md';
+import { RiSettings3Fill, RiShareForwardLine } from 'react-icons/ri';
+import { TbActivityHeartbeat, TbServerCog } from 'react-icons/tb';
 import type { NavigationItem } from '../@types/navigationDrawer';
 
 export const drawerWidth = 250;
@@ -23,7 +18,7 @@ export const navItems: NavigationItem[] = [
   },
   {
     text: 'دیسک‌ها',
-    icon: createElement(MdOutlineSdStorage),
+    icon: createElement(BsDeviceHdd),
     path: '/disks',
   },
   {
@@ -38,19 +33,19 @@ export const navItems: NavigationItem[] = [
   // },
   {
     text: 'فضای فایلی',
-    icon: createElement(MdStorage),
+    icon: createElement(MdAccountTree),
     path: '/file-system',
   },
   {
     text: 'اشتراک گذاری',
-    icon: createElement(BsFillShareFill),
+    icon: createElement(RiShareForwardLine),
     // path: '/share',
     children: [
-      { text: 'SMB', icon: createElement(BsFillShareFill), path: '/share' },
-      { text: 'NFS', icon: createElement(MdFolderShared), path: '/share-nfs' },
+      { text: 'SMB', icon: createElement(BsFolderSymlink), path: '/share' },
+      { text: 'NFS', icon: createElement(BsHddNetwork), path: '/share-nfs' },
       {
         text: 'Web Share',
-        icon: createElement(MdFolderShared),
+        icon: createElement(MdOutlinePublic),
         path: '/web-share',
       },
     ],
@@ -62,12 +57,12 @@ export const navItems: NavigationItem[] = [
     children: [
       {
         text: 'سرویس ها',
-        icon: createElement(TbHeartRateMonitor),
+        icon: createElement(TbServerCog),
         path: '/services',
       },
       {
         text: 'سرویس SNMP',
-        icon: createElement(TbHeartRateMonitor),
+        icon: createElement(TbActivityHeartbeat),
         path: '/snmp-service',
       },
     ],

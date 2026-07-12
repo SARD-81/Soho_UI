@@ -167,7 +167,6 @@ export const useVolumes = () =>
   useQuery<VolumeQueryResult, Error>({
     queryKey: ['volumes'],
     queryFn: fetchVolumes,
-    refetchInterval: 15000,
   });
 
 export type UseVolumesReturn = ReturnType<typeof useVolumes>;

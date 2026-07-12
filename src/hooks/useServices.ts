@@ -15,7 +15,6 @@ export const useServices = () =>
   useQuery<ServicesResponse, Error>({
     queryKey: servicesQueryKey,
     queryFn: fetchServices,
-    refetchInterval: 5000,
   });
 
 export type UseServicesReturn = ReturnType<typeof useServices>;

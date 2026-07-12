@@ -9,6 +9,7 @@ import { useMemo } from 'react';
 import { BYTE_UNITS, clampPercent, parseNumeric } from '../constants/memory';
 import { useMemory } from '../hooks/useMemory';
 import { formatBytes } from '../utils/formatters';
+import DashboardWidgetHeader from './dashboard/DashboardWidgetHeader';
 import { createCardSx } from './cardStyles';
 import AppPieChart from './charts/AppPieChart';
 import { GrMemory } from "react-icons/gr";
@@ -272,20 +273,7 @@ const Memory = () => {
 
   return (
     <Box sx={{ ...cardSx, width: '100%' , justifyContent : 'space-between' }}>
-      <Typography
-        variant="subtitle2"
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          fontWeight: 600,
-        }}
-      >
-        <Box component="span" sx={{ fontSize: 20 }}>
-          <GrMemory size={30} />
-        </Box>
-        وضعیت حافظه
-      </Typography>
+      <DashboardWidgetHeader icon={<GrMemory size={20} />} title="حافظه" subtitle="ظرفیت و مصرف RAM" />
 
       {/*<Box*/}
       {/*  sx={{*/}
