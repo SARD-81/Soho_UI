@@ -8,6 +8,7 @@ const fetchServices = async () => {
   const { data } = await axiosInstance.get<ServicesResponse>(
     '/api/system/service/'
   );
+
   return data;
 };
 
@@ -15,6 +16,9 @@ export const useServices = () =>
   useQuery<ServicesResponse, Error>({
     queryKey: servicesQueryKey,
     queryFn: fetchServices,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
   });
 
 export type UseServicesReturn = ReturnType<typeof useServices>;
