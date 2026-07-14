@@ -7,14 +7,16 @@ export type ServicePrimitiveValue =
 
 export type ServiceValue = ServicePrimitiveValue | ServicePrimitiveValue[];
 
+export type ServiceFlagValue = boolean | string | number | null | undefined;
+
 export interface ServiceDetails {
   unit?: string | null;
   description?: string | null;
   load?: string | null;
   active?: string | null;
   sub?: string | null;
-  enabled?: boolean | null;
-  masked?: boolean | null;
+  enabled?: ServiceFlagValue;
+  masked?: ServiceFlagValue;
   status?: string | null;
   [key: string]: ServiceValue;
 }
