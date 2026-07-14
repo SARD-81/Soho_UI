@@ -24,14 +24,7 @@ interface UseServiceActionOptions {
   onError?: (message: string, payload: ServiceActionPayload) => void;
 }
 
-const SERVICE_SUFFIX = ".service" as const;
-
-export function normalizeSystemdServiceName(service: string): string {
-  const s = service.trim();
-  return s.endsWith(SERVICE_SUFFIX)
-    ? s.slice(0, -SERVICE_SUFFIX.length)
-    : s;
-}
+const normalizeUnitName = (service: string) => service.trim();
 
 const extractErrorMessage = (error: AxiosError<ApiErrorResponse>) => {
   const payload = error.response?.data;
@@ -70,7 +63,7 @@ const extractErrorMessage = (error: AxiosError<ApiErrorResponse>) => {
 };
 
 const buildServiceActionUrl = ({ action, service }: ServiceActionPayload) =>
-  `/api/system/service/${encodeURIComponent(normalizeSystemdServiceName(service))}/control/?action=${encodeURIComponent(action)}`;
+  `/api/system/service/${encodeURIComponent(normalizeUnitName(service))}/control/?action=${encodeURIComponent(action)}`;
 
 export const useServiceAction = (options: UseServiceActionOptions = {}) => {
   const queryClient = useQueryClient();
@@ -85,16 +78,11 @@ export const useServiceAction = (options: UseServiceActionOptions = {}) => {
         buildServiceActionUrl(payload),
         {}
       );
+
       return data;
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: servicesQueryKey });
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          Array.isArray(query.queryKey) &&
-          query.queryKey[0] === 'services' &&
-          query.queryKey[1] === 'status',
-      });
       options.onSuccess?.(variables);
     },
     onError: (error, variables) => {
