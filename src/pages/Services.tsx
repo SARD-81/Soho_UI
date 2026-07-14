@@ -7,15 +7,14 @@ import ServicesTable from '../components/services/ServicesTable';
 import { getServiceLabel } from '../constants/serviceLabels';
 import { useServiceAction } from '../hooks/useServiceAction';
 import { useServices } from '../hooks/useServices';
-import { useServiceStatuses } from '../hooks/useServiceStatuses';
 
 const actionLabels: Record<ServiceActionType, string> = {
   start: 'شروع',
   restart: 'راه‌اندازی مجدد',
   stop: 'توقف',
   reload: 'بارگذاری مجدد',
-  enable: 'فعال‌سازی',
-  disable: 'غیرفعال‌سازی',
+  enable: 'فعال‌سازی در زمان راه‌اندازی سیستم',
+  disable: 'غیرفعال‌سازی در زمان راه‌اندازی سیستم',
   mask: 'ماسک کردن',
   unmask: 'حذف ماسک',
 };
@@ -36,26 +35,17 @@ const Services = () => {
     },
   });
 
-  const statusMap = useServiceStatuses(servicesQuery.data?.data ?? []);
-
   const services = useMemo(
     () =>
       (servicesQuery.data?.data ?? []).map((details) => {
         const normalizedDetails: Record<string, ServiceValue> = {
           ...(details ?? {}),
         };
-
         const description =
           typeof details?.description === 'string'
-            ? details?.description
+            ? details.description
             : undefined;
-
         const name = details.unit;
-        const enabledStatus = statusMap.get(name);
-
-        if (enabledStatus !== undefined) {
-          normalizedDetails.enabled = enabledStatus;
-        }
 
         return {
           name,
@@ -63,7 +53,7 @@ const Services = () => {
           details: normalizedDetails,
         };
       }),
-    [servicesQuery.data?.data, statusMap]
+    [servicesQuery.data?.data]
   );
 
   const handleAction = useCallback(
@@ -80,7 +70,7 @@ const Services = () => {
           variant="h5"
           sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
         >
-          سرویس ها
+          سرویس‌ها
         </Typography>
 
         <ServicesTable
