@@ -80,6 +80,7 @@ const Services = () => {
           onAction={handleAction}
           isActionLoading={serviceAction.isPending}
           activeServiceName={serviceAction.variables?.service ?? null}
+          activeAction={serviceAction.variables?.action ?? null}
         />
       </Box>
     </PageContainer>
