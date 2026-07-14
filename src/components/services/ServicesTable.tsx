@@ -2,10 +2,8 @@ import {
   Box,
   Button,
   CircularProgress,
-  Divider,
-  Menu,
-  MenuItem,
   Stack,
+  Switch,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -15,10 +13,7 @@ import {
   FiAlertCircle,
   FiCheckCircle,
   FiPlay,
-  FiPower,
   FiRefreshCw,
-  FiRepeat,
-  FiShieldOff,
   FiSlash,
   FiStopCircle,
 } from 'react-icons/fi';
@@ -42,6 +37,7 @@ interface ServicesTableProps {
   onAction: (serviceName: string, action: ServiceActionType) => void;
   isActionLoading?: boolean;
   activeServiceName?: string | null;
+  activeAction?: ServiceActionType | null;
 }
 
 type ServiceStatus =
@@ -49,7 +45,6 @@ type ServiceStatus =
   | 'stopped'
   | 'transitioning'
   | 'error'
-  | 'disabled'
   | 'masked';
 
 const actionLabels: Record<ServiceActionType, string> = {
@@ -57,116 +52,11 @@ const actionLabels: Record<ServiceActionType, string> = {
   restart: 'راه‌اندازی مجدد',
   stop: 'توقف',
   reload: 'بارگذاری مجدد',
-  enable: 'فعال‌سازی',
-  disable: 'غیرفعال‌سازی',
+  enable: 'فعال‌سازی در زمان راه‌اندازی سیستم',
+  disable: 'غیرفعال‌سازی در زمان راه‌اندازی سیستم',
   mask: 'ماسک کردن',
   unmask: 'حذف ماسک',
 };
-
-const actionIcons: Record<ServiceActionType, IconType> = {
-  start: FiPlay,
-  stop: FiStopCircle,
-  restart: FiRefreshCw,
-  reload: FiRepeat,
-  enable: FiPower,
-  disable: FiPower,
-  mask: FiSlash,
-  unmask: FiShieldOff,
-};
-
-// const serviceDetailLabels: Record<string, string> = {
-//   description: 'توضیحات',
-//   active: 'وضعیت کلی',
-//   active_state: 'وضعیت کلی',
-//   sub: 'زیر وضعیت',
-//   sub_state: 'زیر وضعیت',
-//   load: 'وضعیت بارگذاری',
-//   pid: 'شناسه پردازش',
-//   enabled: 'فعال',
-//   masked: 'ماسک شده',
-//   status: 'وضعیت سرویس',
-//   last_action: 'آخرین اقدام',
-//   last_restart: 'آخرین راه‌اندازی مجدد',
-// };
-
-// const normalizedValueTranslations: Record<string, string> = {
-//   active: 'فعال',
-//   exited: 'خارج شده',
-//   inactive: 'غیرفعال',
-//   loaded: 'بارگذاری شده',
-//   activating: 'در حال فعال‌سازی',
-//   deactivating: 'در حال غیرفعال‌سازی',
-//   running: 'در حال اجرا',
-//   stopping: 'در حال توقف',
-//   stopped: 'متوقف',
-//   dead: 'متوقف',
-//   failed: 'ناموفق',
-//   enabling: 'در حال فعال‌سازی',
-//   disabling: 'در حال غیرفعال‌سازی',
-//   enabled: 'فعال',
-//   disabled: 'غیرفعال',
-//   pending: 'در انتظار',
-//   masked: 'ماسک شده',
-//   unmasked: 'ماسک نشده',
-// };
-
-// const directValueTranslations: Record<string, string> = {
-//   'Samba SMB Daemon': 'سرویس SMB سامبا',
-//   'Samba NMB Daemon': 'سرویس NMB سامبا',
-//   'OpenSSH server daemon': 'سرویس سرور OpenSSH',
-//   'Raise network interfaces': 'راه‌اندازی رابط‌های شبکه',
-//   'A high performance web server and a reverse proxy server':
-//     'وب‌سرور قدرتمند و پراکسی معکوس',
-//   'stopped via mock service': 'توسط سرویس شبیه‌ساز متوقف شد',
-//   'started via mock service': 'توسط سرویس شبیه‌ساز راه‌اندازی شد',
-//   'restarted via mock service': 'توسط سرویس شبیه‌ساز راه‌اندازی مجدد شد',
-//   'reloaded via mock service': 'توسط سرویس شبیه‌ساز بارگذاری مجدد شد',
-//   'enabled via mock service': 'توسط سرویس شبیه‌ساز فعال شد',
-//   'disabled via mock service': 'توسط سرویس شبیه‌ساز غیرفعال شد',
-//   'masked via mock service': 'توسط سرویس شبیه‌ساز ماسک شد',
-//   'unmasked via mock service': 'ماسک توسط سرویس شبیه‌ساز حذف شد',
-// };
-
-// const numberTypographySx = {
-//   display: 'block',
-//   textAlign: 'center' as const,
-//   direction: 'ltr' as const,
-//   fontVariantNumeric: 'tabular-nums',
-// };
-
-// const formatServiceValue = (value: ServiceValue) => {
-//   if (value === null || value === undefined) {
-//     return '—';
-//   }
-
-//   if (typeof value === 'boolean') {
-//     return value ? 'بله' : 'خیر';
-//   }
-
-//   if (Array.isArray(value)) {
-//     return value.map((item) => (item ?? '—').toString()).join(', ');
-//   }
-
-//   if (typeof value === 'number' && Number.isFinite(value)) {
-//     return value;
-//   }
-
-//   if (typeof value === 'string') {
-//     const directTranslation = directValueTranslations[value];
-//     if (directTranslation) {
-//       return directTranslation;
-//     }
-
-//     const normalized = value.trim().toLowerCase();
-//     const normalizedTranslation = normalizedValueTranslations[normalized];
-
-//     if (normalizedTranslation) {
-//       return normalizedTranslation;
-//     }
-//   }
-
-//   return value?.toString?.() ?? '—';
-// };
 
 const statusConfig: Record<
   ServiceStatus,
@@ -196,12 +86,6 @@ const statusConfig: Record<
     background: 'rgba(220, 53, 69, 0.12)',
     icon: FiAlertCircle,
   },
-  disabled: {
-    label: 'غیرفعال',
-    color: 'var(--color-secondary)',
-    background: 'rgba(130, 130, 130, 0.12)',
-    icon: FiPower,
-  },
   masked: {
     label: 'ماسک شده',
     color: '#b26a00',
@@ -213,12 +97,40 @@ const statusConfig: Record<
 const getNormalizedString = (value: ServiceValue) =>
   typeof value === 'string' ? value.trim().toLowerCase() : '';
 
+const normalizeServiceFlag = (value: ServiceValue): boolean | null => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    if (value === 1) return true;
+    if (value === 0) return false;
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+
+    if (['true', '1', 'yes', 'on', 'enabled', 'active'].includes(normalized)) {
+      return true;
+    }
+
+    if (
+      ['false', '0', 'no', 'off', 'disabled', 'inactive'].includes(normalized)
+    ) {
+      return false;
+    }
+  }
+
+  return null;
+};
+
 const deriveStatus = (
   row: ServiceTableRow,
-  isPending: boolean
-): { status: ServiceStatus; enabled: boolean; masked: boolean } => {
-  if (isPending) {
-    return { status: 'transitioning', enabled: true, masked: false };
+  isRuntimePending: boolean
+): ServiceStatus => {
+  if (isRuntimePending) {
+    return 'transitioning';
   }
 
   const activeState =
@@ -228,65 +140,30 @@ const deriveStatus = (
     getNormalizedString(row.details.sub) ||
     getNormalizedString(row.details.sub_state);
   const statusValue = getNormalizedString(row.details.status);
-  const enabled =
-    row.details.enabled === undefined || row.details.enabled === null
-      ? true
-      : Boolean(row.details.enabled);
-  const masked = Boolean(row.details.masked ?? row.details.mask);
+  const masked = normalizeServiceFlag(
+    row.details.masked ?? row.details.mask
+  );
 
-  if (masked) {
-    return { status: 'masked', enabled, masked };
-  }
-
-  if (enabled === false) {
-    return { status: 'disabled', enabled, masked };
+  if (masked === true) {
+    return 'masked';
   }
 
   if (statusValue === 'failed' || activeState === 'failed') {
-    return { status: 'error', enabled, masked };
+    return 'error';
   }
 
-  if (activeState === 'active' && ['running', 'exited'].includes(subState)) {
-    return { status: 'running', enabled, masked };
+  if (
+    activeState === 'active' &&
+    ['running', 'exited', 'listening'].includes(subState)
+  ) {
+    return 'running';
   }
 
-  if (statusValue === 'running' || statusValue === 'active') {
-    return { status: 'running', enabled, masked };
+  if (['running', 'active'].includes(statusValue)) {
+    return 'running';
   }
 
-  return { status: 'stopped', enabled, masked };
-};
-
-const getPrimaryAction = (status: ServiceStatus): ServiceActionType =>
-  status === 'running' ? 'stop' : 'start';
-
-const getOverflowActions = (
-  status: ServiceStatus,
-  enabled: boolean,
-  masked: boolean
-): ServiceActionType[] => {
-  const actions: ServiceActionType[] = [];
-  const isRunning = status === 'running';
-
-  if (isRunning) {
-    actions.push('restart', 'reload');
-  } else {
-    actions.push('restart');
-  }
-
-  if (masked) {
-    actions.push('unmask');
-  } else {
-    actions.push('mask');
-  }
-
-  if (enabled) {
-    actions.push('disable');
-  } else {
-    actions.push('enable');
-  }
-
-  return actions;
+  return 'stopped';
 };
 
 const ServicesTable = ({
@@ -296,32 +173,12 @@ const ServicesTable = ({
   onAction,
   isActionLoading = false,
   activeServiceName = null,
+  activeAction = null,
 }: ServicesTableProps) => {
-  const [menuState, setMenuState] = useState<{
-    anchorEl: HTMLElement | null;
-    service: string | null;
-  }>({ anchorEl: null, service: null });
-
   const [confirmState, setConfirmState] = useState<{
     service: string;
-    action: ServiceActionType;
+    action: 'stop';
   } | null>(null);
-
-  const detailKeys = useMemo(() => {
-    const keys = new Set<string>();
-
-    services.forEach((service) => {
-      Object.keys(service.details).forEach((key) => {
-        if (
-          !['unit', 'description', 'enabled', 'masked', 'status'].includes(key)
-        ) {
-          keys.add(key);
-        }
-      });
-    });
-
-    return Array.from(keys).sort((a, b) => a.localeCompare(b, 'fa'));
-  }, [services]);
 
   const columns = useMemo<DataTableColumn<ServiceTableRow>[]>(() => {
     const indexColumn: DataTableColumn<ServiceTableRow> = {
@@ -329,14 +186,14 @@ const ServicesTable = ({
       header: 'ردیف',
       align: 'center',
       width: 64,
-      renderCell: (_, index) => (
+      renderCell: (_row, index) => (
         <Typography component="span" sx={{ fontWeight: 500 }}>
           {(index + 1).toLocaleString('en-US')}
         </Typography>
       ),
     };
 
-    const baseColumn: DataTableColumn<ServiceTableRow> = {
+    const nameColumn: DataTableColumn<ServiceTableRow> = {
       id: 'service-name',
       header: 'نام سرویس',
       align: 'left',
@@ -373,12 +230,13 @@ const ServicesTable = ({
 
     const statusColumn: DataTableColumn<ServiceTableRow> = {
       id: 'service-status',
-      header: 'وضعیت',
+      header: 'وضعیت اجرا',
       align: 'center',
-      // width: 150,
       renderCell: (row) => {
         const isPending = isActionLoading && activeServiceName === row.name;
-        const { status } = deriveStatus(row, isPending);
+        const isRuntimePending =
+          isPending && !['enable', 'disable'].includes(activeAction ?? '');
+        const status = deriveStatus(row, isRuntimePending);
         const config = statusConfig[status];
         const Icon = config.icon;
 
@@ -405,302 +263,126 @@ const ServicesTable = ({
       },
     };
 
-    // const dynamicColumns = detailKeys.map<DataTableColumn<ServiceTableRow>>(
-    //   (key) => ({
-    //     id: key,
-    //     header: serviceDetailLabels[key] ?? key,
-    //     align: 'center',
-    //     renderCell: (row) => {
-    //       const rawValue = row.details[key];
-    //       const formatted = formatServiceValue(rawValue);
-    //       const isNumeric = typeof rawValue === 'number' && Number.isFinite(rawValue);
+    const bootColumn: DataTableColumn<ServiceTableRow> = {
+      id: 'service-boot-state',
+      header: 'راه‌اندازی خودکار',
+      align: 'center',
+      renderCell: (row) => {
+        const enabled = normalizeServiceFlag(row.details.enabled);
+        const isPending =
+          isActionLoading &&
+          activeServiceName === row.name &&
+          ['enable', 'disable'].includes(activeAction ?? '');
+        const nextAction: ServiceActionType = enabled === true ? 'disable' : 'enable';
+        const tooltip =
+          enabled === true
+            ? 'غیرفعال‌سازی در زمان راه‌اندازی سیستم'
+            : 'فعال‌سازی در زمان راه‌اندازی سیستم';
 
-    //       return (
-    //         <Typography
-    //           component="span"
-    //           sx={isNumeric ? numberTypographySx : undefined}
-    //         >
-    //           {formatted}
-    //         </Typography>
-    //       );
-    //     },
-    //   })
-    // );
+        if (enabled === null) {
+          return (
+            <Tooltip title="وضعیت راه‌اندازی خودکار از API دریافت نشده است." arrow>
+              <span>
+                <Switch disabled checked={false} />
+              </span>
+            </Tooltip>
+          );
+        }
+
+        return (
+          <Stack direction="row" alignItems="center" justifyContent="center" gap={0.75}>
+            {isPending ? <CircularProgress size={16} /> : null}
+            <Tooltip title={tooltip} arrow>
+              <span>
+                <Switch
+                  checked={enabled}
+                  onChange={() => onAction(row.name, nextAction)}
+                  disabled={isPending}
+                  inputProps={{
+                    'aria-label': tooltip,
+                  }}
+                  color="primary"
+                />
+              </span>
+            </Tooltip>
+            <Typography
+              variant="caption"
+              sx={{
+                color: enabled
+                  ? 'var(--color-success)'
+                  : 'var(--color-secondary)',
+                fontWeight: 700,
+                minWidth: 48,
+              }}
+            >
+              {enabled ? 'فعال' : 'غیرفعال'}
+            </Typography>
+          </Stack>
+        );
+      },
+    };
 
     const actionColumn: DataTableColumn<ServiceTableRow> = {
       id: 'actions',
       header: 'عملیات',
       align: 'right',
-      // width: 240,
       renderCell: (row) => {
         const isPending = isActionLoading && activeServiceName === row.name;
-        const { status, enabled, masked } = deriveStatus(row, isPending);
-        const primaryAction = getPrimaryAction(status);
-        const primaryDisabled =
-          isPending || (primaryAction === 'start' && masked);
-        const overflowActions = getOverflowActions(status, enabled, masked);
-        const toggleAction: ServiceActionType = enabled ? 'disable' : 'enable';
-        const ToggleIcon = actionIcons[toggleAction];
-        const toggleLabel = enabled ? 'غیر فعال سازی' : 'فعالسازی';
-        const toggleTooltip = enabled
-          ? 'غیر فعال سازی در زمان راه اندازی سیستم'
-          : 'فعال سازی در زمان راه اندازی سیستم';
-        const toggleColor = toggleAction === 'enable' ? 'primary' : 'warning';
+        const isRuntimePending =
+          isPending && !['enable', 'disable'].includes(activeAction ?? '');
+        const status = deriveStatus(row, isRuntimePending);
+        const isRunning = status === 'running';
+        const isMasked = status === 'masked';
+        const action: ServiceActionType = isRunning ? 'stop' : 'start';
+        const PrimaryIcon = isRunning ? FiStopCircle : FiPlay;
 
-        const handlePrimaryClick = () => {
-          if (['stop', 'restart'].includes(primaryAction)) {
-            setConfirmState({ service: row.name, action: primaryAction });
+        const handleClick = () => {
+          if (action === 'stop') {
+            setConfirmState({ service: row.name, action: 'stop' });
             return;
           }
 
-          onAction(row.name, primaryAction);
+          onAction(row.name, action);
         };
 
-        // const handleMenuClick = (event: MouseEvent<HTMLButtonElement>) => {
-        //   setMenuState({ anchorEl: event.currentTarget, service: row.name });
-        // };
-
-        const pendingLabel =
-          primaryAction === 'stop' ? 'در حال توقف...' : 'در حال شروع...';
-        const PrimaryIcon =
-          primaryAction === 'start' ? actionIcons.start : actionIcons.stop;
-
         return (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 1,
-              // minWidth: 20,
-            }}
+          <Tooltip
+            title={isMasked && action === 'start' ? 'ابتدا باید ماسک سرویس برداشته شود.' : ''}
+            arrow
           >
-            <Tooltip
-              title={
-                primaryDisabled && masked
-                  ? 'ابتدا باید ماسک سرویس برداشته شود.'
-                  : ''
-              }
-              arrow
-            >
-              <span>
-                <Button
-                  size="small"
-                  variant="contained"
-                  color={primaryAction === 'start' ? 'success' : 'error'}
-                  onClick={handlePrimaryClick}
-                  disabled={primaryDisabled}
-                  startIcon={
-                    isPending ? (
-                      <CircularProgress color="inherit" size={14} />
-                    ) : (
-                      <PrimaryIcon size={16} />
-                    )
-                  }
-                  sx={{
-                    // minWidth: 110,
-                    fontWeight: 700,
-                    '&.Mui-disabled': {
-                      opacity: 0.6,
-                    },
-                  }}
-                >
-                  {isPending ? pendingLabel : actionLabels[primaryAction]}
-                </Button>
-              </span>
-            </Tooltip>
-            <Tooltip title={toggleTooltip} arrow>
-              <span>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color={toggleColor}
-                  onClick={() => onAction(row.name, toggleAction)}
-                  disabled={isPending}
-                  startIcon={
-                    isPending ? (
-                      <CircularProgress color="inherit" size={14} />
-                    ) : (
-                      <ToggleIcon size={16} />
-                    )
-                  }
-                  sx={{
-                    fontWeight: 700,
-                    '&.Mui-disabled': {
-                      opacity: 0.6,
-                    },
-                  }}
-                >
-                  {toggleLabel}
-                </Button>
-              </span>
-            </Tooltip>
-
-            {/* <IconButton
-              aria-label={`اقدامات بیشتر برای ${row.label}`}
-              onClick={handleMenuClick}
-              disabled={isPending}
-              size="small"
-              sx={{
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-primary)',
-              }}
-            >
-              <HiDotsVertical />
-            </IconButton> */}
-
-            <Menu
-              anchorEl={menuState.anchorEl}
-              open={menuState.service === row.name}
-              onClose={() => setMenuState({ anchorEl: null, service: null })}
-              MenuListProps={{ autoFocusItem: true }}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-              <Box sx={{ px: 1, py: 1, minWidth: 240 }}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: 'var(--color-secondary)', mb: 0.5 }}
-                >
-                  چرخه حیات
-                </Typography>
-                {overflowActions
-                  .filter((action) => ['restart', 'reload'].includes(action))
-                  .map((action) => {
-                    const Icon = actionIcons[action];
-                    const isDisabled =
-                      isPending ||
-                      (action === 'reload' && status !== 'running');
-
-                    const content = (
-                      <MenuItem
-                        key={action}
-                        onClick={() => {
-                          if (['stop', 'restart'].includes(action)) {
-                            setConfirmState({ service: row.name, action });
-                          } else {
-                            onAction(row.name, action);
-                          }
-                          setMenuState({ anchorEl: null, service: null });
-                        }}
-                        disabled={isDisabled}
-                      >
-                        <Stack
-                          direction="row"
-                          spacing={1.25}
-                          alignItems="center"
-                          color="var(--color-text)"
-                        >
-                          <Icon size={16} />
-                          <span>{actionLabels[action]}</span>
-                        </Stack>
-                      </MenuItem>
-                    );
-
-                    return isDisabled ? (
-                      <Tooltip
-                        key={action}
-                        title={
-                          status !== 'running'
-                            ? 'این عملیات تنها در حالت اجرا در دسترس است.'
-                            : ''
-                        }
-                        placement="left"
-                        arrow
-                      >
-                        <span>{content}</span>
-                      </Tooltip>
-                    ) : (
-                      content
-                    );
-                  })}
-
-                <Divider sx={{ my: 1 }} />
-
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: 'var(--color-secondary)', mb: 0.5 }}
-                >
-                  راه‌اندازی خودکار
-                </Typography>
-                {overflowActions
-                  .filter((action) => ['enable', 'disable'].includes(action))
-                  .map((action) => {
-                    const Icon = actionIcons[action];
-                    const isDisabled = isPending;
-                    return (
-                      <MenuItem
-                        key={action}
-                        onClick={() => {
-                          onAction(row.name, action);
-                          setMenuState({ anchorEl: null, service: null });
-                        }}
-                        disabled={isDisabled}
-                      >
-                        <Stack
-                          direction="row"
-                          spacing={1.25}
-                          alignItems="center"
-                          color="var(--color-text)"
-                        >
-                          <Icon size={16} />
-                          <span>{actionLabels[action]}</span>
-                        </Stack>
-                      </MenuItem>
-                    );
-                  })}
-
-                <Divider sx={{ my: 1 }} />
-
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: 'var(--color-secondary)', mb: 0.5 }}
-                >
-                  ماسک کردن
-                </Typography>
-                {overflowActions
-                  .filter((action) => ['mask', 'unmask'].includes(action))
-                  .map((action) => {
-                    const Icon = actionIcons[action];
-                    const isDisabled = isPending;
-                    return (
-                      <MenuItem
-                        key={action}
-                        onClick={() => {
-                          onAction(row.name, action);
-                          setMenuState({ anchorEl: null, service: null });
-                        }}
-                        disabled={isDisabled}
-                      >
-                        <Stack
-                          direction="row"
-                          spacing={1.25}
-                          alignItems="center"
-                          color="var(--color-text)"
-                        >
-                          <Icon size={16} />
-                          <span>{actionLabels[action]}</span>
-                        </Stack>
-                      </MenuItem>
-                    );
-                  })}
-              </Box>
-            </Menu>
-          </Box>
+            <span>
+              <Button
+                size="small"
+                variant="contained"
+                color={isRunning ? 'error' : 'success'}
+                onClick={handleClick}
+                disabled={isRuntimePending || (action === 'start' && isMasked)}
+                startIcon={
+                  isRuntimePending ? (
+                    <CircularProgress color="inherit" size={14} />
+                  ) : (
+                    <PrimaryIcon size={16} />
+                  )
+                }
+                sx={{
+                  fontWeight: 700,
+                  '&.Mui-disabled': { opacity: 0.6 },
+                }}
+              >
+                {isRuntimePending
+                  ? action === 'stop'
+                    ? 'در حال توقف...'
+                    : 'در حال شروع...'
+                  : actionLabels[action]}
+              </Button>
+            </span>
+          </Tooltip>
         );
       },
     };
 
-    return [indexColumn, baseColumn, statusColumn, actionColumn];
-  }, [
-    activeServiceName,
-    detailKeys,
-    isActionLoading,
-    menuState.anchorEl,
-    menuState.service,
-    onAction,
-    services,
-  ]);
+    return [indexColumn, nameColumn, statusColumn, bootColumn, actionColumn];
+  }, [activeAction, activeServiceName, isActionLoading, onAction]);
 
   return (
     <>
@@ -718,9 +400,7 @@ const ServicesTable = ({
           onClose={() => setConfirmState(null)}
           title={
             <Typography variant="h6" sx={{ fontWeight: 800 }}>
-              {confirmState.action === 'stop'
-                ? 'توقف سرویس؟'
-                : 'راه‌اندازی مجدد سرویس؟'}
+              توقف سرویس؟
             </Typography>
           }
           actions={
@@ -730,11 +410,7 @@ const ServicesTable = ({
                 onAction(confirmState.service, confirmState.action);
                 setConfirmState(null);
               }}
-              confirmLabel={
-                confirmState.action === 'stop'
-                  ? 'توقف سرویس'
-                  : 'راه‌اندازی مجدد'
-              }
+              confirmLabel="توقف سرویس"
               cancelLabel="انصراف"
               confirmProps={{ color: 'error', disableElevation: true }}
               disableConfirmGradient
@@ -743,7 +419,7 @@ const ServicesTable = ({
           minWidth={420}
         >
           <Typography sx={{ color: 'var(--color-secondary)', lineHeight: 1.7 }}>
-            این عملیات ممکن است باعث اختلال در دسترسی کاربران شود. آیا مطمئن
+            توقف این سرویس ممکن است باعث اختلال در دسترسی کاربران شود. آیا مطمئن
             هستید؟
           </Typography>
         </BlurModal>
