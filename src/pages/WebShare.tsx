@@ -34,7 +34,9 @@ const createFilesystemKey = (poolName: string, fsName: string) =>
   `${poolName}_${fsName}`;
 
 const normalizePath = (value: unknown) => {
-  const normalized = String(value ?? '').trim().replace(/\/+$/, '');
+  const normalized = String(value ?? '')
+    .trim()
+    .replace(/\/+$/, '');
   return normalized || '/';
 };
 
@@ -88,7 +90,9 @@ const WebShare = () => {
   const existingWebShareKeys = useMemo(
     () =>
       new Set(
-        webShares.map((share) => createFilesystemKey(share.poolName, share.fsName))
+        webShares.map((share) =>
+          createFilesystemKey(share.poolName, share.fsName)
+        )
       ),
     [webShares]
   );
@@ -119,7 +123,10 @@ const WebShare = () => {
           (filesystem) =>
             isShareBackedByFilesystem(filesystem, sharedPaths) &&
             !existingWebShareKeys.has(
-              createFilesystemKey(filesystem.poolName, filesystem.filesystemName)
+              createFilesystemKey(
+                filesystem.poolName,
+                filesystem.filesystemName
+              )
             )
         )
         .sort((a, b) =>
@@ -136,8 +143,10 @@ const WebShare = () => {
     () =>
       availableFilesystems.find(
         (filesystem) =>
-          createFilesystemKey(filesystem.poolName, filesystem.filesystemName) ===
-          selectedFilesystemKey
+          createFilesystemKey(
+            filesystem.poolName,
+            filesystem.filesystemName
+          ) === selectedFilesystemKey
       ) ?? null,
     [availableFilesystems, selectedFilesystemKey]
   );
@@ -235,10 +244,12 @@ const WebShare = () => {
   const pendingShareId = deleteShare?.id ?? null;
   const isMutating = deleteWebShare.isPending;
   const webShareHost = window.location.hostname;
-  const isCreateMutating = createWebShare.isPending || setWebSharePermission.isPending;
+  const isCreateMutating =
+    createWebShare.isPending || setWebSharePermission.isPending;
   const isCreateSourceLoading =
     isFilesystemsLoading || isSambaSharesLoading || isNfsSharesLoading;
-  const createSourceError = filesystemsError ?? sambaSharesError ?? nfsSharesError;
+  const createSourceError =
+    filesystemsError ?? sambaSharesError ?? nfsSharesError;
 
   return (
     <PageContainer>
@@ -304,6 +315,29 @@ const WebShare = () => {
             onChange={(event: SelectChangeEvent) =>
               setSelectedFilesystemKey(event.target.value)
             }
+            sx={{
+              color: 'var(--color-text)',
+
+              '& .MuiSelect-select': {
+                color: 'var(--color-text)',
+              },
+
+              '& .MuiSelect-icon': {
+                color: 'var(--color-text)',
+              },
+
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'var(--color-text)',
+              },
+
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'var(--color-text)',
+              },
+
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'var(--color-text)',
+              },
+            }}
           >
             {availableFilesystems.map((filesystem) => {
               const key = createFilesystemKey(
@@ -311,7 +345,7 @@ const WebShare = () => {
                 filesystem.filesystemName
               );
               return (
-                <MenuItem key={key} value={key}>
+                <MenuItem key={key} value={key} sx={{ color: 'var(--color-text)' }}>
                   {renderFilesystemLabel(filesystem)}
                 </MenuItem>
               );
@@ -343,8 +377,8 @@ const WebShare = () => {
         }
       >
         <Typography sx={{ color: 'var(--color-text)' }}>
-          آیا از حذف Web Share برای {deleteShare?.poolName}/{deleteShare?.fsName}{' '}
-          مطمئن هستید؟
+          آیا از حذف Web Share برای {deleteShare?.poolName}/
+          {deleteShare?.fsName} مطمئن هستید؟
         </Typography>
       </BlurModal>
     </PageContainer>

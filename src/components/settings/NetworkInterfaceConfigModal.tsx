@@ -296,7 +296,7 @@ const NetworkInterfaceConfigModal = ({
             </Select>
           </FormControl>
 
-          <TextField
+          {/* <TextField
             label="MTU"
             value={mtu}
             onChange={(event) => {
@@ -308,7 +308,12 @@ const NetworkInterfaceConfigModal = ({
             helperText="مقدار فعلی دریافت‌شده از API"
             fullWidth
             size="small"
-          />
+            sx={{
+                '& .MuiOutlinedInput-input': {
+                  color: 'var(--color-text)',
+                },
+              }}
+          /> */}
 
           {mode === 'dhcp' ? (
             <Alert severity="info">
