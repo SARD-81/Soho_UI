@@ -1,15 +1,22 @@
 import {
   Alert,
   Box,
+  Button,
   FormControl,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
+  Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
-import type { ConfigureInterfaceMode } from '../../@types/network';
+import { MdAdd, MdDeleteOutline, MdWarningAmber } from 'react-icons/md';
+import type {
+  ConfigureInterfaceMode,
+  NetworkInterfaceConfiguration,
+} from '../../@types/network';
 import { isCompleteIPv4Address } from '../../utils/ipAddress';
 import BlurModal from '../BlurModal';
 import IPv4AddressInput from '../common/IPv4AddressInput';
@@ -18,8 +25,7 @@ import ModalActionButtons from '../common/ModalActionButtons';
 interface NetworkInterfaceConfigModalProps {
   open: boolean;
   interfaceName: string | null;
-  initialIp?: string;
-  initialNetmask?: string;
+  initialConfiguration?: NetworkInterfaceConfiguration | null;
   onClose: () => void;
   onSubmit: (
     payload:
@@ -38,46 +44,89 @@ interface NetworkInterfaceConfigModalProps {
 
 const DEFAULT_IP = '0.0.0.0';
 const DEFAULT_NETMASK = '255.255.255.0';
+const EMPTY_DNS_ENTRY = '';
+
+type PendingNetworkPayload =
+  | { mode: 'dhcp' }
+  | {
+      mode: 'static';
+      ip: string;
+      netmask: string;
+      gateway?: string;
+      dns?: string[];
+    };
 
 const NetworkInterfaceConfigModal = ({
   open,
   interfaceName,
-  initialIp = '',
-  initialNetmask = '',
+  initialConfiguration,
   onClose,
   onSubmit,
   isSubmitting,
   errorMessage,
 }: NetworkInterfaceConfigModalProps) => {
-  const defaultMode = useMemo<ConfigureInterfaceMode>(
-    () => (initialIp ? 'static' : 'dhcp'),
-    [initialIp]
-  );
+  const initialMode = initialConfiguration?.configMode ?? 'dhcp';
+  const initialStaticIp = initialConfiguration?.ip?.trim() || DEFAULT_IP;
+  const initialStaticNetmask =
+    initialConfiguration?.netmask?.trim() || DEFAULT_NETMASK;
+  const initialGateway = initialConfiguration?.gateways?.[0]?.trim() ?? '';
+  const initialDns = useMemo(() => {
+    const values = (initialConfiguration?.dns ?? [])
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+    return values.length > 0 ? values : [EMPTY_DNS_ENTRY];
+  }, [initialConfiguration?.dns]);
 
-  const initialStaticIp = initialIp.trim() || DEFAULT_IP;
-  const initialStaticNetmask = initialNetmask.trim() || DEFAULT_NETMASK;
-
-  const [mode, setMode] = useState<ConfigureInterfaceMode>(defaultMode);
+  const [mode, setMode] = useState<ConfigureInterfaceMode>(initialMode);
   const [ip, setIp] = useState(initialStaticIp);
   const [netmask, setNetmask] = useState(initialStaticNetmask);
-  const [gateway, setGateway] = useState('');
-  const [primaryDns, setPrimaryDns] = useState('');
-  const [secondaryDns, setSecondaryDns] = useState('');
+  const [gateway, setGateway] = useState(initialGateway);
+  const [dnsEntries, setDnsEntries] = useState<string[]>(initialDns);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [pendingPayload, setPendingPayload] =
+    useState<PendingNetworkPayload | null>(null);
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    setMode(defaultMode);
+    setMode(initialMode);
     setIp(initialStaticIp);
     setNetmask(initialStaticNetmask);
-    setGateway('');
-    setPrimaryDns('');
-    setSecondaryDns('');
+    setGateway(initialGateway);
+    setDnsEntries(initialDns);
     setLocalError(null);
-  }, [defaultMode, initialStaticIp, initialStaticNetmask, open]);
+    setPendingPayload(null);
+  }, [
+    initialDns,
+    initialGateway,
+    initialMode,
+    initialStaticIp,
+    initialStaticNetmask,
+    open,
+  ]);
+
+  const updateDnsEntry = (index: number, value: string) => {
+    setDnsEntries((previous) =>
+      previous.map((entry, currentIndex) =>
+        currentIndex === index ? value : entry
+      )
+    );
+    setLocalError(null);
+  };
+
+  const addDnsEntry = () => {
+    setDnsEntries((previous) => [...previous, EMPTY_DNS_ENTRY]);
+  };
+
+  const removeDnsEntry = (index: number) => {
+    setDnsEntries((previous) => {
+      const next = previous.filter((_, currentIndex) => currentIndex !== index);
+      return next.length > 0 ? next : [EMPTY_DNS_ENTRY];
+    });
+    setLocalError(null);
+  };
 
   const validateStaticForm = () => {
     if (!ip.trim() || !isCompleteIPv4Address(ip.trim())) {
@@ -92,12 +141,13 @@ const NetworkInterfaceConfigModal = ({
       return 'Default Gateway واردشده معتبر نیست.';
     }
 
-    if (primaryDns.trim() && !isCompleteIPv4Address(primaryDns.trim())) {
-      return 'DNS اصلی واردشده معتبر نیست.';
-    }
+    const invalidDns = dnsEntries
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .find((entry) => !isCompleteIPv4Address(entry));
 
-    if (secondaryDns.trim() && !isCompleteIPv4Address(secondaryDns.trim())) {
-      return 'DNS ثانویه واردشده معتبر نیست.';
+    if (invalidDns) {
+      return `آدرس DNS ${invalidDns} معتبر نیست.`;
     }
 
     return null;
@@ -113,7 +163,7 @@ const NetworkInterfaceConfigModal = ({
 
     if (mode === 'dhcp') {
       setLocalError(null);
-      onSubmit({ mode: 'dhcp' });
+      setPendingPayload({ mode: 'dhcp' });
       return;
     }
 
@@ -123,11 +173,11 @@ const NetworkInterfaceConfigModal = ({
       return;
     }
 
-    const dns = [primaryDns.trim(), secondaryDns.trim()].filter(Boolean);
+    const dns = dnsEntries.map((entry) => entry.trim()).filter(Boolean);
     const trimmedGateway = gateway.trim();
 
     setLocalError(null);
-    onSubmit({
+    setPendingPayload({
       mode: 'static',
       ip: ip.trim(),
       netmask: netmask.trim(),
@@ -136,174 +186,248 @@ const NetworkInterfaceConfigModal = ({
     });
   };
 
-  return (
-    <BlurModal
-      open={open}
-      onClose={onClose}
-      title="پیکربندی رابط شبکه"
-      actions={
-        <ModalActionButtons
-          confirmLabel="ثبت تنظیمات"
-          loadingLabel="در حال ارسال..."
-          isLoading={isSubmitting}
-          disabled={isSubmitting || !interfaceName}
-          disableConfirmGradient
-          confirmProps={{
-            type: 'submit',
-            form: 'network-interface-config-form',
-            sx: {
-              px: 3,
-              py: 1,
-              fontWeight: 600,
-              background:
-                'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
-              color: 'var(--color-bg)',
-              '&:hover': {
-                background:
-                  'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
-              },
-            },
-          }}
-          onCancel={onClose}
-        />
-      }
-    >
-      <Box
-        component="form"
-        id="network-interface-config-form"
-        onSubmit={handleSubmit}
-        sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
-      >
-        <TextField
-          label="رابط شبکه"
-          value={interfaceName ?? ''}
-          disabled
-          fullWidth
-          size="small"
-          InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
-          InputProps={{
-            sx: {
-              backgroundColor: 'var(--color-input-bg)',
-              borderRadius: '5px',
-              '& .MuiInputBase-input': { color: 'var(--color-secondary)' },
-            },
-          }}
-        />
+  const handleConfirmSubmit = () => {
+    if (!pendingPayload || isSubmitting) {
+      return;
+    }
 
-        <FormControl fullWidth>
-          <InputLabel
-            id="network-mode-label"
-            sx={{ color: 'var(--color-secondary)' }}
-          >
-            حالت پیکربندی
-          </InputLabel>
-          <Select
-            labelId="network-mode-label"
-            value={mode}
-            label="حالت پیکربندی"
-            onChange={(event) => {
-              setMode(event.target.value as ConfigureInterfaceMode);
-              setLocalError(null);
-            }}
-            size="small"
-            sx={{
-              backgroundColor: 'var(--color-input-bg)',
-              '& .MuiSelect-select': { color: 'var(--color-text)' },
-            }}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  backgroundColor: 'var(--color-card-bg)',
-                  color: 'var(--color-text)',
+    onSubmit(pendingPayload);
+    setPendingPayload(null);
+  };
+
+  const closeAll = () => {
+    setPendingPayload(null);
+    onClose();
+  };
+
+  return (
+    <>
+      <BlurModal
+        open={open}
+        onClose={closeAll}
+        title="پیکربندی رابط شبکه"
+        actions={
+          <ModalActionButtons
+            confirmLabel="ثبت تنظیمات"
+            loadingLabel="در حال ارسال..."
+            isLoading={isSubmitting}
+            disabled={isSubmitting || !interfaceName}
+            disableConfirmGradient
+            confirmProps={{
+              type: 'submit',
+              form: 'network-interface-config-form',
+              sx: {
+                px: 3,
+                py: 1,
+                fontWeight: 600,
+                background:
+                  'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+                color: 'var(--color-bg)',
+                '&:hover': {
+                  background:
+                    'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
                 },
               },
             }}
-          >
-            <MenuItem value="dhcp">DHCP</MenuItem>
-            <MenuItem value="static">Static</MenuItem>
-          </Select>
-        </FormControl>
+            onCancel={closeAll}
+          />
+        }
+      >
+        <Box
+          component="form"
+          id="network-interface-config-form"
+          onSubmit={handleSubmit}
+          sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+        >
+          <TextField
+            label="رابط شبکه"
+            value={interfaceName ?? ''}
+            disabled
+            fullWidth
+            size="small"
+            InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
+            InputProps={{
+              sx: {
+                backgroundColor: 'var(--color-input-bg)',
+                borderRadius: '5px',
+                '& .MuiInputBase-input': { color: 'var(--color-secondary)' },
+              },
+            }}
+          />
 
-        {mode === 'static' ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <IPv4AddressInput
-              label="آدرس IP"
-              value={ip}
-              onChange={(value) => {
-                setIp(value);
-                setLocalError(null);
-              }}
-              required
-              preventEmpty
-              error={!isCompleteIPv4Address(ip.trim())}
-            />
-
-            <IPv4AddressInput
-              label="ماسک شبکه"
-              value={netmask}
-              onChange={(value) => {
-                setNetmask(value);
-                setLocalError(null);
-              }}
-              required
-              preventEmpty
-              error={!isCompleteIPv4Address(netmask.trim())}
-            />
-
-            <IPv4AddressInput
-              label="Default Gateway"
-              value={gateway}
-              onChange={(value) => {
-                setGateway(value);
-                setLocalError(null);
-              }}
-              error={
-                gateway.trim() !== '' &&
-                !isCompleteIPv4Address(gateway.trim())
-              }
-            />
-
-            <Typography
-              sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}
+          <FormControl fullWidth>
+            <InputLabel
+              id="network-mode-label"
+              sx={{ color: 'var(--color-secondary)' }}
             >
-              تنظیمات DNS
-            </Typography>
-
-            <IPv4AddressInput
-              label="DNS اصلی"
-              value={primaryDns}
-              onChange={(value) => {
-                setPrimaryDns(value);
+              حالت پیکربندی
+            </InputLabel>
+            <Select
+              labelId="network-mode-label"
+              value={mode}
+              label="حالت پیکربندی"
+              onChange={(event) => {
+                setMode(event.target.value as ConfigureInterfaceMode);
                 setLocalError(null);
               }}
-              error={
-                primaryDns.trim() !== '' &&
-                !isCompleteIPv4Address(primaryDns.trim())
-              }
-            />
-
-            <IPv4AddressInput
-              label="DNS ثانویه"
-              value={secondaryDns}
-              onChange={(value) => {
-                setSecondaryDns(value);
-                setLocalError(null);
+              size="small"
+              sx={{
+                backgroundColor: 'var(--color-input-bg)',
+                '& .MuiSelect-select': { color: 'var(--color-text)' },
               }}
-              error={
-                secondaryDns.trim() !== '' &&
-                !isCompleteIPv4Address(secondaryDns.trim())
-              }
-            />
-          </Box>
-        ) : null}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: 'var(--color-card-bg)',
+                    color: 'var(--color-text)',
+                  },
+                },
+              }}
+            >
+              <MenuItem value="dhcp">DHCP</MenuItem>
+              <MenuItem value="static">Static</MenuItem>
+            </Select>
+          </FormControl>
 
-        {localError || errorMessage ? (
-          <Alert severity="error" sx={{ mt: 1 }}>
-            {localError ?? errorMessage}
-          </Alert>
-        ) : null}
-      </Box>
-    </BlurModal>
+          {mode === 'dhcp' ? (
+            <Alert severity="info">
+              این رابط بر اساس مقدار config_mode در حالت DHCP قرار دارد. با ثبت
+              تنظیمات، دریافت آدرس شبکه به‌صورت خودکار انجام می‌شود.
+            </Alert>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.25 }}>
+              <IPv4AddressInput
+                label="آدرس IP"
+                value={ip}
+                onChange={(value) => {
+                  setIp(value);
+                  setLocalError(null);
+                }}
+                required
+                preventEmpty
+                error={!isCompleteIPv4Address(ip.trim())}
+              />
+
+              <IPv4AddressInput
+                label="ماسک شبکه"
+                value={netmask}
+                onChange={(value) => {
+                  setNetmask(value);
+                  setLocalError(null);
+                }}
+                required
+                preventEmpty
+                error={!isCompleteIPv4Address(netmask.trim())}
+              />
+
+              <IPv4AddressInput
+                label="Default Gateway"
+                value={gateway}
+                onChange={(value) => {
+                  setGateway(value);
+                  setLocalError(null);
+                }}
+                error={
+                  gateway.trim() !== '' &&
+                  !isCompleteIPv4Address(gateway.trim())
+                }
+                helperText="اختیاری"
+              />
+
+              <Stack spacing={1.25}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                >
+                  <Typography
+                    sx={{ color: 'var(--color-secondary)', fontWeight: 700 }}
+                  >
+                    سرورهای DNS
+                  </Typography>
+                  <Button
+                    type="button"
+                    size="small"
+                    variant="outlined"
+                    startIcon={<MdAdd />}
+                    onClick={addDnsEntry}
+                  >
+                    افزودن DNS
+                  </Button>
+                </Stack>
+
+                {dnsEntries.map((dnsEntry, index) => (
+                  <Stack
+                    key={`dns-${index}`}
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                  >
+                    <Box sx={{ flex: 1 }}>
+                      <IPv4AddressInput
+                        label={index === 0 ? 'DNS اصلی' : `DNS ثانویه ${index}`}
+                        value={dnsEntry}
+                        onChange={(value) => updateDnsEntry(index, value)}
+                        error={
+                          dnsEntry.trim() !== '' &&
+                          !isCompleteIPv4Address(dnsEntry.trim())
+                        }
+                        helperText="اختیاری"
+                      />
+                    </Box>
+                    <IconButton
+                      type="button"
+                      aria-label={`حذف DNS ${index + 1}`}
+                      onClick={() => removeDnsEntry(index)}
+                      sx={{ color: 'var(--color-error)', mt: 3.5 }}
+                    >
+                      <MdDeleteOutline />
+                    </IconButton>
+                  </Stack>
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          {localError || errorMessage ? (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              {localError ?? errorMessage}
+            </Alert>
+          ) : null}
+        </Box>
+      </BlurModal>
+
+      <BlurModal
+        open={Boolean(pendingPayload)}
+        onClose={() => setPendingPayload(null)}
+        title="تأیید تغییر تنظیمات شبکه"
+        maxWidth="520px"
+        actions={
+          <ModalActionButtons
+            onCancel={() => setPendingPayload(null)}
+            onConfirm={handleConfirmSubmit}
+            confirmLabel="بله، اعمال شود"
+            cancelLabel="بازگشت"
+            isLoading={isSubmitting}
+            disabled={isSubmitting}
+          />
+        }
+      >
+        <Alert
+          severity="warning"
+          icon={<MdWarningAmber size={24} />}
+          sx={{ mb: 2 }}
+        >
+          تغییر پیکربندی شبکه ممکن است باعث تغییر آدرس IP سامانه و قطع ارتباط
+          فعلی شما شود.
+        </Alert>
+        <Typography sx={{ color: 'var(--color-text)', lineHeight: 2 }}>
+          پس از اعمال تنظیمات ممکن است دیگر از طریق آدرس فعلی به این صفحه دسترسی
+          نداشته باشید. قبل از ادامه مطمئن شوید اطلاعات شبکه جدید را در اختیار
+          دارید. در صورت از دست رفتن دسترسی، با پشتیبانی یا مدیر شبکه تماس بگیرید.
+        </Typography>
+      </BlurModal>
+    </>
   );
 };
 
