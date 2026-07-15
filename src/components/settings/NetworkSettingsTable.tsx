@@ -1,9 +1,20 @@
-import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  Chip,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { FiEdit3 } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
-import type { IPv4Info } from '../../@types/network';
+import type {
+  ConfigureInterfacePayload,
+  ConfigureInterfaceMode,
+  IPv4Info,
+  NetworkInterfaceConfiguration,
+} from '../../@types/network';
 import { useConfigureNetworkInterface } from '../../hooks/useConfigureNetworkInterface';
 import { useNetwork, type NetworkData } from '../../hooks/useNetwork';
 import {
@@ -18,6 +29,8 @@ type NetworkSettingsTableRow = {
   interfaceName: string;
   ipv4Entries: IPv4Info[];
   speed: string;
+  configMode: ConfigureInterfaceMode;
+  configuration: NetworkInterfaceConfiguration;
 };
 
 const createSpeedFormatter = () =>
@@ -41,6 +54,8 @@ const createRows = (
         interfaceName,
         ipv4Entries,
         speed: speedText,
+        configMode: details.configuration.configMode,
+        configuration: details.configuration,
       };
     }
   );
@@ -52,8 +67,7 @@ const NetworkSettingsTable = () => {
   const [editModalError, setEditModalError] = useState<string | null>(null);
   const [editModalData, setEditModalData] = useState<{
     interfaceName: string;
-    ip: string;
-    netmask: string;
+    configuration: NetworkInterfaceConfiguration;
   } | null>(null);
 
   const speedFormatter = useMemo(createSpeedFormatter, []);
@@ -77,12 +91,9 @@ const NetworkSettingsTable = () => {
   });
 
   const handleOpenEditModal = useCallback((row: NetworkSettingsTableRow) => {
-    const primaryEntry = row.ipv4Entries[0];
-
     setEditModalData({
       interfaceName: row.interfaceName,
-      ip: primaryEntry?.address ?? '',
-      netmask: primaryEntry?.netmask ?? '',
+      configuration: row.configuration,
     });
     setEditModalError(null);
     setIsEditModalOpen(true);
@@ -96,17 +107,7 @@ const NetworkSettingsTable = () => {
   }, [configureInterface]);
 
   const handleSubmitEditModal = useCallback(
-    (
-      payload:
-        | { mode: 'dhcp' }
-        | {
-            mode: 'static';
-            ip: string;
-            netmask: string;
-            gateway?: string;
-            dns?: string[];
-          }
-    ) => {
+    (payload: Omit<ConfigureInterfacePayload, 'interfaceName'>) => {
       if (!editModalData) {
         return;
       }
@@ -114,7 +115,7 @@ const NetworkSettingsTable = () => {
       configureInterface.mutate({
         interfaceName: editModalData.interfaceName,
         ...payload,
-      });
+      } as ConfigureInterfacePayload);
     },
     [configureInterface, editModalData]
   );
@@ -140,6 +141,21 @@ const NetworkSettingsTable = () => {
         <Typography component="span" sx={{ fontWeight: 600 }}>
           {row.interfaceName}
         </Typography>
+      ),
+    };
+
+    const configModeColumn: DataTableColumn<NetworkSettingsTableRow> = {
+      id: 'config-mode',
+      header: 'حالت پیکربندی',
+      align: 'center',
+      renderCell: (row) => (
+        <Chip
+          size="small"
+          label={row.configMode === 'static' ? 'Static' : 'DHCP'}
+          color={row.configMode === 'static' ? 'primary' : 'info'}
+          variant="outlined"
+          sx={{ minWidth: 78, fontWeight: 700 }}
+        />
       ),
     };
 
@@ -246,6 +262,7 @@ const NetworkSettingsTable = () => {
     return [
       indexColumn,
       interfaceColumn,
+      configModeColumn,
       ipv4Column,
       speedColumn,
       netmaskColumn,
@@ -266,8 +283,7 @@ const NetworkSettingsTable = () => {
       <NetworkInterfaceConfigModal
         open={isEditModalOpen}
         interfaceName={editModalData?.interfaceName ?? null}
-        initialIp={editModalData?.ip ?? ''}
-        initialNetmask={editModalData?.netmask ?? ''}
+        initialConfiguration={editModalData?.configuration ?? null}
         onClose={handleCloseEditModal}
         onSubmit={handleSubmitEditModal}
         isSubmitting={configureInterface.isPending}
