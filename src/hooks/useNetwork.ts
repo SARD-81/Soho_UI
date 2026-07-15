@@ -1,5 +1,9 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import type {
+  ConfigureInterfaceMode,
+  NetworkInterfaceConfiguration,
+} from '../@types/network';
 import axiosInstance from '../lib/axiosInstance';
 
 interface Bandwidth {
@@ -35,6 +39,7 @@ export interface InterfaceStatus {
 export interface NetworkInterface {
   bandwidth: Bandwidth;
   currentSpeed: CurrentNetworkSpeed;
+  configuration: NetworkInterfaceConfiguration;
   addresses?:
     | InterfaceAddress[]
     | Record<string, InterfaceAddress | null>
@@ -55,6 +60,16 @@ export interface NetworkListResponse {
 export interface NetworkDetailsResponse {
   ok?: boolean;
   data?: {
+    config_mode?: string | null;
+    mode?: string | null;
+    gateway?: unknown;
+    gateways?: unknown;
+    default_gateway?: unknown;
+    default_gateways?: unknown;
+    dns?: unknown;
+    dns_servers?: unknown;
+    nameservers?: unknown;
+    mtu?: number | string | null;
     bandwidth?: {
       upload_bytes?: number;
       download_bytes?: number;
@@ -82,6 +97,7 @@ export interface NetworkDetailsResponse {
         | { ipv6?: string; netmask?: string | null }
       >;
     };
+    [key: string]: unknown;
   };
   [key: string]: unknown;
 }
@@ -115,6 +131,64 @@ const EMPTY_CURRENT_SPEED: CurrentNetworkSpeed = {
 const toSafeNumber = (value: unknown) => {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? Math.max(numericValue, 0) : 0;
+};
+
+const findValueByKey = (value: unknown, targetKey: string): unknown => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (targetKey in record) {
+    return record[targetKey];
+  }
+
+  for (const nestedValue of Object.values(record)) {
+    const result = findValueByKey(nestedValue, targetKey);
+    if (result !== undefined) {
+      return result;
+    }
+  }
+
+  return undefined;
+};
+
+const findFirstValueByKeys = (value: unknown, keys: string[]) => {
+  for (const key of keys) {
+    const result = findValueByKey(value, key);
+    if (result !== undefined && result !== null) {
+      return result;
+    }
+  }
+
+  return undefined;
+};
+
+const normalizeStringList = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((entry) => normalizeStringList(entry))
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(/[\s,;]+/)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  if (value == null) {
+    return [];
+  }
+
+  return [String(value).trim()].filter(Boolean);
+};
+
+const normalizeConfigMode = (value: unknown): ConfigureInterfaceMode => {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  return normalized === 'static' ? 'static' : 'dhcp';
 };
 
 const mapAddresses = (
@@ -159,6 +233,54 @@ const mapAddresses = (
   });
 };
 
+const mapConfiguration = (
+  payload: NetworkDetailsResponse['data'],
+  addresses: InterfaceAddress[]
+): NetworkInterfaceConfiguration => {
+  const primaryIpv4 = addresses.find(
+    (entry) => entry.family === 'IPv4' || !String(entry.address ?? '').includes(':')
+  );
+  const configMode = normalizeConfigMode(
+    findFirstValueByKeys(payload, ['config_mode', 'configuration_mode'])
+  );
+  const explicitIp = findFirstValueByKeys(payload, [
+    'static_ip',
+    'ip_address',
+    'ipv4_address',
+  ]);
+  const explicitNetmask = findFirstValueByKeys(payload, [
+    'netmask',
+    'subnet_mask',
+  ]);
+  const gateways = normalizeStringList(
+    findFirstValueByKeys(payload, [
+      'default_gateways',
+      'gateways',
+      'default_gateway',
+      'gateway',
+    ])
+  );
+  const dns = normalizeStringList(
+    findFirstValueByKeys(payload, [
+      'dns_servers',
+      'nameservers',
+      'name_servers',
+      'dns',
+    ])
+  );
+  const mtuValue = findFirstValueByKeys(payload, ['mtu']);
+  const mtuNumber = Number(mtuValue);
+
+  return {
+    configMode,
+    ip: String(explicitIp ?? primaryIpv4?.address ?? '').trim(),
+    netmask: String(explicitNetmask ?? primaryIpv4?.netmask ?? '').trim(),
+    gateways,
+    dns,
+    mtu: Number.isFinite(mtuNumber) ? mtuNumber : null,
+  };
+};
+
 const mapInitialBandwidth = (
   payload?: NetworkDetailsResponse['data']
 ): Bandwidth => {
@@ -201,13 +323,15 @@ const mapInterface = (
 ): [string, NetworkInterface] => {
   const general = payload?.general;
   const hardware = payload?.hardware;
+  const addresses = mapAddresses(general?.ip_addresses);
 
   return [
     name,
     {
       bandwidth: mapInitialBandwidth(payload),
       currentSpeed: EMPTY_CURRENT_SPEED,
-      addresses: mapAddresses(general?.ip_addresses),
+      configuration: mapConfiguration(payload, addresses),
+      addresses,
       status: {
         speed: hardware?.speed_mbps ?? payload?.traffic_summary?.speed ?? null,
         is_up: hardware?.is_up ?? general?.is_up ?? null,
