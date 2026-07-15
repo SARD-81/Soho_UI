@@ -49,51 +49,83 @@ interface ControlGlyphProps {
   hovered: boolean;
 }
 
-const RebootGlyph = ({ x, y, hovered }: ControlGlyphProps) => (
-  <group position={[x, y, 0.448]}>
-    <mesh rotation={[0, 0, -0.2]}>
-      <torusGeometry args={[0.145, 0.018, 12, 48, Math.PI * 1.62]} />
-      <meshStandardMaterial
-        color={hovered ? '#86efac' : '#4ade80'}
-        emissive="#22c55e"
-        emissiveIntensity={hovered ? 1.85 : 1.35}
-        roughness={0.24}
-      />
-    </mesh>
-    <mesh position={[0.11, 0.115, 0.004]} rotation={[0, 0, -0.7]}>
-      <coneGeometry args={[0.045, 0.1, 3]} />
-      <meshStandardMaterial
-        color={hovered ? '#86efac' : '#4ade80'}
-        emissive="#22c55e"
-        emissiveIntensity={hovered ? 1.85 : 1.35}
-        roughness={0.24}
-      />
-    </mesh>
-  </group>
-);
+const RebootGlyph = ({ x, y, hovered }: ControlGlyphProps) => {
+  const color = hovered ? '#bbf7d0' : '#6ee7b7';
+  const emissiveIntensity = hovered ? 1.8 : 1.15;
 
-const PowerGlyph = ({ x, y, hovered }: ControlGlyphProps) => (
-  <group position={[x, y, 0.448]}>
-    <mesh rotation={[0, 0, 0.47]}>
-      <torusGeometry args={[0.12, 0.018, 12, 48, Math.PI * 1.72]} />
-      <meshStandardMaterial
-        color={hovered ? '#fca5a5' : '#f87171'}
-        emissive="#ef4444"
-        emissiveIntensity={hovered ? 1.5 : 1.05}
-        roughness={0.26}
-      />
-    </mesh>
-    <mesh position={[0, 0.095, 0.004]}>
-      <boxGeometry args={[0.035, 0.16, 0.02]} />
-      <meshStandardMaterial
-        color={hovered ? '#fecaca' : '#f87171'}
-        emissive="#ef4444"
-        emissiveIntensity={hovered ? 1.55 : 1.1}
-        roughness={0.24}
-      />
-    </mesh>
-  </group>
-);
+  return (
+    <group position={[x, y, 0.455]}>
+      <mesh position={[0, 0, -0.012]}>
+        <circleGeometry args={[0.17, 48]} />
+        <meshStandardMaterial
+          color="#10281f"
+          emissive="#16a34a"
+          emissiveIntensity={hovered ? 0.28 : 0.12}
+          roughness={0.5}
+        />
+      </mesh>
+
+      <mesh rotation={[0, 0, -0.42]}>
+        <torusGeometry args={[0.105, 0.016, 16, 64, Math.PI * 1.55]} />
+        <meshStandardMaterial
+          color={color}
+          emissive="#22c55e"
+          emissiveIntensity={emissiveIntensity}
+          roughness={0.18}
+        />
+      </mesh>
+
+      <mesh position={[0.105, 0.075, 0.008]} rotation={[0, 0, -0.82]}>
+        <coneGeometry args={[0.038, 0.085, 3]} />
+        <meshStandardMaterial
+          color={color}
+          emissive="#22c55e"
+          emissiveIntensity={emissiveIntensity}
+          roughness={0.18}
+        />
+      </mesh>
+    </group>
+  );
+};
+
+const PowerGlyph = ({ x, y, hovered }: ControlGlyphProps) => {
+  const color = hovered ? '#fecaca' : '#fca5a5';
+  const emissiveIntensity = hovered ? 1.6 : 1.05;
+
+  return (
+    <group position={[x, y, 0.455]}>
+      <mesh position={[0, 0, -0.012]}>
+        <circleGeometry args={[0.17, 48]} />
+        <meshStandardMaterial
+          color="#301517"
+          emissive="#dc2626"
+          emissiveIntensity={hovered ? 0.3 : 0.12}
+          roughness={0.5}
+        />
+      </mesh>
+
+      <mesh rotation={[0, 0, 0.76]}>
+        <torusGeometry args={[0.1, 0.016, 16, 64, Math.PI * 1.48]} />
+        <meshStandardMaterial
+          color={color}
+          emissive="#ef4444"
+          emissiveIntensity={emissiveIntensity}
+          roughness={0.18}
+        />
+      </mesh>
+
+      <mesh position={[0, 0.085, 0.008]}>
+        <boxGeometry args={[0.026, 0.14, 0.024]} />
+        <meshStandardMaterial
+          color={color}
+          emissive="#ef4444"
+          emissiveIntensity={emissiveIntensity}
+          roughness={0.16}
+        />
+      </mesh>
+    </group>
+  );
+};
 
 const ServerChassisModel = ({
   slots,
@@ -199,10 +231,11 @@ const ServerChassisModel = ({
           position={[layout.controlPanelX, -0.2, 0.39]}
         >
           <meshStandardMaterial
-            color={hoveredControl === 'reboot' ? '#203b31' : '#1c232d'}
+            color={hoveredControl === 'reboot' ? '#1d332a' : '#18231f'}
             emissive="#16a34a"
-            emissiveIntensity={hoveredControl === 'reboot' ? 0.75 : 0.38}
-            roughness={0.42}
+            emissiveIntensity={hoveredControl === 'reboot' ? 0.58 : 0.24}
+            roughness={0.4}
+            metalness={0.12}
           />
         </RoundedBox>
         <RebootGlyph
@@ -224,11 +257,11 @@ const ServerChassisModel = ({
           position={[layout.controlPanelX, -1.22, 0.39]}
         >
           <meshStandardMaterial
-            color={hoveredControl === 'poweroff' ? '#402225' : '#242329'}
-            emissive="#ef4444"
-            emissiveIntensity={hoveredControl === 'poweroff' ? 0.6 : 0.22}
-            roughness={0.45}
-            metalness={0.2}
+            color={hoveredControl === 'poweroff' ? '#3a2023' : '#271a1d'}
+            emissive="#dc2626"
+            emissiveIntensity={hoveredControl === 'poweroff' ? 0.5 : 0.2}
+            roughness={0.42}
+            metalness={0.12}
           />
         </RoundedBox>
         <PowerGlyph
