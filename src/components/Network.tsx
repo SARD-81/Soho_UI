@@ -386,7 +386,7 @@ const Network = () => {
                   variant="body2"
                   sx={{ color: theme.palette.text.secondary }}
                 >
-                  سرعت لینک: {speedText}
+                  link speed: {speedText}
                 </Typography>
               </Box>
             </Box>
