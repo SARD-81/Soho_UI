@@ -8,13 +8,17 @@ import axiosInstance from '../lib/axiosInstance';
 import { extractApiErrorMessage } from '../utils/apiError';
 import { networkQueryKey } from './useNetwork';
 
+const DEFAULT_MTU = 1500;
+
 const buildRequestBody = (
   payload: ConfigureInterfacePayload
 ): ConfigureNetworkRequestBody => {
+  const mtu = payload.mtu ?? DEFAULT_MTU;
+
   if (payload.mode === 'dhcp') {
     return {
       mode: 'dhcp',
-      mtu: 1500,
+      mtu,
     };
   }
 
@@ -29,7 +33,7 @@ const buildRequestBody = (
     netmask: payload.netmask.trim(),
     ...(gateway ? { gateway } : {}),
     ...(dns.length > 0 ? { dns } : {}),
-    mtu: 1500,
+    mtu,
   };
 };
 
