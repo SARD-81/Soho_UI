@@ -79,18 +79,6 @@ const NetworkInterfaceConfigModal = ({
     setLocalError(null);
   }, [defaultMode, initialStaticIp, initialStaticNetmask, open]);
 
-  const handleRequiredIpChange = (
-    value: string,
-    setter: (nextValue: string) => void
-  ) => {
-    if (value.trim() === '') {
-      return;
-    }
-
-    setter(value);
-    setLocalError(null);
-  };
-
   const validateStaticForm = () => {
     if (!ip.trim() || !isCompleteIPv4Address(ip.trim())) {
       return 'آدرس IP الزامی است و باید یک IPv4 معتبر باشد.';
@@ -241,16 +229,24 @@ const NetworkInterfaceConfigModal = ({
             <IPv4AddressInput
               label="آدرس IP"
               value={ip}
-              onChange={(value) => handleRequiredIpChange(value, setIp)}
+              onChange={(value) => {
+                setIp(value);
+                setLocalError(null);
+              }}
               required
+              preventEmpty
               error={!isCompleteIPv4Address(ip.trim())}
             />
 
             <IPv4AddressInput
               label="ماسک شبکه"
               value={netmask}
-              onChange={(value) => handleRequiredIpChange(value, setNetmask)}
+              onChange={(value) => {
+                setNetmask(value);
+                setLocalError(null);
+              }}
               required
+              preventEmpty
               error={!isCompleteIPv4Address(netmask.trim())}
             />
 
