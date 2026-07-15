@@ -33,13 +33,14 @@ type NetworkSettingsTableRow = {
 };
 
 type NetworkConfigSubmitPayload =
-  | { mode: 'dhcp' }
+  | { mode: 'dhcp'; mtu?: number }
   | {
       mode: 'static';
       ip: string;
       netmask: string;
       gateway?: string;
       dns?: string[];
+      mtu?: number;
     };
 
 const createSpeedFormatter = () =>
@@ -125,6 +126,7 @@ const NetworkSettingsTable = () => {
         configureInterface.mutate({
           interfaceName: editModalData.interfaceName,
           mode: 'dhcp',
+          mtu: payload.mtu,
         });
         return;
       }
