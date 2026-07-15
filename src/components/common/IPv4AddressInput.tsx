@@ -26,6 +26,7 @@ interface IPv4AddressInputProps {
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
+  preventEmpty?: boolean;
   helperText?: string;
   error?: boolean;
 }
@@ -38,6 +39,7 @@ const IPv4AddressInput = ({
   value,
   onChange,
   required = false,
+  preventEmpty = false,
   helperText,
   error = false,
 }: IPv4AddressInputProps) => {
@@ -64,6 +66,10 @@ const IPv4AddressInput = ({
     const nextOctets = [...octets];
     nextOctets[index] = sanitizedValue;
 
+    if (preventEmpty && nextOctets.every((octet) => octet === '')) {
+      return;
+    }
+
     setOctets(nextOctets);
     onChange(buildIPv4FromOctets(nextOctets));
 
@@ -72,43 +78,49 @@ const IPv4AddressInput = ({
     }
   };
 
-  const handleChange = (index: number) => (event: ChangeEvent<HTMLInputElement>) => {
-    updateOctet(index, event.target.value);
-  };
+  const handleChange = (index: number) =>
+    (event: ChangeEvent<HTMLInputElement>) => {
+      updateOctet(index, event.target.value);
+    };
 
-  const handleKeyDown = (index: number) => (event: KeyboardEvent<HTMLInputElement>) => {
-    const target = event.target as HTMLInputElement;
-    const { key } = event;
+  const handleKeyDown = (index: number) =>
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      const target = event.target as HTMLInputElement;
+      const { key } = event;
 
-    if (key === '.') {
-      event.preventDefault();
-      if (index < octets.length - 1) {
-        focusOctet(index + 1);
+      if (key === '.') {
+        event.preventDefault();
+        if (index < octets.length - 1) {
+          focusOctet(index + 1);
+        }
+        return;
       }
-      return;
-    }
 
-    if (key === 'Backspace' && target.selectionStart === 0 && target.selectionEnd === 0) {
-      if (octets[index] === '' && index > 0) {
+      if (
+        key === 'Backspace' &&
+        target.selectionStart === 0 &&
+        target.selectionEnd === 0
+      ) {
+        if (octets[index] === '' && index > 0) {
+          focusOctet(index - 1);
+        }
+        return;
+      }
+
+      if (key === 'ArrowLeft' && target.selectionStart === 0 && index > 0) {
+        event.preventDefault();
         focusOctet(index - 1);
       }
-      return;
-    }
 
-    if (key === 'ArrowLeft' && target.selectionStart === 0 && index > 0) {
-      event.preventDefault();
-      focusOctet(index - 1);
-    }
-
-    if (
-      key === 'ArrowRight' &&
-      target.selectionStart === (target.value ?? '').length &&
-      index < octets.length - 1
-    ) {
-      event.preventDefault();
-      focusOctet(index + 1);
-    }
-  };
+      if (
+        key === 'ArrowRight' &&
+        target.selectionStart === (target.value ?? '').length &&
+        index < octets.length - 1
+      ) {
+        event.preventDefault();
+        focusOctet(index + 1);
+      }
+    };
 
   const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
     const pastedText = event.clipboardData.getData('text');
@@ -127,37 +139,36 @@ const IPv4AddressInput = ({
 
   return (
     <FormControl fullWidth error={error} required={required} variant="standard">
-      {/* Added shrink to keep label at the top and avoid overlap */}
-      <InputLabel 
-        htmlFor={inputId} 
-        shrink 
-        sx={{ 
+      <InputLabel
+        htmlFor={inputId}
+        shrink
+        sx={{
           color: 'var(--color-secondary)',
-          right: 'auto', 
-        //   right: 0, 
-          transformOrigin: 'top left' 
+          right: 'auto',
+          transformOrigin: 'top left',
         }}
       >
         {label}
       </InputLabel>
-      
+
       <Box
         id={inputId}
         sx={{
           display: 'flex',
           alignItems: 'center',
           gap: 1,
-          // Changed to 'rtl' to reverse the order (1st octet on the Right)
-          direction: 'rtl', 
+          direction: 'rtl',
           flexWrap: 'wrap',
-          // Added margin top so the inputs don't sit on top of the label
-          marginTop: 4, 
+          marginTop: 4,
         }}
         role="group"
         aria-label={label}
       >
         {octets.map((octet, index) => (
-          <Box key={`${label}-octet-${index}`} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            key={`${label}-octet-${index}`}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+          >
             <TextField
               value={octet}
               onChange={handleChange(index)}
@@ -183,14 +194,19 @@ const IPv4AddressInput = ({
               }}
             />
             {index < octets.length - 1 ? (
-              <Typography component="span" sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
+              <Typography
+                component="span"
+                sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}
+              >
                 .
               </Typography>
             ) : null}
           </Box>
         ))}
       </Box>
-      {helperText ? <FormHelperText sx={{ textAlign: 'right' }}>{helperText}</FormHelperText> : null}
+      {helperText ? (
+        <FormHelperText sx={{ textAlign: 'right' }}>{helperText}</FormHelperText>
+      ) : null}
     </FormControl>
   );
 };
