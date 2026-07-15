@@ -19,6 +19,8 @@ import TablePageHeader from '../components/common/TablePageHeader';
 import PageContainer from '../components/PageContainer';
 import WebSharesTable from '../components/webshare/WebSharesTable';
 import { useFileSystems } from '../hooks/useFileSystems';
+import { useNfsShares } from '../hooks/useNfsShares';
+import { useSambaShares } from '../hooks/useSambaShares';
 import {
   extractWebShareErrorMessage,
   useCreateWebShare,
@@ -31,18 +33,29 @@ const WEB_SHARE_DETAIL_VIEW_ID = 'web-shares';
 const createFilesystemKey = (poolName: string, fsName: string) =>
   `${poolName}_${fsName}`;
 
-const ENABLED_SHARE_VALUES = new Set(['on', 'yes', 'true', '1', 'enabled', 'available']);
-
-const isShareEnabledValue = (value: unknown) => {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'number') return value === 1;
-  const normalized = String(value ?? '').trim().toLowerCase();
-  return ENABLED_SHARE_VALUES.has(normalized);
+const normalizePath = (value: unknown) => {
+  const normalized = String(value ?? '').trim().replace(/\/+$/, '');
+  return normalized || '/';
 };
 
-const hasSmbOrNfsShareEnabled = (filesystem: FileSystemEntry) =>
-  isShareEnabledValue(filesystem.attributeMap?.sharesmb) ||
-  isShareEnabledValue(filesystem.attributeMap?.sharenfs);
+const isUsableMountpoint = (value: string) =>
+  value.startsWith('/') && !['/', '/none', '/legacy'].includes(value);
+
+const isShareBackedByFilesystem = (
+  filesystem: FileSystemEntry,
+  sharedPaths: Set<string>
+) => {
+  const mountpoint = normalizePath(filesystem.mountpoint);
+
+  if (!isUsableMountpoint(mountpoint)) {
+    return false;
+  }
+
+  return Array.from(sharedPaths).some(
+    (sharePath) =>
+      sharePath === mountpoint || sharePath.startsWith(`${mountpoint}/`)
+  );
+};
 
 const WebShare = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -61,6 +74,16 @@ const WebShare = () => {
     isLoading: isFilesystemsLoading,
     error: filesystemsError,
   } = useFileSystems();
+  const {
+    data: sambaShares = [],
+    isLoading: isSambaSharesLoading,
+    error: sambaSharesError,
+  } = useSambaShares();
+  const {
+    data: nfsShares = [],
+    isLoading: isNfsSharesLoading,
+    error: nfsSharesError,
+  } = useNfsShares();
 
   const existingWebShareKeys = useMemo(
     () =>
@@ -70,12 +93,31 @@ const WebShare = () => {
     [webShares]
   );
 
+  const sharedPaths = useMemo(() => {
+    const paths = new Set<string>();
+
+    sambaShares.forEach((share) => {
+      const path = share.details.full_path ?? share.details.path;
+      if (path) {
+        paths.add(normalizePath(path));
+      }
+    });
+
+    nfsShares.forEach((share) => {
+      if (share.path) {
+        paths.add(normalizePath(share.path));
+      }
+    });
+
+    return paths;
+  }, [nfsShares, sambaShares]);
+
   const availableFilesystems = useMemo(
     () =>
       (filesystemData?.filesystems ?? [])
         .filter(
           (filesystem) =>
-            hasSmbOrNfsShareEnabled(filesystem) &&
+            isShareBackedByFilesystem(filesystem, sharedPaths) &&
             !existingWebShareKeys.has(
               createFilesystemKey(filesystem.poolName, filesystem.filesystemName)
             )
@@ -87,7 +129,7 @@ const WebShare = () => {
             { sensitivity: 'base' }
           )
         ),
-    [existingWebShareKeys, filesystemData?.filesystems]
+    [existingWebShareKeys, filesystemData?.filesystems, sharedPaths]
   );
 
   const selectedFilesystem = useMemo(
@@ -194,12 +236,14 @@ const WebShare = () => {
   const isMutating = deleteWebShare.isPending;
   const webShareHost = window.location.hostname;
   const isCreateMutating = createWebShare.isPending || setWebSharePermission.isPending;
+  const isCreateSourceLoading =
+    isFilesystemsLoading || isSambaSharesLoading || isNfsSharesLoading;
+  const createSourceError = filesystemsError ?? sambaSharesError ?? nfsSharesError;
 
   return (
     <PageContainer>
       <TablePageHeader
         title="اشتراک‌های Web Share"
-        // subtitle="مدیریت دسترسی وب برای فایل‌سیستم‌های قابل انتشار"
         refreshAction={{
           onClick: () => void refetchWebShares(),
           disabled: isWebSharesFetching,
@@ -213,10 +257,10 @@ const WebShare = () => {
         }}
       />
 
-      {filesystemsError ? (
+      {createSourceError ? (
         <Alert severity="warning" sx={{ mt: 3 }}>
-          دریافت لیست فایل‌سیستم‌ها با خطا مواجه شد؛ ایجاد Web Share ممکن است در
-          دسترس نباشد.
+          دریافت فایل‌سیستم‌ها یا اشتراک‌های SMB/NFS با خطا مواجه شد؛ لیست ایجاد
+          Web Share ممکن است کامل نباشد.
         </Alert>
       ) : null}
 
@@ -248,11 +292,14 @@ const WebShare = () => {
           />
         }
       >
-        <FormControl fullWidth disabled={isFilesystemsLoading || isCreateMutating}>
-          <InputLabel id="webshare-filesystem-label">FileSystem</InputLabel>
+        <FormControl
+          fullWidth
+          disabled={isCreateSourceLoading || isCreateMutating}
+        >
+          <InputLabel id="webshare-filesystem-label">فایل‌سیستم</InputLabel>
           <Select
             labelId="webshare-filesystem-label"
-            label="FileSystem"
+            label="فایل‌سیستم"
             value={selectedFilesystemKey}
             onChange={(event: SelectChangeEvent) =>
               setSelectedFilesystemKey(event.target.value)
@@ -272,8 +319,8 @@ const WebShare = () => {
           </Select>
           <FormHelperText>
             {availableFilesystems.length === 0
-              ? 'فقط فایل‌سیستم‌های دارای SMB یا NFS فعال نمایش داده می‌شوند و مورد واجد شرایطی بدون Web Share موجود نیست.'
-              : 'فقط فایل‌سیستم‌های اشتراک‌گذاری‌شده از طریق SMB یا NFS و بدون Web Share نمایش داده می‌شوند.'}
+              ? 'هیچ فایل‌سیستمِ موجود در اشتراک‌های SMB یا NFS که Web Share نداشته باشد پیدا نشد.'
+              : 'فایل‌سیستم‌های پشت اشتراک‌های موجود در جدول SMB و NFS نمایش داده می‌شوند.'}
           </FormHelperText>
         </FormControl>
       </BlurModal>
