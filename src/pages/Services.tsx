@@ -7,6 +7,7 @@ import ServicesTable from '../components/services/ServicesTable';
 import { getServiceLabel } from '../constants/serviceLabels';
 import { useServiceAction } from '../hooks/useServiceAction';
 import { useServices } from '../hooks/useServices';
+import { useServiceStatuses } from '../hooks/useServiceStatuses';
 
 const actionLabels: Record<ServiceActionType, string> = {
   start: 'شروع',
@@ -21,6 +22,7 @@ const actionLabels: Record<ServiceActionType, string> = {
 
 const Services = () => {
   const servicesQuery = useServices();
+  const serviceStatusMap = useServiceStatuses(servicesQuery.data?.data ?? []);
 
   const serviceAction = useServiceAction({
     onSuccess: ({ action, service }) => {
@@ -46,6 +48,11 @@ const Services = () => {
             ? details.description
             : undefined;
         const name = details.unit;
+        const enabledFromUnitDetails = serviceStatusMap.get(name);
+
+        if (enabledFromUnitDetails !== undefined) {
+          normalizedDetails.enabled = enabledFromUnitDetails;
+        }
 
         return {
           name,
@@ -53,7 +60,7 @@ const Services = () => {
           details: normalizedDetails,
         };
       }),
-    [servicesQuery.data?.data]
+    [serviceStatusMap, servicesQuery.data?.data]
   );
 
   const handleAction = useCallback(
