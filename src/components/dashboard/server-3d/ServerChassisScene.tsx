@@ -43,6 +43,58 @@ const resolveSceneLayout = (slotCount: number) => {
   };
 };
 
+interface ControlGlyphProps {
+  x: number;
+  y: number;
+  hovered: boolean;
+}
+
+const RebootGlyph = ({ x, y, hovered }: ControlGlyphProps) => (
+  <group position={[x, y, 0.448]}>
+    <mesh rotation={[0, 0, -0.2]}>
+      <torusGeometry args={[0.145, 0.018, 12, 48, Math.PI * 1.62]} />
+      <meshStandardMaterial
+        color={hovered ? '#86efac' : '#4ade80'}
+        emissive="#22c55e"
+        emissiveIntensity={hovered ? 1.85 : 1.35}
+        roughness={0.24}
+      />
+    </mesh>
+    <mesh position={[0.11, 0.115, 0.004]} rotation={[0, 0, -0.7]}>
+      <coneGeometry args={[0.045, 0.1, 3]} />
+      <meshStandardMaterial
+        color={hovered ? '#86efac' : '#4ade80'}
+        emissive="#22c55e"
+        emissiveIntensity={hovered ? 1.85 : 1.35}
+        roughness={0.24}
+      />
+    </mesh>
+  </group>
+);
+
+const PowerGlyph = ({ x, y, hovered }: ControlGlyphProps) => (
+  <group position={[x, y, 0.448]}>
+    <mesh rotation={[0, 0, 0.47]}>
+      <torusGeometry args={[0.12, 0.018, 12, 48, Math.PI * 1.72]} />
+      <meshStandardMaterial
+        color={hovered ? '#fca5a5' : '#f87171'}
+        emissive="#ef4444"
+        emissiveIntensity={hovered ? 1.5 : 1.05}
+        roughness={0.26}
+      />
+    </mesh>
+    <mesh position={[0, 0.095, 0.004]}>
+      <boxGeometry args={[0.035, 0.16, 0.02]} />
+      <meshStandardMaterial
+        color={hovered ? '#fecaca' : '#f87171'}
+        emissive="#ef4444"
+        emissiveIntensity={hovered ? 1.55 : 1.1}
+        roughness={0.24}
+      />
+    </mesh>
+  </group>
+);
+
 const ServerChassisModel = ({
   slots,
   selectedSlotNumber,
@@ -141,61 +193,50 @@ const ServerChassisModel = ({
         onPointerOut={handleControlPointerOut}
       >
         <RoundedBox
-          args={[0.43, 0.43, 0.08]}
+          args={[0.46, 0.46, 0.08]}
           radius={0.075}
           smoothness={8}
-          position={[layout.controlPanelX, -0.08, 0.39]}
+          position={[layout.controlPanelX, -0.2, 0.39]}
         >
           <meshStandardMaterial
-            color={hoveredControl === 'reboot' ? '#244033' : '#1c232d'}
+            color={hoveredControl === 'reboot' ? '#203b31' : '#1c232d'}
             emissive="#16a34a"
-            emissiveIntensity={hoveredControl === 'reboot' ? 0.85 : 0.5}
+            emissiveIntensity={hoveredControl === 'reboot' ? 0.75 : 0.38}
             roughness={0.42}
           />
         </RoundedBox>
-
-        <mesh position={[layout.controlPanelX, -0.08, 0.445]}>
-          <torusGeometry args={[0.16, 0.018, 12, 42, Math.PI * 1.55]} />
-          <meshStandardMaterial
-            color={hoveredControl === 'reboot' ? '#4ade80' : '#22c55e'}
-            emissive="#22c55e"
-            emissiveIntensity={hoveredControl === 'reboot' ? 1.75 : 1.35}
-            roughness={0.25}
-          />
-        </mesh>
+        <RebootGlyph
+          x={layout.controlPanelX}
+          y={-0.2}
+          hovered={hoveredControl === 'reboot'}
+        />
       </group>
 
-      <RoundedBox
-        args={[0.5, 0.18, 0.07]}
-        radius={0.035}
-        smoothness={5}
-        position={[layout.controlPanelX, -0.82, 0.39]}
-      >
-        <meshStandardMaterial
-          color="#111827"
-          emissive="#22c55e"
-          emissiveIntensity={0.5}
-          roughness={0.45}
-        />
-      </RoundedBox>
-
-      <RoundedBox
-        args={[0.36, 0.42, 0.07]}
-        radius={0.03}
-        smoothness={5}
-        position={[layout.controlPanelX, -1.35, 0.39]}
+      <group
         onClick={(event) => handlePowerControlClick(event, 'poweroff')}
         onPointerOver={(event) => handleControlPointerOver(event, 'poweroff')}
         onPointerOut={handleControlPointerOut}
       >
-        <meshStandardMaterial
-          color={hoveredControl === 'poweroff' ? '#f8d7a3' : '#e5dfc8'}
-          emissive={hoveredControl === 'poweroff' ? '#ef4444' : '#000000'}
-          emissiveIntensity={hoveredControl === 'poweroff' ? 0.45 : 0}
-          roughness={0.45}
-          metalness={0.2}
+        <RoundedBox
+          args={[0.46, 0.46, 0.08]}
+          radius={0.075}
+          smoothness={8}
+          position={[layout.controlPanelX, -1.22, 0.39]}
+        >
+          <meshStandardMaterial
+            color={hoveredControl === 'poweroff' ? '#402225' : '#242329'}
+            emissive="#ef4444"
+            emissiveIntensity={hoveredControl === 'poweroff' ? 0.6 : 0.22}
+            roughness={0.45}
+            metalness={0.2}
+          />
+        </RoundedBox>
+        <PowerGlyph
+          x={layout.controlPanelX}
+          y={-1.22}
+          hovered={hoveredControl === 'poweroff'}
         />
-      </RoundedBox>
+      </group>
 
       <RoundedBox
         args={[layout.bayPanelWidth, 3.08, 0.2]}
