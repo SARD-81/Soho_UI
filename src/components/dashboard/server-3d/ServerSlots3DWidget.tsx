@@ -165,16 +165,11 @@ const ServerSlots3DWidget = () => {
 
   return (
     <Box sx={{ ...cardSx, width: '100%', minHeight: 520 }}>
+      {/* Header power buttons are intentionally hidden; the 3D panel controls are the single interaction point. */}
       <DashboardWidgetHeader
         icon={<MdDns size={20} />}
         title="نمای سه‌بعدی سرور"
         subtitle="مدل تعاملی اسلات‌ها و جزئیات تمام دیسک‌های سامانه"
-        /*
-        actions={
-          Header power actions are intentionally hidden to avoid duplicating
-          the physical reboot and power controls on the 3D server panel.
-        }
-        */
         status={
           <Stack direction="row" gap={1} flexWrap="wrap">
             <Chip
