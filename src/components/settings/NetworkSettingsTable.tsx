@@ -31,13 +31,7 @@ const createRows = (
     return [];
   }
 
-  const validInterfaces = Object.entries(interfaces).filter((inter) => {
-    if (inter[0].includes("enp")) {
-      return inter
-    }
-  })
-
-  return validInterfaces.map<NetworkSettingsTableRow>(
+  return Object.entries(interfaces).map<NetworkSettingsTableRow>(
     ([interfaceName, details]) => {
       const ipv4Entries = extractIPv4Info(details);
       const speedText = formatInterfaceSpeed(details?.status, formatter);
@@ -105,27 +99,21 @@ const NetworkSettingsTable = () => {
     (
       payload:
         | { mode: 'dhcp' }
-        | { mode: 'static'; ip: string; netmask: string; gateway: string; dns: string[] }
+        | {
+            mode: 'static';
+            ip: string;
+            netmask: string;
+            gateway?: string;
+            dns?: string[];
+          }
     ) => {
       if (!editModalData) {
         return;
       }
 
-      if (payload.mode === 'dhcp') {
-        configureInterface.mutate({
-          interfaceName: editModalData.interfaceName,
-          mode: 'dhcp',
-        });
-        return;
-      }
-
       configureInterface.mutate({
         interfaceName: editModalData.interfaceName,
-        mode: 'static',
-        ip: payload.ip,
-        netmask: payload.netmask,
-        gateway: payload.gateway,
-        dns: payload.dns,
+        ...payload,
       });
     },
     [configureInterface, editModalData]
