@@ -3,20 +3,13 @@ import {
   Box,
   Chip,
   Divider,
-  IconButton,
   Skeleton,
   Stack,
-  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
-import {
-  MdDns,
-  MdPowerSettingsNew,
-  MdRestartAlt,
-  MdStorage,
-} from 'react-icons/md';
+import { MdDns, MdStorage } from 'react-icons/md';
 import { useSystemPowerActions } from '../../../contexts/SystemPowerActionsContext';
 import { usePoolDeviceSlots } from '../../../hooks/usePoolDeviceSlots';
 import { useZpool } from '../../../hooks/useZpool';
@@ -176,36 +169,12 @@ const ServerSlots3DWidget = () => {
         icon={<MdDns size={20} />}
         title="نمای سه‌بعدی سرور"
         subtitle="مدل تعاملی اسلات‌ها و جزئیات تمام دیسک‌های سامانه"
+        /*
         actions={
-          <Stack direction="row" spacing={0.5}>
-            <Tooltip title="راه‌اندازی مجدد سیستم">
-              <span>
-                <IconButton
-                  size="small"
-                  aria-label="راه‌اندازی مجدد سیستم"
-                  disabled={isPowerActionDisabled}
-                  onClick={() => requestPowerAction('reboot')}
-                  sx={{ color: 'success.main' }}
-                >
-                  <MdRestartAlt />
-                </IconButton>
-              </span>
-            </Tooltip>
-            <Tooltip title="خاموش کردن سیستم">
-              <span>
-                <IconButton
-                  size="small"
-                  aria-label="خاموش کردن سیستم"
-                  disabled={isPowerActionDisabled}
-                  onClick={() => requestPowerAction('poweroff')}
-                  sx={{ color: 'error.main' }}
-                >
-                  <MdPowerSettingsNew />
-                </IconButton>
-              </span>
-            </Tooltip>
-          </Stack>
+          Header power actions are intentionally hidden to avoid duplicating
+          the physical reboot and power controls on the 3D server panel.
         }
+        */
         status={
           <Stack direction="row" gap={1} flexWrap="wrap">
             <Chip
