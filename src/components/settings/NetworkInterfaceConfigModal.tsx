@@ -28,13 +28,16 @@ interface NetworkInterfaceConfigModalProps {
           mode: 'static';
           ip: string;
           netmask: string;
-          gateway: string;
-          dns: string[];
+          gateway?: string;
+          dns?: string[];
         }
   ) => void;
   isSubmitting: boolean;
   errorMessage: string | null;
 }
+
+const DEFAULT_IP = '0.0.0.0';
+const DEFAULT_NETMASK = '255.255.255.0';
 
 const NetworkInterfaceConfigModal = ({
   open,
@@ -51,66 +54,99 @@ const NetworkInterfaceConfigModal = ({
     [initialIp]
   );
 
+  const initialStaticIp = initialIp.trim() || DEFAULT_IP;
+  const initialStaticNetmask = initialNetmask.trim() || DEFAULT_NETMASK;
+
   const [mode, setMode] = useState<ConfigureInterfaceMode>(defaultMode);
-  const [ip, setIp] = useState(initialIp);
-  const [netmask, setNetmask] = useState(initialNetmask);
+  const [ip, setIp] = useState(initialStaticIp);
+  const [netmask, setNetmask] = useState(initialStaticNetmask);
   const [gateway, setGateway] = useState('');
   const [primaryDns, setPrimaryDns] = useState('');
   const [secondaryDns, setSecondaryDns] = useState('');
+  const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) {
-      setMode(defaultMode);
-      setIp(initialIp);
-      setNetmask(initialNetmask);
-      setGateway('');
-      setPrimaryDns('');
-      setSecondaryDns('');
+    if (!open) {
+      return;
     }
-  }, [defaultMode, initialIp, initialNetmask, open]);
 
-  const isStaticMode = mode === 'static';
+    setMode(defaultMode);
+    setIp(initialStaticIp);
+    setNetmask(initialStaticNetmask);
+    setGateway('');
+    setPrimaryDns('');
+    setSecondaryDns('');
+    setLocalError(null);
+  }, [defaultMode, initialStaticIp, initialStaticNetmask, open]);
 
-  const isStaticFormValid =
-    isCompleteIPv4Address(ip) &&
-    isCompleteIPv4Address(netmask) &&
-    isCompleteIPv4Address(gateway) &&
-    isCompleteIPv4Address(primaryDns) &&
-    (secondaryDns === '' || isCompleteIPv4Address(secondaryDns));
+  const handleRequiredIpChange = (
+    value: string,
+    setter: (nextValue: string) => void
+  ) => {
+    if (value.trim() === '') {
+      return;
+    }
+
+    setter(value);
+    setLocalError(null);
+  };
+
+  const validateStaticForm = () => {
+    if (!ip.trim() || !isCompleteIPv4Address(ip.trim())) {
+      return 'آدرس IP الزامی است و باید یک IPv4 معتبر باشد.';
+    }
+
+    if (!netmask.trim() || !isCompleteIPv4Address(netmask.trim())) {
+      return 'ماسک شبکه الزامی است و باید یک IPv4 معتبر باشد.';
+    }
+
+    if (gateway.trim() && !isCompleteIPv4Address(gateway.trim())) {
+      return 'Default Gateway واردشده معتبر نیست.';
+    }
+
+    if (primaryDns.trim() && !isCompleteIPv4Address(primaryDns.trim())) {
+      return 'DNS اصلی واردشده معتبر نیست.';
+    }
+
+    if (secondaryDns.trim() && !isCompleteIPv4Address(secondaryDns.trim())) {
+      return 'DNS ثانویه واردشده معتبر نیست.';
+    }
+
+    return null;
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!interfaceName) {
+      setLocalError('رابط شبکه مشخص نشده است.');
       return;
     }
 
     if (mode === 'dhcp') {
+      setLocalError(null);
       onSubmit({ mode: 'dhcp' });
       return;
     }
 
-    if (!isStaticFormValid) {
+    const validationError = validateStaticForm();
+    if (validationError) {
+      setLocalError(validationError);
       return;
     }
 
-    const trimmedDns = [primaryDns.trim(), secondaryDns.trim()].filter(
-      (value) => value !== ''
-    );
+    const dns = [primaryDns.trim(), secondaryDns.trim()].filter(Boolean);
+    const trimmedGateway = gateway.trim();
 
+    setLocalError(null);
     onSubmit({
       mode: 'static',
       ip: ip.trim(),
       netmask: netmask.trim(),
-      gateway: gateway.trim(),
-      dns: trimmedDns,
+      ...(trimmedGateway ? { gateway: trimmedGateway } : {}),
+      ...(dns.length > 0 ? { dns } : {}),
     });
   };
-
-  const isConfirmDisabled =
-    isSubmitting ||
-    !interfaceName ||
-    (isStaticMode ? !isStaticFormValid : false);
 
   return (
     <BlurModal
@@ -122,7 +158,7 @@ const NetworkInterfaceConfigModal = ({
           confirmLabel="ثبت تنظیمات"
           loadingLabel="در حال ارسال..."
           isLoading={isSubmitting}
-          disabled={isConfirmDisabled}
+          disabled={isSubmitting || !interfaceName}
           disableConfirmGradient
           confirmProps={{
             type: 'submit',
@@ -138,12 +174,9 @@ const NetworkInterfaceConfigModal = ({
                 background:
                   'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%)',
               },
-              '&.Mui-disabled': {
-                backgroundColor: 'color-mix(in srgb, var(--color-secondary) 25%, transparent)',
-                color: 'var(--color-secondary)',
-              },
             },
           }}
+          onCancel={onClose}
         />
       }
     >
@@ -153,10 +186,6 @@ const NetworkInterfaceConfigModal = ({
         onSubmit={handleSubmit}
         sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
       >
-        {/* <Typography sx={{ color: 'var(--color-secondary)' }}>
-          حالت پیکربندی رابط شبکه را انتخاب کرده و مقادیر مورد نیاز را وارد کنید.
-        </Typography> */}
-
         <TextField
           label="رابط شبکه"
           value={interfaceName ?? ''}
@@ -174,83 +203,107 @@ const NetworkInterfaceConfigModal = ({
         />
 
         <FormControl fullWidth>
-          <InputLabel id="network-mode-label" sx={{ color: 'var(--color-secondary)' }}>
+          <InputLabel
+            id="network-mode-label"
+            sx={{ color: 'var(--color-secondary)' }}
+          >
             حالت پیکربندی
           </InputLabel>
           <Select
             labelId="network-mode-label"
             value={mode}
             label="حالت پیکربندی"
-            onChange={(event) => setMode(event.target.value as ConfigureInterfaceMode)}
+            onChange={(event) => {
+              setMode(event.target.value as ConfigureInterfaceMode);
+              setLocalError(null);
+            }}
             size="small"
             sx={{
               backgroundColor: 'var(--color-input-bg)',
               '& .MuiSelect-select': { color: 'var(--color-text)' },
             }}
             MenuProps={{
-                PaperProps: {
-                  sx: {
-                    backgroundColor: 'var(--color-card-bg)',
-                    color: 'var(--color-text)',
-                  },
+              PaperProps: {
+                sx: {
+                  backgroundColor: 'var(--color-card-bg)',
+                  color: 'var(--color-text)',
                 },
-              }}
+              },
+            }}
           >
             <MenuItem value="dhcp">DHCP</MenuItem>
             <MenuItem value="static">Static</MenuItem>
           </Select>
         </FormControl>
 
-        {isStaticMode ? (
+        {mode === 'static' ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <IPv4AddressInput
               label="آدرس IP"
               value={ip}
-              onChange={setIp}
+              onChange={(value) => handleRequiredIpChange(value, setIp)}
               required
-            //   helperText="آدرس IPv4 را به‌صورت چهار بخش عددی وارد کنید."
-              error={ip !== '' && !isCompleteIPv4Address(ip)}
+              error={!isCompleteIPv4Address(ip.trim())}
             />
+
             <IPv4AddressInput
               label="ماسک شبکه"
               value={netmask}
-              onChange={setNetmask}
+              onChange={(value) => handleRequiredIpChange(value, setNetmask)}
               required
-            //   helperText="ماسک شبکه را مشابه کنترل‌های IPv4 در ویندوز وارد کنید."
-              error={netmask !== '' && !isCompleteIPv4Address(netmask)}
+              error={!isCompleteIPv4Address(netmask.trim())}
             />
+
             <IPv4AddressInput
-              label=" Default Gateway"
+              label="Default Gateway"
               value={gateway}
-              onChange={setGateway}
-              required
-            //   helperText="آدرس دروازه پیش‌فرض را وارد کنید."
-              error={gateway !== '' && !isCompleteIPv4Address(gateway)}
+              onChange={(value) => {
+                setGateway(value);
+                setLocalError(null);
+              }}
+              error={
+                gateway.trim() !== '' &&
+                !isCompleteIPv4Address(gateway.trim())
+              }
             />
-            <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
+
+            <Typography
+              sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}
+            >
               تنظیمات DNS
             </Typography>
+
             <IPv4AddressInput
               label="DNS اصلی"
               value={primaryDns}
-              onChange={setPrimaryDns}
-              required
-            //   helperText="DNS اصلی را به‌صورت چهار بخش عددی مشخص کنید."
-              error={primaryDns !== '' && !isCompleteIPv4Address(primaryDns)}
+              onChange={(value) => {
+                setPrimaryDns(value);
+                setLocalError(null);
+              }}
+              error={
+                primaryDns.trim() !== '' &&
+                !isCompleteIPv4Address(primaryDns.trim())
+              }
             />
+
             <IPv4AddressInput
               label="DNS ثانویه"
               value={secondaryDns}
-              onChange={setSecondaryDns}
-            //   helperText="(اختیاری) DNS ثانویه را وارد کنید."
-              error={secondaryDns !== '' && !isCompleteIPv4Address(secondaryDns)}
+              onChange={(value) => {
+                setSecondaryDns(value);
+                setLocalError(null);
+              }}
+              error={
+                secondaryDns.trim() !== '' &&
+                !isCompleteIPv4Address(secondaryDns.trim())
+              }
             />
           </Box>
         ) : null}
 
-        {errorMessage ? (
+        {localError || errorMessage ? (
           <Alert severity="error" sx={{ mt: 1 }}>
-            {errorMessage}
+            {localError ?? errorMessage}
           </Alert>
         ) : null}
       </Box>
