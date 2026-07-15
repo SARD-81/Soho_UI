@@ -291,8 +291,8 @@ const NetworkInterfaceConfigModal = ({
                 '& .MuiSelect-select': { color: 'var(--color-text)' },
               }}
             >
-              <MenuItem value="dhcp">DHCP</MenuItem>
-              <MenuItem value="static">Static</MenuItem>
+              <MenuItem value="dhcp" sx={{ color: 'var(--color-text)' }}>DHCP</MenuItem>
+              <MenuItem value="static" sx={{ color: 'var(--color-text)' }}>Static</MenuItem>
             </Select>
           </FormControl>
 
