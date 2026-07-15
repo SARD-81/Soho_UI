@@ -15,6 +15,15 @@ export type IPv4Info = {
 
 export type ConfigureInterfaceMode = 'dhcp' | 'static';
 
+export interface NetworkInterfaceConfiguration {
+  configMode: ConfigureInterfaceMode;
+  ip: string;
+  netmask: string;
+  gateways: string[];
+  dns: string[];
+  mtu: number | null;
+}
+
 export type ConfigureInterfacePayload =
   | {
       interfaceName: string;
