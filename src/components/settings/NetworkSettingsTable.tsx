@@ -10,7 +10,6 @@ import { toast } from 'react-hot-toast';
 import { FiEdit3 } from 'react-icons/fi';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type {
-  ConfigureInterfacePayload,
   ConfigureInterfaceMode,
   IPv4Info,
   NetworkInterfaceConfiguration,
@@ -32,6 +31,16 @@ type NetworkSettingsTableRow = {
   configMode: ConfigureInterfaceMode;
   configuration: NetworkInterfaceConfiguration;
 };
+
+type NetworkConfigSubmitPayload =
+  | { mode: 'dhcp' }
+  | {
+      mode: 'static';
+      ip: string;
+      netmask: string;
+      gateway?: string;
+      dns?: string[];
+    };
 
 const createSpeedFormatter = () =>
   new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
@@ -107,15 +116,23 @@ const NetworkSettingsTable = () => {
   }, [configureInterface]);
 
   const handleSubmitEditModal = useCallback(
-    (payload: Omit<ConfigureInterfacePayload, 'interfaceName'>) => {
+    (payload: NetworkConfigSubmitPayload) => {
       if (!editModalData) {
+        return;
+      }
+
+      if (payload.mode === 'dhcp') {
+        configureInterface.mutate({
+          interfaceName: editModalData.interfaceName,
+          mode: 'dhcp',
+        });
         return;
       }
 
       configureInterface.mutate({
         interfaceName: editModalData.interfaceName,
         ...payload,
-      } as ConfigureInterfacePayload);
+      });
     },
     [configureInterface, editModalData]
   );
