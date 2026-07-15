@@ -28,6 +28,7 @@ export type ConfigureInterfacePayload =
   | {
       interfaceName: string;
       mode: 'dhcp';
+      mtu?: number;
     }
   | {
       interfaceName: string;
@@ -36,11 +37,12 @@ export type ConfigureInterfacePayload =
       netmask: string;
       gateway?: string;
       dns?: string[];
+      mtu?: number;
     };
 
 export type ConfigureDhcpNetworkRequestBody = {
   mode: 'dhcp';
-  mtu: 1500;
+  mtu: number;
 };
 
 export type ConfigureStaticNetworkRequestBody = {
@@ -49,7 +51,7 @@ export type ConfigureStaticNetworkRequestBody = {
   netmask: string;
   gateway?: string;
   dns?: string[];
-  mtu: 1500;
+  mtu: number;
 };
 
 export type ConfigureNetworkRequestBody =
