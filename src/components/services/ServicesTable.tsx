@@ -125,6 +125,8 @@ const normalizeServiceFlag = (value: ServiceValue): boolean | null => {
   return null;
 };
 
+const getServiceStateToken = (value: string) => value.split(/\s+/, 1)[0] ?? '';
+
 const deriveStatus = (
   row: ServiceTableRow,
   isRuntimePending: boolean
@@ -139,7 +141,9 @@ const deriveStatus = (
   const subState =
     getNormalizedString(row.details.sub) ||
     getNormalizedString(row.details.sub_state);
+  const subStateToken = getServiceStateToken(subState);
   const statusValue = getNormalizedString(row.details.status);
+  const statusToken = getServiceStateToken(statusValue);
   const masked = normalizeServiceFlag(
     row.details.masked ?? row.details.mask
   );
@@ -148,18 +152,18 @@ const deriveStatus = (
     return 'masked';
   }
 
-  if (statusValue === 'failed' || activeState === 'failed') {
+  if (statusToken === 'failed' || activeState === 'failed') {
     return 'error';
   }
 
   if (
     activeState === 'active' &&
-    ['running', 'exited', 'listening'].includes(subState)
+    ['running', 'exited', 'listening'].includes(subStateToken)
   ) {
     return 'running';
   }
 
-  if (['running', 'active'].includes(statusValue)) {
+  if (['running', 'active'].includes(statusToken)) {
     return 'running';
   }
 
