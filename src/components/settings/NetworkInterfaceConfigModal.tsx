@@ -29,13 +29,14 @@ interface NetworkInterfaceConfigModalProps {
   onClose: () => void;
   onSubmit: (
     payload:
-      | { mode: 'dhcp' }
+      | { mode: 'dhcp'; mtu?: number }
       | {
           mode: 'static';
           ip: string;
           netmask: string;
           gateway?: string;
           dns?: string[];
+          mtu?: number;
         }
   ) => void;
   isSubmitting: boolean;
@@ -44,16 +45,18 @@ interface NetworkInterfaceConfigModalProps {
 
 const DEFAULT_IP = '0.0.0.0';
 const DEFAULT_NETMASK = '255.255.255.0';
+const DEFAULT_MTU = 1500;
 const EMPTY_DNS_ENTRY = '';
 
 type PendingNetworkPayload =
-  | { mode: 'dhcp' }
+  | { mode: 'dhcp'; mtu?: number }
   | {
       mode: 'static';
       ip: string;
       netmask: string;
       gateway?: string;
       dns?: string[];
+      mtu?: number;
     };
 
 const NetworkInterfaceConfigModal = ({
@@ -70,6 +73,7 @@ const NetworkInterfaceConfigModal = ({
   const initialStaticNetmask =
     initialConfiguration?.netmask?.trim() || DEFAULT_NETMASK;
   const initialGateway = initialConfiguration?.gateways?.[0]?.trim() ?? '';
+  const initialMtu = String(initialConfiguration?.mtu ?? DEFAULT_MTU);
   const initialDns = useMemo(() => {
     const values = (initialConfiguration?.dns ?? [])
       .map((entry) => entry.trim())
@@ -81,6 +85,7 @@ const NetworkInterfaceConfigModal = ({
   const [ip, setIp] = useState(initialStaticIp);
   const [netmask, setNetmask] = useState(initialStaticNetmask);
   const [gateway, setGateway] = useState(initialGateway);
+  const [mtu, setMtu] = useState(initialMtu);
   const [dnsEntries, setDnsEntries] = useState<string[]>(initialDns);
   const [localError, setLocalError] = useState<string | null>(null);
   const [pendingPayload, setPendingPayload] =
@@ -95,6 +100,7 @@ const NetworkInterfaceConfigModal = ({
     setIp(initialStaticIp);
     setNetmask(initialStaticNetmask);
     setGateway(initialGateway);
+    setMtu(initialMtu);
     setDnsEntries(initialDns);
     setLocalError(null);
     setPendingPayload(null);
@@ -102,6 +108,7 @@ const NetworkInterfaceConfigModal = ({
     initialDns,
     initialGateway,
     initialMode,
+    initialMtu,
     initialStaticIp,
     initialStaticNetmask,
     open,
@@ -128,7 +135,19 @@ const NetworkInterfaceConfigModal = ({
     setLocalError(null);
   };
 
+  const validateMtu = () => {
+    const numericMtu = Number(mtu);
+    return Number.isInteger(numericMtu) && numericMtu > 0
+      ? null
+      : 'مقدار MTU باید یک عدد صحیح مثبت باشد.';
+  };
+
   const validateStaticForm = () => {
+    const mtuError = validateMtu();
+    if (mtuError) {
+      return mtuError;
+    }
+
     if (!ip.trim() || !isCompleteIPv4Address(ip.trim())) {
       return 'آدرس IP الزامی است و باید یک IPv4 معتبر باشد.';
     }
@@ -161,9 +180,17 @@ const NetworkInterfaceConfigModal = ({
       return;
     }
 
+    const mtuError = validateMtu();
+    if (mtuError) {
+      setLocalError(mtuError);
+      return;
+    }
+
+    const numericMtu = Number(mtu);
+
     if (mode === 'dhcp') {
       setLocalError(null);
-      setPendingPayload({ mode: 'dhcp' });
+      setPendingPayload({ mode: 'dhcp', mtu: numericMtu });
       return;
     }
 
@@ -183,6 +210,7 @@ const NetworkInterfaceConfigModal = ({
       netmask: netmask.trim(),
       ...(trimmedGateway ? { gateway: trimmedGateway } : {}),
       ...(dns.length > 0 ? { dns } : {}),
+      mtu: numericMtu,
     });
   };
 
@@ -245,23 +273,10 @@ const NetworkInterfaceConfigModal = ({
             disabled
             fullWidth
             size="small"
-            InputLabelProps={{ sx: { color: 'var(--color-secondary)' } }}
-            InputProps={{
-              sx: {
-                backgroundColor: 'var(--color-input-bg)',
-                borderRadius: '5px',
-                '& .MuiInputBase-input': { color: 'var(--color-secondary)' },
-              },
-            }}
           />
 
           <FormControl fullWidth>
-            <InputLabel
-              id="network-mode-label"
-              sx={{ color: 'var(--color-secondary)' }}
-            >
-              حالت پیکربندی
-            </InputLabel>
+            <InputLabel id="network-mode-label">حالت پیکربندی</InputLabel>
             <Select
               labelId="network-mode-label"
               value={mode}
@@ -275,19 +290,25 @@ const NetworkInterfaceConfigModal = ({
                 backgroundColor: 'var(--color-input-bg)',
                 '& .MuiSelect-select': { color: 'var(--color-text)' },
               }}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    backgroundColor: 'var(--color-card-bg)',
-                    color: 'var(--color-text)',
-                  },
-                },
-              }}
             >
               <MenuItem value="dhcp">DHCP</MenuItem>
               <MenuItem value="static">Static</MenuItem>
             </Select>
           </FormControl>
+
+          <TextField
+            label="MTU"
+            value={mtu}
+            onChange={(event) => {
+              setMtu(event.target.value.replace(/[^0-9]/g, ''));
+              setLocalError(null);
+            }}
+            inputProps={{ inputMode: 'numeric' }}
+            error={Boolean(validateMtu())}
+            helperText="مقدار فعلی دریافت‌شده از API"
+            fullWidth
+            size="small"
+          />
 
           {mode === 'dhcp' ? (
             <Alert severity="info">
