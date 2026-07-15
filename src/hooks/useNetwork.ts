@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '../lib/axiosInstance';
 
@@ -9,10 +8,15 @@ interface Bandwidth {
   unit: string;
 }
 
+export interface CurrentNetworkSpeed {
+  upload: number;
+  download: number;
+  unit: 'bytes_per_sec';
+}
+
 export interface InterfaceAddress {
   address?: string | null;
   netmask?: string | null;
-
   family?: string | null;
   [key: string]: unknown;
 }
@@ -20,12 +24,12 @@ export interface InterfaceAddress {
 export interface InterfaceStatus {
   speed?: number | string | null;
   is_up?: boolean | null;
-
   [key: string]: unknown;
 }
 
 export interface NetworkInterface {
   bandwidth: Bandwidth;
+  currentSpeed: CurrentNetworkSpeed;
   addresses?:
     | InterfaceAddress[]
     | Record<string, InterfaceAddress | null>
@@ -72,7 +76,19 @@ export interface NetworkDetailsResponse {
   [key: string]: unknown;
 }
 
+interface NetworkSpeedResponse {
+  ok?: boolean;
+  data?: unknown;
+  [key: string]: unknown;
+}
+
 export const networkQueryKey = ['network'] as const;
+
+const EMPTY_CURRENT_SPEED: CurrentNetworkSpeed = {
+  upload: 0,
+  download: 0,
+  unit: 'bytes_per_sec',
+};
 
 const mapAddresses = (
   addresses:
@@ -118,13 +134,10 @@ const mapAddresses = (
 
 type BandwidthPayload = { upload_bytes?: number; download_bytes?: number } | null;
 
-const isBandwidthPayload = (payload: unknown): payload is BandwidthPayload => {
-  return (
-    payload != null &&
-    typeof payload === 'object' &&
-    ('upload_bytes' in payload || 'download_bytes' in payload)
-  );
-};
+const isBandwidthPayload = (payload: unknown): payload is BandwidthPayload =>
+  payload != null &&
+  typeof payload === 'object' &&
+  ('upload_bytes' in payload || 'download_bytes' in payload);
 
 const mapBandwidth = (
   payload?: NetworkDetailsResponse['data'] | BandwidthPayload
@@ -144,6 +157,35 @@ const mapBandwidth = (
   };
 };
 
+const findNumericValueByKey = (value: unknown, targetKey: string): number | null => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (targetKey in record) {
+    const numericValue = Number(record[targetKey]);
+    return Number.isFinite(numericValue) ? Math.max(numericValue, 0) : null;
+  }
+
+  for (const nestedValue of Object.values(record)) {
+    const result = findNumericValueByKey(nestedValue, targetKey);
+    if (result !== null) {
+      return result;
+    }
+  }
+
+  return null;
+};
+
+const mapCurrentNetworkSpeed = (payload: unknown): CurrentNetworkSpeed => ({
+  upload:
+    findNumericValueByKey(payload, 'current_upload_speed_bytes_per_sec') ?? 0,
+  download:
+    findNumericValueByKey(payload, 'current_download_speed_bytes_per_sec') ?? 0,
+  unit: 'bytes_per_sec',
+});
+
 const mapInterface = (
   name: string,
   payload: NetworkDetailsResponse['data']
@@ -156,6 +198,7 @@ const mapInterface = (
     name,
     {
       bandwidth,
+      currentSpeed: EMPTY_CURRENT_SPEED,
       addresses: mapAddresses(general?.ip_addresses),
       status: {
         speed: hardware?.speed_mbps ?? payload?.traffic_summary?.speed ?? null,
@@ -167,18 +210,18 @@ const mapInterface = (
 
 const fetchNetworkInterfaces = async (): Promise<NetworkData> => {
   const { data: listResponse } = await axiosInstance.get<NetworkListResponse>(
-    '/api/system/network/'
+    '/api/system/network'
   );
 
-  const names = listResponse.data?.names ?? [];
+  const names = (listResponse.data?.names ?? []).filter(
+    (name): name is string => typeof name === 'string' && name.trim().length > 0
+  );
 
   const interfaces = await Promise.all(
     names.map(async (name) => {
       const { data } = await axiosInstance.get<NetworkDetailsResponse>(
-        `/api/system/network/${name}/`,
-        {
-          params: { property: 'all' },
-        }
+        `/api/system/network/${encodeURIComponent(name)}/`,
+        { params: { property: 'all' } }
       );
       return mapInterface(name, data.data ?? {});
     })
@@ -197,13 +240,31 @@ const fetchNetworkBandwidth = async (
   const interfaces = await Promise.all(
     names.map(async (name) => {
       const { data } = await axiosInstance.get<NetworkDetailsResponse>(
-        `/api/system/network/${name}/`,
-        {
-          params: { property: 'bandwidth' },
-        }
+        `/api/system/network/${encodeURIComponent(name)}/`,
+        { params: { property: 'bandwidth' } }
       );
 
       return [name, mapBandwidth(data.data)] as const;
+    })
+  );
+
+  return Object.fromEntries(interfaces);
+};
+
+const fetchCurrentNetworkSpeeds = async (
+  names: string[]
+): Promise<Record<string, CurrentNetworkSpeed>> => {
+  if (!names.length) {
+    return {};
+  }
+
+  const interfaces = await Promise.all(
+    names.map(async (name) => {
+      const { data } = await axiosInstance.get<NetworkSpeedResponse>(
+        `/api/system/network/${encodeURIComponent(name)}/bandwidth/`
+      );
+
+      return [name, mapCurrentNetworkSpeed(data.data ?? data)] as const;
     })
   );
 
@@ -220,9 +281,18 @@ export const useNetwork = (enabled = true) => {
   const interfaceNames = Object.keys(detailsQuery.data?.interfaces ?? {});
 
   const bandwidthQuery = useQuery<Record<string, Bandwidth>, Error>({
-    queryKey: [...networkQueryKey, 'bandwidth', interfaceNames],
+    queryKey: [...networkQueryKey, 'bandwidth-total', interfaceNames],
     queryFn: () => fetchNetworkBandwidth(interfaceNames),
-    enabled: enabled && Boolean(detailsQuery.data),
+    enabled: enabled && interfaceNames.length > 0,
+    refetchInterval: 2000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const currentSpeedQuery = useQuery<Record<string, CurrentNetworkSpeed>, Error>({
+    queryKey: [...networkQueryKey, 'bandwidth-current-speed', interfaceNames],
+    queryFn: () => fetchCurrentNetworkSpeeds(interfaceNames),
+    enabled: enabled && interfaceNames.length > 0,
     refetchInterval: 2000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
@@ -235,31 +305,41 @@ export const useNetwork = (enabled = true) => {
 
     const interfaces = Object.entries(detailsQuery.data.interfaces).reduce(
       (result, [name, networkInterface]) => {
-        const latestBandwidth = bandwidthQuery.data?.[name];
-
-        result[name] = latestBandwidth
-          ? { ...networkInterface, bandwidth: latestBandwidth }
-          : networkInterface;
-
+        result[name] = {
+          ...networkInterface,
+          bandwidth: bandwidthQuery.data?.[name] ?? networkInterface.bandwidth,
+          currentSpeed:
+            currentSpeedQuery.data?.[name] ?? networkInterface.currentSpeed,
+        };
         return result;
       },
       {} as Record<string, NetworkInterface>
     );
 
     return { interfaces } satisfies NetworkData;
-  }, [detailsQuery.data, bandwidthQuery.data]);
+  }, [bandwidthQuery.data, currentSpeedQuery.data, detailsQuery.data]);
 
   return {
     ...detailsQuery,
     data: mergedData,
-    error: detailsQuery.error ?? bandwidthQuery.error,
-    isFetching: detailsQuery.isFetching || bandwidthQuery.isFetching,
-    isLoading: detailsQuery.isLoading || bandwidthQuery.isLoading,
+    error:
+      detailsQuery.error ?? bandwidthQuery.error ?? currentSpeedQuery.error,
+    isFetching:
+      detailsQuery.isFetching ||
+      bandwidthQuery.isFetching ||
+      currentSpeedQuery.isFetching,
+    isLoading:
+      detailsQuery.isLoading ||
+      bandwidthQuery.isLoading ||
+      currentSpeedQuery.isLoading,
     refetch: async () => {
       const baseResult = await detailsQuery.refetch();
 
       if (baseResult.data) {
-        await bandwidthQuery.refetch();
+        await Promise.all([
+          bandwidthQuery.refetch(),
+          currentSpeedQuery.refetch(),
+        ]);
       }
 
       return baseResult;
