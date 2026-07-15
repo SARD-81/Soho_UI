@@ -14,31 +14,35 @@ const buildRequestBody = (
   if (payload.mode === 'dhcp') {
     return {
       mode: 'dhcp',
-      mtu: 1400,
-      save_to_db: false,
+      mtu: 1500,
     };
   }
+
+  const gateway = payload.gateway?.trim() ?? '';
+  const dns = (payload.dns ?? [])
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
 
   return {
     mode: 'static',
     ip: payload.ip.trim(),
     netmask: payload.netmask.trim(),
-    gateway: payload.gateway.trim(),
-    dns: payload.dns.map((entry) => entry.trim()),
+    ...(gateway ? { gateway } : {}),
+    ...(dns.length > 0 ? { dns } : {}),
     mtu: 1500,
-    save_to_db: false,
   };
 };
 
 const configureNetworkInterfaceRequest = async (
   payload: ConfigureInterfacePayload
 ) => {
-  const endpoint = `/api/system/network/${encodeURIComponent(
-    payload.interfaceName
-  )}/configure/`;
+  const encodedInterfaceName = encodeURIComponent(payload.interfaceName);
+  const endpoint =
+    payload.mode === 'dhcp'
+      ? `/api/network/${encodedInterfaceName}/configure/`
+      : `/api/system/network/${encodedInterfaceName}/configure/`;
 
   const body = buildRequestBody(payload);
-
   await axiosInstance.post(endpoint, body);
 };
 
