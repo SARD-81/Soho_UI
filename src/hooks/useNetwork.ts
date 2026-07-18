@@ -62,6 +62,7 @@ export interface NetworkDetailsResponse {
   data?: {
     config_mode?: string | null;
     mode?: string | null;
+    configured_dns?: unknown;
     gateway?: unknown;
     gateways?: unknown;
     default_gateway?: unknown;
@@ -78,6 +79,7 @@ export interface NetworkDetailsResponse {
     };
     traffic_summary?: {
       speed?: number | null;
+      speed_mbps?: number | null;
       volume?: { bytes_sent?: number; bytes_recv?: number };
       packets?: Record<string, number>;
     };
@@ -92,6 +94,7 @@ export interface NetworkDetailsResponse {
       mac_address?: string;
       mtu?: number;
       is_up?: boolean;
+      default_gateway?: string | null;
       ip_addresses?: Array<
         | { ip?: string; netmask?: string | null; broadcast?: string | null }
         | { ipv6?: string; netmask?: string | null }
@@ -253,22 +256,25 @@ const mapConfiguration = (
     'subnet_mask',
   ]);
   const gateways = normalizeStringList(
-    findFirstValueByKeys(payload, [
-      'default_gateways',
-      'gateways',
-      'default_gateway',
-      'gateway',
-    ])
+    payload?.general?.default_gateway ??
+      findFirstValueByKeys(payload, [
+        'default_gateway',
+        'default_gateways',
+        'gateways',
+        'gateway',
+      ])
   );
   const dns = normalizeStringList(
-    findFirstValueByKeys(payload, [
-      'dns_servers',
-      'nameservers',
-      'name_servers',
-      'dns',
-    ])
+    payload?.configured_dns ??
+      findFirstValueByKeys(payload, [
+        'configured_dns',
+        'dns_servers',
+        'nameservers',
+        'name_servers',
+        'dns',
+      ])
   );
-  const mtuValue = findFirstValueByKeys(payload, ['mtu']);
+  const mtuValue = payload?.hardware?.mtu ?? payload?.general?.mtu ?? findFirstValueByKeys(payload, ['mtu']);
   const mtuNumber = Number(mtuValue);
 
   return {
@@ -333,7 +339,11 @@ const mapInterface = (
       configuration: mapConfiguration(payload, addresses),
       addresses,
       status: {
-        speed: hardware?.speed_mbps ?? payload?.traffic_summary?.speed ?? null,
+        speed:
+          hardware?.speed_mbps ??
+          payload?.traffic_summary?.speed_mbps ??
+          payload?.traffic_summary?.speed ??
+          null,
         is_up: hardware?.is_up ?? general?.is_up ?? null,
       },
     },
