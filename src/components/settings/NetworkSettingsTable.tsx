@@ -71,6 +71,59 @@ const createRows = (
   );
 };
 
+const renderNetworkValues = (
+  values: string[],
+  emptyLabel: string,
+  maxVisibleItems = 2
+) => {
+  if (values.length === 0) {
+    return (
+      <Typography component="span" sx={{ color: 'var(--color-secondary)' }}>
+        {emptyLabel}
+      </Typography>
+    );
+  }
+
+  const visibleValues = values.slice(0, maxVisibleItems);
+  const hiddenCount = values.length - visibleValues.length;
+
+  return (
+    <Tooltip title={values.join('، ')} arrow>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 0.25,
+          direction: 'ltr',
+        }}
+      >
+        {visibleValues.map((value) => (
+          <Typography
+            component="span"
+            key={value}
+            sx={{
+              color: 'var(--color-text)',
+              fontVariantNumeric: 'tabular-nums',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {value}
+          </Typography>
+        ))}
+        {hiddenCount > 0 ? (
+          <Typography
+            component="span"
+            sx={{ color: 'var(--color-primary)', fontSize: '0.75rem' }}
+          >
+            +{hiddenCount}
+          </Typography>
+        ) : null}
+      </Box>
+    </Tooltip>
+  );
+};
+
 const NetworkSettingsTable = () => {
   const { data, isLoading, error } = useNetwork();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -231,6 +284,22 @@ const NetworkSettingsTable = () => {
       },
     };
 
+    const gatewayColumn: DataTableColumn<NetworkSettingsTableRow> = {
+      id: 'default-gateway',
+      header: 'درگاه پیش‌فرض',
+      align: 'center',
+      renderCell: (row) =>
+        renderNetworkValues(row.configuration.gateways, 'تنظیم نشده', 1),
+    };
+
+    const dnsColumn: DataTableColumn<NetworkSettingsTableRow> = {
+      id: 'configured-dns',
+      header: 'DNSهای تنظیم‌شده',
+      align: 'center',
+      renderCell: (row) =>
+        renderNetworkValues(row.configuration.dns, 'تنظیم نشده', 2),
+    };
+
     const speedColumn: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'link-speed',
       header: 'سرعت لینک',
@@ -261,6 +330,7 @@ const NetworkSettingsTable = () => {
           <span>
             <IconButton
               size="small"
+              aria-label={`ویرایش رابط ${row.interfaceName}`}
               onClick={() => handleOpenEditModal(row)}
               disabled={configureInterface.isPending}
               sx={{
@@ -283,8 +353,10 @@ const NetworkSettingsTable = () => {
       interfaceColumn,
       configModeColumn,
       ipv4Column,
-      speedColumn,
       netmaskColumn,
+      gatewayColumn,
+      dnsColumn,
+      speedColumn,
       actionColumn,
     ];
   }, [configureInterface.isPending, handleOpenEditModal]);
