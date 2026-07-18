@@ -300,6 +300,26 @@ const NetworkSettingsTable = () => {
         renderNetworkValues(row.configuration.dns, 'تنظیم نشده', 2),
     };
 
+    const MTUColumn: DataTableColumn<NetworkSettingsTableRow> = {
+      id: 'MTU',
+      header: 'MTU',
+      align: 'center',
+      renderCell: (row) => (
+        <Typography
+          component="span"
+          sx={{
+            color:
+              row.configuration.mtu === null
+                ? 'var(--color-secondary)'
+                : 'var(--color-text)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {row.configuration.mtu ?? 'تنظیم نشده'}
+        </Typography>
+      ),
+    };
+
     const speedColumn: DataTableColumn<NetworkSettingsTableRow> = {
       id: 'link-speed',
       header: 'سرعت لینک',
@@ -356,6 +376,7 @@ const NetworkSettingsTable = () => {
       netmaskColumn,
       gatewayColumn,
       dnsColumn,
+      MTUColumn,
       speedColumn,
       actionColumn,
     ];

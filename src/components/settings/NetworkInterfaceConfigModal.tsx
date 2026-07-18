@@ -296,7 +296,7 @@ const NetworkInterfaceConfigModal = ({
             </Select>
           </FormControl>
 
-          {/* <TextField
+          <TextField
             label="MTU"
             value={mtu}
             onChange={(event) => {
@@ -305,7 +305,7 @@ const NetworkInterfaceConfigModal = ({
             }}
             inputProps={{ inputMode: 'numeric' }}
             error={Boolean(validateMtu())}
-            helperText="مقدار فعلی دریافت‌شده از API"
+            // helperText="مقدار فعلی دریافت‌شده از API"
             fullWidth
             size="small"
             sx={{
@@ -313,7 +313,7 @@ const NetworkInterfaceConfigModal = ({
                   color: 'var(--color-text)',
                 },
               }}
-          /> */}
+          />
 
           {mode === 'dhcp' ? (
             <Alert severity="info">
