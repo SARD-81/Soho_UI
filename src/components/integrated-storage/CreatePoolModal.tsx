@@ -365,7 +365,7 @@ const CreatePoolModal = ({
                         />
                       }
                       label={
-                        <Tooltip title={`اسلات ${device.slotNumber}`} placement="top" arrow>
+                        <Tooltip title={`اسلات ${device.slotNumber}(${device.wwn})`} placement="top" arrow>
                           <Typography
                             component="span"
                             sx={{ color: 'var(--color-text)' }}

@@ -203,7 +203,7 @@ const Network = () => {
                 variant="subtitle2"
                 sx={{ mb: 0.5, color: 'var(--color-text)', fontWeight: 700 }}
               >
-                ترافیک شبکه
+                حجم دیتا در شبکه
               </Typography>
               <ResponsiveChartContainer height={chartSize}>
                 {(width) => (

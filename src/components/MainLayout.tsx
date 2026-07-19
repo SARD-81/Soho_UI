@@ -299,8 +299,10 @@ const MainLayout: React.FC = () => {
                     component="div"
                     sx={{
                       color: 'var(--color-secondary)',
-                      fontSize: 12,
-                      letterSpacing: '0.18em',
+                      fontFamily: 'var(--font-vazir)',
+                      fontWeight: "bold",
+                      fontSize: 13,
+                      letterSpacing: '0.13em',
                       lineHeight: 2.4,
                       textTransform: 'uppercase',
                     }}
