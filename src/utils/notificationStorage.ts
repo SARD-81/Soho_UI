@@ -28,6 +28,7 @@ const isValidNotification = (notification: StoredNotification): notification is 
     notification.severity === 'critical') &&
   (notification.source === 'startup-capacity-check' ||
     notification.source === 'resource-status-change-check' ||
+    notification.source === 'disk-temperature-check' ||
     notification.source === 'user-action') &&
   typeof notification.createdAt === 'string' &&
   typeof notification.updatedAt === 'string' &&
