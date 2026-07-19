@@ -2,13 +2,22 @@ import { useQueries, useQuery, type UseQueryOptions } from '@tanstack/react-quer
 import type { DiskInventoryItem } from '../@types/disk';
 import { fetchDiskDetail, fetchDiskInventory } from '../lib/diskApi';
 
-export const useDiskInventory = () =>
+interface UseDiskInventoryOptions {
+  enabled?: boolean;
+  refetchInterval?: number | false;
+}
+
+export const useDiskInventory = (options?: UseDiskInventoryOptions) =>
   useQuery<DiskInventoryItem[], Error>({
     queryKey: ['disk', 'inventory'],
-    queryFn: fetchDiskInventory,
+    queryFn: ({ signal }) => fetchDiskInventory({ signal }),
+    enabled: options?.enabled ?? true,
+    refetchInterval: options?.refetchInterval,
+    refetchIntervalInBackground: false,
     select: (items) =>
-      [...items].sort((a, b) => a.disk.localeCompare(b.disk, 'fa-IR', { sensitivity: 'base' })),
-    // refetchInterval: 30000,
+      [...items].sort((a, b) =>
+        a.disk.localeCompare(b.disk, 'fa-IR', { sensitivity: 'base' })
+      ),
     refetchOnWindowFocus: true,
   });
 
