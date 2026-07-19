@@ -12,7 +12,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 import { useMemo, useState } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
 import {
@@ -26,7 +26,6 @@ import {
   MdWarningAmber,
 } from 'react-icons/md';
 import type {
-  LocalNotification,
   LocalNotificationSeverity,
 } from '../../@types/notification';
 import { useLocalNotifications } from '../../hooks/useLocalNotifications';
@@ -54,6 +53,24 @@ const formatNotificationDate = (dateValue: string) =>
     timeStyle: 'short',
   }).format(new Date(dateValue));
 
+const getSeverityPalette = (
+  severity: LocalNotificationSeverity,
+  theme: Theme
+) => {
+  const main =
+    severity === 'critical'
+      ? theme.palette.error.main
+      : severity === 'warning'
+        ? theme.palette.warning.main
+        : theme.palette.info.main;
+
+  return {
+    main,
+    soft: alpha(main, severity === 'critical' ? 0.12 : 0.09),
+    border: alpha(main, 0.3),
+  };
+};
+
 const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const {
@@ -76,33 +93,6 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
 
   const handleClose = () => {
     setAnchorEl(null);
-  };
-
-  const getSeverityPalette = (
-    severity: LocalNotificationSeverity,
-    theme: Parameters<NonNullable<React.ComponentProps<typeof Box>['sx']>>[0]
-  ) => {
-    if (severity === 'critical') {
-      return {
-        main: theme.palette.error.main,
-        soft: alpha(theme.palette.error.main, 0.1),
-        border: alpha(theme.palette.error.main, 0.3),
-      };
-    }
-
-    if (severity === 'warning') {
-      return {
-        main: theme.palette.warning.main,
-        soft: alpha(theme.palette.warning.main, 0.1),
-        border: alpha(theme.palette.warning.main, 0.28),
-      };
-    }
-
-    return {
-      main: theme.palette.info.main,
-      soft: alpha(theme.palette.info.main, 0.09),
-      border: alpha(theme.palette.info.main, 0.26),
-    };
   };
 
   return (
@@ -150,7 +140,10 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                 ? `linear-gradient(160deg, ${alpha('#111827', 0.985)}, ${alpha('#0b1220', 0.97)})`
                 : `linear-gradient(160deg, ${alpha('#ffffff', 0.99)}, ${alpha('#f8fafc', 0.98)})`,
             backdropFilter: 'blur(16px)',
-            boxShadow: `0 24px 60px ${alpha(theme.palette.common.black, 0.28)}`,
+            boxShadow: `0 24px 60px ${alpha(
+              theme.palette.common.black,
+              0.28
+            )}`,
           }),
         }}
       >
@@ -275,7 +268,7 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                         ? palette.soft
                         : alpha(theme.palette.background.paper, 0.34),
                       transition:
-                        'transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease',
+                        'transform 0.18s ease, background-color 0.18s ease',
                       '&:hover': {
                         transform: 'translateY(-1px)',
                         backgroundColor: alpha(palette.main, 0.12),
