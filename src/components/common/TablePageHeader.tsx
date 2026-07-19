@@ -25,6 +25,10 @@ export interface TablePageHeaderAction {
 interface TablePageHeaderProps {
   title: ReactNode;
   subtitle?: ReactNode;
+  /**
+   * Kept temporarily for backwards compatibility with existing pages.
+   * Refresh buttons are intentionally not rendered anywhere in the project.
+   */
   refreshAction?: Omit<TablePageHeaderAction, 'label'> & {
     label?: ReactNode;
   };
@@ -137,18 +141,14 @@ const TablePageHeader = ({
   actions = [],
   sx,
 }: TablePageHeaderProps) => {
+  // Refresh controls are disabled globally. Existing page props are ignored so
+  // callers can be cleaned up gradually without reintroducing the button.
+  void refreshAction;
+
   const resolvedActions: TablePageHeaderAction[] = [];
 
   if (primaryAction) {
     resolvedActions.push(primaryAction);
-  }
-
-  if (refreshAction) {
-    resolvedActions.push({
-      label: refreshAction.label ?? 'به‌روزرسانی لیست',
-      ...refreshAction,
-      variant: refreshAction.variant ?? 'outlined',
-    });
   }
 
   resolvedActions.push(...actions);
