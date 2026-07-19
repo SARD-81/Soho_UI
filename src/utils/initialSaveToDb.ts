@@ -1,12 +1,12 @@
 import type { AxiosRequestConfig } from 'axios';
 
 const AUTH_ENDPOINT_PARTS = [
-  '/auth/',
+  '/auth',
   '/login',
   '/logout',
-  '/token/',
-  '/token/refresh',
-  '/token/verify',
+  '/token',
+  '/refresh',
+  '/verify',
 ];
 
 let activePageScope = '';
