@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
 import { setupAxiosMockAdapter } from '../mocks/setupMocks';
 import { logApiErrorDetails } from '../utils/apiError';
+import { applyInitialSaveToDbPolicy } from '../utils/initialSaveToDb';
 import { refreshAccessToken } from './authApi';
 import { emitSessionCleared, emitTokenRefreshed } from './authEvents';
 import tokenStorage from './tokenStorage';
@@ -29,6 +30,8 @@ if (shouldUseMockApi) {
 
 axiosInstance.interceptors.request.use(
   (config) => {
+    applyInitialSaveToDbPolicy(config);
+
     const token = tokenStorage.getAccessToken();
     if (token) {
       config.headers = config.headers ?? {};
