@@ -8,6 +8,12 @@ import React, {
   useState,
 } from 'react';
 import {
+  clearSessionActivityTimestamp,
+  readSessionLastActivityAt,
+  SESSION_IDLE_TIMEOUT_MS,
+  startSessionActivityWindow,
+} from '../hooks/useSessionActivityTimeout';
+import {
   logout as logoutRequest,
   refreshAccessToken,
   verifyAccessToken,
@@ -15,10 +21,6 @@ import {
 import { AUTH_EVENTS, authEventTarget } from '../lib/authEvents';
 import axiosInstance from '../lib/axiosInstance';
 import tokenStorage from '../lib/tokenStorage';
-import {
-  clearSessionActivityTimestamp,
-  startSessionActivityWindow,
-} from '../hooks/useSessionActivityTimeout';
 import { resetInitialSaveToDbPolicy } from '../utils/initialSaveToDb';
 
 interface AuthContextType {
@@ -104,6 +106,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const storedAccess = tokenStorage.getAccessToken();
       const storedRefresh = tokenStorage.getRefreshToken();
       const savedUsername = tokenStorage.getUsername();
+      const lastActivityAt = readSessionLastActivityAt();
+
+      if (
+        storedRefresh &&
+        lastActivityAt !== null &&
+        Date.now() - lastActivityAt >= SESSION_IDLE_TIMEOUT_MS
+      ) {
+        clearAuthState();
+        setIsAuthLoading(false);
+        return;
+      }
 
       // Use the existing access token when it is still valid to avoid unnecessary refresh calls.
       if (storedAccess) {
