@@ -3,6 +3,7 @@ export type LocalNotificationSeverity = 'info' | 'warning' | 'critical';
 export type LocalNotificationSource =
   | 'startup-capacity-check'
   | 'resource-status-change-check'
+  | 'disk-temperature-check'
   | 'user-action';
 
 export type LocalNotificationEntityType =
