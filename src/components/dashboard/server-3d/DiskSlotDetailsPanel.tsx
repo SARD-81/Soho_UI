@@ -27,13 +27,14 @@ const renderDetailValue = (value: unknown): ReactNode => {
 
   if (typeof formatted === 'string' && formatted.includes('\n')) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.35 }}>
         {formatted.split('\n').map((line, index) => (
           <Typography
             key={`${line}-${index}`}
+            component="span"
             sx={{
-              fontSize: '0.86rem',
-              textAlign: 'right',
+              fontSize: '0.84rem',
+              textAlign: 'left',
               whiteSpace: 'normal',
               wordBreak: 'break-word',
               overflowWrap: 'anywhere',
@@ -52,7 +53,7 @@ const renderDetailValue = (value: unknown): ReactNode => {
 const InfoTile = ({ label, value }: { label: string; value: unknown }) => (
   <Box
     sx={{
-      p: 1.5,
+      p: 1.25,
       borderRadius: '8px',
       border: (theme) =>
         `1px solid ${
@@ -62,34 +63,45 @@ const InfoTile = ({ label, value }: { label: string; value: unknown }) => (
         }`,
       background:
         'linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(0,198,169,0.055) 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 0.5,
-      minHeight: 78,
+      display: 'grid',
+      gridTemplateColumns: 'minmax(88px, 42%) minmax(0, 1fr)',
+      alignItems: 'start',
+      gap: 1,
+      minHeight: 54,
       minWidth: 0,
+      direction: 'rtl',
     }}
   >
     <Typography
       sx={{
         color: 'var(--color-secondary)',
-        fontWeight: 700,
+        fontWeight: 800,
         fontSize: '0.82rem',
+        whiteSpace: 'nowrap',
+        textAlign: 'right',
+        lineHeight: 1.8,
       }}
     >
-      {label}
+      {label} :
     </Typography>
-    <Typography
+
+    <Box
       sx={{
         color: 'var(--color-text)',
-        fontWeight: 700,
+        fontWeight: 800,
         fontSize: '0.9rem',
+        textAlign: 'left',
+        direction: 'ltr',
+        unicodeBidi: 'plaintext',
         whiteSpace: 'normal',
         wordBreak: 'break-word',
         overflowWrap: 'anywhere',
+        lineHeight: 1.8,
+        minWidth: 0,
       }}
     >
       {renderDetailValue(value)}
-    </Typography>
+    </Box>
   </Box>
 );
 
@@ -126,8 +138,12 @@ const EmptySelectionState = () => (
       <Typography sx={{ fontWeight: 800, color: 'var(--color-text)' }}>
         یک اسلات را انتخاب کنید
       </Typography>
-      <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.9 }}>
-        با کلیک روی هر bay در مدل سه‌بعدی، جزئیات دیسک همان اسلات در این پنل نمایش داده می‌شود.
+      <Typography
+        variant="body2"
+        sx={{ color: 'text.secondary', lineHeight: 1.9 }}
+      >
+        با کلیک روی هر bay در مدل سه‌بعدی، جزئیات دیسک همان اسلات در این پنل
+        نمایش داده می‌شود.
       </Typography>
     </Stack>
   </Box>
@@ -162,9 +178,12 @@ const EmptyBayState = ({ selectedBay }: { selectedBay: ServerSlotViewModel }) =>
     <Typography sx={{ fontWeight: 800, color: 'var(--color-text)' }}>
       این اسلات خالی است
     </Typography>
-    <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.9 }}>
-  برای این اسلات هنوز دیسکی در سامانه شناسایی نشده است.
-</Typography>
+    <Typography
+      variant="body2"
+      sx={{ color: 'text.secondary', lineHeight: 1.9 }}
+    >
+      برای این اسلات هنوز دیسکی در سامانه شناسایی نشده است.
+    </Typography>
   </Box>
 );
 
@@ -188,11 +207,11 @@ const DiskSlotDetailsPanel = ({ selectedBay }: DiskSlotDetailsPanelProps) => {
 
   return (
     <Box
-  sx={{
-    height: '100%',
-    minHeight: 0,
-    maxHeight: { xs: 'none', lg: 390 },
-    overflow: 'hidden',
+      sx={{
+        height: '100%',
+        minHeight: 0,
+        maxHeight: { xs: 'none', lg: 390 },
+        overflow: 'hidden',
         borderRadius: '12px',
         border: (theme) =>
           `1px solid ${
@@ -209,7 +228,12 @@ const DiskSlotDetailsPanel = ({ selectedBay }: DiskSlotDetailsPanelProps) => {
         minWidth: 0,
       }}
     >
-      <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        gap={1}
+      >
         <Stack direction="row" alignItems="center" gap={1.25} minWidth={0}>
           <Box
             sx={{
@@ -296,23 +320,23 @@ const DiskSlotDetailsPanel = ({ selectedBay }: DiskSlotDetailsPanelProps) => {
 
       {detailEntries.length > 0 ? (
         <Box
-  sx={{
-    display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      sm: 'repeat(2, minmax(0, 1fr))',
-      lg: '1fr',
-      xl: 'repeat(2, minmax(0, 1fr))',
-    },
-    gap: 1.25,
-    overflowY: 'auto',
-    pr: 0.5,
-    minHeight: 0,
-    '& > *': {
-  minWidth: 0,
-},
-  }}
->
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, minmax(0, 1fr))',
+              lg: '1fr',
+              xl: 'repeat(2, minmax(0, 1fr))',
+            },
+            gap: 1.25,
+            overflowY: 'auto',
+            pr: 0.5,
+            minHeight: 0,
+            '& > *': {
+              minWidth: 0,
+            },
+          }}
+        >
           {detailEntries.map(([label, value]) => (
             <InfoTile key={label} label={label} value={value} />
           ))}
