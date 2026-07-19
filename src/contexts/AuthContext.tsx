@@ -206,21 +206,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = useCallback(async () => {
     const currentRefresh = refreshToken ?? tokenStorage.getRefreshToken();
-    let logoutError: unknown = null;
 
-    try {
-      if (currentRefresh) {
-        await logoutRequest(currentRefresh);
-      }
-    } catch (error) {
-      console.error('Failed to notify server about logout', error);
-      logoutError = error;
-    } finally {
-      clearAuthState();
+    // End the local session immediately so protected routes redirect to login
+    // even if the backend logout request is slow or temporarily unavailable.
+    clearAuthState();
+
+    if (!currentRefresh) {
+      return;
     }
 
-    if (logoutError) {
-      throw logoutError;
+    try {
+      await logoutRequest(currentRefresh);
+    } catch (error) {
+      console.error('Failed to notify server about logout', error);
+      throw error;
     }
   }, [refreshToken, clearAuthState]);
 
