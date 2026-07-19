@@ -15,6 +15,11 @@ import {
 import { AUTH_EVENTS, authEventTarget } from '../lib/authEvents';
 import axiosInstance from '../lib/axiosInstance';
 import tokenStorage from '../lib/tokenStorage';
+import {
+  clearSessionActivityTimestamp,
+  startSessionActivityWindow,
+} from '../hooks/useSessionActivityTimeout';
+import { resetInitialSaveToDbPolicy } from '../utils/initialSaveToDb';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -85,6 +90,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const clearAuthState = useCallback(() => {
     tokenStorage.clear();
+    clearSessionActivityTimestamp();
+    resetInitialSaveToDbPolicy();
     setAccessToken(null);
     setRefreshToken(null);
     setIsAuthenticated(false);
@@ -178,6 +185,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setRefreshToken(refresh);
       setIsAuthenticated(true);
       setUsername(user);
+      startSessionActivityWindow();
+      resetInitialSaveToDbPolicy();
     },
     [setAccessToken, setRefreshToken, setUsername]
   );
