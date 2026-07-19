@@ -1,22 +1,34 @@
 import { useEffect, useRef } from 'react';
 
-const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
-const SESSION_IDLE_CHECK_INTERVAL_MS = 30 * 1000;
+export const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const LAST_ACTIVITY_STORAGE_KEY = 'auth:last-activity-at';
-
 const ACTIVITY_WRITE_THROTTLE_MS = 5 * 1000;
 
 const getCurrentTimestamp = () => Date.now();
 
-const readLastActivityAt = (): number | null => {
+const getSessionStorage = (): Storage | null => {
   if (typeof window === 'undefined') {
     return null;
   }
 
   try {
-    const storedValue = window.sessionStorage.getItem(
-      LAST_ACTIVITY_STORAGE_KEY
-    );
+    return window.sessionStorage;
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('[auth] sessionStorage is unavailable', error);
+    }
+    return null;
+  }
+};
+
+export const readSessionLastActivityAt = (): number | null => {
+  const storage = getSessionStorage();
+  if (!storage) {
+    return null;
+  }
+
+  try {
+    const storedValue = storage.getItem(LAST_ACTIVITY_STORAGE_KEY);
     if (!storedValue) {
       return null;
     }
@@ -31,16 +43,36 @@ const readLastActivityAt = (): number | null => {
   }
 };
 
-const writeLastActivityAt = (timestamp: number) => {
-  if (typeof window === 'undefined') {
+const writeSessionLastActivityAt = (timestamp: number) => {
+  const storage = getSessionStorage();
+  if (!storage) {
     return;
   }
 
   try {
-    window.sessionStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, String(timestamp));
+    storage.setItem(LAST_ACTIVITY_STORAGE_KEY, String(timestamp));
   } catch (error) {
     if (import.meta.env.DEV) {
       console.warn('[auth] unable to write last activity timestamp', error);
+    }
+  }
+};
+
+export const startSessionActivityWindow = () => {
+  writeSessionLastActivityAt(getCurrentTimestamp());
+};
+
+export const clearSessionActivityTimestamp = () => {
+  const storage = getSessionStorage();
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.removeItem(LAST_ACTIVITY_STORAGE_KEY);
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('[auth] unable to clear last activity timestamp', error);
     }
   }
 };
@@ -66,52 +98,23 @@ export const useSessionActivityTimeout = ({
     }
 
     timeoutFiredRef.current = false;
-
-    let intervalId: number | null = null;
-    let listenersActive = true;
-
-    const recordActivity = (timestamp: number) => {
-      lastActivityWriteRef.current = timestamp;
-      writeLastActivityAt(timestamp);
-    };
+    let timeoutId: number | null = null;
+    let listenersActive = false;
 
     const isPastIdleTimeout = (
       previousLastActivityAt: number,
       timestamp: number
     ) => timestamp - previousLastActivityAt >= SESSION_IDLE_TIMEOUT_MS;
 
-    const recordActivityUnlessTimedOut = (timestamp: number) => {
-      const previousLastActivityAt = readLastActivityAt();
-
-      if (
-        previousLastActivityAt !== null &&
-        isPastIdleTimeout(previousLastActivityAt, timestamp)
-      ) {
-        handleTimeout();
-        return;
+    function clearIdleTimer() {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+        timeoutId = null;
       }
+    }
 
-      recordActivity(timestamp);
-    };
-
-    const handleActivity = () => {
-      if (timeoutFiredRef.current) {
-        return;
-      }
-
-      const now = getCurrentTimestamp();
-      if (now - lastActivityWriteRef.current < ACTIVITY_WRITE_THROTTLE_MS) {
-        return;
-      }
-
-      recordActivityUnlessTimedOut(now);
-    };
-
-    const stopTracking = () => {
-      if (intervalId) {
-        window.clearInterval(intervalId);
-        intervalId = null;
-      }
+    function stopTracking() {
+      clearIdleTimer();
 
       if (!listenersActive) {
         return;
@@ -125,24 +128,44 @@ export const useSessionActivityTimeout = ({
       window.removeEventListener('focus', handleActivity);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       listenersActive = false;
-    };
+    }
 
-    const handleTimeout = () => {
+    function handleTimeout() {
       if (timeoutFiredRef.current) {
         return;
       }
 
       timeoutFiredRef.current = true;
       stopTracking();
+      clearSessionActivityTimestamp();
       void onTimeoutRef.current();
-    };
+    }
 
-    const checkIdleTimeout = () => {
+    function scheduleTimeout(lastActivityAt: number) {
+      clearIdleTimer();
+      const elapsed = getCurrentTimestamp() - lastActivityAt;
+      const remaining = SESSION_IDLE_TIMEOUT_MS - elapsed;
+
+      if (remaining <= 0) {
+        handleTimeout();
+        return;
+      }
+
+      timeoutId = window.setTimeout(handleTimeout, remaining);
+    }
+
+    function recordActivity(timestamp: number) {
+      lastActivityWriteRef.current = timestamp;
+      writeSessionLastActivityAt(timestamp);
+      scheduleTimeout(timestamp);
+    }
+
+    function checkIdleTimeout() {
       if (timeoutFiredRef.current) {
         return;
       }
 
-      const lastActivityAt = readLastActivityAt();
+      const lastActivityAt = readSessionLastActivityAt();
       const now = getCurrentTimestamp();
 
       if (lastActivityAt === null) {
@@ -152,19 +175,62 @@ export const useSessionActivityTimeout = ({
 
       if (isPastIdleTimeout(lastActivityAt, now)) {
         handleTimeout();
+        return;
       }
-    };
 
-    const handleVisibilityChange = () => {
+      lastActivityWriteRef.current = lastActivityAt;
+      scheduleTimeout(lastActivityAt);
+    }
+
+    function handleActivity() {
+      if (timeoutFiredRef.current) {
+        return;
+      }
+
+      const now = getCurrentTimestamp();
+      const previousLastActivityAt = readSessionLastActivityAt();
+
+      if (
+        previousLastActivityAt !== null &&
+        isPastIdleTimeout(previousLastActivityAt, now)
+      ) {
+        handleTimeout();
+        return;
+      }
+
+      if (now - lastActivityWriteRef.current < ACTIVITY_WRITE_THROTTLE_MS) {
+        return;
+      }
+
+      recordActivity(now);
+    }
+
+    function handleVisibilityChange() {
       if (document.visibilityState === 'visible') {
         checkIdleTimeout();
       }
-    };
+    }
 
-    // A successful authenticated mount should start a fresh activity window.
-    // Without this, a stale timestamp from a previous session can immediately
-    // trigger the idle-timeout logout right after a new login.
-    recordActivity(getCurrentTimestamp());
+    const storedLastActivityAt = readSessionLastActivityAt();
+    const now = getCurrentTimestamp();
+
+    // Preserve the timestamp across page reloads. If the user returns after
+    // thirty minutes, expire the session before accepting that return as new
+    // activity. A fresh timestamp is created only for a genuinely new login.
+    if (
+      storedLastActivityAt !== null &&
+      isPastIdleTimeout(storedLastActivityAt, now)
+    ) {
+      handleTimeout();
+      return;
+    }
+
+    if (storedLastActivityAt === null) {
+      recordActivity(now);
+    } else {
+      lastActivityWriteRef.current = storedLastActivityAt;
+      scheduleTimeout(storedLastActivityAt);
+    }
 
     window.addEventListener('click', handleActivity);
     window.addEventListener('keydown', handleActivity);
@@ -173,11 +239,7 @@ export const useSessionActivityTimeout = ({
     window.addEventListener('pointerdown', handleActivity, { passive: true });
     window.addEventListener('focus', handleActivity);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    intervalId = window.setInterval(
-      checkIdleTimeout,
-      SESSION_IDLE_CHECK_INTERVAL_MS
-    );
+    listenersActive = true;
 
     return () => {
       stopTracking();
