@@ -7,16 +7,28 @@ import {
   IconButton,
   List,
   ListItem,
-  ListItemText,
   Popover,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useMemo, useState } from 'react';
-import type { MouseEvent } from 'react';
-import { MdClose, MdDeleteOutline, MdDone, MdNotificationsNone } from 'react-icons/md';
-import type { LocalNotification, LocalNotificationSeverity } from '../../@types/notification';
+import type { MouseEvent, ReactNode } from 'react';
+import {
+  MdClose,
+  MdDeleteOutline,
+  MdDone,
+  MdDoneAll,
+  MdErrorOutline,
+  MdInfoOutline,
+  MdNotificationsNone,
+  MdWarningAmber,
+} from 'react-icons/md';
+import type {
+  LocalNotification,
+  LocalNotificationSeverity,
+} from '../../@types/notification';
 import { useLocalNotifications } from '../../hooks/useLocalNotifications';
 
 type NotificationBellProps = {
@@ -30,6 +42,12 @@ const severityLabelByType: Record<LocalNotificationSeverity, string> = {
   critical: 'بحرانی',
 };
 
+const severityIconByType: Record<LocalNotificationSeverity, ReactNode> = {
+  info: <MdInfoOutline size={21} />,
+  warning: <MdWarningAmber size={21} />,
+  critical: <MdErrorOutline size={21} />,
+};
+
 const formatNotificationDate = (dateValue: string) =>
   new Intl.DateTimeFormat('fa-IR', {
     dateStyle: 'short',
@@ -38,12 +56,17 @@ const formatNotificationDate = (dateValue: string) =>
 
 const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotification } =
-    useLocalNotifications(userKey);
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearNotification,
+  } = useLocalNotifications(userKey);
 
   const visibleNotifications = useMemo(
     () => notifications.slice(0, maxItems),
-    [maxItems, notifications],
+    [maxItems, notifications]
   );
   const isOpen = Boolean(anchorEl);
 
@@ -55,32 +78,55 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
     setAnchorEl(null);
   };
 
-  const getSeverityColor = (severity: LocalNotification['severity']) => {
+  const getSeverityPalette = (
+    severity: LocalNotificationSeverity,
+    theme: Parameters<NonNullable<React.ComponentProps<typeof Box>['sx']>>[0]
+  ) => {
     if (severity === 'critical') {
-      return 'error';
+      return {
+        main: theme.palette.error.main,
+        soft: alpha(theme.palette.error.main, 0.1),
+        border: alpha(theme.palette.error.main, 0.3),
+      };
     }
 
     if (severity === 'warning') {
-      return 'warning';
+      return {
+        main: theme.palette.warning.main,
+        soft: alpha(theme.palette.warning.main, 0.1),
+        border: alpha(theme.palette.warning.main, 0.28),
+      };
     }
 
-    return 'default';
+    return {
+      main: theme.palette.info.main,
+      soft: alpha(theme.palette.info.main, 0.09),
+      border: alpha(theme.palette.info.main, 0.26),
+    };
   };
 
   return (
     <>
-      <IconButton
-        aria-label="اعلان‌ها"
-        aria-controls={isOpen ? 'notification-popover' : undefined}
-        aria-haspopup="true"
-        onClick={handleOpen}
-        size="small"
-        sx={{ color: 'var(--color-bg-primary)' }}
-      >
-        <Badge badgeContent={unreadCount} color="error" max={99} overlap="circular">
-          <MdNotificationsNone size={24} />
-        </Badge>
-      </IconButton>
+      <Tooltip title="اعلان‌ها">
+        <IconButton
+          aria-label="اعلان‌ها"
+          aria-controls={isOpen ? 'notification-popover' : undefined}
+          aria-haspopup="true"
+          onClick={handleOpen}
+          size="small"
+          sx={{ color: 'var(--color-text)' }}
+        >
+          <Badge
+            badgeContent={unreadCount}
+            color="error"
+            max={99}
+            overlap="circular"
+          >
+            <MdNotificationsNone size={24} />
+          </Badge>
+        </IconButton>
+      </Tooltip>
+
       <Popover
         id="notification-popover"
         anchorEl={anchorEl}
@@ -89,119 +135,287 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         PaperProps={{
+          dir: 'rtl',
           sx: (theme) => ({
             mt: 1.5,
-            width: { xs: 'calc(100vw - 32px)', sm: 420 },
+            width: { xs: 'calc(100vw - 24px)', sm: 440 },
             maxWidth: '100%',
-            borderRadius: 2,
+            borderRadius: '16px',
+            overflow: 'hidden',
             direction: 'rtl',
-            border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-            backgroundColor:
-              theme.palette.mode === 'dark' ? alpha('#121212', 0.96) : alpha('#ffffff', 0.98),
-            backdropFilter: 'blur(12px)',
+            textAlign: 'right',
+            border: `1px solid ${alpha(theme.palette.divider, 0.66)}`,
+            background:
+              theme.palette.mode === 'dark'
+                ? `linear-gradient(160deg, ${alpha('#111827', 0.985)}, ${alpha('#0b1220', 0.97)})`
+                : `linear-gradient(160deg, ${alpha('#ffffff', 0.99)}, ${alpha('#f8fafc', 0.98)})`,
+            backdropFilter: 'blur(16px)',
+            boxShadow: `0 24px 60px ${alpha(theme.palette.common.black, 0.28)}`,
           }),
         }}
       >
-        <Box sx={{ p: 2 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'var(--color-text)' }}>
+        <Box
+          sx={(theme) => ({
+            p: 2,
+            background: `linear-gradient(135deg, ${alpha(
+              theme.palette.primary.main,
+              0.12
+            )}, transparent 70%)`,
+          })}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            spacing={1}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 900,
+                  color: 'var(--color-text)',
+                  textAlign: 'right',
+                }}
+              >
                 اعلان‌ها
               </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {unreadCount > 0 ? `${unreadCount} اعلان خوانده‌نشده` : 'همه اعلان‌ها خوانده شده‌اند'}
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'text.secondary',
+                  textAlign: 'right',
+                  display: 'block',
+                  mt: 0.25,
+                }}
+              >
+                {unreadCount > 0
+                  ? `${unreadCount.toLocaleString('fa-IR')} اعلان خوانده‌نشده`
+                  : 'همه اعلان‌ها خوانده شده‌اند'}
               </Typography>
             </Box>
-            <Button size="small" disabled={unreadCount === 0} onClick={markAllAsRead}>
+
+            <Button
+              size="small"
+              disabled={unreadCount === 0}
+              onClick={markAllAsRead}
+              startIcon={<MdDoneAll />}
+              sx={{ fontWeight: 800, flexShrink: 0 }}
+            >
               خواندن همه
             </Button>
           </Stack>
         </Box>
+
         <Divider />
+
         {visibleNotifications.length === 0 ? (
-          <Typography sx={{ px: 2, py: 4, textAlign: 'center', color: 'text.secondary' }}>
-            اعلانی برای نمایش وجود ندارد.
-          </Typography>
+          <Box
+            sx={{
+              px: 2,
+              py: 5,
+              display: 'grid',
+              placeItems: 'center',
+              gap: 1,
+              textAlign: 'center',
+            }}
+          >
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: '14px',
+                display: 'grid',
+                placeItems: 'center',
+                color: 'var(--color-primary)',
+                backgroundColor:
+                  'color-mix(in srgb, var(--color-primary) 10%, transparent)',
+                border:
+                  '1px solid color-mix(in srgb, var(--color-primary) 24%, transparent)',
+              }}
+            >
+              <MdNotificationsNone size={25} />
+            </Box>
+            <Typography sx={{ color: 'text.secondary' }}>
+              اعلانی برای نمایش وجود ندارد.
+            </Typography>
+          </Box>
         ) : (
-          <List disablePadding sx={{ maxHeight: 460, overflowY: 'auto' }}>
+          <List
+            disablePadding
+            sx={{
+              maxHeight: 470,
+              overflowY: 'auto',
+              p: 1.25,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+            }}
+          >
             {visibleNotifications.map((notification) => {
               const isUnread = notification.readAt === null;
-              const isCritical = notification.severity === 'critical';
 
               return (
                 <ListItem
                   key={notification.id}
-                  alignItems="flex-start"
-                  sx={(theme) => ({
-                    gap: 1,
-                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.55)}`,
-                    backgroundColor: isUnread ? alpha(theme.palette.primary.main, 0.06) : 'transparent',
-                    borderRight: `4px solid ${
-                      isCritical ? theme.palette.error.main : theme.palette.warning.main
-                    }`,
-                  })}
-                  secondaryAction={
-                    <Stack direction="row" spacing={0.5}>
-                      <IconButton
-                        edge="end"
-                        aria-label="خوانده شد"
-                        disabled={!isUnread}
-                        size="small"
-                        onClick={() => markAsRead(notification.id)}
-                      >
-                        <MdDone />
-                      </IconButton>
-                      <IconButton
-                        edge="end"
-                        aria-label="حذف اعلان"
-                        size="small"
-                        onClick={() => clearNotification(notification.id)}
-                      >
-                        <MdDeleteOutline />
-                      </IconButton>
-                    </Stack>
-                  }
+                  disableGutters
+                  sx={(theme) => {
+                    const palette = getSeverityPalette(
+                      notification.severity,
+                      theme
+                    );
+
+                    return {
+                      display: 'block',
+                      p: 1.35,
+                      borderRadius: '12px',
+                      border: `1px solid ${palette.border}`,
+                      borderRight: `4px solid ${palette.main}`,
+                      backgroundColor: isUnread
+                        ? palette.soft
+                        : alpha(theme.palette.background.paper, 0.34),
+                      transition:
+                        'transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        backgroundColor: alpha(palette.main, 0.12),
+                      },
+                    };
+                  }}
                 >
-                  <ListItemText
-                    sx={{ pr: 7, my: 0 }}
-                    primary={
-                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.75 }}>
+                  <Stack direction="row" alignItems="flex-start" spacing={1.1}>
+                    <Box
+                      sx={(theme) => {
+                        const palette = getSeverityPalette(
+                          notification.severity,
+                          theme
+                        );
+
+                        return {
+                          width: 36,
+                          height: 36,
+                          borderRadius: '10px',
+                          flex: '0 0 auto',
+                          display: 'grid',
+                          placeItems: 'center',
+                          color: palette.main,
+                          backgroundColor: palette.soft,
+                          border: `1px solid ${palette.border}`,
+                        };
+                      }}
+                    >
+                      {severityIconByType[notification.severity]}
+                    </Box>
+
+                    <Box sx={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        gap={0.75}
+                        flexWrap="wrap"
+                        sx={{ mb: 0.65 }}
+                      >
                         <Chip
                           size="small"
-                          color={getSeverityColor(notification.severity)}
                           label={severityLabelByType[notification.severity]}
-                          variant={isCritical ? 'filled' : 'outlined'}
-                          sx={{ fontWeight: isCritical ? 800 : 600 }}
+                          color={
+                            notification.severity === 'critical'
+                              ? 'error'
+                              : notification.severity === 'warning'
+                                ? 'warning'
+                                : 'info'
+                          }
+                          variant={
+                            notification.severity === 'critical'
+                              ? 'filled'
+                              : 'outlined'
+                          }
+                          sx={{ fontWeight: 800 }}
                         />
                         {isUnread ? (
-                          <Chip size="small" label="جدید" color="primary" variant="outlined" />
+                          <Chip
+                            size="small"
+                            label="جدید"
+                            color="primary"
+                            variant="outlined"
+                          />
                         ) : null}
                       </Stack>
-                    }
-                    secondary={
-                      <Box component="span">
+
+                      <Typography
+                        sx={{
+                          fontWeight:
+                            notification.severity === 'critical' ? 900 : 800,
+                          color: 'var(--color-text)',
+                          textAlign: 'right',
+                          lineHeight: 1.75,
+                        }}
+                      >
+                        {notification.title}
+                      </Typography>
+
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: 'text.secondary',
+                          mt: 0.35,
+                          textAlign: 'right',
+                          direction: 'rtl',
+                          lineHeight: 1.9,
+                          overflowWrap: 'anywhere',
+                        }}
+                      >
+                        {notification.message}
+                      </Typography>
+
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        gap={1}
+                        sx={{ mt: 0.9 }}
+                      >
                         <Typography
-                          component="span"
-                          display="block"
-                          sx={{ fontWeight: isCritical ? 800 : 700, color: 'var(--color-text)' }}
+                          variant="caption"
+                          sx={{ color: 'text.secondary' }}
                         >
-                          {notification.title}
-                        </Typography>
-                        <Typography component="span" display="block" variant="body2" color="text.secondary">
-                          {notification.message}
-                        </Typography>
-                        <Typography component="span" display="block" variant="caption" color="text.secondary" sx={{ mt: 0.75 }}>
                           {formatNotificationDate(notification.updatedAt)}
                         </Typography>
-                      </Box>
-                    }
-                  />
+
+                        <Stack direction="row" spacing={0.35}>
+                          <Tooltip title="خوانده شد">
+                            <span>
+                              <IconButton
+                                aria-label="علامت‌گذاری اعلان به‌عنوان خوانده‌شده"
+                                disabled={!isUnread}
+                                size="small"
+                                onClick={() => markAsRead(notification.id)}
+                              >
+                                <MdDone />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="حذف اعلان">
+                            <IconButton
+                              aria-label="حذف اعلان"
+                              size="small"
+                              onClick={() => clearNotification(notification.id)}
+                            >
+                              <MdDeleteOutline />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                      </Stack>
+                    </Box>
+                  </Stack>
                 </ListItem>
               );
             })}
           </List>
         )}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
+
+        <Divider />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', p: 1 }}>
           <Button size="small" startIcon={<MdClose />} onClick={handleClose}>
             بستن
           </Button>
