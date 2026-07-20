@@ -1,6 +1,7 @@
 import type { ResourceStatusSnapshotItem } from './notificationStatusRules';
 
-const RESOURCE_STATUS_SNAPSHOT_KEY_PREFIX = 'soho:notifications:resource-status-snapshot';
+const RESOURCE_STATUS_SNAPSHOT_KEY_PREFIX =
+  'soho:notifications:resource-status-snapshot';
 
 interface ResourceStatusSnapshotStorageValue {
   version: 1;
@@ -13,14 +14,18 @@ const isBrowser = () => typeof window !== 'undefined';
 export const getResourceStatusSnapshotStorageKey = (userKey?: string) =>
   `${RESOURCE_STATUS_SNAPSHOT_KEY_PREFIX}:${userKey || 'default'}`;
 
-const isValidSnapshotItem = (item: unknown): item is ResourceStatusSnapshotItem => {
+const isValidSnapshotItem = (
+  item: unknown
+): item is ResourceStatusSnapshotItem => {
   if (item == null || typeof item !== 'object') {
     return false;
   }
 
   const candidate = item as Partial<ResourceStatusSnapshotItem>;
   return (
-    (candidate.entityType === 'pool' || candidate.entityType === 'disk') &&
+    (candidate.entityType === 'pool' ||
+      candidate.entityType === 'disk' ||
+      candidate.entityType === 'service') &&
     typeof candidate.entityId === 'string' &&
     candidate.entityId.trim().length > 0 &&
     typeof candidate.entityName === 'string' &&
@@ -30,7 +35,9 @@ const isValidSnapshotItem = (item: unknown): item is ResourceStatusSnapshotItem 
   );
 };
 
-const isValidSnapshotValue = (value: unknown): value is ResourceStatusSnapshotStorageValue => {
+const isValidSnapshotValue = (
+  value: unknown
+): value is ResourceStatusSnapshotStorageValue => {
   if (value == null || typeof value !== 'object') {
     return false;
   }
@@ -46,7 +53,7 @@ const isValidSnapshotValue = (value: unknown): value is ResourceStatusSnapshotSt
 };
 
 export const loadResourceStatusSnapshot = (
-  userKey?: string,
+  userKey?: string
 ): ResourceStatusSnapshotStorageValue | null => {
   if (!isBrowser()) {
     return null;
@@ -75,7 +82,7 @@ export const loadResourceStatusSnapshot = (
 
 export const saveResourceStatusSnapshot = (
   items: ResourceStatusSnapshotItem[],
-  userKey?: string,
+  userKey?: string
 ): ResourceStatusSnapshotStorageValue | null => {
   if (!isBrowser()) {
     return null;
@@ -88,7 +95,10 @@ export const saveResourceStatusSnapshot = (
   };
 
   try {
-    window.localStorage.setItem(getResourceStatusSnapshotStorageKey(userKey), JSON.stringify(snapshot));
+    window.localStorage.setItem(
+      getResourceStatusSnapshotStorageKey(userKey),
+      JSON.stringify(snapshot)
+    );
     return snapshot;
   } catch {
     return null;
