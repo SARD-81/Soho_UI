@@ -10,6 +10,7 @@ import {
 import {
   createResourceStatusChangeNotification,
   normalizeResourceStatus,
+  type ResourceStatusEntityType,
   type ResourceStatusSnapshotItem,
 } from '../utils/notificationStatusRules';
 import {
@@ -130,13 +131,19 @@ const createServiceSnapshotItem = (
   };
 };
 
+interface CurrentSnapshot {
+  items: ResourceStatusSnapshotItem[];
+  availableEntityTypes: Set<ResourceStatusEntityType>;
+}
+
 const createSnapshotSignature = (
-  items: ResourceStatusSnapshotItem[],
+  snapshot: CurrentSnapshot,
   userKey?: string
 ) =>
   JSON.stringify({
     userKey: userKey || 'default',
-    items: items.map((item) => [
+    availableEntityTypes: Array.from(snapshot.availableEntityTypes).sort(),
+    items: snapshot.items.map((item) => [
       item.entityType,
       item.entityId,
       item.entityName,
@@ -161,29 +168,55 @@ export const useResourceStatusChangeNotifications = (
   const [error, setError] = useState<Error | null>(null);
   const checkedDataSignatureRef = useRef<string | null>(null);
 
-  const buildCurrentSnapshot = useCallback(() => {
-    const pools = Array.isArray(zpoolQuery.data?.pools)
-      ? zpoolQuery.data.pools
-      : [];
-    const disks = Array.isArray(diskQuery.data?.disks)
-      ? diskQuery.data.disks
-      : [];
-    const services = Array.isArray(servicesQuery.data?.data)
-      ? servicesQuery.data.data
-      : [];
+  const buildCurrentSnapshot = useCallback((): CurrentSnapshot => {
+    const items: ResourceStatusSnapshotItem[] = [];
+    const availableEntityTypes = new Set<ResourceStatusEntityType>();
 
-    const poolItems = pools
-      .map(createPoolSnapshotItem)
-      .filter((item): item is ResourceStatusSnapshotItem => item != null);
-    const diskItems = disks
-      .map(createDiskSnapshotItem)
-      .filter((item): item is ResourceStatusSnapshotItem => item != null);
-    const serviceItems = services
-      .map(createServiceSnapshotItem)
-      .filter((item): item is ResourceStatusSnapshotItem => item != null);
+    if (zpoolQuery.isSuccess && zpoolQuery.data != null) {
+      availableEntityTypes.add('pool');
+      const pools = Array.isArray(zpoolQuery.data.pools)
+        ? zpoolQuery.data.pools
+        : [];
+      items.push(
+        ...pools
+          .map(createPoolSnapshotItem)
+          .filter((item): item is ResourceStatusSnapshotItem => item != null)
+      );
+    }
 
-    return [...poolItems, ...diskItems, ...serviceItems];
-  }, [diskQuery.data, servicesQuery.data, zpoolQuery.data]);
+    if (diskQuery.isSuccess && diskQuery.data != null) {
+      availableEntityTypes.add('disk');
+      const disks = Array.isArray(diskQuery.data.disks)
+        ? diskQuery.data.disks
+        : [];
+      items.push(
+        ...disks
+          .map(createDiskSnapshotItem)
+          .filter((item): item is ResourceStatusSnapshotItem => item != null)
+      );
+    }
+
+    if (servicesQuery.isSuccess && servicesQuery.data != null) {
+      availableEntityTypes.add('service');
+      const services = Array.isArray(servicesQuery.data.data)
+        ? servicesQuery.data.data
+        : [];
+      items.push(
+        ...services
+          .map(createServiceSnapshotItem)
+          .filter((item): item is ResourceStatusSnapshotItem => item != null)
+      );
+    }
+
+    return { items, availableEntityTypes };
+  }, [
+    diskQuery.data,
+    diskQuery.isSuccess,
+    servicesQuery.data,
+    servicesQuery.isSuccess,
+    zpoolQuery.data,
+    zpoolQuery.isSuccess,
+  ]);
 
   const runStatusChangeChecks = useCallback(() => {
     if (!isBrowser()) {
@@ -194,11 +227,11 @@ export const useResourceStatusChangeNotifications = (
     setError(null);
 
     try {
-      const currentSnapshotItems = buildCurrentSnapshot();
+      const currentSnapshot = buildCurrentSnapshot();
       const previousSnapshot = loadResourceStatusSnapshot(userKey);
 
       if (previousSnapshot == null) {
-        saveResourceStatusSnapshot(currentSnapshotItems, userKey);
+        saveResourceStatusSnapshot(currentSnapshot.items, userKey);
         setLastCheckAt(new Date().toISOString());
         return;
       }
@@ -213,7 +246,7 @@ export const useResourceStatusChangeNotifications = (
       cleanupExpiredNotifications(userKey);
       let generatedCount = 0;
 
-      currentSnapshotItems.forEach((currentItem) => {
+      currentSnapshot.items.forEach((currentItem) => {
         const previousItem = previousItemByKey.get(
           `${currentItem.entityType}:${currentItem.entityId}`
         );
@@ -238,7 +271,13 @@ export const useResourceStatusChangeNotifications = (
         generatedCount += 1;
       });
 
-      saveResourceStatusSnapshot(currentSnapshotItems, userKey);
+      const retainedUnavailableItems = previousSnapshot.items.filter(
+        (item) => !currentSnapshot.availableEntityTypes.has(item.entityType)
+      );
+      saveResourceStatusSnapshot(
+        [...retainedUnavailableItems, ...currentSnapshot.items],
+        userKey
+      );
       setLastCheckAt(new Date().toISOString());
 
       if (generatedCount > 0) {
@@ -263,22 +302,13 @@ export const useResourceStatusChangeNotifications = (
   }, [buildCurrentSnapshot, userKey]);
 
   useEffect(() => {
-    if (
-      !zpoolQuery.isSuccess ||
-      !diskQuery.isSuccess ||
-      !servicesQuery.isSuccess ||
-      zpoolQuery.data == null ||
-      diskQuery.data == null ||
-      servicesQuery.data == null
-    ) {
+    const currentSnapshot = buildCurrentSnapshot();
+
+    if (currentSnapshot.availableEntityTypes.size === 0) {
       return;
     }
 
-    const currentSnapshotItems = buildCurrentSnapshot();
-    const dataSignature = createSnapshotSignature(
-      currentSnapshotItems,
-      userKey
-    );
+    const dataSignature = createSnapshotSignature(currentSnapshot, userKey);
 
     if (checkedDataSignatureRef.current === dataSignature) {
       return;
@@ -286,17 +316,7 @@ export const useResourceStatusChangeNotifications = (
 
     checkedDataSignatureRef.current = dataSignature;
     runStatusChangeChecks();
-  }, [
-    buildCurrentSnapshot,
-    diskQuery.data,
-    diskQuery.isSuccess,
-    runStatusChangeChecks,
-    servicesQuery.data,
-    servicesQuery.isSuccess,
-    userKey,
-    zpoolQuery.data,
-    zpoolQuery.isSuccess,
-  ]);
+  }, [buildCurrentSnapshot, runStatusChangeChecks, userKey]);
 
   return { isChecking, lastCheckAt, error };
 };
