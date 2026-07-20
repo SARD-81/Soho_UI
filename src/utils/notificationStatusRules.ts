@@ -1,7 +1,7 @@
 import type { LocalNotificationSeverity } from '../@types/notification';
 import type { UpsertLocalNotificationInput } from './notificationStorage';
 
-export type ResourceStatusEntityType = 'pool' | 'disk';
+export type ResourceStatusEntityType = 'pool' | 'disk' | 'service';
 
 export interface ResourceStatusSnapshotItem {
   entityType: ResourceStatusEntityType;
@@ -19,8 +19,22 @@ export interface ResourceStatusChange {
 }
 
 const EMPTY_STATUS_VALUES = new Set(['', '-', 'UNKNOWN', 'N/A', 'NULL']);
-const HEALTHY_STATUSES = new Set(['ONLINE', 'OK', 'HEALTHY', 'AVAILABLE', 'ACTIVE', 'READY']);
-const WARNING_STATUSES = new Set(['DEGRADED', 'WARNING', 'WARN', 'REMOVED', 'SUSPENDED']);
+const HEALTHY_STATUSES = new Set([
+  'ONLINE',
+  'OK',
+  'HEALTHY',
+  'AVAILABLE',
+  'ACTIVE',
+  'READY',
+  'RUNNING',
+]);
+const WARNING_STATUSES = new Set([
+  'DEGRADED',
+  'WARNING',
+  'WARN',
+  'REMOVED',
+  'SUSPENDED',
+]);
 const CRITICAL_STATUSES = new Set([
   'FAULTED',
   'FAILED',
@@ -30,6 +44,10 @@ const CRITICAL_STATUSES = new Set([
   'UNAVAILABLE',
   'ERROR',
   'CRITICAL',
+  'STOPPED',
+  'INACTIVE',
+  'DEAD',
+  'MASKED',
 ]);
 
 export const normalizeResourceStatus = (value: unknown): string | null => {
@@ -43,9 +61,10 @@ export const normalizeResourceStatus = (value: unknown): string | null => {
 
 export const resolveStatusSeverity = (
   _previousStatus: string,
-  currentStatus: string,
+  currentStatus: string
 ): LocalNotificationSeverity => {
-  const normalizedCurrentStatus = normalizeResourceStatus(currentStatus) ?? currentStatus.trim().toUpperCase();
+  const normalizedCurrentStatus =
+    normalizeResourceStatus(currentStatus) ?? currentStatus.trim().toUpperCase();
 
   if (HEALTHY_STATUSES.has(normalizedCurrentStatus)) {
     return 'info';
@@ -62,7 +81,22 @@ export const resolveStatusSeverity = (
   return 'warning';
 };
 
-const resolveStatusTitle = (severity: LocalNotificationSeverity) => {
+const resolveStatusTitle = (
+  severity: LocalNotificationSeverity,
+  entityType: ResourceStatusEntityType
+) => {
+  if (entityType === 'service') {
+    if (severity === 'info') {
+      return 'سرویس مجدداً در حال اجرا است';
+    }
+
+    if (severity === 'critical') {
+      return 'توقف سرویس سامانه';
+    }
+
+    return 'تغییر وضعیت سرویس';
+  }
+
   if (severity === 'info') {
     return 'بازگشت وضعیت به حالت عادی';
   }
@@ -74,18 +108,24 @@ const resolveStatusTitle = (severity: LocalNotificationSeverity) => {
   return 'تغییر وضعیت هشدارآمیز';
 };
 
-const resolveEntityLabel = (entityType: ResourceStatusEntityType) =>
-  entityType === 'pool' ? 'Pool' : 'دیسک';
+const resolveEntityLabel = (entityType: ResourceStatusEntityType) => {
+  if (entityType === 'pool') return 'Pool';
+  if (entityType === 'service') return 'سرویس';
+  return 'دیسک';
+};
 
 export const createResourceStatusChangeNotification = (
-  change: ResourceStatusChange,
+  change: ResourceStatusChange
 ): UpsertLocalNotificationInput => {
-  const severity = resolveStatusSeverity(change.previousStatus, change.currentStatus);
+  const severity = resolveStatusSeverity(
+    change.previousStatus,
+    change.currentStatus
+  );
   const detectedAt = new Date().toISOString();
 
   return {
     fingerprint: `status-change:${change.entityType}:${change.entityId}:${change.previousStatus}->${change.currentStatus}`,
-    title: resolveStatusTitle(severity),
+    title: resolveStatusTitle(severity, change.entityType),
     message: `وضعیت ${resolveEntityLabel(change.entityType)} «${change.entityName}» از «${change.previousStatus}» به «${change.currentStatus}» تغییر کرد.`,
     severity,
     source: 'resource-status-change-check',
