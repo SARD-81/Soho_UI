@@ -1,6 +1,7 @@
 import { Box, type SxProps, type Theme } from '@mui/material';
 import type { PropsWithChildren } from 'react';
 import { useLocation } from 'react-router-dom';
+import PoolPageRealtimeRefresher from './integrated-storage/PoolPageRealtimeRefresher';
 import ServiceStoppedAlert from './services/ServiceStoppedAlert';
 
 interface PageContainerProps extends PropsWithChildren {
@@ -27,8 +28,9 @@ const SERVICE_ROUTE_CONFIG: Record<
 
 const PageContainer = ({ children, sx }: PageContainerProps) => {
   const location = useLocation();
-  const serviceConfig =
-    SERVICE_ROUTE_CONFIG[location.pathname.toLowerCase()] ?? null;
+  const normalizedPathname = location.pathname.toLowerCase();
+  const serviceConfig = SERVICE_ROUTE_CONFIG[normalizedPathname] ?? null;
+  const isPoolPage = normalizedPathname === '/integrated-space';
 
   return (
     <Box
@@ -40,6 +42,7 @@ const PageContainer = ({ children, sx }: PageContainerProps) => {
         ...sx,
       }}
     >
+      {isPoolPage ? <PoolPageRealtimeRefresher /> : null}
       {serviceConfig ? (
         <ServiceStoppedAlert
           unitName={serviceConfig.unitName}
