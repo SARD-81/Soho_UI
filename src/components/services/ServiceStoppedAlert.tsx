@@ -40,6 +40,7 @@ const ServiceStoppedAlert = ({
 
   return (
     <Alert
+      dir="rtl"
       severity="error"
       variant="outlined"
       sx={{
@@ -56,10 +57,23 @@ const ServiceStoppedAlert = ({
         },
         '& .MuiAlert-message': {
           width: '100%',
+          direction: 'rtl',
+          textAlign: 'right',
+        },
+        '& .MuiAlertTitle-root': {
+          direction: 'rtl',
+          textAlign: 'right',
         },
       }}
     >
-      <AlertTitle sx={{ fontWeight: 900, mb: 0.5 }}>
+      <AlertTitle
+        sx={{
+          fontWeight: 900,
+          mb: 0.5,
+          direction: 'rtl',
+          textAlign: 'right',
+        }}
+      >
         {serviceLabel} در حال اجرا نیست
       </AlertTitle>
       وضعیت فعلی سرویس «{STATUS_LABELS[runtimeStatus]}» است. تا زمانی که سرویس
