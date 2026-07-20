@@ -27,15 +27,23 @@ const renderDetailValue = (value: unknown): ReactNode => {
 
   if (typeof formatted === 'string' && formatted.includes('\n')) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
+      <Box
+        dir="rtl"
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.2,
+        }}
+      >
         {formatted.split('\n').map((line, index) => (
           <Typography
             key={`${line}-${index}`}
             component="span"
+            dir="rtl"
             sx={{
               fontSize: '0.74rem',
               lineHeight: 1.45,
-              textAlign: 'left',
+              textAlign: 'start',
               whiteSpace: 'normal',
               wordBreak: 'break-word',
               overflowWrap: 'anywhere',
@@ -60,6 +68,7 @@ const InfoTile = ({ label, value }: { label: string; value: unknown }) => {
 
   return (
     <Box
+      dir="ltr"
       sx={{
         p: 1,
         borderRadius: '8px',
@@ -72,22 +81,24 @@ const InfoTile = ({ label, value }: { label: string; value: unknown }) => {
         background:
           'linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(0,198,169,0.055) 100%)',
         display: 'grid',
-        gridTemplateColumns: 'minmax(82px, 38%) minmax(0, 1fr)',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(82px, 38%)',
+        gridTemplateAreas: '"value label"',
         alignItems: 'center',
         gap: 0.75,
         minHeight: 48,
         minWidth: 0,
         overflow: 'hidden',
-        direction: 'rtl',
       }}
     >
       <Typography
+        dir="rtl"
         sx={{
+          gridArea: 'label',
           color: 'var(--color-secondary)',
           fontWeight: 800,
           fontSize: '0.74rem',
           whiteSpace: 'normal',
-          textAlign: 'right',
+          textAlign: 'start',
           lineHeight: 1.45,
           minWidth: 0,
           overflowWrap: 'anywhere',
@@ -97,14 +108,14 @@ const InfoTile = ({ label, value }: { label: string; value: unknown }) => {
       </Typography>
 
       <Box
+        dir="rtl"
         title={valueTitle}
         sx={{
+          gridArea: 'value',
           color: 'var(--color-text)',
           fontWeight: 700,
           fontSize: 'clamp(0.68rem, 0.45vw + 0.52rem, 0.79rem)',
-          textAlign: 'left',
-          direction: 'ltr',
-          unicodeBidi: 'plaintext',
+          textAlign: 'end',
           whiteSpace: 'normal',
           wordBreak: 'break-word',
           overflowWrap: 'anywhere',
