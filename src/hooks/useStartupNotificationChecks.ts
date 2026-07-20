@@ -1,23 +1,69 @@
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { FileSystemEntry } from '../@types/filesystem';
-import type { ZpoolCapacityEntry } from '../@types/zpool';
-import { cleanupExpiredNotifications, upsertNotification } from '../utils/notificationStorage';
+import type { FileSystemEntry, FileSystemQueryResult } from '../@types/filesystem';
+import type { ZpoolCapacityEntry, ZpoolQueryResult } from '../@types/zpool';
+import {
+  cleanupExpiredNotifications,
+  upsertNotification,
+} from '../utils/notificationStorage';
 import {
   createFilesystemCapacityNotification,
   createPoolCapacityNotification,
   normalizePercentValue,
 } from '../utils/notificationCapacityRules';
-import { useFileSystems } from './useFileSystems';
-import { useZpool } from './useZpool';
+import { fetchFileSystems } from './useFileSystems';
+import { fetchZpools } from './useZpool';
 
-export const CHECK_INTERVAL_MS = 30 * 60 * 1000;
+export const CAPACITY_CHECK_INTERVAL_MS = 60_000;
+export const CHECK_INTERVAL_MS = CAPACITY_CHECK_INTERVAL_MS;
 
-const LAST_CAPACITY_CHECK_KEY_PREFIX = 'soho:notifications:last-capacity-check';
-const PERCENT_FIELD_NAMES = ['used_percent', 'usage_percent', 'capacity', 'usedPercent', 'percent'] as const;
-const POOL_PERCENT_FIELD_NAMES = ['capacity', 'cap', ...PERCENT_FIELD_NAMES] as const;
-const USED_FIELD_NAMES = ['used', 'usedBytes', 'used_bytes', 'used_capacity', 'capacity_used'] as const;
-const TOTAL_FIELD_NAMES = ['total', 'totalBytes', 'total_bytes', 'quota', 'referenced_quota', 'capacity_total'] as const;
-const AVAILABLE_FIELD_NAMES = ['available', 'avail', 'free', 'freeBytes', 'free_bytes', 'capacity_free'] as const;
+const CAPACITY_ZPOOL_QUERY_KEY = [
+  'notifications',
+  'capacity',
+  'zpool',
+] as const;
+const CAPACITY_FILESYSTEM_QUERY_KEY = [
+  'notifications',
+  'capacity',
+  'filesystems',
+] as const;
+const LAST_CAPACITY_CHECK_KEY_PREFIX =
+  'soho:notifications:last-capacity-check';
+const PERCENT_FIELD_NAMES = [
+  'used_percent',
+  'usage_percent',
+  'capacity',
+  'usedPercent',
+  'percent',
+] as const;
+const POOL_PERCENT_FIELD_NAMES = [
+  'capacity',
+  'cap',
+  ...PERCENT_FIELD_NAMES,
+] as const;
+const USED_FIELD_NAMES = [
+  'used',
+  'usedBytes',
+  'used_bytes',
+  'used_capacity',
+  'capacity_used',
+] as const;
+const TOTAL_FIELD_NAMES = [
+  'total',
+  'totalBytes',
+  'total_bytes',
+  'quota',
+  'referenced_quota',
+  'capacity_total',
+] as const;
+const AVAILABLE_FIELD_NAMES = [
+  'available',
+  'avail',
+  'free',
+  'freeBytes',
+  'free_bytes',
+  'capacity_free',
+] as const;
 
 type StartupNotificationChecksResult = {
   isChecking: boolean;
@@ -30,7 +76,10 @@ const isBrowser = () => typeof window !== 'undefined';
 const createLastCheckStorageKey = (userKey?: string) =>
   `${LAST_CAPACITY_CHECK_KEY_PREFIX}:${userKey || 'default'}`;
 
-const getRecordValue = (record: Record<string, unknown>, keys: readonly string[]) => {
+const getRecordValue = (
+  record: Record<string, unknown>,
+  keys: readonly string[]
+) => {
   for (const key of keys) {
     if (Object.prototype.hasOwnProperty.call(record, key)) {
       return record[key];
@@ -59,7 +108,9 @@ const normalizeByteValue = (value: unknown): number | null => {
     return numericValue;
   }
 
-  const match = trimmedValue.replace(/,/g, '.').match(/^(-?\d+(?:\.\d+)?)\s*([KMGTPE]?i?B?)?$/i);
+  const match = trimmedValue
+    .replace(/,/g, '.')
+    .match(/^(-?\d+(?:\.\d+)?)\s*([KMGTPE]?i?B?)?$/i);
   if (!match) {
     return null;
   }
@@ -92,7 +143,9 @@ const normalizeByteValue = (value: unknown): number | null => {
     eib: 1024 ** 6,
   };
 
-  return multiplierByUnit[unit] != null ? baseValue * multiplierByUnit[unit] : null;
+  return multiplierByUnit[unit] != null
+    ? baseValue * multiplierByUnit[unit]
+    : null;
 };
 
 const resolvePoolPercent = (pool: ZpoolCapacityEntry) => {
@@ -101,42 +154,91 @@ const resolvePoolPercent = (pool: ZpoolCapacityEntry) => {
     return normalizedPercent;
   }
 
-  return normalizePercentValue(getRecordValue(pool.raw, POOL_PERCENT_FIELD_NAMES));
+  return normalizePercentValue(
+    getRecordValue(pool.raw, POOL_PERCENT_FIELD_NAMES)
+  );
 };
 
 const resolveFilesystemPercent = (filesystem: FileSystemEntry) => {
-  const rawPercent = normalizePercentValue(getRecordValue(filesystem.raw, PERCENT_FIELD_NAMES));
+  const rawPercent = normalizePercentValue(
+    getRecordValue(filesystem.raw, PERCENT_FIELD_NAMES)
+  );
   if (rawPercent != null) {
     return rawPercent;
   }
 
-  const attributePercent = normalizePercentValue(getRecordValue(filesystem.attributeMap, PERCENT_FIELD_NAMES));
+  const attributePercent = normalizePercentValue(
+    getRecordValue(filesystem.attributeMap, PERCENT_FIELD_NAMES)
+  );
   if (attributePercent != null) {
     return attributePercent;
   }
 
-  const usedBytes = normalizeByteValue(getRecordValue(filesystem.raw, USED_FIELD_NAMES));
-  const totalBytes = normalizeByteValue(getRecordValue(filesystem.raw, TOTAL_FIELD_NAMES));
-  const availableBytes = normalizeByteValue(getRecordValue(filesystem.raw, AVAILABLE_FIELD_NAMES));
-  const calculatedTotalBytes = totalBytes ?? (usedBytes != null && availableBytes != null ? usedBytes + availableBytes : null);
+  const usedBytes = normalizeByteValue(
+    getRecordValue(filesystem.raw, USED_FIELD_NAMES)
+  );
+  const totalBytes = normalizeByteValue(
+    getRecordValue(filesystem.raw, TOTAL_FIELD_NAMES)
+  );
+  const availableBytes = normalizeByteValue(
+    getRecordValue(filesystem.raw, AVAILABLE_FIELD_NAMES)
+  );
+  const calculatedTotalBytes =
+    totalBytes ??
+    (usedBytes != null && availableBytes != null
+      ? usedBytes + availableBytes
+      : null);
 
-  if (usedBytes != null && calculatedTotalBytes != null && calculatedTotalBytes > 0) {
+  if (
+    usedBytes != null &&
+    calculatedTotalBytes != null &&
+    calculatedTotalBytes > 0
+  ) {
     return (usedBytes / calculatedTotalBytes) * 100;
   }
 
   return null;
 };
 
-export const useStartupNotificationChecks = (userKey?: string): StartupNotificationChecksResult => {
-  const zpoolQuery = useZpool({ refetchInterval: 0 });
-  const fileSystemsQuery = useFileSystems();
+export const useStartupNotificationChecks = (
+  userKey?: string
+): StartupNotificationChecksResult => {
+  const zpoolQuery = useQuery<ZpoolQueryResult, Error>({
+    queryKey: CAPACITY_ZPOOL_QUERY_KEY,
+    queryFn: ({ signal }) => fetchZpools(signal),
+    refetchInterval: CAPACITY_CHECK_INTERVAL_MS,
+    refetchIntervalInBackground: false,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false,
+    meta: { skipGlobalLoader: true },
+  });
+  const fileSystemsQuery = useQuery<FileSystemQueryResult, Error>({
+    queryKey: CAPACITY_FILESYSTEM_QUERY_KEY,
+    queryFn: ({ signal }) => fetchFileSystems(signal),
+    refetchInterval: CAPACITY_CHECK_INTERVAL_MS,
+    refetchIntervalInBackground: false,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false,
+    meta: { skipGlobalLoader: true },
+  });
   const [isChecking, setIsChecking] = useState(false);
   const [lastCheckAt, setLastCheckAt] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const checkedDataSignatureRef = useRef<string | null>(null);
+  const processedCompleteFetchAtRef = useRef(0);
 
-  const storageKey = useMemo(() => createLastCheckStorageKey(userKey), [userKey]);
+  const storageKey = useMemo(
+    () => createLastCheckStorageKey(userKey),
+    [userKey]
+  );
   const isDataReady = zpoolQuery.isSuccess && fileSystemsQuery.isSuccess;
+
+  useEffect(() => {
+    processedCompleteFetchAtRef.current = 0;
+  }, [storageKey]);
 
   const runCapacityChecks = useCallback(() => {
     if (!isBrowser()) {
@@ -145,9 +247,14 @@ export const useStartupNotificationChecks = (userKey?: string): StartupNotificat
 
     const now = Date.now();
     const lastCheckValue = window.localStorage.getItem(storageKey);
-    const lastCheckTime = lastCheckValue == null ? null : Number(lastCheckValue);
+    const lastCheckTime =
+      lastCheckValue == null ? null : Number(lastCheckValue);
 
-    if (lastCheckTime != null && Number.isFinite(lastCheckTime) && now - lastCheckTime < CHECK_INTERVAL_MS) {
+    if (
+      lastCheckTime != null &&
+      Number.isFinite(lastCheckTime) &&
+      now - lastCheckTime < CAPACITY_CHECK_INTERVAL_MS
+    ) {
       setLastCheckAt(new Date(lastCheckTime).toISOString());
       return;
     }
@@ -168,7 +275,10 @@ export const useStartupNotificationChecks = (userKey?: string): StartupNotificat
 
       poolData.pools.forEach((pool) => {
         const percent = resolvePoolPercent(pool);
-        const notification = percent == null ? null : createPoolCapacityNotification(pool.name, percent);
+        const notification =
+          percent == null
+            ? null
+            : createPoolCapacityNotification(pool.name, percent);
 
         if (notification != null) {
           upsertNotification(notification, userKey);
@@ -178,9 +288,14 @@ export const useStartupNotificationChecks = (userKey?: string): StartupNotificat
 
       filesystemData.filesystems.forEach((filesystem) => {
         const percent = resolveFilesystemPercent(filesystem);
-        const notification = percent == null
-          ? null
-          : createFilesystemCapacityNotification(filesystem.poolName, filesystem.filesystemName, percent);
+        const notification =
+          percent == null
+            ? null
+            : createFilesystemCapacityNotification(
+                filesystem.poolName,
+                filesystem.filesystemName,
+                percent
+              );
 
         if (notification != null) {
           upsertNotification(notification, userKey);
@@ -195,41 +310,64 @@ export const useStartupNotificationChecks = (userKey?: string): StartupNotificat
       if (generatedCount > 0) {
         window.dispatchEvent(
           new CustomEvent('soho:notifications:capacity-summary', {
-            detail: { message: 'چند هشدار ظرفیت در سامانه شناسایی شد.', count: generatedCount },
-          }),
+            detail: {
+              message: 'چند هشدار ظرفیت در سامانه شناسایی شد.',
+              count: generatedCount,
+            },
+          })
         );
       }
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError : new Error('Capacity notification check failed'));
+      setError(
+        caughtError instanceof Error
+          ? caughtError
+          : new Error('Capacity notification check failed')
+      );
     } finally {
       setIsChecking(false);
     }
-  }, [fileSystemsQuery.data, storageKey, userKey, zpoolQuery.data]);
+  }, [
+    fileSystemsQuery.data,
+    storageKey,
+    userKey,
+    zpoolQuery.data,
+  ]);
 
   useEffect(() => {
-    if (!isDataReady || zpoolQuery.data == null || fileSystemsQuery.data == null) {
+    if (
+      !isDataReady ||
+      zpoolQuery.data == null ||
+      fileSystemsQuery.data == null
+    ) {
       return;
     }
 
-    const dataSignature = JSON.stringify({
-      pools: zpoolQuery.data.pools.map((pool) => [pool.name, resolvePoolPercent(pool)]),
-      filesystems: fileSystemsQuery.data.filesystems.map((filesystem) => [
-        filesystem.fullName,
-        resolveFilesystemPercent(filesystem),
-      ]),
-    });
+    const completeFetchAt = Math.min(
+      zpoolQuery.dataUpdatedAt,
+      fileSystemsQuery.dataUpdatedAt
+    );
 
-    if (checkedDataSignatureRef.current === dataSignature) {
+    if (
+      completeFetchAt <= 0 ||
+      processedCompleteFetchAtRef.current === completeFetchAt
+    ) {
       return;
     }
 
-    checkedDataSignatureRef.current = dataSignature;
+    processedCompleteFetchAtRef.current = completeFetchAt;
     runCapacityChecks();
-  }, [fileSystemsQuery.data, isDataReady, runCapacityChecks, zpoolQuery.data]);
+  }, [
+    fileSystemsQuery.data,
+    fileSystemsQuery.dataUpdatedAt,
+    isDataReady,
+    runCapacityChecks,
+    zpoolQuery.data,
+    zpoolQuery.dataUpdatedAt,
+  ]);
 
   return {
     isChecking,
     lastCheckAt,
-    error,
+    error: error ?? zpoolQuery.error ?? fileSystemsQuery.error ?? null,
   };
 };
