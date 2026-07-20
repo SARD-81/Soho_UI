@@ -65,7 +65,7 @@ const SAMBA_USER_DETAIL_VIEW_ID = 'samba-users';
 
 const Share = () => {
   const [activeTab, setActiveTab] = useState<ShareTabValue>(
-    SHARE_TABS.sambaGroups
+    SHARE_TABS.shares
   );
   const [manageUsersShare, setManageUsersShare] = useState<string | null>(null);
   const [manageGroupsShare, setManageGroupsShare] = useState<string | null>(
