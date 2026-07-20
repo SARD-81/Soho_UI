@@ -241,7 +241,9 @@ const normalizeZpoolCapacity = (
   };
 };
 
-const fetchZpools = async (signal?: AbortSignal): Promise<ZpoolQueryResult> => {
+export const fetchZpools = async (
+  signal?: AbortSignal
+): Promise<ZpoolQueryResult> => {
   const { data: listResponse } = await axiosInstance.get<ZpoolListResponse>(
     ZPOOL_LIST_ENDPOINT,
     {
