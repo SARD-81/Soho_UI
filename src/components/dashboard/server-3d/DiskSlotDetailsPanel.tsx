@@ -27,13 +27,14 @@ const renderDetailValue = (value: unknown): ReactNode => {
 
   if (typeof formatted === 'string' && formatted.includes('\n')) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.35 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
         {formatted.split('\n').map((line, index) => (
           <Typography
             key={`${line}-${index}`}
             component="span"
             sx={{
-              fontSize: '0.84rem',
+              fontSize: '0.74rem',
+              lineHeight: 1.45,
               textAlign: 'left',
               whiteSpace: 'normal',
               wordBreak: 'break-word',
@@ -50,60 +51,83 @@ const renderDetailValue = (value: unknown): ReactNode => {
   return formatted;
 };
 
-const InfoTile = ({ label, value }: { label: string; value: unknown }) => (
-  <Box
-    sx={{
-      p: 1.25,
-      borderRadius: '8px',
-      border: (theme) =>
-        `1px solid ${
-          theme.palette.mode === 'dark'
-            ? 'rgba(255,255,255,0.08)'
-            : 'rgba(0,0,0,0.08)'
-        }`,
-      background:
-        'linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(0,198,169,0.055) 100%)',
-      display: 'grid',
-      gridTemplateColumns: 'minmax(88px, 42%) minmax(0, 1fr)',
-      alignItems: 'start',
-      gap: 1,
-      minHeight: 54,
-      minWidth: 0,
-      direction: 'rtl',
-    }}
-  >
-    <Typography
-      sx={{
-        color: 'var(--color-secondary)',
-        fontWeight: 800,
-        fontSize: '0.82rem',
-        whiteSpace: 'nowrap',
-        textAlign: 'right',
-        lineHeight: 1.8,
-      }}
-    >
-      {label} :
-    </Typography>
+const InfoTile = ({ label, value }: { label: string; value: unknown }) => {
+  const formattedValue = formatDetailValue(value);
+  const valueTitle =
+    typeof formattedValue === 'string' || typeof formattedValue === 'number'
+      ? String(formattedValue)
+      : undefined;
 
+  return (
     <Box
       sx={{
-        color: 'var(--color-text)',
-        fontWeight: 800,
-        fontSize: '0.9rem',
-        textAlign: 'left',
-        direction: 'ltr',
-        unicodeBidi: 'plaintext',
-        whiteSpace: 'normal',
-        wordBreak: 'break-word',
-        overflowWrap: 'anywhere',
-        lineHeight: 1.8,
+        p: 1,
+        borderRadius: '8px',
+        border: (theme) =>
+          `1px solid ${
+            theme.palette.mode === 'dark'
+              ? 'rgba(255,255,255,0.08)'
+              : 'rgba(0,0,0,0.08)'
+          }`,
+        background:
+          'linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(0,198,169,0.055) 100%)',
+        display: 'grid',
+        gridTemplateColumns: 'minmax(82px, 38%) minmax(0, 1fr)',
+        alignItems: 'center',
+        gap: 0.75,
+        minHeight: 48,
         minWidth: 0,
+        overflow: 'hidden',
+        direction: 'rtl',
       }}
     >
-      {renderDetailValue(value)}
+      <Typography
+        sx={{
+          color: 'var(--color-secondary)',
+          fontWeight: 800,
+          fontSize: '0.74rem',
+          whiteSpace: 'normal',
+          textAlign: 'right',
+          lineHeight: 1.45,
+          minWidth: 0,
+          overflowWrap: 'anywhere',
+        }}
+      >
+        {label} :
+      </Typography>
+
+      <Box
+        title={valueTitle}
+        sx={{
+          color: 'var(--color-text)',
+          fontWeight: 700,
+          fontSize: 'clamp(0.68rem, 0.45vw + 0.52rem, 0.79rem)',
+          textAlign: 'left',
+          direction: 'ltr',
+          unicodeBidi: 'plaintext',
+          whiteSpace: 'normal',
+          wordBreak: 'break-word',
+          overflowWrap: 'anywhere',
+          lineHeight: 1.45,
+          minWidth: 0,
+          maxWidth: '100%',
+          overflow: 'hidden',
+          display: '-webkit-box',
+          WebkitBoxOrient: 'vertical',
+          WebkitLineClamp: 2,
+          '& .MuiTypography-root': {
+            fontSize: 'inherit',
+            lineHeight: 'inherit',
+            maxWidth: '100%',
+            overflowWrap: 'anywhere',
+          },
+        }}
+      >
+        {renderDetailValue(value)}
+      </Box>
     </Box>
-  </Box>
-);
+  );
+};
 
 const EmptySelectionState = () => (
   <Box
@@ -322,13 +346,8 @@ const DiskSlotDetailsPanel = ({ selectedBay }: DiskSlotDetailsPanelProps) => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, minmax(0, 1fr))',
-              lg: '1fr',
-              xl: 'repeat(2, minmax(0, 1fr))',
-            },
-            gap: 1.25,
+            gridTemplateColumns: 'minmax(0, 1fr)',
+            gap: 0.85,
             overflowY: 'auto',
             pr: 0.5,
             minHeight: 0,
