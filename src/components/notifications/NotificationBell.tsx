@@ -300,7 +300,7 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                       {severityIconByType[notification.severity]}
                     </Box>
 
-                    <Box sx={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
+                    <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                       <Stack
                         direction="row"
                         alignItems="center"
@@ -340,7 +340,7 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                           fontWeight:
                             notification.severity === 'critical' ? 900 : 800,
                           color: 'var(--color-text)',
-                          textAlign: 'right',
+                          textAlign: 'left',
                           lineHeight: 1.75,
                         }}
                       >
@@ -352,7 +352,7 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                         sx={{
                           color: 'text.secondary',
                           mt: 0.35,
-                          textAlign: 'right',
+                          textAlign: 'left',
                           direction: 'rtl',
                           lineHeight: 1.9,
                           overflowWrap: 'anywhere',
