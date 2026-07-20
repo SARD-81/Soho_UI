@@ -25,9 +25,7 @@ import {
   MdNotificationsNone,
   MdWarningAmber,
 } from 'react-icons/md';
-import type {
-  LocalNotificationSeverity,
-} from '../../@types/notification';
+import type { LocalNotificationSeverity } from '../../@types/notification';
 import { useLocalNotifications } from '../../hooks/useLocalNotifications';
 
 type NotificationBellProps = {
@@ -71,7 +69,10 @@ const getSeverityPalette = (
   };
 };
 
-const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => {
+const NotificationBell = ({
+  userKey,
+  maxItems = 10,
+}: NotificationBellProps) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const {
     notifications,
@@ -148,8 +149,11 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
         }}
       >
         <Box
+          dir="rtl"
           sx={(theme) => ({
             p: 2,
+            direction: 'rtl',
+            textAlign: 'right',
             background: `linear-gradient(135deg, ${alpha(
               theme.palette.primary.main,
               0.12
@@ -160,14 +164,16 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
             direction="row"
             alignItems="center"
             justifyContent="space-between"
-            spacing={1}
+            gap={1}
+            sx={{ direction: 'rtl', textAlign: 'right' }}
           >
-            <Box sx={{ minWidth: 0 }}>
+            <Box sx={{ minWidth: 0, textAlign: 'right' }}>
               <Typography
                 variant="subtitle1"
                 sx={{
                   fontWeight: 900,
                   color: 'var(--color-text)',
+                  direction: 'rtl',
                   textAlign: 'right',
                 }}
               >
@@ -177,6 +183,7 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                 variant="caption"
                 sx={{
                   color: 'text.secondary',
+                  direction: 'rtl',
                   textAlign: 'right',
                   display: 'block',
                   mt: 0.25,
@@ -193,7 +200,12 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
               disabled={unreadCount === 0}
               onClick={markAllAsRead}
               startIcon={<MdDoneAll />}
-              sx={{ fontWeight: 800, flexShrink: 0 }}
+              sx={{
+                fontWeight: 800,
+                flexShrink: 0,
+                direction: 'rtl',
+                textAlign: 'right',
+              }}
             >
               خواندن همه
             </Button>
@@ -204,13 +216,14 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
 
         {visibleNotifications.length === 0 ? (
           <Box
+            dir="rtl"
             sx={{
               px: 2,
               py: 5,
               display: 'grid',
-              placeItems: 'center',
               gap: 1,
-              textAlign: 'center',
+              direction: 'rtl',
+              textAlign: 'right',
             }}
           >
             <Box
@@ -220,6 +233,7 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                 borderRadius: '14px',
                 display: 'grid',
                 placeItems: 'center',
+                justifySelf: 'center',
                 color: 'var(--color-primary)',
                 backgroundColor:
                   'color-mix(in srgb, var(--color-primary) 10%, transparent)',
@@ -229,13 +243,20 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
             >
               <MdNotificationsNone size={25} />
             </Box>
-            <Typography sx={{ color: 'text.secondary' }}>
+            <Typography
+              sx={{
+                color: 'text.secondary',
+                direction: 'rtl',
+                textAlign: 'right',
+              }}
+            >
               اعلانی برای نمایش وجود ندارد.
             </Typography>
           </Box>
         ) : (
           <List
             disablePadding
+            dir="rtl"
             sx={{
               maxHeight: 470,
               overflowY: 'auto',
@@ -243,6 +264,8 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
               display: 'flex',
               flexDirection: 'column',
               gap: 1,
+              direction: 'rtl',
+              textAlign: 'right',
             }}
           >
             {visibleNotifications.map((notification) => {
@@ -252,6 +275,7 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                 <ListItem
                   key={notification.id}
                   disableGutters
+                  dir="rtl"
                   sx={(theme) => {
                     const palette = getSeverityPalette(
                       notification.severity,
@@ -261,9 +285,11 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                     return {
                       display: 'block',
                       p: 1.35,
+                      direction: 'rtl',
+                      textAlign: 'right',
                       borderRadius: '12px',
                       border: `1px solid ${palette.border}`,
-                      borderRight: `4px solid ${palette.main}`,
+                      borderInlineStart: `4px solid ${palette.main}`,
                       backgroundColor: isUnread
                         ? palette.soft
                         : alpha(theme.palette.background.paper, 0.34),
@@ -276,7 +302,12 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                     };
                   }}
                 >
-                  <Stack direction="row" alignItems="flex-start" spacing={1.1}>
+                  <Stack
+                    direction="row"
+                    alignItems="flex-start"
+                    gap={1.1}
+                    sx={{ direction: 'rtl', textAlign: 'right' }}
+                  >
                     <Box
                       sx={(theme) => {
                         const palette = getSeverityPalette(
@@ -300,13 +331,25 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                       {severityIconByType[notification.severity]}
                     </Box>
 
-                    <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                    <Box
+                      dir="rtl"
+                      sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        direction: 'rtl',
+                        textAlign: 'right',
+                      }}
+                    >
                       <Stack
                         direction="row"
                         alignItems="center"
                         gap={0.75}
                         flexWrap="wrap"
-                        sx={{ mb: 0.65 }}
+                        sx={{
+                          mb: 0.65,
+                          direction: 'rtl',
+                          justifyContent: 'flex-start',
+                        }}
                       >
                         <Chip
                           size="small"
@@ -323,7 +366,7 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                               ? 'filled'
                               : 'outlined'
                           }
-                          sx={{ fontWeight: 800 }}
+                          sx={{ fontWeight: 800, direction: 'rtl' }}
                         />
                         {isUnread ? (
                           <Chip
@@ -331,6 +374,7 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                             label="جدید"
                             color="primary"
                             variant="outlined"
+                            sx={{ direction: 'rtl' }}
                           />
                         ) : null}
                       </Stack>
@@ -340,8 +384,11 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                           fontWeight:
                             notification.severity === 'critical' ? 900 : 800,
                           color: 'var(--color-text)',
-                          textAlign: 'left',
+                          direction: 'rtl',
+                          textAlign: 'right',
+                          unicodeBidi: 'plaintext',
                           lineHeight: 1.75,
+                          overflowWrap: 'anywhere',
                         }}
                       >
                         {notification.title}
@@ -352,8 +399,9 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                         sx={{
                           color: 'text.secondary',
                           mt: 0.35,
-                          textAlign: 'left',
                           direction: 'rtl',
+                          textAlign: 'right',
+                          unicodeBidi: 'plaintext',
                           lineHeight: 1.9,
                           overflowWrap: 'anywhere',
                         }}
@@ -366,16 +414,24 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
                         alignItems="center"
                         justifyContent="space-between"
                         gap={1}
-                        sx={{ mt: 0.9 }}
+                        sx={{ mt: 0.9, direction: 'rtl' }}
                       >
                         <Typography
                           variant="caption"
-                          sx={{ color: 'text.secondary' }}
+                          sx={{
+                            color: 'text.secondary',
+                            direction: 'rtl',
+                            textAlign: 'right',
+                          }}
                         >
                           {formatNotificationDate(notification.updatedAt)}
                         </Typography>
 
-                        <Stack direction="row" spacing={0.35}>
+                        <Stack
+                          direction="row"
+                          spacing={0.35}
+                          sx={{ direction: 'rtl' }}
+                        >
                           <Tooltip title="خوانده شد">
                             <span>
                               <IconButton
@@ -408,8 +464,22 @@ const NotificationBell = ({ userKey, maxItems = 10 }: NotificationBellProps) => 
         )}
 
         <Divider />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start', p: 1 }}>
-          <Button size="small" startIcon={<MdClose />} onClick={handleClose}>
+        <Box
+          dir="rtl"
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-start',
+            p: 1,
+            direction: 'rtl',
+            textAlign: 'right',
+          }}
+        >
+          <Button
+            size="small"
+            startIcon={<MdClose />}
+            onClick={handleClose}
+            sx={{ direction: 'rtl', textAlign: 'right' }}
+          >
             بستن
           </Button>
         </Box>
