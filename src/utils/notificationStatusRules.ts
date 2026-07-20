@@ -50,6 +50,33 @@ const CRITICAL_STATUSES = new Set([
   'MASKED',
 ]);
 
+const STATUS_LABELS: Record<string, string> = {
+  ONLINE: 'آنلاین',
+  OFFLINE: 'آفلاین',
+  OK: 'سالم',
+  HEALTHY: 'سالم',
+  AVAILABLE: 'در دسترس',
+  UNAVAILABLE: 'در دسترس نیست',
+  UNAVAIL: 'در دسترس نیست',
+  ACTIVE: 'فعال',
+  INACTIVE: 'غیرفعال',
+  READY: 'آماده',
+  RUNNING: 'در حال اجرا',
+  STOPPED: 'متوقف',
+  DEAD: 'متوقف',
+  DEGRADED: 'کاهش‌یافته',
+  WARNING: 'هشدار',
+  WARN: 'هشدار',
+  REMOVED: 'خارج‌شده',
+  SUSPENDED: 'تعلیق‌شده',
+  FAULTED: 'خراب',
+  FAILED: 'ناموفق',
+  FAIL: 'ناموفق',
+  ERROR: 'دارای خطا',
+  CRITICAL: 'بحرانی',
+  MASKED: 'ماسک‌شده',
+};
+
 export const normalizeResourceStatus = (value: unknown): string | null => {
   if (typeof value !== 'string') {
     return null;
@@ -57,6 +84,15 @@ export const normalizeResourceStatus = (value: unknown): string | null => {
 
   const normalizedValue = value.trim().toUpperCase();
   return EMPTY_STATUS_VALUES.has(normalizedValue) ? null : normalizedValue;
+};
+
+const resolveStatusLabel = (status: string) => {
+  const normalizedStatus = normalizeResourceStatus(status);
+  if (normalizedStatus == null) {
+    return 'نامشخص';
+  }
+
+  return STATUS_LABELS[normalizedStatus] ?? status.trim();
 };
 
 export const resolveStatusSeverity = (
@@ -122,11 +158,13 @@ export const createResourceStatusChangeNotification = (
     change.currentStatus
   );
   const detectedAt = new Date().toISOString();
+  const previousStatusLabel = resolveStatusLabel(change.previousStatus);
+  const currentStatusLabel = resolveStatusLabel(change.currentStatus);
 
   return {
     fingerprint: `status-change:${change.entityType}:${change.entityId}:${change.previousStatus}->${change.currentStatus}`,
     title: resolveStatusTitle(severity, change.entityType),
-    message: `وضعیت ${resolveEntityLabel(change.entityType)} «${change.entityName}» از «${change.previousStatus}» به «${change.currentStatus}» تغییر کرد.`,
+    message: `وضعیت ${resolveEntityLabel(change.entityType)} «${change.entityName}» از «${previousStatusLabel}» به «${currentStatusLabel}» تغییر کرد.`,
     severity,
     source: 'resource-status-change-check',
     entityType: change.entityType,
