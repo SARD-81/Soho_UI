@@ -16,9 +16,9 @@ const createAppQueryClient = () => {
   let client: QueryClient;
 
   const mutationCache = new MutationCache({
-    onSuccess: async () => {
-      // Every successful API action refreshes the queries currently mounted on
-      // the active page. React Query deduplicates overlapping invalidations.
+    onSettled: async () => {
+      // Every completed API action refreshes the queries currently mounted on
+      // the active page, whether the action succeeded or returned an error.
       await client.invalidateQueries({ type: 'active' });
     },
   });
