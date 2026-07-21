@@ -1,4 +1,5 @@
 const SETTINGS_TABS = {
+  general: 'general',
   network: 'network',
   users: 'users',
 } as const;
@@ -6,6 +7,7 @@ const SETTINGS_TABS = {
 type SettingsTabValue = (typeof SETTINGS_TABS)[keyof typeof SETTINGS_TABS];
 
 const SETTINGS_TAB_ITEMS: Array<{ label: string; value: SettingsTabValue }> = [
+  { label: 'تنظیمات عمومی', value: SETTINGS_TABS.general },
   { label: 'تنظیمات شبکه', value: SETTINGS_TABS.network },
   { label: 'تنظیمات کاربران', value: SETTINGS_TABS.users },
 ];
