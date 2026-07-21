@@ -28,7 +28,8 @@ export const tabListSx: SxProps<Theme> = {
   '& .MuiTabs-flexContainer': {
     gap: 1,
     direction: 'rtl',
-    justifyContent: 'flex-start',
+    flexDirection: 'row-reverse',
+    justifyContent: 'flex-end',
   },
   '& .MuiTab-root': {
     color: 'var(--color-secondary)',
