@@ -29,29 +29,57 @@ const Settings = () => {
   );
 
   return (
-    <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
+    <PageContainer
+      sx={{
+        backgroundColor: 'var(--color-background)',
+        direction: 'rtl',
+        textAlign: 'right',
+        color: 'var(--color-text)',
+      }}
+    >
       <Typography
         variant="h5"
-        sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
+        sx={{
+          color: 'var(--color-primary)',
+          fontWeight: 800,
+          direction: 'rtl',
+          textAlign: 'right',
+        }}
       >
         تنظیمات
       </Typography>
 
-      <Box sx={tabContainerSx}>
+      <Box dir="rtl" sx={{ ...tabContainerSx, direction: 'rtl' }}>
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
           variant="scrollable"
           scrollButtons="auto"
           allowScrollButtonsMobile
-          sx={tabListSx}
+          dir="rtl"
+          sx={{
+            ...tabListSx,
+            direction: 'rtl',
+            '& .MuiTabs-flexContainer': {
+              direction: 'rtl',
+              justifyContent: 'flex-start',
+              gap: 1,
+            },
+            '& .MuiTab-root': {
+              color: 'var(--color-secondary)',
+              textAlign: 'right',
+            },
+            '& .MuiTab-root.Mui-selected': {
+              color: 'var(--color-primary)',
+            },
+          }}
         >
           {SETTINGS_TAB_ITEMS.map((tab) => (
             <Tab key={tab.value} label={tab.label} value={tab.value} />
           ))}
         </Tabs>
 
-        <Box sx={tabPanelSx}>
+        <Box dir="rtl" sx={{ ...tabPanelSx, direction: 'rtl' }}>
           <TabPanel
             value={SETTINGS_TABS.general}
             currentValue={activeTab}
