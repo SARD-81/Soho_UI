@@ -1,6 +1,8 @@
 export interface SystemTimeInfo {
   localTime: string | null;
   utcTime: string | null;
+  hardwareLocalTime: string | null;
+  hardwareUtcTime: string | null;
   rtcTime: string | null;
   timezone: string | null;
   ntpEnabled: boolean | null;
@@ -19,6 +21,8 @@ export interface HostnameInfo {
 export interface SystemVersionInfo {
   lines: string[];
   text: string;
+  filePath: string | null;
+  backendError: string | null;
   raw: unknown;
 }
 
