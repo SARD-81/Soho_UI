@@ -1,24 +1,23 @@
 import { Box, Tab, Tabs, Typography } from '@mui/material';
 import { type SyntheticEvent, useCallback, useState } from 'react';
-import PageContainer from '../components/PageContainer';
 import TabPanel from '../components/TabPanel';
-import GeneralSettingsPanel from '../components/settings/GeneralSettingsPanel';
 import NetworkSettingsTable from '../components/settings/NetworkSettingsTable';
 import UserSettingsTable from '../components/settings/UserSettingsTable';
-import {
-  tabContainerSx,
-  tabListSx,
-  tabPanelSx,
-} from '../components/tabs/styles';
 import {
   SETTINGS_TAB_ITEMS,
   SETTINGS_TABS,
   type SettingsTabValue,
 } from '../constants/settings';
+import PageContainer from '../components/PageContainer';
+import {
+  tabContainerSx,
+  tabListSx,
+  tabPanelSx,
+} from '../components/tabs/styles';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<SettingsTabValue>(
-    SETTINGS_TABS.general
+    SETTINGS_TABS.network
   );
 
   const handleTabChange = useCallback(
@@ -29,50 +28,22 @@ const Settings = () => {
   );
 
   return (
-    <PageContainer
-      sx={{
-        backgroundColor: 'var(--color-background)',
-        direction: 'rtl',
-        textAlign: 'right',
-        color: 'var(--color-text)',
-      }}
-    >
+    <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
       <Typography
         variant="h5"
-        sx={{
-          color: 'var(--color-primary)',
-          fontWeight: 800,
-          direction: 'rtl',
-          textAlign: 'right',
-        }}
+        sx={{ color: 'var(--color-primary)', fontWeight: 700 }}
       >
         تنظیمات
       </Typography>
 
-      <Box dir="rtl" sx={tabContainerSx}>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
-          dir="rtl"
-          sx={tabListSx}
-        >
+      <Box sx={tabContainerSx}>
+        <Tabs value={activeTab} onChange={handleTabChange} sx={tabListSx}>
           {SETTINGS_TAB_ITEMS.map((tab) => (
             <Tab key={tab.value} label={tab.label} value={tab.value} />
           ))}
         </Tabs>
 
-        <Box dir="rtl" sx={tabPanelSx}>
-          <TabPanel
-            value={SETTINGS_TABS.general}
-            currentValue={activeTab}
-            sx={{ mt: 0 }}
-          >
-            <GeneralSettingsPanel />
-          </TabPanel>
-
+        <Box sx={tabPanelSx}>
           <TabPanel
             value={SETTINGS_TABS.network}
             currentValue={activeTab}
