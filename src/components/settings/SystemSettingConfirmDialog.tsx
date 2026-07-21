@@ -53,8 +53,9 @@ const SystemSettingConfirmDialog = ({
         dir: 'rtl',
         sx: {
           color: 'var(--color-text)',
-          backgroundColor: 'var(--color-card-bg)',
-          borderRadius: '14px',
+          background:
+            'linear-gradient(145deg, color-mix(in srgb, var(--color-card-bg) 96%, var(--color-primary) 4%) 0%, var(--color-card-bg) 100%)',
+          borderRadius: '16px',
           border: `1px solid color-mix(in srgb, ${accentColor} 42%, transparent)`,
           boxShadow: '0 26px 70px -34px rgba(0, 0, 0, 0.72)',
           overflow: 'hidden',
@@ -63,8 +64,16 @@ const SystemSettingConfirmDialog = ({
         },
       }}
     >
-      <DialogTitle sx={{ pb: 1.25 }}>
-        <Stack direction="row" alignItems="center" gap={1.25}>
+      <DialogTitle sx={{ pb: 1.25, direction: 'rtl', textAlign: 'right' }}>
+        <Stack
+          gap={1.25}
+          sx={{
+            direction: 'rtl',
+            flexDirection: 'row-reverse',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+          }}
+        >
           <Box
             sx={{
               width: 42,
@@ -80,13 +89,22 @@ const SystemSettingConfirmDialog = ({
           >
             <Icon size={24} />
           </Box>
-          <Typography component="span" sx={{ fontSize: '1rem', fontWeight: 900 }}>
+          <Typography
+            component="span"
+            sx={{
+              color: 'var(--color-text)',
+              fontSize: '1rem',
+              fontWeight: 900,
+              direction: 'rtl',
+              textAlign: 'right',
+            }}
+          >
             {title}
           </Typography>
         </Stack>
       </DialogTitle>
 
-      <DialogContent>
+      <DialogContent sx={{ direction: 'rtl', textAlign: 'right' }}>
         <Typography
           sx={{
             color: 'var(--color-secondary)',
@@ -99,24 +117,28 @@ const SystemSettingConfirmDialog = ({
         </Typography>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-        <Button
-          variant="outlined"
-          onClick={onCancel}
-          disabled={isLoading}
-          sx={{ borderRadius: '8px', minWidth: 112 }}
-        >
-          انصراف
-        </Button>
+      <DialogActions
+        sx={{
+          px: 3,
+          pb: 2.5,
+          gap: 1,
+          direction: 'rtl',
+          flexDirection: 'row-reverse',
+          justifyContent: 'flex-end',
+        }}
+      >
         <Button
           variant="contained"
           onClick={onConfirm}
           disabled={isLoading}
-          startIcon={isLoading ? <CircularProgress size={17} color="inherit" /> : undefined}
+          startIcon={
+            isLoading ? <CircularProgress size={17} color="inherit" /> : undefined
+          }
           sx={{
-            borderRadius: '8px',
+            borderRadius: '9px',
             minWidth: 132,
             color: 'var(--color-bg)',
+            fontWeight: 900,
             backgroundColor: accentColor,
             '&:hover': {
               backgroundColor: accentColor,
@@ -125,6 +147,20 @@ const SystemSettingConfirmDialog = ({
           }}
         >
           {isLoading ? 'در حال اعمال...' : confirmLabel}
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={onCancel}
+          disabled={isLoading}
+          sx={{
+            borderRadius: '9px',
+            minWidth: 112,
+            color: 'var(--color-text)',
+            borderColor:
+              'color-mix(in srgb, var(--color-secondary) 50%, transparent)',
+          }}
+        >
+          انصراف
         </Button>
       </DialogActions>
     </Dialog>
