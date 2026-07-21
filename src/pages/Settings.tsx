@@ -1,23 +1,24 @@
 import { Box, Tab, Tabs, Typography } from '@mui/material';
 import { type SyntheticEvent, useCallback, useState } from 'react';
+import PageContainer from '../components/PageContainer';
 import TabPanel from '../components/TabPanel';
+import GeneralSettingsPanel from '../components/settings/GeneralSettingsPanel';
 import NetworkSettingsTable from '../components/settings/NetworkSettingsTable';
 import UserSettingsTable from '../components/settings/UserSettingsTable';
-import {
-  SETTINGS_TAB_ITEMS,
-  SETTINGS_TABS,
-  type SettingsTabValue,
-} from '../constants/settings';
-import PageContainer from '../components/PageContainer';
 import {
   tabContainerSx,
   tabListSx,
   tabPanelSx,
 } from '../components/tabs/styles';
+import {
+  SETTINGS_TAB_ITEMS,
+  SETTINGS_TABS,
+  type SettingsTabValue,
+} from '../constants/settings';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<SettingsTabValue>(
-    SETTINGS_TABS.network
+    SETTINGS_TABS.general
   );
 
   const handleTabChange = useCallback(
@@ -37,13 +38,28 @@ const Settings = () => {
       </Typography>
 
       <Box sx={tabContainerSx}>
-        <Tabs value={activeTab} onChange={handleTabChange} sx={tabListSx}>
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={tabListSx}
+        >
           {SETTINGS_TAB_ITEMS.map((tab) => (
             <Tab key={tab.value} label={tab.label} value={tab.value} />
           ))}
         </Tabs>
 
         <Box sx={tabPanelSx}>
+          <TabPanel
+            value={SETTINGS_TABS.general}
+            currentValue={activeTab}
+            sx={{ mt: 0 }}
+          >
+            <GeneralSettingsPanel />
+          </TabPanel>
+
           <TabPanel
             value={SETTINGS_TABS.network}
             currentValue={activeTab}
