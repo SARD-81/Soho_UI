@@ -21,6 +21,22 @@ const unwrapData = (payload: unknown) => {
     : payload;
 };
 
+const getRecord = (value: unknown): Record<string, unknown> | null =>
+  isRecord(value) ? value : null;
+
+const getPathValue = (source: unknown, path: readonly string[]): unknown => {
+  let current: unknown = source;
+
+  for (const segment of path) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+    current = current[segment];
+  }
+
+  return current;
+};
+
 const findNestedValue = (
   source: unknown,
   aliases: readonly string[],
@@ -122,9 +138,14 @@ const normalizeStringArray = (value: unknown): string[] => {
 
 export const normalizeSystemTimeInfo = (payload: unknown): SystemTimeInfo => {
   const data = unwrapData(payload);
+  const dataRecord = getRecord(data);
+  const osTime = getRecord(dataRecord?.os_time);
+  const hardwareTime = getRecord(dataRecord?.hw_time);
+  const ntp = getRecord(dataRecord?.ntp);
 
-  return {
-    localTime: normalizeString(
+  const localTime =
+    normalizeString(osTime?.local) ??
+    normalizeString(
       findNestedValue(data, [
         'local_time',
         'localtime',
@@ -133,8 +154,11 @@ export const normalizeSystemTimeInfo = (payload: unknown): SystemTimeInfo => {
         'local_datetime',
         'datetime_local',
       ])
-    ),
-    utcTime: normalizeString(
+    );
+
+  const utcTime =
+    normalizeString(osTime?.utc) ??
+    normalizeString(
       findNestedValue(data, [
         'utc_time',
         'utctime',
@@ -142,38 +166,69 @@ export const normalizeSystemTimeInfo = (payload: unknown): SystemTimeInfo => {
         'current_utc_time',
         'utc_datetime',
       ])
-    ),
-    rtcTime: normalizeString(
+    );
+
+  const hardwareLocalTime =
+    normalizeString(hardwareTime?.local) ??
+    normalizeString(
       findNestedValue(data, [
-        'rtc_time',
-        'rtctime',
-        'hardware_time',
-        'hardware_clock',
-        'hwclock',
+        'hardware_local_time',
+        'hw_local_time',
+        'rtc_local_time',
       ])
-    ),
-    timezone: normalizeString(
-      findNestedValue(data, ['timezone', 'time_zone', 'zone'])
-    ),
-    ntpEnabled: normalizeBoolean(
+    );
+
+  const hardwareUtcTime =
+    normalizeString(hardwareTime?.utc) ??
+    normalizeString(
       findNestedValue(data, [
-        'ntp_enabled',
-        'ntpenabled',
-        'ntp_active',
-        'ntpactive',
-        'use_ntp',
+        'hardware_utc_time',
+        'hw_utc_time',
+        'rtc_utc_time',
       ])
-    ),
-    ntpSynchronized: normalizeBoolean(
-      findNestedValue(data, [
-        'ntp_synchronized',
-        'ntpsynchronized',
-        'ntp_synced',
-        'system_clock_synchronized',
-        'synchronized',
-        'synced',
-      ])
-    ),
+    );
+
+  const fallbackRtcTime = normalizeString(
+    findNestedValue(data, [
+      'rtc_time',
+      'rtctime',
+      'hardware_time',
+      'hardware_clock',
+      'hwclock',
+    ])
+  );
+
+  return {
+    localTime,
+    utcTime,
+    hardwareLocalTime,
+    hardwareUtcTime,
+    rtcTime: hardwareLocalTime ?? hardwareUtcTime ?? fallbackRtcTime,
+    timezone:
+      normalizeString(dataRecord?.timezone) ??
+      normalizeString(findNestedValue(data, ['time_zone', 'zone'])),
+    ntpEnabled:
+      normalizeBoolean(ntp?.enabled) ??
+      normalizeBoolean(
+        findNestedValue(data, [
+          'ntp_enabled',
+          'ntpenabled',
+          'ntp_active',
+          'ntpactive',
+          'use_ntp',
+        ])
+      ),
+    ntpSynchronized:
+      normalizeBoolean(ntp?.synchronized) ??
+      normalizeBoolean(
+        findNestedValue(data, [
+          'ntp_synchronized',
+          'ntpsynchronized',
+          'ntp_synced',
+          'system_clock_synchronized',
+          'synced',
+        ])
+      ),
     rtcInLocalTimezone: normalizeBoolean(
       findNestedValue(data, [
         'rtc_in_local_tz',
@@ -183,15 +238,17 @@ export const normalizeSystemTimeInfo = (payload: unknown): SystemTimeInfo => {
         'local_rtc',
       ])
     ),
-    ntpServers: normalizeStringArray(
-      findNestedValue(data, [
-        'ntp_servers',
-        'configured_ntp_servers',
-        'timeservers',
-        'time_servers',
-        'servers',
-      ])
-    ),
+    ntpServers:
+      normalizeStringArray(ntp?.servers).length > 0
+        ? normalizeStringArray(ntp?.servers)
+        : normalizeStringArray(
+            findNestedValue(data, [
+              'ntp_servers',
+              'configured_ntp_servers',
+              'timeservers',
+              'time_servers',
+            ])
+          ),
     raw: data,
   };
 };
@@ -209,17 +266,26 @@ export const normalizeTimezoneList = (payload: unknown): string[] => {
 
 export const normalizeHostnameInfo = (payload: unknown): HostnameInfo => {
   const data = unwrapData(payload);
-  const staticHostname = normalizeString(
-    findNestedValue(data, ['static_hostname', 'statichostname', 'persistent_hostname'])
-  );
-  const currentHostname = normalizeString(
-    findNestedValue(data, [
-      'hostname',
-      'current_hostname',
-      'currenthostname',
-      'transient_hostname',
-    ])
-  );
+  const dataRecord = getRecord(data);
+  const exactHostname = normalizeString(dataRecord?.hostname);
+  const staticHostname =
+    normalizeString(dataRecord?.static_hostname) ??
+    normalizeString(
+      findNestedValue(data, [
+        'static_hostname',
+        'statichostname',
+        'persistent_hostname',
+      ])
+    );
+  const currentHostname =
+    exactHostname ??
+    normalizeString(dataRecord?.current_hostname) ??
+    normalizeString(
+      findNestedValue(data, [
+        'currenthostname',
+        'transient_hostname',
+      ])
+    );
 
   return {
     currentHostname: currentHostname ?? staticHostname,
@@ -230,31 +296,44 @@ export const normalizeHostnameInfo = (payload: unknown): HostnameInfo => {
 
 export const normalizeSystemVersion = (payload: unknown): SystemVersionInfo => {
   const data = unwrapData(payload);
+  const dataRecord = getRecord(data);
+  const filePath = normalizeString(dataRecord?.file_path);
+  const backendError = normalizeString(dataRecord?.error);
   let lines: string[] = [];
 
   if (Array.isArray(data)) {
-    lines = data
-      .map(normalizeString)
-      .filter((item): item is string => Boolean(item));
+    lines = normalizeStringArray(data);
   } else if (typeof data === 'string') {
     lines = data
       .split(/\r?\n/)
       .map((line) => line.trim())
       .filter(Boolean);
-  } else {
-    const candidate = findNestedValue(data, [
-      'lines',
-      'version_lines',
-      'version',
-      'content',
-      'text',
-    ]);
-    lines = normalizeStringArray(candidate);
+  } else if (dataRecord) {
+    const contentLines = normalizeStringArray(dataRecord.content);
+    const rawText = normalizeString(dataRecord.raw_text);
+    const version = normalizeString(dataRecord.version);
+
+    if (contentLines.length > 0) {
+      lines = contentLines;
+    } else if (rawText) {
+      lines = rawText
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+    } else if (version) {
+      lines = [version];
+    } else {
+      lines = normalizeStringArray(
+        findNestedValue(data, ['lines', 'version_lines', 'text'])
+      );
+    }
   }
 
   return {
     lines,
     text: lines.join('\n'),
+    filePath,
+    backendError,
     raw: data,
   };
 };
@@ -279,7 +358,7 @@ const stringifyCompact = (value: unknown): string | null => {
 export const normalizeHwclockResult = (payload: unknown): HwclockResult => {
   const data = unwrapData(payload);
   const message =
-    normalizeString(findNestedValue(payload, ['message'])) ??
+    normalizeString(getPathValue(payload, ['message'])) ??
     'عملیات ساعت سخت‌افزاری با موفقیت انجام شد.';
   const displayValue = stringifyCompact(
     findNestedValue(data, [
@@ -304,7 +383,10 @@ export const validateHostname = (value: string) => {
   }
 
   if (hostname.length > 253) {
-    return { value: hostname, error: 'طول نام میزبان نباید بیشتر از ۲۵۳ کاراکتر باشد.' };
+    return {
+      value: hostname,
+      error: 'طول نام میزبان نباید بیشتر از ۲۵۳ کاراکتر باشد.',
+    };
   }
 
   const labels = hostname.split('.');
