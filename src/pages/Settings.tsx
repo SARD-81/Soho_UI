@@ -49,10 +49,7 @@ const Settings = () => {
         تنظیمات
       </Typography>
 
-      <Box
-        dir="rtl"
-        sx={[tabContainerSx, { direction: 'rtl', textAlign: 'right' }]}
-      >
+      <Box dir="rtl" sx={tabContainerSx}>
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
@@ -60,34 +57,14 @@ const Settings = () => {
           scrollButtons="auto"
           allowScrollButtonsMobile
           dir="rtl"
-          sx={[
-            tabListSx,
-            {
-              direction: 'rtl',
-              '& .MuiTabs-flexContainer': {
-                direction: 'rtl',
-                justifyContent: 'flex-start',
-                gap: 1,
-              },
-              '& .MuiTab-root': {
-                color: 'var(--color-secondary)',
-                textAlign: 'right',
-              },
-              '& .MuiTab-root.Mui-selected': {
-                color: 'var(--color-primary)',
-              },
-            },
-          ]}
+          sx={tabListSx}
         >
           {SETTINGS_TAB_ITEMS.map((tab) => (
             <Tab key={tab.value} label={tab.label} value={tab.value} />
           ))}
         </Tabs>
 
-        <Box
-          dir="rtl"
-          sx={[tabPanelSx, { direction: 'rtl', textAlign: 'right' }]}
-        >
+        <Box dir="rtl" sx={tabPanelSx}>
           <TabPanel
             value={SETTINGS_TABS.general}
             currentValue={activeTab}
