@@ -46,7 +46,7 @@ const ServiceStoppedAlert = ({
       sx={{
         mb: 2,
         direction: 'rtl',
-        textAlign: 'right',
+        textAlign: 'left',
         alignItems: 'flex-start',
         borderRadius: '10px',
         borderColor: 'rgba(244, 67, 54, 0.5)',
@@ -58,11 +58,11 @@ const ServiceStoppedAlert = ({
         '& .MuiAlert-message': {
           width: '100%',
           direction: 'rtl',
-          textAlign: 'right',
+          textAlign: 'left',
         },
         '& .MuiAlertTitle-root': {
           direction: 'rtl',
-          textAlign: 'right',
+          textAlign: 'left',
         },
       }}
     >
@@ -71,7 +71,7 @@ const ServiceStoppedAlert = ({
           fontWeight: 900,
           mb: 0.5,
           direction: 'rtl',
-          textAlign: 'right',
+          textAlign: 'left',
         }}
       >
         {serviceLabel} در حال اجرا نیست
