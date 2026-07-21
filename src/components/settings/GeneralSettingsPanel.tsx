@@ -7,6 +7,7 @@ import {
   CircularProgress,
   Divider,
   FormControl,
+  FormControlLabel,
   FormLabel,
   IconButton,
   Paper,
@@ -63,13 +64,6 @@ import SystemSettingConfirmDialog, {
   type SystemSettingConfirmSeverity,
 } from './SystemSettingConfirmDialog';
 
-const DEFAULT_NTP_SERVERS = [
-  '0.debian.pool.ntp.org',
-  '1.debian.pool.ntp.org',
-  '2.debian.pool.ntp.org',
-  '3.debian.pool.ntp.org',
-];
-
 const sectionPaperSx = {
   position: 'relative',
   minWidth: 0,
@@ -124,7 +118,9 @@ const commonFieldSx = {
   },
   '& .MuiInputLabel-root': {
     color: 'var(--color-secondary)',
-    textAlign: 'right',
+    right: 14,
+    left: 'auto',
+    transformOrigin: 'top right',
   },
   '& .MuiInputLabel-root.Mui-focused': {
     color: 'var(--color-primary)',
@@ -140,6 +136,7 @@ const commonFieldSx = {
   '& .MuiOutlinedInput-notchedOutline': {
     borderColor:
       'color-mix(in srgb, var(--color-secondary) 34%, transparent)',
+    textAlign: 'right',
   },
   '&:hover .MuiOutlinedInput-notchedOutline': {
     borderColor:
@@ -185,10 +182,6 @@ const primaryButtonSx = {
     background:
       'color-mix(in srgb, var(--color-primary) 34%, var(--color-card-bg))',
   },
-  '& .MuiButton-startIcon': {
-    marginInlineStart: 0,
-    marginInlineEnd: 0.75,
-  },
 } as const;
 
 const outlinedButtonSx = {
@@ -202,10 +195,6 @@ const outlinedButtonSx = {
     borderColor: 'var(--color-primary)',
     backgroundColor:
       'color-mix(in srgb, var(--color-primary) 9%, transparent)',
-  },
-  '& .MuiButton-startIcon': {
-    marginInlineStart: 0,
-    marginInlineEnd: 0.75,
   },
 } as const;
 
@@ -239,25 +228,17 @@ const SectionHeader = ({
   action,
 }: SectionHeaderProps) => (
   <Stack
+    direction={{ xs: 'column', sm: 'row' }}
+    alignItems={{ xs: 'stretch', sm: 'flex-start' }}
+    justifyContent="space-between"
     gap={1.5}
-    sx={{
-      mb: 2.25,
-      direction: 'rtl',
-      flexDirection: { xs: 'column', sm: 'row-reverse' },
-      alignItems: { xs: 'stretch', sm: 'flex-start' },
-      justifyContent: 'space-between',
-    }}
+    sx={{ mb: 2.25, direction: 'rtl' }}
   >
     <Stack
+      direction="row"
+      alignItems="flex-start"
       gap={1.2}
-      sx={{
-        minWidth: 0,
-        flex: 1,
-        direction: 'rtl',
-        flexDirection: 'row-reverse',
-        alignItems: 'flex-start',
-        justifyContent: 'flex-end',
-      }}
+      sx={{ minWidth: 0, flex: 1, direction: 'rtl' }}
     >
       <Box
         sx={{
@@ -321,15 +302,10 @@ interface InfoRowProps {
 
 const InfoRow = ({ label, value, ltr = false }: InfoRowProps) => (
   <Stack
+    direction="row"
+    alignItems="center"
     gap={1.5}
-    sx={{
-      py: 0.8,
-      minWidth: 0,
-      direction: 'rtl',
-      flexDirection: 'row-reverse',
-      alignItems: 'center',
-      justifyContent: 'flex-end',
-    }}
+    sx={{ py: 0.8, minWidth: 0, direction: 'rtl' }}
   >
     <Typography
       variant="body2"
@@ -424,7 +400,7 @@ const GeneralSettingsPanel = () => {
   const [timezoneDirty, setTimezoneDirty] = useState(false);
 
   const [ntpEnabled, setNtpEnabled] = useState(false);
-  const [ntpServers, setNtpServers] = useState<string[]>(DEFAULT_NTP_SERVERS);
+  const [ntpServers, setNtpServers] = useState<string[]>([]);
   const [ntpErrors, setNtpErrors] = useState<Record<number, string>>({});
   const [ntpFormError, setNtpFormError] = useState<string | null>(null);
   const [ntpDirty, setNtpDirty] = useState(false);
@@ -458,11 +434,7 @@ const GeneralSettingsPanel = () => {
   useEffect(() => {
     if (!ntpDirty && timeQuery.data) {
       setNtpEnabled(timeQuery.data.ntpEnabled ?? false);
-      setNtpServers(
-        timeQuery.data.ntpServers.length > 0
-          ? timeQuery.data.ntpServers
-          : DEFAULT_NTP_SERVERS
-      );
+      setNtpServers(timeQuery.data.ntpServers);
     }
   }, [ntpDirty, timeQuery.data]);
 
@@ -485,12 +457,8 @@ const GeneralSettingsPanel = () => {
 
   const timezoneOptions = useMemo(() => {
     const values = new Set(timezoneQuery.data ?? []);
-    if (timeQuery.data?.timezone) {
-      values.add(timeQuery.data.timezone);
-    }
-    if (timezone) {
-      values.add(timezone);
-    }
+    if (timeQuery.data?.timezone) values.add(timeQuery.data.timezone);
+    if (timezone) values.add(timezone);
     return Array.from(values).sort((left, right) =>
       left.localeCompare(right, 'en')
     );
@@ -513,17 +481,11 @@ const GeneralSettingsPanel = () => {
   const handleRequestHostnameChange = () => {
     const validation = validateHostname(hostname);
     setHostnameError(validation.error);
+    if (validation.error) return;
 
-    if (validation.error) {
-      return;
-    }
-
-    const currentHostname =
-      hostnameQuery.data?.staticHostname ??
-      hostnameQuery.data?.currentHostname ??
-      '';
-
-    if (validation.value === currentHostname.toLowerCase()) {
+    if (
+      validation.value === hostnameQuery.data?.staticHostname?.toLowerCase()
+    ) {
       toast('نام میزبان تغییری نکرده است.');
       return;
     }
@@ -652,9 +614,7 @@ const GeneralSettingsPanel = () => {
 
     const validation = formatManualTimeForApi(manualTime);
     setManualTimeError(validation.error);
-    if (validation.error) {
-      return;
-    }
+    if (validation.error) return;
 
     setPendingAction({
       type: 'manual-time',
@@ -703,9 +663,7 @@ const GeneralSettingsPanel = () => {
   };
 
   const handleConfirmAction = async () => {
-    if (!pendingAction || isMutationPending) {
-      return;
-    }
+    if (!pendingAction || isMutationPending) return;
 
     try {
       if (pendingAction.type === 'hostname') {
@@ -743,10 +701,7 @@ const GeneralSettingsPanel = () => {
       setPendingAction(null);
     } catch (error) {
       toast.error(
-        extractApiErrorMessage(
-          error,
-          'اعمال تنظیمات سیستم با خطا مواجه شد.'
-        )
+        extractApiErrorMessage(error, 'اعمال تنظیمات سیستم با خطا مواجه شد.')
       );
     }
   };
@@ -777,18 +732,12 @@ const GeneralSettingsPanel = () => {
           </Alert>
         ) : null}
 
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              md: 'repeat(3, minmax(0, 1fr))',
-            },
-            gap: 2,
-            direction: 'rtl',
-          }}
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={2}
+          sx={{ direction: 'rtl', alignItems: 'stretch' }}
         >
-          <Paper sx={sectionPaperSx}>
+          <Paper sx={{ ...sectionPaperSx, flex: 1 }}>
             <SectionHeader
               icon={<MdComputer size={23} />}
               title="هویت سامانه"
@@ -799,7 +748,7 @@ const GeneralSettingsPanel = () => {
             <InfoRow label="نسخه سیستم" value={systemVersion} ltr />
           </Paper>
 
-          <Paper sx={sectionPaperSx}>
+          <Paper sx={{ ...sectionPaperSx, flex: 1 }}>
             <SectionHeader
               icon={<MdAccessTime size={23} />}
               title="وضعیت زمان سیستم"
@@ -824,7 +773,7 @@ const GeneralSettingsPanel = () => {
             />
           </Paper>
 
-          <Paper sx={sectionPaperSx}>
+          <Paper sx={{ ...sectionPaperSx, flex: 1 }}>
             <SectionHeader
               icon={<MdSync size={23} />}
               title="همگام‌سازی و ساعت سخت‌افزاری"
@@ -870,21 +819,14 @@ const GeneralSettingsPanel = () => {
               ltr
             />
           </Paper>
-        </Box>
+        </Stack>
 
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              lg: 'repeat(2, minmax(0, 1fr))',
-            },
-            gap: 2,
-            alignItems: 'start',
-            direction: 'rtl',
-          }}
+        <Stack
+          direction={{ xs: 'column', lg: 'row' }}
+          spacing={2}
+          sx={{ direction: 'rtl', alignItems: 'stretch' }}
         >
-          <Paper sx={sectionPaperSx}>
+          <Paper sx={{ ...sectionPaperSx, flex: 1 }}>
             <SectionHeader
               icon={<MdComputer size={23} />}
               title="نام میزبان"
@@ -923,7 +865,7 @@ const GeneralSettingsPanel = () => {
             </Stack>
           </Paper>
 
-          <Paper sx={sectionPaperSx}>
+          <Paper sx={{ ...sectionPaperSx, flex: 1 }}>
             <SectionHeader
               icon={<MdPublic size={23} />}
               title="منطقه زمانی"
@@ -1020,142 +962,135 @@ const GeneralSettingsPanel = () => {
               </Button>
             </Stack>
           </Paper>
+        </Stack>
 
-          <Paper sx={{ ...sectionPaperSx, gridColumn: { lg: '1 / -1' } }}>
-            <SectionHeader
-              icon={<MdDns size={23} />}
-              title="همگام‌سازی NTP"
-              description="مدیریت همگام‌سازی خودکار ساعت با یک یا چند سرور زمان"
-              action={
-                <Stack
-                  gap={0.75}
-                  sx={{
-                    direction: 'rtl',
-                    flexDirection: 'row-reverse',
-                    alignItems: 'center',
+        <Paper sx={sectionPaperSx}>
+          <SectionHeader
+            icon={<MdDns size={23} />}
+            title="همگام‌سازی NTP"
+            description="مدیریت همگام‌سازی خودکار ساعت با یک یا چند سرور زمان"
+            action={
+              <Stack direction="row" gap={0.75} alignItems="center" sx={{ direction: 'rtl' }}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: 'var(--color-text)', fontWeight: 800 }}
+                >
+                  {ntpEnabled ? 'فعال' : 'غیرفعال'}
+                </Typography>
+                <Switch
+                  checked={ntpEnabled}
+                  onChange={(event) => {
+                    setNtpEnabled(event.target.checked);
+                    setNtpDirty(true);
+                    setNtpFormError(null);
                   }}
-                >
-                  <Switch
-                    checked={ntpEnabled}
-                    onChange={(event) => {
-                      setNtpEnabled(event.target.checked);
-                      setNtpDirty(true);
-                      setNtpFormError(null);
-                    }}
-                    inputProps={{ 'aria-label': 'فعال یا غیرفعال کردن NTP' }}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{ color: 'var(--color-text)', fontWeight: 800 }}
-                  >
-                    {ntpEnabled ? 'فعال' : 'غیرفعال'}
-                  </Typography>
-                </Stack>
-              }
-            />
-
-            <Stack spacing={1.5}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: {
-                    xs: '1fr',
-                    md: 'repeat(2, minmax(0, 1fr))',
-                  },
-                  gap: 1.25,
-                  direction: 'rtl',
-                }}
-              >
-                {ntpServers.map((server, index) => (
-                  <Stack
-                    key={`ntp-server-${index}`}
-                    gap={0.75}
-                    sx={{
-                      minWidth: 0,
-                      direction: 'rtl',
-                      flexDirection: 'row-reverse',
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <TextField
-                      label={`سرور NTP ${index + 1}`}
-                      value={server}
-                      onChange={(event) =>
-                        handleNtpServerChange(index, event.target.value)
-                      }
-                      error={Boolean(ntpErrors[index])}
-                      helperText={
-                        ntpErrors[index] ?? 'نام دامنه یا آدرس IP سرور زمان'
-                      }
-                      fullWidth
-                      sx={technicalFieldSx}
-                    />
-                    <Tooltip title="حذف سرور">
-                      <IconButton
-                        aria-label={`حذف سرور NTP شماره ${index + 1}`}
-                        onClick={() => handleRemoveNtpServer(index)}
-                        sx={{
-                          mt: 0.6,
-                          flexShrink: 0,
-                          color: 'var(--color-error)',
-                          border:
-                            '1px solid color-mix(in srgb, var(--color-error) 34%, transparent)',
-                          '&:hover': {
-                            backgroundColor:
-                              'color-mix(in srgb, var(--color-error) 10%, transparent)',
-                          },
-                        }}
-                      >
-                        <MdDeleteOutline />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                ))}
-              </Box>
-
-              <Stack
-                gap={1}
-                sx={{
-                  direction: 'rtl',
-                  flexDirection: { xs: 'column', sm: 'row-reverse' },
-                  alignItems: { xs: 'stretch', sm: 'center' },
-                  justifyContent: 'flex-end',
-                }}
-              >
-                <Button
-                  variant="contained"
-                  startIcon={<MdSave />}
-                  onClick={handleRequestNtpChange}
-                  disabled={isMutationPending}
-                  sx={primaryButtonSx}
-                >
-                  ثبت تنظیمات NTP
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<MdAdd />}
-                  onClick={handleAddNtpServer}
-                  sx={outlinedButtonSx}
-                >
-                  افزودن سرور NTP
-                </Button>
+                  inputProps={{ 'aria-label': 'فعال یا غیرفعال کردن NTP' }}
+                />
               </Stack>
+            }
+          />
 
-              {ntpFormError ? (
-                <Alert severity="error" sx={alertSx}>
-                  {ntpFormError}
-                </Alert>
-              ) : null}
-            </Stack>
-          </Paper>
+          {ntpServers.length === 0 ? (
+            <Alert severity="info" variant="outlined" sx={{ ...alertSx, mb: 1.5 }}>
+              هنوز هیچ سرور NTP ثبت نشده است. برای افزودن سرور از دکمه زیر استفاده کنید.
+            </Alert>
+          ) : null}
 
-          <Paper sx={sectionPaperSx}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 1.25,
+              direction: 'rtl',
+            }}
+          >
+            {ntpServers.map((server, index) => (
+              <Stack
+                key={`ntp-server-${index}`}
+                direction="row"
+                gap={0.75}
+                alignItems="flex-start"
+                sx={{
+                  direction: 'rtl',
+                  minWidth: 0,
+                  width: { xs: '100%', md: 'calc(50% - 5px)' },
+                }}
+              >
+                <TextField
+                  label={`سرور NTP ${index + 1}`}
+                  value={server}
+                  onChange={(event) =>
+                    handleNtpServerChange(index, event.target.value)
+                  }
+                  error={Boolean(ntpErrors[index])}
+                  helperText={
+                    ntpErrors[index] ?? 'نام دامنه یا آدرس IP سرور زمان'
+                  }
+                  fullWidth
+                  sx={technicalFieldSx}
+                />
+                <Tooltip title="حذف سرور">
+                  <IconButton
+                    aria-label={`حذف سرور NTP شماره ${index + 1}`}
+                    onClick={() => handleRemoveNtpServer(index)}
+                    sx={{
+                      mt: 0.75,
+                      flexShrink: 0,
+                      color: 'var(--color-error)',
+                      border:
+                        '1px solid color-mix(in srgb, var(--color-error) 40%, transparent)',
+                    }}
+                  >
+                    <MdDeleteOutline />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            ))}
+          </Box>
+
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            gap={1}
+            sx={{ mt: 1.5, direction: 'rtl' }}
+          >
+            <Button
+              variant="contained"
+              startIcon={<MdSave />}
+              onClick={handleRequestNtpChange}
+              disabled={isMutationPending}
+              sx={primaryButtonSx}
+            >
+              ثبت تنظیمات NTP
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<MdAdd />}
+              onClick={handleAddNtpServer}
+              sx={outlinedButtonSx}
+            >
+              افزودن سرور NTP
+            </Button>
+          </Stack>
+
+          {ntpFormError ? (
+            <Alert severity="error" sx={{ ...alertSx, mt: 1.5 }}>
+              {ntpFormError}
+            </Alert>
+          ) : null}
+        </Paper>
+
+        <Stack
+          direction={{ xs: 'column', lg: 'row' }}
+          spacing={2}
+          sx={{ direction: 'rtl', alignItems: 'stretch' }}
+        >
+          <Paper sx={{ ...sectionPaperSx, flex: 1 }}>
             <SectionHeader
               icon={<MdSchedule size={23} />}
               title="تنظیم دستی زمان"
               description="تنظیم تاریخ و ساعت سیستم در زمانی که NTP غیرفعال است"
             />
-            <Stack spacing={1.5} alignItems="stretch">
+            <Stack spacing={1.5}>
               {timeQuery.data?.ntpEnabled ? (
                 <Alert severity="warning" sx={alertSx}>
                   NTP در حال حاضر فعال است. برای تنظیم دستی زمان ابتدا آن را
@@ -1199,7 +1134,7 @@ const GeneralSettingsPanel = () => {
             </Stack>
           </Paper>
 
-          <Paper sx={sectionPaperSx}>
+          <Paper sx={{ ...sectionPaperSx, flex: 1 }}>
             <SectionHeader
               icon={<MdMemory size={23} />}
               title="ساعت سخت‌افزاری RTC"
@@ -1222,52 +1157,14 @@ const GeneralSettingsPanel = () => {
                   onChange={(event) =>
                     setRtcMode(event.target.value as 'utc' | 'local')
                   }
-                  sx={{
-                    mt: 0.75,
-                    direction: 'rtl',
-                    flexDirection: 'row-reverse',
-                    justifyContent: 'flex-end',
-                    gap: 1.5,
-                    color: 'var(--color-text)',
-                    '& .MuiFormControlLabel-root': {
-                      m: 0,
-                      color: 'var(--color-text)',
-                    },
-                    '& .MuiTypography-root': {
-                      color: 'var(--color-text)',
-                    },
-                  }}
+                  sx={{ mt: 0.5, direction: 'rtl' }}
                 >
-                  <Box
-                    component="label"
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      color: 'var(--color-text)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Radio value="utc" />
-                    <Typography component="span" dir="ltr">
-                      UTC
-                    </Typography>
-                  </Box>
-                  <Box
-                    component="label"
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      color: 'var(--color-text)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Radio value="local" />
-                    <Typography component="span" dir="ltr">
-                      Local Time
-                    </Typography>
-                  </Box>
+                  <FormControlLabel value="utc" control={<Radio />} label="UTC" />
+                  <FormControlLabel
+                    value="local"
+                    control={<Radio />}
+                    label="Local Time"
+                  />
                 </RadioGroup>
               </FormControl>
 
@@ -1277,9 +1174,9 @@ const GeneralSettingsPanel = () => {
                 variant="outlined"
                 sx={alertSx}
               >
-                در بیشتر سرورهای لینوکسی نگهداری RTC بر مبنای UTC توصیه
-                می‌شود؛ حالت Local Time معمولاً برای سازگاری با سیستم‌عامل‌های
-                دیگر استفاده می‌شود.
+                در بیشتر سرورهای لینوکسی نگهداری RTC بر مبنای UTC توصیه می‌شود؛
+                حالت Local Time معمولاً برای سازگاری با سیستم‌عامل‌های دیگر
+                استفاده می‌شود.
               </Alert>
 
               {hwclockDisplay ? (
@@ -1296,12 +1193,10 @@ const GeneralSettingsPanel = () => {
                     backgroundColor:
                       'color-mix(in srgb, var(--color-background) 72%, transparent)',
                     border:
-                      '1px solid color-mix(in srgb, var(--color-primary) 18%, transparent)',
+                      '1px solid color-mix(in srgb, var(--color-primary) 14%, transparent)',
                     fontFamily: 'monospace',
                     fontSize: '0.82rem',
                     textAlign: 'right',
-                    whiteSpace: 'pre-wrap',
-                    overflowWrap: 'anywhere',
                   }}
                 >
                   {hwclockDisplay}
@@ -1309,14 +1204,10 @@ const GeneralSettingsPanel = () => {
               ) : null}
 
               <Stack
+                direction={{ xs: 'column', md: 'row' }}
                 gap={1}
-                sx={{
-                  direction: 'rtl',
-                  flexDirection: { xs: 'column', md: 'row-reverse' },
-                  alignItems: { xs: 'stretch', md: 'center' },
-                  justifyContent: 'flex-end',
-                  flexWrap: 'wrap',
-                }}
+                flexWrap="wrap"
+                sx={{ direction: 'rtl' }}
               >
                 <Button
                   variant="contained"
@@ -1348,7 +1239,7 @@ const GeneralSettingsPanel = () => {
               </Stack>
             </Stack>
           </Paper>
-        </Box>
+        </Stack>
       </Stack>
 
       <SystemSettingConfirmDialog
@@ -1359,9 +1250,7 @@ const GeneralSettingsPanel = () => {
         severity={pendingAction?.severity}
         isLoading={isMutationPending}
         onCancel={() => {
-          if (!isMutationPending) {
-            setPendingAction(null);
-          }
+          if (!isMutationPending) setPendingAction(null);
         }}
         onConfirm={() => void handleConfirmAction()}
       />
