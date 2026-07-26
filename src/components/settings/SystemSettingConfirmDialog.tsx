@@ -1,9 +1,9 @@
-import { Box, CircularProgress, Stack, Typography } from '@mui/material';
-import { MdInfoOutline, MdOutlineWarningAmber } from 'react-icons/md';
-import BlurModal from '../BlurModal';
-import ModalActionButtons from '../common/ModalActionButtons';
+import { Box, CircularProgress, Stack, Typography } from "@mui/material";
+import { MdInfoOutline, MdOutlineWarningAmber } from "react-icons/md";
+import BlurModal from "../BlurModal";
+import ModalActionButtons from "../common/ModalActionButtons";
 
-export type SystemSettingConfirmSeverity = 'info' | 'warning' | 'error';
+export type SystemSettingConfirmSeverity = "info" | "warning" | "error";
 
 interface SystemSettingConfirmDialogProps {
   open: boolean;
@@ -17,23 +17,23 @@ interface SystemSettingConfirmDialogProps {
 }
 
 const severityColor = {
-  info: 'var(--color-primary)',
-  warning: 'var(--color-warning)',
-  error: 'var(--color-error)',
+  info: "var(--color-primary)",
+  warning: "var(--color-warning)",
+  error: "var(--color-error)",
 } as const;
 
 const SystemSettingConfirmDialog = ({
   open,
   title,
   description,
-  confirmLabel = 'تایید و ادامه',
-  severity = 'warning',
+  confirmLabel = "تایید و ادامه",
+  severity = "warning",
   isLoading = false,
   onCancel,
   onConfirm,
 }: SystemSettingConfirmDialogProps) => {
   const accentColor = severityColor[severity];
-  const Icon = severity === 'info' ? MdInfoOutline : MdOutlineWarningAmber;
+  const Icon = severity === "info" ? MdInfoOutline : MdOutlineWarningAmber;
 
   return (
     <BlurModal
@@ -48,15 +48,15 @@ const SystemSettingConfirmDialog = ({
           direction="row"
           alignItems="center"
           gap={1.25}
-          sx={{ minWidth: 0, direction: 'rtl' }}
+          sx={{ minWidth: 0 }}
         >
           <Box
             sx={{
               width: 42,
               height: 42,
-              borderRadius: '12px',
-              display: 'grid',
-              placeItems: 'center',
+              borderRadius: "12px",
+              display: "grid",
+              placeItems: "center",
               color: accentColor,
               backgroundColor: `color-mix(in srgb, ${accentColor} 12%, transparent)`,
               border: `1px solid color-mix(in srgb, ${accentColor} 30%, transparent)`,
@@ -69,11 +69,10 @@ const SystemSettingConfirmDialog = ({
             component="span"
             sx={{
               minWidth: 0,
-              color: 'var(--color-text)',
-              fontSize: '1rem',
+              color: "var(--color-text)",
+              fontSize: "1rem",
               fontWeight: 900,
-              direction: 'rtl',
-              textAlign: 'right',
+              textAlign: "start",
             }}
           >
             {title}
@@ -81,7 +80,7 @@ const SystemSettingConfirmDialog = ({
         </Stack>
       }
       actions={
-        <Box sx={{ width: '100%', direction: 'ltr' }}>
+        <Box sx={{ width: "100%" }}>
           <ModalActionButtons
             onConfirm={onConfirm}
             onCancel={onCancel}
@@ -95,13 +94,13 @@ const SystemSettingConfirmDialog = ({
               ) : undefined,
               sx: {
                 minWidth: 148,
-                color: 'var(--color-bg)',
+                color: "var(--color-bg)",
                 backgroundColor: accentColor,
                 borderColor: accentColor,
-                '&:hover': {
+                "&:hover": {
                   backgroundColor: accentColor,
                   borderColor: accentColor,
-                  filter: 'brightness(1.06)',
+                  filter: "brightness(1.06)",
                 },
               },
             }}
@@ -109,9 +108,9 @@ const SystemSettingConfirmDialog = ({
               disabled: isLoading,
               sx: {
                 minWidth: 112,
-                color: 'var(--color-text)',
+                color: "var(--color-text)",
                 borderColor:
-                  'color-mix(in srgb, var(--color-secondary) 50%, transparent)',
+                  "color-mix(in srgb, var(--color-secondary) 50%, transparent)",
               },
             }}
           />
@@ -121,19 +120,17 @@ const SystemSettingConfirmDialog = ({
       <Box
         sx={{
           p: 2,
-          borderRadius: '12px',
-          direction: 'rtl',
-          textAlign: 'right',
-          color: 'var(--color-text)',
+          borderRadius: "12px",
+          textAlign: "start",
+          color: "var(--color-text)",
           backgroundColor: `color-mix(in srgb, ${accentColor} 7%, transparent)`,
           border: `1px solid color-mix(in srgb, ${accentColor} 24%, transparent)`,
         }}
       >
         <Typography
           sx={{
-            color: 'var(--color-secondary)',
-            direction: 'rtl',
-            textAlign: 'right',
+            color: "var(--color-secondary)",
+            textAlign: "start",
             lineHeight: 2,
           }}
         >

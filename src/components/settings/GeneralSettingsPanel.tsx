@@ -13,7 +13,6 @@ import {
   Switch,
   TextField,
   Tooltip,
-  Typography,
 } from "@mui/material";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { FiEdit3 } from "react-icons/fi";
@@ -917,7 +916,6 @@ const GeneralSettingsPanel = () => {
         submitLabel="ثبت نام میزبان"
         icon={<MdComputer />}
         title="ویرایش نام میزبان"
-        description="تغییر نام پایدار سامانه در شبکه"
       >
         <TextField
           fullWidth
@@ -929,10 +927,7 @@ const GeneralSettingsPanel = () => {
             setHostnameError(null);
           }}
           error={Boolean(hostnameError)}
-          helperText={
-            hostnameError ??
-            "نمونه‌های معتبر: soho یا storage-node-01.example.local"
-          }
+          helperText={hostnameError}
           sx={technicalFieldSx}
           slotProps={{
             htmlInput: { maxLength: 253, dir: "ltr", style: ltrInputStyle },
@@ -949,7 +944,6 @@ const GeneralSettingsPanel = () => {
         submitLabel="ثبت منطقه زمانی"
         icon={<MdPublic />}
         title="ویرایش منطقه زمانی"
-        description="انتخاب منطقه معتبر برای محاسبه زمان محلی سامانه"
       >
         <Autocomplete
           options={timezoneOptions}
@@ -971,10 +965,7 @@ const GeneralSettingsPanel = () => {
               {...params}
               label="منطقه زمانی"
               error={Boolean(timezoneError)}
-              helperText={
-                timezoneError ??
-                "منطقه زمانی روی محاسبه و نمایش زمان محلی اثر می‌گذارد."
-              }
+              helperText={timezoneError}
               sx={technicalFieldSx}
               slotProps={{
                 htmlInput: {
@@ -998,7 +989,6 @@ const GeneralSettingsPanel = () => {
         errorMessage={ntpFormError}
         icon={<MdDns />}
         title="همگام‌سازی خودکار زمان"
-        description="تنظیم سرورهای زمان برای همگام‌سازی خودکار ساعت سامانه"
       >
         <FormControlLabel
           control={
@@ -1031,9 +1021,7 @@ const GeneralSettingsPanel = () => {
                   handleNtpServerChange(index, event.target.value)
                 }
                 error={Boolean(ntpErrors[index])}
-                helperText={
-                  ntpErrors[index] ?? "نام دامنه یا نشانی آی‌پی سرور زمان"
-                }
+                helperText={ntpErrors[index]}
                 sx={technicalFieldSx}
                 slotProps={{
                   htmlInput: { dir: "ltr", style: ltrInputStyle },
@@ -1072,7 +1060,6 @@ const GeneralSettingsPanel = () => {
         submitLabel="تنظیم زمان سیستم"
         icon={<MdMemory />}
         title="تنظیم دستی زمان"
-        description="تنظیم تاریخ و ساعت سیستم در زمانی که همگام‌سازی خودکار خاموش است"
       >
         {isNtpActive ? (
           <Alert severity="warning" sx={alertSx}>
@@ -1091,10 +1078,7 @@ const GeneralSettingsPanel = () => {
             setManualTimeError(null);
           }}
           error={Boolean(manualTimeError)}
-          helperText={
-            manualTimeError ??
-            "زمان در قالب محلی انتخاب می‌شود و با منطقه زمانی فعال تفسیر خواهد شد."
-          }
+          helperText={manualTimeError}
           sx={technicalFieldSx}
           slotProps={{
             inputLabel: { shrink: true },
@@ -1112,11 +1096,10 @@ const GeneralSettingsPanel = () => {
         isSubmitting={manageHwclockMutation.isPending}
         icon={<MdInfoOutline />}
         title="ساعت سخت‌افزاری مادربرد"
-        description="مشاهده و همگام‌سازی ساعت مادربرد با سیستم‌عامل"
       >
         <FormControl sx={fieldSx}>
           <FormLabel sx={{ fontSize: "0.85rem", mb: 0.5 }}>
-            مقدار ساعت سخت‌افزاری چگونه تفسیر شود؟
+            تفسیر مقدار ساعت مادربرد
           </FormLabel>
           <RadioGroup
             row
@@ -1137,12 +1120,6 @@ const GeneralSettingsPanel = () => {
             />
           </RadioGroup>
         </FormControl>
-
-        <Alert severity="info" sx={alertSx}>
-          در بیشتر سرورهای لینوکسی توصیه می‌شود ساعت مادربرد بر مبنای وقت جهانی
-          نگهداری شود؛ وقت محلی بیشتر برای سازگاری با سیستم‌عامل‌های دیگر کاربرد
-          دارد.
-        </Alert>
 
         {hwclockDisplay ? (
           <Box component="pre" sx={codeBlockSx} style={ltrBlockStyle}>
