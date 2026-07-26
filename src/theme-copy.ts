@@ -34,10 +34,6 @@ export const getTheme = (isDark: boolean) => {
   const tooltipText = isDark ? '#e2e8f0' : '#e0f2fe';
 
   return createTheme({
-    // The app renders inside an RTL emotion cache (see src/rtl-cache.ts) and a
-    // `dir="rtl"` document, so MUI itself must know it is in RTL mode in
-    // order to place input labels, adornments and icons on the correct side.
-    direction: 'rtl',
     palette: {
       mode: isDark ? 'dark' : 'light',
       primary: { main: primaryMain, light: primaryLight },

@@ -8,19 +8,39 @@ interface TabPanelProps<Value extends TabValue> {
   currentValue: Value;
   children: ReactNode;
   sx?: SxProps<Theme>;
+  /** Shared prefix used to link the panel with its tab for screen readers. */
+  idPrefix?: string;
 }
 
+/**
+ * Accessible tab panel: exposes `role="tabpanel"` and is linked back to its
+ * tab through `id` / `aria-labelledby`, so assistive technology announces the
+ * active section correctly.
+ */
 const TabPanel = <Value extends TabValue>({
   value,
   currentValue,
   children,
   sx,
+  idPrefix = 'tab',
 }: TabPanelProps<Value>) => {
-  if (value !== currentValue) {
+  const isActive = value === currentValue;
+
+  if (!isActive) {
     return null;
   }
 
-  return <Box sx={{ mt: 3, ...sx }}>{children}</Box>;
+  return (
+    <Box
+      role="tabpanel"
+      id={`${idPrefix}-panel-${value}`}
+      aria-labelledby={`${idPrefix}-${value}`}
+      tabIndex={0}
+      sx={{ mt: 3, outline: 'none', ...sx }}
+    >
+      {children}
+    </Box>
+  );
 };
 
 export default TabPanel;
