@@ -11,6 +11,8 @@ interface BlurModalProps {
   maxWidth?: number | string;
   minWidth?: number | string;
   maxHeight?: number | string;
+  direction?: 'rtl' | 'ltr';
+  closeDisabled?: boolean;
 }
 
 const BlurModal = ({
@@ -20,13 +22,15 @@ const BlurModal = ({
   actions,
   children,
   maxWidth,
-  minWidth = "455px",
-  maxHeight = "90vh",
+  minWidth = '455px',
+  maxHeight = '90vh',
+  direction,
+  closeDisabled = false,
 }: BlurModalProps) => {
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={closeDisabled ? undefined : onClose}
       closeAfterTransition
       slotProps={{
         backdrop: {
@@ -38,6 +42,7 @@ const BlurModal = ({
       }}
     >
       <Box
+        dir={direction}
         sx={{
           position: 'absolute',
           top: '50%',
@@ -45,14 +50,19 @@ const BlurModal = ({
           transform: 'translate(-50%, -50%)',
           width: 'auto',
           ...(maxWidth && { maxWidth }),
-          minWidth ,
+          minWidth,
           ...(maxHeight && { maxHeight }),
           borderRadius: '5px',
           bgcolor: 'var(--color-card-bg)',
+          color: 'var(--color-text)',
           boxShadow: '0 30px 60px -32px rgba(0, 0, 0, 0.6)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           overflow: 'hidden',
           overflowY: 'auto',
+          ...(direction && {
+            direction,
+            textAlign: direction === 'rtl' ? 'right' : 'left',
+          }),
         }}
       >
         <Box sx={{ p: 4 }}>
@@ -63,11 +73,22 @@ const BlurModal = ({
               justifyContent: 'space-between',
               mb: 3,
               gap: 2,
+              ...(direction && { direction }),
             }}
           >
             {title ? (
               typeof title === 'string' ? (
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: 'var(--color-text)',
+                    fontWeight: 700,
+                    ...(direction && {
+                      direction,
+                      textAlign: direction === 'rtl' ? 'right' : 'left',
+                    }),
+                  }}
+                >
                   {title}
                 </Typography>
               ) : (
@@ -80,7 +101,10 @@ const BlurModal = ({
             <IconButton
               size="small"
               onClick={onClose}
+              disabled={closeDisabled}
+              aria-label="بستن مودال"
               sx={{
+                flexShrink: 0,
                 color: 'var(--color-secondary)',
                 '&:hover': {
                   color: 'var(--color-primary)',
@@ -91,7 +115,14 @@ const BlurModal = ({
             </IconButton>
           </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3,
+              ...(direction && { direction }),
+            }}
+          >
             {children}
           </Box>
         </Box>
@@ -107,6 +138,7 @@ const BlurModal = ({
               gap: 2,
               backgroundColor: 'rgba(9, 20, 40, 0.04)',
               borderTop: '1px solid rgba(255, 255, 255, 0.04)',
+              ...(direction && { direction }),
             }}
           >
             {actions}

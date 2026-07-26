@@ -71,7 +71,7 @@ const ServiceStoppedAlert = ({
           fontWeight: 900,
           mb: 0.5,
           direction: 'rtl',
-          textAlign: 'right',
+          textAlign: 'left',
         }}
       >
         {serviceLabel} در حال اجرا نیست

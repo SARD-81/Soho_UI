@@ -39,6 +39,7 @@ const PageContainer = ({ children, sx }: PageContainerProps) => {
         flexDirection: 'column',
         gap: 3,
         width: '100%',
+        
         ...sx,
       }}
     >
