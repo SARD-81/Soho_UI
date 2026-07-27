@@ -3,6 +3,7 @@ import {
   Autocomplete,
   Box,
   Button,
+  Checkbox,
   Chip,
   Divider,
   FormControl,
@@ -194,6 +195,8 @@ const GeneralSettingsPanel = () => {
   const [manualTimeError, setManualTimeError] = useState<string | null>(null);
   const manualTimeInitializedRef = useRef(false);
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("jalali");
+  /** When checked, the system time is set from the client clock on submit. */
+  const [useClientTime, setUseClientTime] = useState(false);
 
   const [hwclockTimes, setHwclockTimes] = useState<HardwareClockTimes | null>(
     null,
@@ -418,7 +421,12 @@ const GeneralSettingsPanel = () => {
       return;
     }
 
-    const validation = formatManualTimeForApi(manualTime);
+    /** The checkbox always wins, so the freshest client clock is submitted. */
+    const requestedTime = useClientTime
+      ? toDateTimeLocalValue(new Date())
+      : manualTime;
+
+    const validation = formatManualTimeForApi(requestedTime);
     setManualTimeError(validation.error);
     if (validation.error) return;
 
@@ -718,7 +726,24 @@ const GeneralSettingsPanel = () => {
   /** Manual-time picker, shared by its own modal and the time-settings modal. */
   const renderManualTimeFields = () => (
     <Stack gap={1.5}>
-      <FormControl sx={fieldSx}>
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={useClientTime}
+            onChange={(event) => {
+              setUseClientTime(event.target.checked);
+              setManualTimeError(null);
+
+              if (event.target.checked) {
+                setManualTime(toDateTimeLocalValue(new Date()));
+              }
+            }}
+          />
+        }
+        label="تنطیم برابر زمان کلاینت"
+      />
+
+      <FormControl sx={fieldSx} disabled={useClientTime}>
         <FormLabel sx={{ fontSize: "0.85rem", mb: 0.5 }}>نوع تقویم</FormLabel>
         <RadioGroup
           row
@@ -750,6 +775,7 @@ const GeneralSettingsPanel = () => {
           }}
           error={Boolean(manualTimeError)}
           helperText={manualTimeError}
+          disabled={useClientTime}
         />
       ) : (
         <TextField
@@ -763,6 +789,7 @@ const GeneralSettingsPanel = () => {
           }}
           error={Boolean(manualTimeError)}
           helperText={manualTimeError}
+          disabled={useClientTime}
           sx={technicalFieldSx}
           slotProps={{
             inputLabel: { shrink: true },

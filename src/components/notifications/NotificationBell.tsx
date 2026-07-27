@@ -11,10 +11,10 @@ import {
   Stack,
   Tooltip,
   Typography,
-} from '@mui/material';
-import { alpha, type Theme } from '@mui/material/styles';
-import { useMemo, useState } from 'react';
-import type { MouseEvent, ReactNode } from 'react';
+} from "@mui/material";
+import { alpha, type Theme } from "@mui/material/styles";
+import { useMemo, useState } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import {
   MdClose,
   MdDeleteOutline,
@@ -24,9 +24,9 @@ import {
   MdInfoOutline,
   MdNotificationsNone,
   MdWarningAmber,
-} from 'react-icons/md';
-import type { LocalNotificationSeverity } from '../../@types/notification';
-import { useLocalNotifications } from '../../hooks/useLocalNotifications';
+} from "react-icons/md";
+import type { LocalNotificationSeverity } from "../../@types/notification";
+import { useLocalNotifications } from "../../hooks/useLocalNotifications";
 
 type NotificationBellProps = {
   userKey?: string;
@@ -34,9 +34,9 @@ type NotificationBellProps = {
 };
 
 const severityLabelByType: Record<LocalNotificationSeverity, string> = {
-  info: 'اطلاع‌رسانی',
-  warning: 'هشدار',
-  critical: 'بحرانی',
+  info: "اطلاع‌رسانی",
+  warning: "هشدار",
+  critical: "بحرانی",
 };
 
 const severityIconByType: Record<LocalNotificationSeverity, ReactNode> = {
@@ -45,30 +45,42 @@ const severityIconByType: Record<LocalNotificationSeverity, ReactNode> = {
   critical: <MdErrorOutline size={21} />,
 };
 
+/** Jalali date and 24-hour time with Persian digits. */
 const formatNotificationDate = (dateValue: string) =>
-  new Intl.DateTimeFormat('fa-IR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
+  new Intl.DateTimeFormat("fa-IR", {
+    dateStyle: "short",
+    timeStyle: "short",
+    hourCycle: "h23",
   }).format(new Date(dateValue));
+
+const formatCount = (value: number) => value.toLocaleString("fa-IR");
 
 const getSeverityPalette = (
   severity: LocalNotificationSeverity,
-  theme: Theme
+  theme: Theme,
 ) => {
   const main =
-    severity === 'critical'
+    severity === "critical"
       ? theme.palette.error.main
-      : severity === 'warning'
+      : severity === "warning"
         ? theme.palette.warning.main
         : theme.palette.info.main;
 
   return {
     main,
-    soft: alpha(main, severity === 'critical' ? 0.12 : 0.09),
+    soft: alpha(main, severity === "critical" ? 0.12 : 0.09),
     border: alpha(main, 0.3),
   };
 };
 
+/**
+ * Notification centre.
+ *
+ * The whole app runs through `stylis-plugin-rtl`, so `direction` and
+ * `textAlign: 'right'` written inside `sx` are mirrored and end up pushing the
+ * content to the wrong side. Layout here therefore relies on the native `dir`
+ * attribute plus logical values (`textAlign: 'start'`, `flex-start`).
+ */
 const NotificationBell = ({
   userKey,
   maxItems = 10,
@@ -84,7 +96,7 @@ const NotificationBell = ({
 
   const visibleNotifications = useMemo(
     () => notifications.slice(0, maxItems),
-    [maxItems, notifications]
+    [maxItems, notifications],
   );
   const isOpen = Boolean(anchorEl);
 
@@ -101,11 +113,11 @@ const NotificationBell = ({
       <Tooltip title="اعلان‌ها">
         <IconButton
           aria-label="اعلان‌ها"
-          aria-controls={isOpen ? 'notification-popover' : undefined}
+          aria-controls={isOpen ? "notification-popover" : undefined}
           aria-haspopup="true"
           onClick={handleOpen}
           size="small"
-          sx={{ color: 'var(--color-text)' }}
+          sx={{ color: "var(--color-text)" }}
         >
           <Badge
             badgeContent={unreadCount}
@@ -123,40 +135,40 @@ const NotificationBell = ({
         anchorEl={anchorEl}
         open={isOpen}
         onClose={handleClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{
-          dir: 'rtl',
-          sx: (theme) => ({
-            mt: 1.5,
-            width: { xs: 'calc(100vw - 24px)', sm: 440 },
-            maxWidth: '100%',
-            borderRadius: '16px',
-            overflow: 'hidden',
-            direction: 'rtl',
-            textAlign: 'right',
-            border: `1px solid ${alpha(theme.palette.divider, 0.66)}`,
-            background:
-              theme.palette.mode === 'dark'
-                ? `linear-gradient(160deg, ${alpha('#111827', 0.985)}, ${alpha('#0b1220', 0.97)})`
-                : `linear-gradient(160deg, ${alpha('#ffffff', 0.99)}, ${alpha('#f8fafc', 0.98)})`,
-            backdropFilter: 'blur(16px)',
-            boxShadow: `0 24px 60px ${alpha(
-              theme.palette.common.black,
-              0.28
-            )}`,
-          }),
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slotProps={{
+          paper: {
+            dir: "rtl",
+            sx: (theme) => ({
+              mt: 1.5,
+              width: { xs: "calc(100vw - 24px)", sm: 440 },
+              maxWidth: "100%",
+              borderRadius: "16px",
+              overflow: "hidden",
+              textAlign: "start",
+              border: `1px solid ${alpha(theme.palette.divider, 0.66)}`,
+              background:
+                theme.palette.mode === "dark"
+                  ? `linear-gradient(160deg, ${alpha("#111827", 0.985)}, ${alpha("#0b1220", 0.97)})`
+                  : `linear-gradient(160deg, ${alpha("#ffffff", 0.99)}, ${alpha("#f8fafc", 0.98)})`,
+              backdropFilter: "blur(16px)",
+              boxShadow: `0 24px 60px ${alpha(
+                theme.palette.common.black,
+                0.28,
+              )}`,
+            }),
+          },
         }}
       >
+        {/* ── سربرگ ── */}
         <Box
-          dir="rtl"
           sx={(theme) => ({
             p: 2,
-            direction: 'rtl',
-            textAlign: 'right',
+            textAlign: "start",
             background: `linear-gradient(135deg, ${alpha(
               theme.palette.primary.main,
-              0.12
+              0.12,
             )}, transparent 70%)`,
           })}
         >
@@ -165,16 +177,14 @@ const NotificationBell = ({
             alignItems="center"
             justifyContent="space-between"
             gap={1}
-            sx={{ direction: 'rtl', textAlign: 'right' }}
           >
-            <Box sx={{ minWidth: 0, textAlign: 'right' }}>
+            <Box sx={{ minWidth: 0, textAlign: "start" }}>
               <Typography
                 variant="subtitle1"
                 sx={{
                   fontWeight: 900,
-                  color: 'var(--color-text)',
-                  direction: 'rtl',
-                  textAlign: 'right',
+                  textAlign: "start",
+                  color: "var(--color-text)",
                 }}
               >
                 اعلان‌ها
@@ -182,16 +192,15 @@ const NotificationBell = ({
               <Typography
                 variant="caption"
                 sx={{
-                  color: 'text.secondary',
-                  direction: 'rtl',
-                  textAlign: 'right',
-                  display: 'block',
+                  display: "block",
                   mt: 0.25,
+                  textAlign: "start",
+                  color: "text.secondary",
                 }}
               >
                 {unreadCount > 0
-                  ? `${unreadCount.toLocaleString('fa-IR')} اعلان خوانده‌نشده`
-                  : 'همه اعلان‌ها خوانده شده‌اند'}
+                  ? `${formatCount(unreadCount)} اعلان خوانده‌نشده`
+                  : "همه اعلان‌ها خوانده شده‌اند"}
               </Typography>
             </Box>
 
@@ -200,12 +209,7 @@ const NotificationBell = ({
               disabled={unreadCount === 0}
               onClick={markAllAsRead}
               startIcon={<MdDoneAll />}
-              sx={{
-                fontWeight: 800,
-                flexShrink: 0,
-                direction: 'rtl',
-                textAlign: 'right',
-              }}
+              sx={{ fontWeight: 800, flexShrink: 0 }}
             >
               خواندن همه
             </Button>
@@ -216,56 +220,45 @@ const NotificationBell = ({
 
         {visibleNotifications.length === 0 ? (
           <Box
-            dir="rtl"
             sx={{
               px: 2,
               py: 5,
-              display: 'grid',
+              display: "grid",
               gap: 1,
-              direction: 'rtl',
-              textAlign: 'right',
+              justifyItems: "center",
+              textAlign: "center",
             }}
           >
             <Box
               sx={{
                 width: 48,
                 height: 48,
-                borderRadius: '14px',
-                display: 'grid',
-                placeItems: 'center',
-                justifySelf: 'center',
-                color: 'var(--color-primary)',
+                borderRadius: "14px",
+                display: "grid",
+                placeItems: "center",
+                color: "var(--color-primary)",
                 backgroundColor:
-                  'color-mix(in srgb, var(--color-primary) 10%, transparent)',
+                  "color-mix(in srgb, var(--color-primary) 10%, transparent)",
                 border:
-                  '1px solid color-mix(in srgb, var(--color-primary) 24%, transparent)',
+                  "1px solid color-mix(in srgb, var(--color-primary) 24%, transparent)",
               }}
             >
               <MdNotificationsNone size={25} />
             </Box>
-            <Typography
-              sx={{
-                color: 'text.secondary',
-                direction: 'rtl',
-                textAlign: 'right',
-              }}
-            >
+            <Typography sx={{ color: "text.secondary" }}>
               اعلانی برای نمایش وجود ندارد.
             </Typography>
           </Box>
         ) : (
           <List
             disablePadding
-            dir="rtl"
             sx={{
               maxHeight: 470,
-              overflowY: 'auto',
+              overflowY: "auto",
               p: 1.25,
-              display: 'flex',
-              flexDirection: 'column',
+              display: "flex",
+              flexDirection: "column",
               gap: 1,
-              direction: 'rtl',
-              textAlign: 'right',
             }}
           >
             {visibleNotifications.map((notification) => {
@@ -275,53 +268,46 @@ const NotificationBell = ({
                 <ListItem
                   key={notification.id}
                   disableGutters
-                  dir="rtl"
                   sx={(theme) => {
                     const palette = getSeverityPalette(
                       notification.severity,
-                      theme
+                      theme,
                     );
 
                     return {
-                      display: 'block',
+                      display: "block",
                       p: 1.35,
-                      direction: 'rtl',
-                      textAlign: 'right',
-                      borderRadius: '12px',
+                      textAlign: "start",
+                      borderRadius: "12px",
                       border: `1px solid ${palette.border}`,
                       borderInlineStart: `4px solid ${palette.main}`,
                       backgroundColor: isUnread
                         ? palette.soft
                         : alpha(theme.palette.background.paper, 0.34),
                       transition:
-                        'transform 0.18s ease, background-color 0.18s ease',
-                      '&:hover': {
-                        transform: 'translateY(-1px)',
+                        "transform 0.18s ease, background-color 0.18s ease",
+                      "&:hover": {
+                        transform: "translateY(-1px)",
                         backgroundColor: alpha(palette.main, 0.12),
                       },
                     };
                   }}
                 >
-                  <Stack
-                    direction="row"
-                    alignItems="flex-start"
-                    gap={1.1}
-                    sx={{ direction: 'rtl', textAlign: 'right' }}
-                  >
+                  <Stack direction="row" alignItems="flex-start" gap={1.1}>
                     <Box
                       sx={(theme) => {
                         const palette = getSeverityPalette(
                           notification.severity,
-                          theme
+                          theme,
                         );
 
                         return {
                           width: 36,
                           height: 36,
-                          borderRadius: '10px',
-                          flex: '0 0 auto',
-                          display: 'grid',
-                          placeItems: 'center',
+                          borderRadius: "10px",
+                          flex: "0 0 auto",
+                          display: "grid",
+                          placeItems: "center",
                           color: palette.main,
                           backgroundColor: palette.soft,
                           border: `1px solid ${palette.border}`,
@@ -331,42 +317,31 @@ const NotificationBell = ({
                       {severityIconByType[notification.severity]}
                     </Box>
 
-                    <Box
-                      dir="rtl"
-                      sx={{
-                        flex: 1,
-                        minWidth: 0,
-                        direction: 'rtl',
-                        textAlign: 'right',
-                      }}
-                    >
+                    <Box sx={{ flex: 1, minWidth: 0, textAlign: "start" }}>
                       <Stack
                         direction="row"
                         alignItems="center"
+                        justifyContent="flex-start"
                         gap={0.75}
                         flexWrap="wrap"
-                        sx={{
-                          mb: 0.65,
-                          direction: 'rtl',
-                          justifyContent: 'flex-start',
-                        }}
+                        sx={{ mb: 0.65 }}
                       >
                         <Chip
                           size="small"
                           label={severityLabelByType[notification.severity]}
                           color={
-                            notification.severity === 'critical'
-                              ? 'error'
-                              : notification.severity === 'warning'
-                                ? 'warning'
-                                : 'info'
+                            notification.severity === "critical"
+                              ? "error"
+                              : notification.severity === "warning"
+                                ? "warning"
+                                : "info"
                           }
                           variant={
-                            notification.severity === 'critical'
-                              ? 'filled'
-                              : 'outlined'
+                            notification.severity === "critical"
+                              ? "filled"
+                              : "outlined"
                           }
-                          sx={{ fontWeight: 800, direction: 'rtl' }}
+                          sx={{ fontWeight: 800 }}
                         />
                         {isUnread ? (
                           <Chip
@@ -374,7 +349,6 @@ const NotificationBell = ({
                             label="جدید"
                             color="primary"
                             variant="outlined"
-                            sx={{ direction: 'rtl' }}
                           />
                         ) : null}
                       </Stack>
@@ -382,13 +356,11 @@ const NotificationBell = ({
                       <Typography
                         sx={{
                           fontWeight:
-                            notification.severity === 'critical' ? 900 : 800,
-                          color: 'var(--color-text)',
-                          direction: 'rtl',
-                          textAlign: 'right',
-                          unicodeBidi: 'plaintext',
+                            notification.severity === "critical" ? 900 : 800,
+                          color: "var(--color-text)",
+                          textAlign: "start",
                           lineHeight: 1.75,
-                          overflowWrap: 'anywhere',
+                          overflowWrap: "anywhere",
                         }}
                       >
                         {notification.title}
@@ -397,13 +369,11 @@ const NotificationBell = ({
                       <Typography
                         variant="body2"
                         sx={{
-                          color: 'text.secondary',
                           mt: 0.35,
-                          direction: 'rtl',
-                          textAlign: 'right',
-                          unicodeBidi: 'plaintext',
+                          color: "text.secondary",
+                          textAlign: "start",
                           lineHeight: 1.9,
-                          overflowWrap: 'anywhere',
+                          overflowWrap: "anywhere",
                         }}
                       >
                         {notification.message}
@@ -414,24 +384,16 @@ const NotificationBell = ({
                         alignItems="center"
                         justifyContent="space-between"
                         gap={1}
-                        sx={{ mt: 0.9, direction: 'rtl' }}
+                        sx={{ mt: 0.9 }}
                       >
                         <Typography
                           variant="caption"
-                          sx={{
-                            color: 'text.secondary',
-                            direction: 'rtl',
-                            textAlign: 'right',
-                          }}
+                          sx={{ color: "text.secondary", textAlign: "start" }}
                         >
                           {formatNotificationDate(notification.updatedAt)}
                         </Typography>
 
-                        <Stack
-                          direction="row"
-                          spacing={0.35}
-                          sx={{ direction: 'rtl' }}
-                        >
+                        <Stack direction="row" spacing={0.35}>
                           <Tooltip title="خوانده شد">
                             <span>
                               <IconButton
@@ -464,21 +426,12 @@ const NotificationBell = ({
         )}
 
         <Divider />
-        <Box
-          dir="rtl"
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-start',
-            p: 1,
-            direction: 'rtl',
-            textAlign: 'right',
-          }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "flex-end", p: 1 }}>
           <Button
             size="small"
             startIcon={<MdClose />}
             onClick={handleClose}
-            sx={{ direction: 'rtl', textAlign: 'right' }}
+            sx={{ fontWeight: 800 }}
           >
             بستن
           </Button>

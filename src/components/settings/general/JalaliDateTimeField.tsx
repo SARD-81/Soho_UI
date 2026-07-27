@@ -35,19 +35,38 @@ export interface JalaliDateTimeFieldProps {
   disabled?: boolean;
 }
 
+type TimeField = "hour" | "minute" | "second";
+
 interface DraftState {
   year: number;
   month: number;
   day: number;
-  hour: number;
-  minute: number;
-  second: number;
+  /** Time parts are kept as text so a two-digit value can be typed freely. */
+  hour: string;
+  minute: string;
+  second: string;
 }
+
+const TIME_LIMITS: Record<TimeField, { max: number; label: string }> = {
+  hour: { max: 23, label: "ساعت" },
+  minute: { max: 59, label: "دقیقه" },
+  second: { max: 59, label: "ثانیه" },
+};
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
+
+/** Converts Persian/Arabic-Indic digits to plain Latin ones. */
+const toLatinDigits = (value: string) =>
+  value
+    .replace(/[\u06F0-\u06F9]/g, (digit) =>
+      String(digit.charCodeAt(0) - 0x06f0),
+    )
+    .replace(/[\u0660-\u0669]/g, (digit) =>
+      String(digit.charCodeAt(0) - 0x0660),
+    );
 
 /** Jalali draft of "now", used when the incoming value cannot be parsed. */
 const nowDraft = (): DraftState => {
@@ -62,9 +81,9 @@ const nowDraft = (): DraftState => {
     year: jalali.year,
     month: jalali.month,
     day: jalali.day,
-    hour: now.getHours(),
-    minute: now.getMinutes(),
-    second: now.getSeconds(),
+    hour: pad(now.getHours()),
+    minute: pad(now.getMinutes()),
+    second: pad(now.getSeconds()),
   };
 };
 
@@ -81,19 +100,36 @@ const draftFromValue = (value: string): DraftState => {
     year: jalali.year,
     month: jalali.month,
     day: jalali.day,
-    hour: parts.hour,
-    minute: parts.minute,
-    second: parts.second,
+    hour: pad(parts.hour),
+    minute: pad(parts.minute),
+    second: pad(parts.second),
   };
+};
+
+/** `null` when the text is empty or outside the allowed range. */
+const readTimePart = (text: string, field: TimeField) => {
+  if (text.trim() === "") {
+    return null;
+  }
+
+  const numeric = Number(text);
+  if (!Number.isInteger(numeric)) {
+    return null;
+  }
+
+  return numeric >= 0 && numeric <= TIME_LIMITS[field].max ? numeric : null;
 };
 
 /** Draft -> Gregorian wall-clock string expected by the settings panel. */
 const draftToWallClock = (draft: DraftState) => {
   const gregorian = jalaliToGregorian(draft.year, draft.month, draft.day);
+  const hour = readTimePart(draft.hour, "hour") ?? 0;
+  const minute = readTimePart(draft.minute, "minute") ?? 0;
+  const second = readTimePart(draft.second, "second") ?? 0;
 
   return (
     `${gregorian.year}-${pad(gregorian.month)}-${pad(gregorian.day)}` +
-    `T${pad(draft.hour)}:${pad(draft.minute)}:${pad(draft.second)}`
+    `T${pad(hour)}:${pad(minute)}:${pad(second)}`
   );
 };
 
@@ -134,6 +170,18 @@ const JalaliDateTimeField = ({
     return (date.getDay() + 1) % 7;
   }, [draft.month, draft.year]);
 
+  const timeErrors = useMemo(
+    () => ({
+      hour: readTimePart(draft.hour, "hour") === null,
+      minute: readTimePart(draft.minute, "minute") === null,
+      second: readTimePart(draft.second, "second") === null,
+    }),
+    [draft.hour, draft.minute, draft.second],
+  );
+
+  const hasTimeError =
+    timeErrors.hour || timeErrors.minute || timeErrors.second;
+
   const openPicker = (event: MouseEvent<HTMLElement>) => {
     if (disabled) {
       return;
@@ -159,29 +207,61 @@ const JalaliDateTimeField = ({
     });
   };
 
-  const updateTime = (
-    field: "hour" | "minute" | "second",
-    rawValue: string,
-  ) => {
-    const numeric = Number(rawValue.replace(/\D/g, ""));
-    const max = field === "hour" ? 23 : 59;
+  /**
+   * Keeps the typed text as-is (up to two digits) so the second digit of a
+   * value such as ۱۵ can always be entered. Persian digits are accepted too.
+   */
+  const handleTimeChange = (field: TimeField, rawValue: string) => {
+    const digits = toLatinDigits(rawValue).replace(/\D/g, "").slice(0, 2);
 
-    setDraft((current) => ({
-      ...current,
-      [field]: clamp(Number.isNaN(numeric) ? 0 : numeric, 0, max),
-    }));
+    setDraft((current) => ({ ...current, [field]: digits }));
+  };
+
+  /** Normalises the field on blur: empty becomes ۰۰ and the range is enforced. */
+  const handleTimeBlur = (field: TimeField) => {
+    setDraft((current) => {
+      const numeric = Number(current[field]);
+      const safeValue = Number.isInteger(numeric)
+        ? clamp(numeric, 0, TIME_LIMITS[field].max)
+        : 0;
+
+      return { ...current, [field]: pad(safeValue) };
+    });
   };
 
   const commit = () => {
+    if (hasTimeError) {
+      return;
+    }
+
     onChange(draftToWallClock(draft));
     closePicker();
   };
 
   const timeFieldSx = {
     ...(settingsTechnicalFieldSx as Record<string, unknown>),
-    width: 72,
+    width: 82,
     "& .MuiInputBase-input": { textAlign: "center", fontWeight: 700 },
   };
+
+  const renderTimeField = (field: TimeField) => (
+    <TextField
+      label={TIME_LIMITS[field].label}
+      value={toPersianDigits(draft[field])}
+      onChange={(event) => handleTimeChange(field, event.target.value)}
+      onBlur={() => handleTimeBlur(field)}
+      error={timeErrors[field]}
+      sx={timeFieldSx}
+      slotProps={{
+        inputLabel: { shrink: true },
+        htmlInput: {
+          inputMode: "numeric",
+          maxLength: 2,
+          "aria-label": TIME_LIMITS[field].label,
+        },
+      }}
+    />
+  );
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -328,34 +408,23 @@ const JalaliDateTimeField = ({
           </Box>
 
           <Stack direction="row" gap={1} justifyContent="center">
-            <TextField
-              label="ساعت"
-              value={pad(draft.hour)}
-              onChange={(event) => updateTime("hour", event.target.value)}
-              sx={timeFieldSx}
-              slotProps={{
-                htmlInput: { inputMode: "numeric", maxLength: 2 },
-              }}
-            />
-            <TextField
-              label="دقیقه"
-              value={pad(draft.minute)}
-              onChange={(event) => updateTime("minute", event.target.value)}
-              sx={timeFieldSx}
-              slotProps={{
-                htmlInput: { inputMode: "numeric", maxLength: 2 },
-              }}
-            />
-            <TextField
-              label="ثانیه"
-              value={pad(draft.second)}
-              onChange={(event) => updateTime("second", event.target.value)}
-              sx={timeFieldSx}
-              slotProps={{
-                htmlInput: { inputMode: "numeric", maxLength: 2 },
-              }}
-            />
+            {renderTimeField("hour")}
+            {renderTimeField("minute")}
+            {renderTimeField("second")}
           </Stack>
+
+          {hasTimeError ? (
+            <Typography
+              sx={{
+                fontSize: "0.78rem",
+                fontWeight: 700,
+                textAlign: "start",
+                color: "var(--color-error)",
+              }}
+            >
+              ساعت بین ۰ تا ۲۳ و دقیقه و ثانیه بین ۰ تا ۵۹ مجاز است.
+            </Typography>
+          ) : null}
 
           <Stack direction="row" gap={1} justifyContent="flex-end">
             <Button
@@ -368,6 +437,7 @@ const JalaliDateTimeField = ({
             <Button
               variant="contained"
               onClick={commit}
+              disabled={hasTimeError}
               sx={settingsPrimaryButtonSx}
             >
               تایید
