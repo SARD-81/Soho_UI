@@ -199,6 +199,7 @@ src/
     settings/
       general/
         InfoRow.tsx
+        JalaliDateTimeField.tsx
         Ltr.tsx
         SectionHeader.tsx
         SettingEditModal.tsx
@@ -433,8 +434,10 @@ src/
     formatDetailValue.ts
     formatters.ts
     generalSettings.ts
+    hardwareClock.ts
     initialSaveToDb.ts
     ipAddress.ts
+    jalali.ts
     keySort.ts
     networkDetails.ts
     nfsDetails.ts
@@ -6321,6 +6324,322 @@ export const buildServerSlots = (
 
 export const sortServerSlots = (slots: ServerSlotViewModel[]) =>
   [...slots].sort((a, b) => a.slotNumber - b.slotNumber);
+</file>
+
+<file path="src/components/dashboard/server-3d/ServerSlots3DWidget.tsx">
+import {
+  Alert,
+  Box,
+  Chip,
+  Divider,
+  Skeleton,
+  Stack,
+  Typography,
+  useTheme,
+} from '@mui/material';
+import { useMemo, useState } from 'react';
+import { MdDns, MdStorage } from 'react-icons/md';
+import { useSystemPowerActions } from '../../../contexts/SystemPowerActionsContext';
+import { usePoolDeviceSlots } from '../../../hooks/usePoolDeviceSlots';
+import { useZpool } from '../../../hooks/useZpool';
+import { createCardSx } from '../../cardStyles';
+import DashboardWidgetHeader from '../DashboardWidgetHeader';
+import DiskSlotDetailsPanel from './DiskSlotDetailsPanel';
+import type { ServerSceneColors } from './ServerBay';
+import ServerChassisScene from './ServerChassisScene';
+import {
+  buildServerSlots,
+  resolveServerSlotCount,
+  sortServerSlots,
+} from './serverSlotModel';
+
+const ServerSlots3DWidget = () => {
+  const theme = useTheme();
+  const cardSx = createCardSx(theme);
+  const [selectedSlotNumber, setSelectedSlotNumber] = useState<number | null>(
+    null
+  );
+  const { requestPowerAction, isPowerActionDisabled } = useSystemPowerActions();
+
+  const {
+    data: zpoolData,
+    isLoading: isPoolsLoading,
+    error: poolsError,
+  } = useZpool({
+    refetchInterval: 30_000,
+  });
+
+  const poolNames = useMemo(
+    () =>
+      (zpoolData?.pools ?? [])
+        .map((pool) => pool.name.trim())
+        .filter((poolName) => poolName.length > 0),
+    [zpoolData?.pools]
+  );
+
+  const {
+    data: poolDeviceSlots,
+    isLoading: isSlotsLoading,
+    isFetching: isSlotsFetching,
+  } = usePoolDeviceSlots(poolNames, {
+    enabled: true,
+    refetchInterval: 10_000,
+  });
+
+  const slotCount = useMemo(
+    () =>
+      resolveServerSlotCount(
+        poolDeviceSlots?.slotsByPool,
+        poolDeviceSlots?.inventory
+      ),
+    [poolDeviceSlots?.inventory, poolDeviceSlots?.slotsByPool]
+  );
+
+  const serverSlots = useMemo(
+    () =>
+      sortServerSlots(
+        buildServerSlots(
+          poolDeviceSlots?.slotsByPool,
+          poolDeviceSlots?.inventory,
+          slotCount
+        )
+      ),
+    [poolDeviceSlots?.inventory, poolDeviceSlots?.slotsByPool, slotCount]
+  );
+
+  const selectedBay = useMemo(
+    () =>
+      selectedSlotNumber == null
+        ? null
+        : (serverSlots.find((slot) => slot.slotNumber === selectedSlotNumber) ??
+          null),
+    [selectedSlotNumber, serverSlots]
+  );
+
+  const discoveredDiskCount = serverSlots.filter((slot) => slot.disk).length;
+  const freeDiskCount = serverSlots.filter(
+    (slot) => slot.health === 'free'
+  ).length;
+  const inactiveDiskCount = serverSlots.filter(
+    (slot) => slot.health === 'inactive'
+  ).length;
+  const hasSlotErrors =
+    Object.keys(poolDeviceSlots?.errorsByPool ?? {}).length > 0;
+
+  const slotErrorMessages = Object.entries(poolDeviceSlots?.errorsByPool ?? {});
+
+  const colors: ServerSceneColors = useMemo(
+    () => ({
+      chassis: theme.palette.mode === 'dark' ? '#101318' : '#1b1f26',
+      chassisEdge: theme.palette.mode === 'dark' ? '#2c3441' : '#38404d',
+      bay: theme.palette.mode === 'dark' ? '#1d2430' : '#151b24',
+      bayDark: '#05070b',
+      primary: theme.palette.primary.main,
+      primaryLight: theme.palette.primary.light,
+      selected: theme.palette.primary.main,
+      empty: theme.palette.mode === 'dark' ? '#475569' : '#64748b',
+      free: theme.palette.mode === 'dark' ? '#334155' : '#94a3b8',
+      inactive: theme.palette.warning.main,
+      success: theme.palette.success.main,
+      warning: theme.palette.warning.main,
+      error: theme.palette.error.main,
+      unknown: theme.palette.mode === 'dark' ? '#94a3b8' : '#64748b',
+    }),
+    [theme]
+  );
+
+  const isInitialLoading =
+    isPoolsLoading || (isSlotsLoading && !poolDeviceSlots);
+
+  if (isInitialLoading) {
+    return (
+      <Box sx={{ ...cardSx, width: '100%', minHeight: 520 }}>
+        <Stack direction="row" alignItems="center" gap={1}>
+          <Skeleton variant="circular" width={34} height={34} />
+          <Skeleton variant="text" width={180} height={28} />
+        </Stack>
+        <Divider />
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 360px' },
+            gap: 2,
+            minHeight: 380,
+          }}
+        >
+          <Skeleton
+            variant="rounded"
+            height={380}
+            sx={{ borderRadius: '12px' }}
+          />
+          <Skeleton
+            variant="rounded"
+            height={380}
+            sx={{ borderRadius: '12px' }}
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (poolsError) {
+    return (
+      <Box sx={{ ...cardSx, width: '100%' }}>
+        <Alert severity="error">
+          خطا در دریافت اطلاعات فضاهای یکپارچه: {poolsError.message}
+        </Alert>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ ...cardSx, width: '100%', minHeight: 520 }}>
+      {/* Header power buttons are intentionally hidden; the 3D panel controls are the single interaction point. */}
+      <DashboardWidgetHeader
+        icon={<MdDns size={20} />}
+        title="نمای سه‌بعدی سرور"
+        subtitle="مدل تعاملی اسلات‌ها و جزئیات تمام دیسک‌های سامانه"
+        status={
+          <Stack direction="row" gap={1} flexWrap="wrap">
+            <Chip
+              icon={<MdStorage />}
+              label={`${discoveredDiskCount} از ${slotCount} اسلات دارای دیسک`}
+              size="small"
+              sx={{
+                fontWeight: 800,
+                color: 'var(--color-text)',
+                backgroundColor: 'rgba(0,198,169,0.08)',
+                border: '1px solid rgba(0,198,169,0.22)',
+              }}
+            />
+            {freeDiskCount > 0 ? (
+              <Chip
+                label={`${freeDiskCount} دیسک آزاد`}
+                size="small"
+                sx={{
+                  fontWeight: 700,
+                  color: 'var(--color-secondary)',
+                  backgroundColor: 'rgba(148,163,184,0.1)',
+                }}
+              />
+            ) : null}
+            {inactiveDiskCount > 0 ? (
+              <Chip
+                label={`${inactiveDiskCount} دیسک غیرفعال`}
+                size="small"
+                sx={{
+                  fontWeight: 700,
+                  color: theme.palette.warning.main,
+                  backgroundColor: 'rgba(245,158,11,0.1)',
+                }}
+              />
+            ) : null}
+            {isSlotsFetching ? (
+              <Chip
+                label="در حال بروزرسانی"
+                size="small"
+                sx={{
+                  fontWeight: 700,
+                  color: 'var(--color-secondary)',
+                  backgroundColor: 'rgba(163,146,75,0.09)',
+                }}
+              />
+            ) : null}
+          </Stack>
+        }
+      />
+
+      {hasSlotErrors ? (
+        <Alert severity="warning" sx={{ borderRadius: '10px' }}>
+          {slotErrorMessages.map(([poolName, message]) => (
+            <Typography key={poolName} variant="body2">
+              {poolName}: {message}
+            </Typography>
+          ))}
+        </Alert>
+      ) : null}
+
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 380px' },
+          gap: 2,
+          alignItems: { xs: 'stretch', lg: 'start' },
+        }}
+      >
+        <Box
+          sx={{
+            height: { xs: 340, md: 390 },
+            minHeight: { xs: 340, md: 390 },
+            borderRadius: '14px',
+            overflow: 'hidden',
+            position: 'relative',
+            background:
+              theme.palette.mode === 'dark'
+                ? 'radial-gradient(circle at 50% 20%, rgba(0,198,169,0.12), rgba(15,23,42,0.06) 42%, rgba(0,0,0,0.04) 100%)'
+                : 'radial-gradient(circle at 50% 20%, rgba(0,198,169,0.13), rgba(35,167,213,0.06) 42%, rgba(255,255,255,0.18) 100%)',
+            border: (innerTheme) =>
+              `1px solid ${
+                innerTheme.palette.mode === 'dark'
+                  ? 'rgba(255,255,255,0.07)'
+                  : 'rgba(0,0,0,0.07)'
+              }`,
+          }}
+        >
+          <ServerChassisScene
+            slots={serverSlots}
+            selectedSlotNumber={selectedSlotNumber}
+            colors={colors}
+            onSelectSlot={setSelectedSlotNumber}
+            onRequestReboot={() => requestPowerAction('reboot')}
+            onRequestPoweroff={() => requestPowerAction('poweroff')}
+            powerActionsDisabled={isPowerActionDisabled}
+          />
+
+          <Box
+            sx={{
+              position: 'absolute',
+              right: 14,
+              bottom: 14,
+              display: 'flex',
+              gap: 1,
+              flexWrap: 'wrap',
+              pointerEvents: 'none',
+            }}
+          >
+            <Chip
+              label="کلیک روی هر اسلات"
+              size="small"
+              sx={{
+                fontFamily: 'var(--font-vazir)',
+                fontWeight: 800,
+                color: 'var(--color-text)',
+                backdropFilter: 'blur(8px)',
+                backgroundColor:
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(15,23,42,0.68)'
+                    : 'rgba(255,255,255,0.72)',
+                border: '1px solid rgba(0,198,169,0.22)',
+              }}
+            />
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            height: { xs: 'auto', lg: 390 },
+            minHeight: { xs: 280, lg: 390 },
+            minWidth: 0,
+          }}
+        >
+          <DiskSlotDetailsPanel selectedBay={selectedBay} />
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+export default ServerSlots3DWidget;
 </file>
 
 <file path="src/components/dashboard/DashboardLayoutPanel.fa.md">
@@ -36556,82 +36875,6 @@ function App() {
 export default App;
 </file>
 
-<file path="src/index.css">
-@import "tailwindcss";
-@import 'vazirmatn/Vazirmatn-font-face.css';
-@import "/fonts/Vazir/font-face-UI.css";
-
-@font-face {
-    font-family: 'Didot';
-    font-weight: 100 900;
-    font-display: swap;
-    src: url("/fonts/GFSDidot-Regular.ttf") format('truetype');
-}
-
-@font-face {
-    font-family: 'Roboto';
-    font-weight: 100 900;
-    font-display: swap;
-    src: url("/fonts/Roboto-Regular.ttf") format('truetype');
-}
-
-:root {
-    --font-vazir: 'Vazirmatn', sans-serif;
-    --font-didot: 'Didot', serif;
-    --font-roboto: 'Roboto', serif;
-
-    /* Light theme variables */
-
-    --color-background : #e9e9e9;
-    --color-primary: #00c6a9;
-    --color-primary-light: #23a7d5;
-    --color-secondary: #a3924b;
-    --color-bg-primary: #000000;
-    --color-text: #1f1f1f;
-    --color-bg: #ffffff;
-    --color-card-bg: rgba(255, 255, 255, 0.92);
-    --color-input-bg: rgba(255, 255, 255, 0.95);
-    --color-input-border: rgba(0, 0, 0, 0.12);
-    --color-input-focus-border: var(--color-primary);
-    --color-error : #ef4444;
-    --color-success: #10b981;
-}
-
-[data-theme="dark"] {
-    --color-background : #222222;
-    --color-primary: #00c6a9;
-    --color-primary-light: #23a7d5;
-    --color-secondary: #a3924b;
-    --color-bg-primary: #ffffff;
-    --color-text: #e0e0e0;
-    --color-bg: #121212;
-    --color-card-bg: rgba(30, 30, 30, 0.92);
-    --color-input-bg: rgba(45, 45, 45, 0.95);
-    --color-input-border: rgba(255, 255, 255, 0.12);
-    --color-input-focus-border: var(--color-primary);
-    --color-error : #ef4444;
-    --color-success: #10b981;
-}
-
-html {
-    direction: rtl;
-}
-
-body {
-    font-family: var(--font-vazir);
-    background-color: var(--color-bg);
-    color: var(--color-text);
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.auth-gradient { animation: gradientMove 15s ease infinite; background-size: 400% 400%; }
-@keyframes gradientMove {
-    0% { background-position: 0% 50% }
-    50% { background-position: 100% 50% }
-    100% { background-position: 0% 50% }
-}
-</file>
-
 <file path="src/rtl-cache.ts">
 import createCache from '@emotion/cache';
 import stylisRTLPlugin from 'stylis-plugin-rtl';
@@ -38726,6 +38969,391 @@ export const InfoRowList = ({ rows }: InfoRowListProps) => (
 export default InfoRow;
 </file>
 
+<file path="src/components/settings/general/JalaliDateTimeField.tsx">
+import {
+  Box,
+  Button,
+  IconButton,
+  Popover,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import type { MouseEvent } from "react";
+import { MdCalendarMonth, MdChevronLeft, MdChevronRight } from "react-icons/md";
+import {
+  JALALI_MONTH_NAMES,
+  formatJalaliWallClockLabel,
+  gregorianToJalali,
+  jalaliMonthLength,
+  jalaliToGregorian,
+  parseWallClockValue,
+  toPersianDigits,
+} from "../../../utils/jalali";
+import { settingsPrimaryButtonSx, settingsTechnicalFieldSx } from "./styles";
+import { settingsOutlinedButtonSx } from "./styles";
+
+const WEEKDAY_SHORT_NAMES = ["ش", "ی", "د", "س", "چ", "پ", "ج"];
+
+export interface JalaliDateTimeFieldProps {
+  label: string;
+  /** Gregorian wall-clock value, `YYYY-MM-DDTHH:mm:ss`. */
+  value: string;
+  /** Called with a Gregorian wall-clock value; the backend format never changes. */
+  onChange: (value: string) => void;
+  error?: boolean;
+  helperText?: string | null;
+  disabled?: boolean;
+}
+
+interface DraftState {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+}
+
+const pad = (value: number) => String(value).padStart(2, "0");
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
+
+/** Jalali draft of "now", used when the incoming value cannot be parsed. */
+const nowDraft = (): DraftState => {
+  const now = new Date();
+  const jalali = gregorianToJalali(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    now.getDate(),
+  );
+
+  return {
+    year: jalali.year,
+    month: jalali.month,
+    day: jalali.day,
+    hour: now.getHours(),
+    minute: now.getMinutes(),
+    second: now.getSeconds(),
+  };
+};
+
+const draftFromValue = (value: string): DraftState => {
+  const parts = parseWallClockValue(value);
+
+  if (!parts) {
+    return nowDraft();
+  }
+
+  const jalali = gregorianToJalali(parts.year, parts.month, parts.day);
+
+  return {
+    year: jalali.year,
+    month: jalali.month,
+    day: jalali.day,
+    hour: parts.hour,
+    minute: parts.minute,
+    second: parts.second,
+  };
+};
+
+/** Draft -> Gregorian wall-clock string expected by the settings panel. */
+const draftToWallClock = (draft: DraftState) => {
+  const gregorian = jalaliToGregorian(draft.year, draft.month, draft.day);
+
+  return (
+    `${gregorian.year}-${pad(gregorian.month)}-${pad(gregorian.day)}` +
+    `T${pad(draft.hour)}:${pad(draft.minute)}:${pad(draft.second)}`
+  );
+};
+
+/**
+ * Fully Persian date & time picker.
+ *
+ * Everything the operator sees is Jalali with Persian digits, while the value
+ * handed back through `onChange` stays a Gregorian `YYYY-MM-DDTHH:mm:ss`
+ * string, so the API contract is untouched.
+ */
+const JalaliDateTimeField = ({
+  label,
+  value,
+  onChange,
+  error = false,
+  helperText,
+  disabled = false,
+}: JalaliDateTimeFieldProps) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [draft, setDraft] = useState<DraftState>(() => draftFromValue(value));
+
+  useEffect(() => {
+    setDraft(draftFromValue(value));
+  }, [value]);
+
+  const displayValue = useMemo(
+    () => formatJalaliWallClockLabel(value) ?? "",
+    [value],
+  );
+
+  const monthLength = jalaliMonthLength(draft.year, draft.month);
+
+  /** Weekday (0 = Saturday) of the first day of the displayed month. */
+  const firstWeekday = useMemo(() => {
+    const gregorian = jalaliToGregorian(draft.year, draft.month, 1);
+    const date = new Date(gregorian.year, gregorian.month - 1, gregorian.day);
+
+    return (date.getDay() + 1) % 7;
+  }, [draft.month, draft.year]);
+
+  const openPicker = (event: MouseEvent<HTMLElement>) => {
+    if (disabled) {
+      return;
+    }
+
+    setAnchorEl(event.currentTarget);
+  };
+
+  const closePicker = () => setAnchorEl(null);
+
+  const shiftMonth = (delta: number) => {
+    setDraft((current) => {
+      const raw = current.month - 1 + delta;
+      const year = current.year + Math.floor(raw / 12);
+      const month = (((raw % 12) + 12) % 12) + 1;
+
+      return {
+        ...current,
+        year,
+        month,
+        day: clamp(current.day, 1, jalaliMonthLength(year, month)),
+      };
+    });
+  };
+
+  const updateTime = (
+    field: "hour" | "minute" | "second",
+    rawValue: string,
+  ) => {
+    const numeric = Number(rawValue.replace(/\D/g, ""));
+    const max = field === "hour" ? 23 : 59;
+
+    setDraft((current) => ({
+      ...current,
+      [field]: clamp(Number.isNaN(numeric) ? 0 : numeric, 0, max),
+    }));
+  };
+
+  const commit = () => {
+    onChange(draftToWallClock(draft));
+    closePicker();
+  };
+
+  const timeFieldSx = {
+    ...(settingsTechnicalFieldSx as Record<string, unknown>),
+    width: 72,
+    "& .MuiInputBase-input": { textAlign: "center", fontWeight: 700 },
+  };
+
+  return (
+    <Box sx={{ width: "100%" }}>
+      <TextField
+        fullWidth
+        label={label}
+        value={displayValue}
+        onClick={openPicker}
+        error={error}
+        helperText={helperText ?? undefined}
+        disabled={disabled}
+        sx={settingsTechnicalFieldSx}
+        slotProps={{
+          inputLabel: { shrink: true },
+          htmlInput: {
+            readOnly: true,
+            "aria-label": "انتخاب تاریخ و ساعت",
+            style: { cursor: disabled ? "default" : "pointer" },
+          },
+          input: {
+            endAdornment: (
+              <MdCalendarMonth size={20} style={{ opacity: 0.75 }} />
+            ),
+          },
+        }}
+      />
+
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={closePicker}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        transformOrigin={{ vertical: "top", horizontal: "center" }}
+        slotProps={{
+          paper: {
+            dir: "rtl",
+            sx: {
+              mt: 1,
+              p: 1.75,
+              width: "min(320px, calc(100vw - 32px))",
+              borderRadius: "14px",
+              color: "var(--color-text)",
+              backgroundColor: "var(--color-card-bg)",
+              border:
+                "1px solid color-mix(in srgb, var(--color-primary) 24%, transparent)",
+            },
+          },
+        }}
+      >
+        <Stack gap={1.5}>
+          <Stack direction="row" alignItems="center" gap={1}>
+            <IconButton
+              size="small"
+              aria-label="ماه قبل"
+              onClick={() => shiftMonth(-1)}
+              sx={{ color: "var(--color-primary)" }}
+            >
+              <MdChevronRight size={20} />
+            </IconButton>
+
+            <Typography
+              sx={{
+                flex: 1,
+                textAlign: "center",
+                fontWeight: 800,
+                fontSize: "0.95rem",
+              }}
+            >
+              {`${JALALI_MONTH_NAMES[draft.month - 1]} ${toPersianDigits(
+                draft.year,
+              )}`}
+            </Typography>
+
+            <IconButton
+              size="small"
+              aria-label="ماه بعد"
+              onClick={() => shiftMonth(1)}
+              sx={{ color: "var(--color-primary)" }}
+            >
+              <MdChevronLeft size={20} />
+            </IconButton>
+          </Stack>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7, 1fr)",
+              gap: 0.5,
+            }}
+          >
+            {WEEKDAY_SHORT_NAMES.map((name) => (
+              <Typography
+                key={name}
+                aria-hidden
+                sx={{
+                  textAlign: "center",
+                  fontSize: "0.72rem",
+                  fontWeight: 700,
+                  color: "var(--color-secondary)",
+                }}
+              >
+                {name}
+              </Typography>
+            ))}
+
+            {Array.from({ length: firstWeekday }).map((_, index) => (
+              <Box key={`blank-${index}`} />
+            ))}
+
+            {Array.from({ length: monthLength }).map((_, index) => {
+              const day = index + 1;
+              const isSelected = day === draft.day;
+
+              return (
+                <Box
+                  key={day}
+                  component="button"
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => setDraft((current) => ({ ...current, day }))}
+                  sx={{
+                    height: 34,
+                    cursor: "pointer",
+                    borderRadius: "9px",
+                    border: "1px solid transparent",
+                    fontFamily: "inherit",
+                    fontWeight: isSelected ? 800 : 600,
+                    fontSize: "0.84rem",
+                    color: isSelected ? "var(--color-bg)" : "var(--color-text)",
+                    backgroundColor: isSelected
+                      ? "var(--color-primary)"
+                      : "transparent",
+                    "&:hover": {
+                      backgroundColor: isSelected
+                        ? "var(--color-primary)"
+                        : "color-mix(in srgb, var(--color-primary) 14%, transparent)",
+                    },
+                  }}
+                >
+                  {toPersianDigits(day)}
+                </Box>
+              );
+            })}
+          </Box>
+
+          <Stack direction="row" gap={1} justifyContent="center">
+            <TextField
+              label="ساعت"
+              value={pad(draft.hour)}
+              onChange={(event) => updateTime("hour", event.target.value)}
+              sx={timeFieldSx}
+              slotProps={{
+                htmlInput: { inputMode: "numeric", maxLength: 2 },
+              }}
+            />
+            <TextField
+              label="دقیقه"
+              value={pad(draft.minute)}
+              onChange={(event) => updateTime("minute", event.target.value)}
+              sx={timeFieldSx}
+              slotProps={{
+                htmlInput: { inputMode: "numeric", maxLength: 2 },
+              }}
+            />
+            <TextField
+              label="ثانیه"
+              value={pad(draft.second)}
+              onChange={(event) => updateTime("second", event.target.value)}
+              sx={timeFieldSx}
+              slotProps={{
+                htmlInput: { inputMode: "numeric", maxLength: 2 },
+              }}
+            />
+          </Stack>
+
+          <Stack direction="row" gap={1} justifyContent="flex-end">
+            <Button
+              variant="outlined"
+              onClick={() => setDraft(nowDraft())}
+              sx={settingsOutlinedButtonSx}
+            >
+              اکنون
+            </Button>
+            <Button
+              variant="contained"
+              onClick={commit}
+              sx={settingsPrimaryButtonSx}
+            >
+              تایید
+            </Button>
+          </Stack>
+        </Stack>
+      </Popover>
+    </Box>
+  );
+};
+
+export default JalaliDateTimeField;
+</file>
+
 <file path="src/components/settings/general/Ltr.tsx">
 import type { CSSProperties, ReactNode } from 'react';
 
@@ -38858,146 +39486,6 @@ const SectionHeader = ({
 );
 
 export default SectionHeader;
-</file>
-
-<file path="src/components/settings/general/SettingEditModal.tsx">
-import { Alert, Box, Button, Stack, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
-import BlurModal from '../../BlurModal';
-import {
-  settingsAlertSx as alertSx,
-  settingsOutlinedButtonSx as outlinedButtonSx,
-  settingsPrimaryButtonSx as primaryButtonSx,
-} from './styles';
-
-export interface SettingEditModalProps {
-  open: boolean;
-  title: string;
-  description?: string;
-  icon?: ReactNode;
-  errorMessage?: string | null;
-  isSubmitting?: boolean;
-  submitLabel?: string;
-  /** Rows that only expose direct actions (no form) hide the submit button. */
-  hideSubmit?: boolean;
-  onClose: () => void;
-  onSubmit?: () => void;
-  children: ReactNode;
-}
-
-/**
- * Shared editing shell for a single row of the general-settings table.
- * Pure presentation: it never owns form state, validation or mutations.
- */
-const SettingEditModal = ({
-  open,
-  title,
-  description,
-  icon,
-  errorMessage,
-  isSubmitting = false,
-  submitLabel = 'ثبت تغییرات',
-  hideSubmit = false,
-  onClose,
-  onSubmit,
-  children,
-}: SettingEditModalProps) => {
-  return (
-    <BlurModal
-      open={open}
-      onClose={onClose}
-      closeDisabled={isSubmitting}
-      direction="rtl"
-      minWidth="min(620px, calc(100vw - 32px))"
-      maxWidth="620px"
-      title={
-        <Stack
-          direction="row"
-          alignItems="center"
-          gap={1.25}
-          sx={{ minWidth: 0 }}
-        >
-          {icon ? (
-            <Box
-              aria-hidden
-              sx={{
-                width: 42,
-                height: 42,
-                flexShrink: 0,
-                borderRadius: '12px',
-                display: 'grid',
-                placeItems: 'center',
-                fontSize: 22,
-                color: 'var(--color-primary)',
-                backgroundColor:
-                  'color-mix(in srgb, var(--color-primary) 12%, transparent)',
-                border:
-                  '1px solid color-mix(in srgb, var(--color-primary) 24%, transparent)',
-              }}
-            >
-              {icon}
-            </Box>
-          ) : null}
-
-          <Box sx={{ minWidth: 0 }}>
-            <Typography
-              component="h2"
-              sx={{
-                fontWeight: 700,
-                fontSize: '1.05rem',
-                color: 'var(--color-text)',
-              }}
-            >
-              {title}
-            </Typography>
-            {description ? (
-              <Typography
-                sx={{
-                  mt: 0.25,
-                  fontSize: '0.8rem',
-                  lineHeight: 1.7,
-                  color: 'var(--color-secondary)',
-                }}
-              >
-                {description}
-              </Typography>
-            ) : null}
-          </Box>
-        </Stack>
-      }
-      actions={
-        <>
-          <Button
-            onClick={onClose}
-            disabled={isSubmitting}
-            sx={outlinedButtonSx}
-          >
-            انصراف
-          </Button>
-          {hideSubmit ? null : (
-            <Button
-              onClick={onSubmit}
-              disabled={isSubmitting}
-              sx={primaryButtonSx}
-            >
-              {submitLabel}
-            </Button>
-          )}
-        </>
-      }
-    >
-      {errorMessage ? (
-        <Alert severity="error" sx={alertSx}>
-          {errorMessage}
-        </Alert>
-      ) : null}
-
-      {children}
-    </BlurModal>
-  );
-};
-
-export default SettingEditModal;
 </file>
 
 <file path="src/components/settings/general/SettingFieldTile.tsx">
@@ -39313,520 +39801,6 @@ const SettingsAccordionSection = ({
 };
 
 export default SettingsAccordionSection;
-</file>
-
-<file path="src/components/settings/general/SettingsRowsTable.tsx">
-import { Chip, Stack } from "@mui/material";
-import { useMemo } from "react";
-import type { ReactNode } from "react";
-import type { DataTableColumn } from "../../../@types/dataTable";
-import DataTable from "../../DataTable";
-import type { SettingsBadgeColor } from "./SettingsAccordionSection";
-import {
-  settingsSectionTableContainerSx,
-  settingsSectionTableSx,
-  toPersianDigits,
-} from "./styles";
-
-export interface SettingsTableRow {
-  id: string;
-  title: string;
-  value: ReactNode;
-  status?: { label: string; color?: SettingsBadgeColor };
-  action?: ReactNode;
-}
-
-export interface SettingsRowsTableProps {
-  rows: SettingsTableRow[];
-  isLoading?: boolean;
-  /** Hide the status column for sections that have nothing to report. */
-  showStatus?: boolean;
-  /** Hide the action column for read-only sections. */
-  showAction?: boolean;
-}
-
-/**
- * Table used inside an expanded settings section.
- *
- * Keeps the exact look of the previous flat settings table (same DataTable,
- * same header row, same hover behaviour) but scoped to a single section, so
- * every section stays readable and comparable.
- */
-const SettingsRowsTable = ({
-  rows,
-  isLoading = false,
-  showStatus = true,
-  showAction = true,
-}: SettingsRowsTableProps) => {
-  const columns = useMemo<DataTableColumn<SettingsTableRow>[]>(() => {
-    const base: DataTableColumn<SettingsTableRow>[] = [
-      {
-        id: "index",
-        header: "#",
-        width: 56,
-        renderCell: (_row, index) => toPersianDigits(index + 1),
-      },
-      {
-        id: "title",
-        header: "تنظیم",
-        width: "26%",
-        cellSx: { fontWeight: 700 },
-        renderCell: (row) => row.title,
-      },
-      {
-        id: "value",
-        header: "مقدار",
-        renderCell: (row) => row.value,
-      },
-    ];
-
-    if (showStatus) {
-      base.push({
-        id: "status",
-        header: "وضعیت",
-        width: "18%",
-        renderCell: (row) =>
-          row.status ? (
-            <Chip
-              size="small"
-              variant="outlined"
-              label={row.status.label}
-              color={row.status.color ?? "default"}
-              sx={{ fontWeight: 700, fontSize: "0.72rem" }}
-            />
-          ) : (
-            "—"
-          ),
-      });
-    }
-
-    if (showAction) {
-      base.push({
-        id: "action",
-        header: "عملیات",
-        align: "center",
-        width: 110,
-        renderCell: (row) =>
-          row.action ? (
-            <Stack direction="row" gap={0.5} justifyContent="center">
-              {row.action}
-            </Stack>
-          ) : (
-            "—"
-          ),
-      });
-    }
-
-    return base;
-  }, [showAction, showStatus]);
-
-  return (
-    <DataTable<SettingsTableRow>
-      columns={columns}
-      data={rows}
-      getRowId={(row) => row.id}
-      isLoading={isLoading}
-      containerSx={settingsSectionTableContainerSx}
-      tableSx={settingsSectionTableSx}
-    />
-  );
-};
-
-export default SettingsRowsTable;
-</file>
-
-<file path="src/components/settings/general/styles.ts">
-import type { SxProps, Theme } from "@mui/material";
-import type { CSSProperties } from "react";
-
-/**
- * Shared design tokens for the settings panels.
- *
- * IMPORTANT (RTL): the app renders MUI through `stylis-plugin-rtl`
- * (see `src/rtl-cache.ts`), which mirrors *physical* CSS properties.
- * A hand written `direction: 'rtl'` is therefore flipped to `ltr`, and
- * `textAlign: 'right'` becomes `left` — which is exactly what broke the
- * bidi ordering of Persian sentences on the settings page.
- *
- * Rule for this folder: never set `direction`, `textAlign: 'right'`, `left`
- * or `right` by hand. The document is already `dir="rtl"` (see `index.html`)
- * and the MUI theme is RTL aware, so only logical properties are used below.
- */
-
-export const settingsCardSx: SxProps<Theme> = {
-  position: "relative",
-  minWidth: 0,
-  height: "100%",
-  // Flex column + `mt: auto` on the footer keeps every action bar pinned to
-  // the bottom edge, so cards in the same row line up perfectly.
-  display: "flex",
-  flexDirection: "column",
-  p: { xs: 2, md: 2.5 },
-  borderRadius: "16px",
-  overflow: "hidden",
-  textAlign: "start",
-  color: "var(--color-text)",
-  background:
-    "linear-gradient(145deg, color-mix(in srgb, var(--color-card-bg) 96%, var(--color-primary) 4%) 0%, var(--color-card-bg) 100%)",
-  border: "1px solid color-mix(in srgb, var(--color-primary) 22%, transparent)",
-  boxShadow: "0 18px 48px -38px rgba(0, 0, 0, 0.72)",
-  transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-  "&:hover": {
-    borderColor: "color-mix(in srgb, var(--color-primary) 34%, transparent)",
-    boxShadow: "0 22px 54px -38px rgba(0, 0, 0, 0.82)",
-  },
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    insetInlineStart: 0,
-    insetBlock: 0,
-    width: "3px",
-    background:
-      "linear-gradient(180deg, var(--color-primary), transparent 78%)",
-    opacity: 0.72,
-  },
-};
-
-export const settingsFieldSx: SxProps<Theme> = {
-  "& .MuiInputBase-root": {
-    color: "var(--color-text)",
-    backgroundColor:
-      "color-mix(in srgb, var(--color-background) 62%, transparent)",
-    borderRadius: "10px",
-  },
-  "& .MuiInputBase-input": {
-    color: "var(--color-text)",
-    WebkitTextFillColor: "var(--color-text)",
-    textAlign: "start",
-  },
-  "& .MuiInputBase-input.Mui-disabled": {
-    color: "var(--color-text)",
-    WebkitTextFillColor: "var(--color-text)",
-    opacity: 0.68,
-  },
-  // Label placement is handled by the RTL-aware theme; only colors here.
-  "& .MuiInputLabel-root": {
-    color: "var(--color-secondary)",
-  },
-  "& .MuiInputLabel-root.Mui-focused": {
-    color: "var(--color-primary)",
-  },
-  "& .MuiFormHelperText-root": {
-    mx: 0,
-    mt: 0.75,
-    textAlign: "start",
-    color: "var(--color-secondary)",
-    fontSize: "0.75rem",
-    lineHeight: 1.9,
-  },
-  "& .MuiOutlinedInput-notchedOutline": {
-    borderColor: "color-mix(in srgb, var(--color-secondary) 34%, transparent)",
-  },
-  "&:hover .MuiOutlinedInput-notchedOutline": {
-    borderColor: "color-mix(in srgb, var(--color-primary) 50%, transparent)",
-  },
-  "& .MuiSvgIcon-root": {
-    color: "var(--color-secondary)",
-  },
-};
-
-/**
- * Field that holds an LTR technical value (hostname, IP, timezone id,
- * timestamp). The *value* is LTR and starts from the left edge of the box,
- * while the Persian label and helper text stay RTL.
- */
-export const settingsTechnicalFieldSx: SxProps<Theme> = {
-  ...(settingsFieldSx as Record<string, unknown>),
-  "& .MuiInputBase-input": {
-    color: "var(--color-text)",
-    WebkitTextFillColor: "var(--color-text)",
-    fontVariantNumeric: "tabular-nums",
-    letterSpacing: "0.01em",
-  },
-  "& .MuiInputBase-input.Mui-disabled": {
-    color: "var(--color-text)",
-    WebkitTextFillColor: "var(--color-text)",
-    opacity: 0.68,
-  },
-};
-
-/**
- * Inline style (NOT emotion) for inputs holding an LTR technical value.
- *
- * `stylis-plugin-rtl` mirrors every `direction` / `text-align` declaration it
- * sees, so writing `direction: 'ltr'` inside `sx` produces `direction: rtl`
- * in the browser. React inline styles bypass stylis entirely, so they are the
- * only reliable escape hatch. Pass it through `slotProps.htmlInput`:
- *
- * ```tsx
- * slotProps={{ htmlInput: { dir: 'ltr', style: ltrInputStyle } }}
- * ```
- */
-export const ltrInputStyle: CSSProperties = {
-  direction: "ltr",
-  textAlign: "left",
-  unicodeBidi: "isolate",
-};
-
-/** Inline style for read-only console output (hwclock dump). */
-export const ltrBlockStyle: CSSProperties = {
-  direction: "ltr",
-  textAlign: "left",
-  unicodeBidi: "isolate",
-};
-
-export const settingsPrimaryButtonSx: SxProps<Theme> = {
-  minHeight: 40,
-  px: 2.5,
-  borderRadius: "9px",
-  fontWeight: 800,
-  fontSize: "0.86rem",
-  whiteSpace: "nowrap",
-  color: "var(--color-bg)",
-  background:
-    "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)",
-  boxShadow:
-    "0 12px 26px -18px color-mix(in srgb, var(--color-primary) 75%, transparent)",
-  "& .MuiButton-startIcon": {
-    marginInlineEnd: "8px",
-    marginInlineStart: "-2px",
-    marginRight: 0,
-    marginLeft: 0,
-  },
-  "&:hover": {
-    filter: "brightness(1.05)",
-  },
-  "&.Mui-disabled": {
-    color: "color-mix(in srgb, var(--color-bg) 58%, transparent)",
-    background:
-      "color-mix(in srgb, var(--color-primary) 34%, var(--color-card-bg))",
-  },
-};
-
-export const settingsOutlinedButtonSx: SxProps<Theme> = {
-  minHeight: 40,
-  px: 2.25,
-  borderRadius: "9px",
-  fontWeight: 800,
-  fontSize: "0.86rem",
-  whiteSpace: "nowrap",
-  color: "var(--color-primary)",
-  borderColor: "color-mix(in srgb, var(--color-primary) 58%, transparent)",
-  "& .MuiButton-startIcon": {
-    marginInlineEnd: "8px",
-    marginInlineStart: "-2px",
-    marginRight: 0,
-    marginLeft: 0,
-  },
-  "&:hover": {
-    borderColor: "var(--color-primary)",
-    backgroundColor: "color-mix(in srgb, var(--color-primary) 9%, transparent)",
-  },
-};
-
-export const settingsAlertSx: SxProps<Theme> = {
-  borderRadius: "10px",
-  textAlign: "start",
-  "& .MuiAlert-icon": {
-    marginInlineStart: 0,
-    marginInlineEnd: 1,
-    marginRight: 0,
-    marginLeft: 0,
-  },
-  "& .MuiAlert-message": {
-    width: "100%",
-    textAlign: "start",
-    lineHeight: 2,
-    fontSize: "0.82rem",
-  },
-};
-
-/** Dropdown surface for the timezone Autocomplete. */
-export const settingsPopupSx: SxProps<Theme> = {
-  color: "var(--color-text)",
-  backgroundColor: "var(--color-card-bg)",
-  border: "1px solid color-mix(in srgb, var(--color-primary) 22%, transparent)",
-  "& .MuiAutocomplete-noOptions, & .MuiAutocomplete-loading": {
-    color: "var(--color-secondary)",
-    textAlign: "start",
-    fontSize: "0.85rem",
-  },
-};
-
-/** Read-only console-style output (hwclock dump). */
-export const settingsCodeBlockSx: SxProps<Theme> = {
-  m: 0,
-  p: 1.5,
-  maxHeight: 150,
-  overflow: "auto",
-  borderRadius: "10px",
-  color: "var(--color-text)",
-  backgroundColor:
-    "color-mix(in srgb, var(--color-background) 72%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--color-primary) 14%, transparent)",
-  fontFamily: "monospace",
-  fontSize: "0.82rem",
-};
-
-/**
- * Action bar at the bottom of a settings card. `mt: auto` pushes it down so
- * that cards of different heights still align their buttons on one line.
- */
-export const settingsCardFooterSx: SxProps<Theme> = {
-  mt: "auto",
-  pt: 1.75,
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 1,
-  borderTop:
-    "1px solid color-mix(in srgb, var(--color-secondary) 14%, transparent)",
-};
-
-/** Responsive card grid used instead of nested row/column stacks. */
-export const settingsGridSx = (columns: number): SxProps<Theme> => ({
-  display: "grid",
-  gap: 2,
-  alignItems: "stretch",
-  gridTemplateColumns: {
-    xs: "1fr",
-    md: columns >= 3 ? "repeat(2, minmax(0, 1fr))" : "1fr",
-    lg: `repeat(${columns}, minmax(0, 1fr))`,
-  },
-});
-
-/* ------------------------------------------------------------------ *
- * Accordion sections of the general-settings tab
- * ------------------------------------------------------------------ */
-
-/** Outer shell of one collapsible settings section. */
-export const settingsAccordionSx: SxProps<Theme> = {
-  position: "relative",
-  overflow: "hidden",
-  borderRadius: "16px !important",
-  color: "var(--color-text)",
-  backgroundColor: "var(--color-card-bg)",
-  backgroundImage:
-    "linear-gradient(145deg, color-mix(in srgb, var(--color-card-bg) 95%, var(--color-primary) 5%) 0%, var(--color-card-bg) 100%)",
-  border: "1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)",
-  boxShadow: "0 18px 48px -40px rgba(0, 0, 0, 0.7)",
-  transition:
-    "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
-  "&::before": { display: "none" },
-  "&:hover": {
-    borderColor: "color-mix(in srgb, var(--color-primary) 34%, transparent)",
-  },
-  "&.Mui-expanded": {
-    borderColor: "color-mix(in srgb, var(--color-primary) 42%, transparent)",
-    boxShadow: "0 26px 60px -40px rgba(0, 0, 0, 0.85)",
-  },
-  // Accent bar on the inline-start edge, mirrored automatically in RTL.
-  "&::after": {
-    content: '""',
-    position: "absolute",
-    insetInlineStart: 0,
-    insetBlock: 0,
-    width: "3px",
-    background:
-      "linear-gradient(180deg, var(--color-primary), transparent 82%)",
-    opacity: 0.75,
-    pointerEvents: "none",
-  },
-};
-
-/** Clickable header row of a settings section. */
-export const settingsAccordionSummarySx: SxProps<Theme> = {
-  px: { xs: 1.75, md: 2.25 },
-  py: { xs: 1.25, md: 1.5 },
-  minHeight: "unset",
-  gap: 1,
-  "&.Mui-focusVisible": {
-    backgroundColor:
-      "color-mix(in srgb, var(--color-primary) 10%, transparent)",
-  },
-  "& .MuiAccordionSummary-content": {
-    m: 0,
-    minWidth: 0,
-    "&.Mui-expanded": { m: 0 },
-  },
-  "& .MuiAccordionSummary-expandIconWrapper": {
-    color: "var(--color-primary)",
-    backgroundColor:
-      "color-mix(in srgb, var(--color-primary) 10%, transparent)",
-    borderRadius: "50%",
-    width: 30,
-    height: 30,
-    display: "grid",
-    placeItems: "center",
-    transition: "transform 0.25s ease, background-color 0.2s ease",
-  },
-  "&:hover .MuiAccordionSummary-expandIconWrapper": {
-    backgroundColor:
-      "color-mix(in srgb, var(--color-primary) 20%, transparent)",
-  },
-};
-
-/** Body of an expanded settings section. */
-export const settingsAccordionDetailsSx: SxProps<Theme> = {
-  px: { xs: 1.75, md: 2.25 },
-  pt: 2,
-  pb: 2.25,
-  display: "flex",
-  flexDirection: "column",
-  gap: 1.75,
-  borderTop:
-    "1px solid color-mix(in srgb, var(--color-secondary) 16%, transparent)",
-  backgroundColor:
-    "color-mix(in srgb, var(--color-background) 34%, transparent)",
-};
-
-/** Headline value badge shown in a collapsed section header. */
-export const settingsSummaryValueSx: SxProps<Theme> = {
-  px: 1.25,
-  py: 0.5,
-  borderRadius: "10px",
-  maxWidth: { xs: "100%", md: 340 },
-  fontWeight: 800,
-  fontSize: "0.86rem",
-  lineHeight: 1.8,
-  color: "var(--color-primary)",
-  backgroundColor: "color-mix(in srgb, var(--color-primary) 10%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--color-primary) 22%, transparent)",
-  fontVariantNumeric: "tabular-nums",
-  overflowWrap: "anywhere",
-  textAlign: "start",
-};
-
-/** Table container used inside an expanded settings section. */
-export const settingsSectionTableContainerSx: SxProps<Theme> = {
-  mt: 0,
-  borderRadius: "12px",
-  boxShadow: "none",
-  border:
-    "1px solid color-mix(in srgb, var(--color-secondary) 18%, transparent)",
-};
-
-/** Table body used inside an expanded settings section. */
-export const settingsSectionTableSx: SxProps<Theme> = {
-  minWidth: 560,
-  "& .MuiTableCell-root": { py: 1.15 },
-};
-
-/** Toolbar above the section list (expand/collapse all, refresh). */
-export const settingsToolbarSx: SxProps<Theme> = {
-  display: "flex",
-  flexWrap: "wrap",
-  alignItems: "center",
-  gap: 1,
-  mb: 1.75,
-};
-
-/** Vertical rhythm shared by every settings section stack. */
-export const SETTINGS_SECTION_GAP = 2.25;
-export const SETTINGS_CARD_GAP = 2;
-
-/** Persian digits for user-facing counters and ordinals. */
-export const toPersianDigits = (value: string | number) =>
-  String(value).replace(/\d/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
 </file>
 
 <file path="src/components/MainLayout.tsx">
@@ -43206,6 +43180,175 @@ const Share = () => {
 export default Share;
 </file>
 
+<file path="src/utils/hardwareClock.ts">
+/**
+ * Helpers that turn the raw `hwclock` API payload into values an ordinary
+ * operator can read.
+ *
+ * The backend answer for `/api/system/time/hwclock/` contains a nested object
+ * such as `{ "hw_time": { "utc": "...", "local": "..." } }`. Showing that JSON
+ * in the UI is useless for a normal user, so everything here is about
+ * extracting the two timestamps and describing the drift in Persian.
+ */
+
+import { parseWallClockValue } from "./jalali";
+
+export interface HardwareClockTimes {
+  utc: string | null;
+  local: string | null;
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+const normalizeTimestamp = (value: unknown): string | null => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed && parseWallClockValue(trimmed) ? trimmed : null;
+};
+
+const UTC_KEYS = ["utc", "utc_time", "universal", "hw_utc"];
+const LOCAL_KEYS = ["local", "local_time", "localtime", "hw_local"];
+
+/**
+ * Walks the payload (any depth) and picks the first UTC / local timestamps it
+ * can recognise, so a change in the backend envelope does not break the modal.
+ */
+export const extractHardwareClockTimes = (
+  payload: unknown,
+): HardwareClockTimes => {
+  const result: HardwareClockTimes = { utc: null, local: null };
+  const queue: unknown[] = [payload];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+
+    if (Array.isArray(current)) {
+      queue.push(...current);
+      continue;
+    }
+
+    if (!isRecord(current)) {
+      continue;
+    }
+
+    for (const [key, value] of Object.entries(current)) {
+      const normalizedKey = key.toLowerCase();
+
+      if (!result.utc && UTC_KEYS.includes(normalizedKey)) {
+        result.utc = normalizeTimestamp(value);
+      }
+
+      if (!result.local && LOCAL_KEYS.includes(normalizedKey)) {
+        result.local = normalizeTimestamp(value);
+      }
+
+      if (isRecord(value) || Array.isArray(value)) {
+        queue.push(value);
+      }
+    }
+
+    if (result.utc && result.local) {
+      break;
+    }
+  }
+
+  return result;
+};
+
+const toDate = (value: string | null | undefined): Date | null => {
+  if (!value) {
+    return null;
+  }
+
+  const parts = parseWallClockValue(value);
+
+  if (!parts) {
+    return null;
+  }
+
+  return new Date(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second,
+  );
+};
+
+export type ClockDriftLevel = "aligned" | "minor" | "major" | "unknown";
+
+export interface ClockDrift {
+  level: ClockDriftLevel;
+  /** Persian sentence describing the drift, ready to render. */
+  label: string;
+  seconds: number | null;
+}
+
+const describeDuration = (totalSeconds: number) => {
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const chunks: string[] = [];
+
+  if (days > 0) chunks.push(`${days} روز`);
+  if (hours > 0) chunks.push(`${hours} ساعت`);
+  if (minutes > 0) chunks.push(`${minutes} دقیقه`);
+  if (seconds > 0 && days === 0 && hours === 0) chunks.push(`${seconds} ثانیه`);
+
+  return chunks.length > 0 ? chunks.join(" و ") : "کمتر از یک ثانیه";
+};
+
+/**
+ * Compares the motherboard clock with the operating-system clock and returns a
+ * sentence such as «ساعت مادربرد ۳ دقیقه از سیستم عقب‌تر است».
+ */
+export const describeClockDrift = (
+  systemTime: string | null | undefined,
+  hardwareTime: string | null | undefined,
+): ClockDrift => {
+  const system = toDate(systemTime ?? null);
+  const hardware = toDate(hardwareTime ?? null);
+
+  if (!system || !hardware) {
+    return {
+      level: "unknown",
+      label: "برای مقایسه، ابتدا ساعت مادربرد را بخوانید.",
+      seconds: null,
+    };
+  }
+
+  const diffSeconds = Math.round(
+    (hardware.getTime() - system.getTime()) / 1000,
+  );
+  const absolute = Math.abs(diffSeconds);
+
+  if (absolute <= 2) {
+    return {
+      level: "aligned",
+      label: "ساعت مادربرد و ساعت سیستم یکسان هستند.",
+      seconds: diffSeconds,
+    };
+  }
+
+  const duration = describeDuration(absolute);
+  const direction = diffSeconds > 0 ? "جلوتر" : "عقب‌تر";
+
+  return {
+    level: absolute <= 60 ? "minor" : "major",
+    label: `ساعت مادربرد ${duration} از ساعت سیستم ${direction} است.`,
+    seconds: diffSeconds,
+  };
+};
+</file>
+
 <file path="src/utils/notificationStorage.ts">
 import type { LocalNotification } from '../@types/notification';
 
@@ -43634,6 +43777,84 @@ export const getServiceRuntimeSnapshotStatus = (
 ) => deriveServiceRuntimeStatus(details).toUpperCase();
 </file>
 
+<file path="src/index.css">
+@import "tailwindcss";
+@import 'vazirmatn/Vazirmatn-font-face.css';
+@import "/fonts/Vazir/font-face-UI.css";
+
+@font-face {
+    font-family: 'Didot';
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("/fonts/GFSDidot-Regular.ttf") format('truetype');
+}
+
+@font-face {
+    font-family: 'Roboto';
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("/fonts/Roboto-Regular.ttf") format('truetype');
+}
+
+:root {
+    --font-vazir: 'Vazirmatn', sans-serif;
+    --font-didot: 'Didot', serif;
+    --font-roboto: 'Roboto', serif;
+
+    /* Light theme variables */
+
+    --color-background : #e9e9e9;
+    --color-primary: #00c6a9;
+    --color-primary-light: #23a7d5;
+    --color-secondary: #a3924b;
+    --color-bg-primary: #000000;
+    --color-text: #1f1f1f;
+    --color-bg: #ffffff;
+    --color-card-bg: rgba(255, 255, 255, 0.92);
+    --color-input-bg: rgba(255, 255, 255, 0.95);
+    --color-input-border: rgba(0, 0, 0, 0.12);
+    --color-input-focus-border: var(--color-primary);
+    --color-error : #ef4444;
+    --color-warning: #f59e0b;
+    --color-success: #10b981;
+}
+
+[data-theme="dark"] {
+    --color-background : #222222;
+    --color-primary: #00c6a9;
+    --color-primary-light: #23a7d5;
+    --color-secondary: #a3924b;
+    --color-bg-primary: #ffffff;
+    --color-text: #e0e0e0;
+    --color-bg: #121212;
+    --color-card-bg: rgba(30, 30, 30, 0.92);
+    --color-input-bg: rgba(45, 45, 45, 0.95);
+    --color-input-border: rgba(255, 255, 255, 0.12);
+    --color-input-focus-border: var(--color-primary);
+    --color-error : #ef4444;
+    --color-warning: #f59e0b;
+    --color-success: #10b981;
+}
+
+html {
+    direction: rtl;
+}
+
+body {
+    font-family: var(--font-vazir);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.auth-gradient { animation: gradientMove 15s ease infinite; background-size: 400% 400%; }
+@keyframes gradientMove {
+    0% { background-position: 0% 50% }
+    50% { background-position: 100% 50% }
+    100% { background-position: 0% 50% }
+}
+</file>
+
 <file path="src/theme.ts">
 import { createTheme } from '@mui/material/styles';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
@@ -43855,320 +44076,654 @@ Popover اعلان‌ها، کارت هر اعلان، عنوان، متن، ت�
 اعلان‌ها بر اساس fingerprint به‌روزرسانی می‌شوند تا یک وضعیت تکراری، چند اعلان همسان نسازد. اعلان‌ها برای هر کاربر جداگانه ذخیره می‌شوند و بعد از مدت TTL پاک می‌شوند.
 </file>
 
-<file path="src/components/dashboard/server-3d/ServerSlots3DWidget.tsx">
+<file path="src/components/settings/general/SettingEditModal.tsx">
+import { Alert, Box, Button, Stack, Typography } from "@mui/material";
+import type { ReactNode } from "react";
+import BlurModal from "../../BlurModal";
 import {
-  Alert,
-  Box,
-  Chip,
-  Divider,
-  Skeleton,
-  Stack,
-  Typography,
-  useTheme,
-} from '@mui/material';
-import { useMemo, useState } from 'react';
-import { MdDns, MdStorage } from 'react-icons/md';
-import { useSystemPowerActions } from '../../../contexts/SystemPowerActionsContext';
-import { usePoolDeviceSlots } from '../../../hooks/usePoolDeviceSlots';
-import { useZpool } from '../../../hooks/useZpool';
-import { createCardSx } from '../../cardStyles';
-import DashboardWidgetHeader from '../DashboardWidgetHeader';
-import DiskSlotDetailsPanel from './DiskSlotDetailsPanel';
-import type { ServerSceneColors } from './ServerBay';
-import ServerChassisScene from './ServerChassisScene';
-import {
-  buildServerSlots,
-  resolveServerSlotCount,
-  sortServerSlots,
-} from './serverSlotModel';
+  settingsAlertSx as alertSx,
+  settingsOutlinedButtonSx as outlinedButtonSx,
+  settingsPrimaryButtonSx as primaryButtonSx,
+} from "./styles";
 
-const ServerSlots3DWidget = () => {
-  const theme = useTheme();
-  const cardSx = createCardSx(theme);
-  const [selectedSlotNumber, setSelectedSlotNumber] = useState<number | null>(
-    null
-  );
-  const { requestPowerAction, isPowerActionDisabled } = useSystemPowerActions();
+export interface SettingEditModalProps {
+  open: boolean;
+  title: string;
+  description?: string;
+  icon?: ReactNode;
+  errorMessage?: string | null;
+  isSubmitting?: boolean;
+  submitLabel?: string;
+  /** Rows that only expose direct actions (no form) hide the submit button. */
+  hideSubmit?: boolean;
+  onClose: () => void;
+  onSubmit?: () => void;
+  children: ReactNode;
+}
 
-  const {
-    data: zpoolData,
-    isLoading: isPoolsLoading,
-    error: poolsError,
-  } = useZpool({
-    refetchInterval: 30_000,
-  });
-
-  const poolNames = useMemo(
-    () =>
-      (zpoolData?.pools ?? [])
-        .map((pool) => pool.name.trim())
-        .filter((poolName) => poolName.length > 0),
-    [zpoolData?.pools]
-  );
-
-  const {
-    data: poolDeviceSlots,
-    isLoading: isSlotsLoading,
-    isFetching: isSlotsFetching,
-  } = usePoolDeviceSlots(poolNames, {
-    enabled: true,
-    refetchInterval: 10_000,
-  });
-
-  const slotCount = useMemo(
-    () =>
-      resolveServerSlotCount(
-        poolDeviceSlots?.slotsByPool,
-        poolDeviceSlots?.inventory
-      ),
-    [poolDeviceSlots?.inventory, poolDeviceSlots?.slotsByPool]
-  );
-
-  const serverSlots = useMemo(
-    () =>
-      sortServerSlots(
-        buildServerSlots(
-          poolDeviceSlots?.slotsByPool,
-          poolDeviceSlots?.inventory,
-          slotCount
-        )
-      ),
-    [poolDeviceSlots?.inventory, poolDeviceSlots?.slotsByPool, slotCount]
-  );
-
-  const selectedBay = useMemo(
-    () =>
-      selectedSlotNumber == null
-        ? null
-        : (serverSlots.find((slot) => slot.slotNumber === selectedSlotNumber) ??
-          null),
-    [selectedSlotNumber, serverSlots]
-  );
-
-  const discoveredDiskCount = serverSlots.filter((slot) => slot.disk).length;
-  const freeDiskCount = serverSlots.filter(
-    (slot) => slot.health === 'free'
-  ).length;
-  const inactiveDiskCount = serverSlots.filter(
-    (slot) => slot.health === 'inactive'
-  ).length;
-  const hasSlotErrors =
-    Object.keys(poolDeviceSlots?.errorsByPool ?? {}).length > 0;
-
-  const slotErrorMessages = Object.entries(poolDeviceSlots?.errorsByPool ?? {});
-
-  const colors: ServerSceneColors = useMemo(
-    () => ({
-      chassis: theme.palette.mode === 'dark' ? '#101318' : '#1b1f26',
-      chassisEdge: theme.palette.mode === 'dark' ? '#2c3441' : '#38404d',
-      bay: theme.palette.mode === 'dark' ? '#1d2430' : '#151b24',
-      bayDark: '#05070b',
-      primary: theme.palette.primary.main,
-      primaryLight: theme.palette.primary.light,
-      selected: theme.palette.primary.main,
-      empty: theme.palette.mode === 'dark' ? '#475569' : '#64748b',
-      free: theme.palette.mode === 'dark' ? '#334155' : '#94a3b8',
-      inactive: theme.palette.warning.main,
-      success: theme.palette.success.main,
-      warning: theme.palette.warning.main,
-      error: theme.palette.error.main,
-      unknown: theme.palette.mode === 'dark' ? '#94a3b8' : '#64748b',
-    }),
-    [theme]
-  );
-
-  const isInitialLoading =
-    isPoolsLoading || (isSlotsLoading && !poolDeviceSlots);
-
-  if (isInitialLoading) {
-    return (
-      <Box sx={{ ...cardSx, width: '100%', minHeight: 520 }}>
-        <Stack direction="row" alignItems="center" gap={1}>
-          <Skeleton variant="circular" width={34} height={34} />
-          <Skeleton variant="text" width={180} height={28} />
-        </Stack>
-        <Divider />
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 360px' },
-            gap: 2,
-            minHeight: 380,
-          }}
-        >
-          <Skeleton
-            variant="rounded"
-            height={380}
-            sx={{ borderRadius: '12px' }}
-          />
-          <Skeleton
-            variant="rounded"
-            height={380}
-            sx={{ borderRadius: '12px' }}
-          />
-        </Box>
-      </Box>
-    );
-  }
-
-  if (poolsError) {
-    return (
-      <Box sx={{ ...cardSx, width: '100%' }}>
-        <Alert severity="error">
-          خطا در دریافت اطلاعات فضاهای یکپارچه: {poolsError.message}
-        </Alert>
-      </Box>
-    );
-  }
-
+/**
+ * Shared editing shell for a single row of the general-settings table.
+ * Pure presentation: it never owns form state, validation or mutations.
+ */
+const SettingEditModal = ({
+  open,
+  title,
+  description,
+  icon,
+  errorMessage,
+  isSubmitting = false,
+  submitLabel = "ثبت تغییرات",
+  hideSubmit = false,
+  onClose,
+  onSubmit,
+  children,
+}: SettingEditModalProps) => {
   return (
-    <Box sx={{ ...cardSx, width: '100%', minHeight: 520 }}>
-      {/* Header power buttons are intentionally hidden; the 3D panel controls are the single interaction point. */}
-      <DashboardWidgetHeader
-        icon={<MdDns size={20} />}
-        title="نمای سه‌بعدی سرور"
-        subtitle="مدل تعاملی اسلات‌ها و جزئیات تمام دیسک‌های سامانه"
-        status={
-          <Stack direction="row" gap={1} flexWrap="wrap">
-            <Chip
-              icon={<MdStorage />}
-              label={`${discoveredDiskCount} از ${slotCount} اسلات دارای دیسک`}
-              size="small"
+    <BlurModal
+      open={open}
+      onClose={onClose}
+      closeDisabled={isSubmitting}
+      direction="rtl"
+      minWidth="min(620px, calc(100vw - 32px))"
+      maxWidth="620px"
+      title={
+        <Stack
+          direction="row"
+          alignItems="center"
+          gap={1.25}
+          sx={{ minWidth: 0 }}
+        >
+          {icon ? (
+            <Box
+              aria-hidden
               sx={{
-                fontWeight: 800,
-                color: 'var(--color-text)',
-                backgroundColor: 'rgba(0,198,169,0.08)',
-                border: '1px solid rgba(0,198,169,0.22)',
+                width: 42,
+                height: 42,
+                flexShrink: 0,
+                borderRadius: "12px",
+                display: "grid",
+                placeItems: "center",
+                fontSize: 22,
+                color: "var(--color-primary)",
+                backgroundColor:
+                  "color-mix(in srgb, var(--color-primary) 12%, transparent)",
+                border:
+                  "1px solid color-mix(in srgb, var(--color-primary) 24%, transparent)",
               }}
-            />
-            {freeDiskCount > 0 ? (
-              <Chip
-                label={`${freeDiskCount} دیسک آزاد`}
-                size="small"
-                sx={{
-                  fontWeight: 700,
-                  color: 'var(--color-secondary)',
-                  backgroundColor: 'rgba(148,163,184,0.1)',
-                }}
-              />
-            ) : null}
-            {inactiveDiskCount > 0 ? (
-              <Chip
-                label={`${inactiveDiskCount} دیسک غیرفعال`}
-                size="small"
-                sx={{
-                  fontWeight: 700,
-                  color: theme.palette.warning.main,
-                  backgroundColor: 'rgba(245,158,11,0.1)',
-                }}
-              />
-            ) : null}
-            {isSlotsFetching ? (
-              <Chip
-                label="در حال بروزرسانی"
-                size="small"
-                sx={{
-                  fontWeight: 700,
-                  color: 'var(--color-secondary)',
-                  backgroundColor: 'rgba(163,146,75,0.09)',
-                }}
-              />
-            ) : null}
-          </Stack>
-        }
-      />
+            >
+              {icon}
+            </Box>
+          ) : null}
 
-      {hasSlotErrors ? (
-        <Alert severity="warning" sx={{ borderRadius: '10px' }}>
-          {slotErrorMessages.map(([poolName, message]) => (
-            <Typography key={poolName} variant="body2">
-              {poolName}: {message}
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              component="h2"
+              sx={{
+                fontWeight: 700,
+                fontSize: "1.05rem",
+                color: "var(--color-text)",
+              }}
+            >
+              {title}
             </Typography>
-          ))}
+            {description ? (
+              <Typography
+                sx={{
+                  mt: 0.25,
+                  fontSize: "0.8rem",
+                  lineHeight: 1.7,
+                  color: "var(--color-secondary)",
+                }}
+              >
+                {description}
+              </Typography>
+            ) : null}
+          </Box>
+        </Stack>
+      }
+      actions={
+        <>
+          <Button
+            variant="outlined"
+            onClick={onClose}
+            disabled={isSubmitting}
+            sx={outlinedButtonSx}
+          >
+            انصراف
+          </Button>
+          {hideSubmit ? null : (
+            <Button
+              variant="contained"
+              onClick={onSubmit}
+              disabled={isSubmitting}
+              sx={primaryButtonSx}
+            >
+              {submitLabel}
+            </Button>
+          )}
+        </>
+      }
+    >
+      {errorMessage ? (
+        <Alert severity="error" sx={alertSx}>
+          {errorMessage}
         </Alert>
       ) : null}
 
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 380px' },
-          gap: 2,
-          alignItems: { xs: 'stretch', lg: 'start' },
-        }}
-      >
-        <Box
-          sx={{
-            height: { xs: 340, md: 390 },
-            minHeight: { xs: 340, md: 390 },
-            borderRadius: '14px',
-            overflow: 'hidden',
-            position: 'relative',
-            background:
-              theme.palette.mode === 'dark'
-                ? 'radial-gradient(circle at 50% 20%, rgba(0,198,169,0.12), rgba(15,23,42,0.06) 42%, rgba(0,0,0,0.04) 100%)'
-                : 'radial-gradient(circle at 50% 20%, rgba(0,198,169,0.13), rgba(35,167,213,0.06) 42%, rgba(255,255,255,0.18) 100%)',
-            border: (innerTheme) =>
-              `1px solid ${
-                innerTheme.palette.mode === 'dark'
-                  ? 'rgba(255,255,255,0.07)'
-                  : 'rgba(0,0,0,0.07)'
-              }`,
-          }}
-        >
-          <ServerChassisScene
-            slots={serverSlots}
-            selectedSlotNumber={selectedSlotNumber}
-            colors={colors}
-            onSelectSlot={setSelectedSlotNumber}
-            onRequestReboot={() => requestPowerAction('reboot')}
-            onRequestPoweroff={() => requestPowerAction('poweroff')}
-            powerActionsDisabled={isPowerActionDisabled}
-          />
-
-          <Box
-            sx={{
-              position: 'absolute',
-              right: 14,
-              bottom: 14,
-              display: 'flex',
-              gap: 1,
-              flexWrap: 'wrap',
-              pointerEvents: 'none',
-            }}
-          >
-            <Chip
-              label="کلیک روی هر اسلات"
-              size="small"
-              sx={{
-                fontFamily: 'var(--font-vazir)',
-                fontWeight: 800,
-                color: 'var(--color-text)',
-                backdropFilter: 'blur(8px)',
-                backgroundColor:
-                  theme.palette.mode === 'dark'
-                    ? 'rgba(15,23,42,0.68)'
-                    : 'rgba(255,255,255,0.72)',
-                border: '1px solid rgba(0,198,169,0.22)',
-              }}
-            />
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            height: { xs: 'auto', lg: 390 },
-            minHeight: { xs: 280, lg: 390 },
-            minWidth: 0,
-          }}
-        >
-          <DiskSlotDetailsPanel selectedBay={selectedBay} />
-        </Box>
-      </Box>
-    </Box>
+      {children}
+    </BlurModal>
   );
 };
 
-export default ServerSlots3DWidget;
+export default SettingEditModal;
+</file>
+
+<file path="src/components/settings/general/SettingsRowsTable.tsx">
+import { Stack, Tooltip } from "@mui/material";
+import { useMemo } from "react";
+import type { ReactNode } from "react";
+import type { DataTableColumn } from "../../../@types/dataTable";
+import DataTable from "../../DataTable";
+import {
+  settingsSectionTableContainerSx,
+  settingsSectionTableSx,
+  toPersianDigits,
+} from "./styles";
+
+export interface SettingsTableRow {
+  id: string;
+  title: string;
+  /** Optional tooltip that explains the row title. */
+  hint?: string;
+  value: ReactNode;
+  /**
+   * Inline control rendered right next to the value (edit icon, status chip).
+   * The table has no dedicated action column any more, so every interaction
+   * lives here.
+   */
+  valueAdornment?: ReactNode;
+}
+
+export interface SettingsRowsTableProps {
+  rows: SettingsTableRow[];
+  isLoading?: boolean;
+}
+
+/**
+ * Table used inside an expanded settings section.
+ *
+ * Only three columns are rendered: the row number, the setting name and its
+ * value. Status chips and edit icons sit inside the value cell, next to the
+ * data they belong to.
+ */
+const SettingsRowsTable = ({
+  rows,
+  isLoading = false,
+}: SettingsRowsTableProps) => {
+  const columns = useMemo<DataTableColumn<SettingsTableRow>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        width: 56,
+        renderCell: (_row, index) => toPersianDigits(index + 1),
+      },
+      {
+        id: "title",
+        header: "تنطیم",
+        width: "30%",
+        cellSx: { fontWeight: 700 },
+        renderCell: (row) =>
+          row.hint ? (
+            <Tooltip title={row.hint} arrow>
+              <span
+                style={{
+                  textDecoration: "underline dotted",
+                  textUnderlineOffset: "4px",
+                  cursor: "help",
+                }}
+              >
+                {row.title}
+              </span>
+            </Tooltip>
+          ) : (
+            row.title
+          ),
+      },
+      {
+        id: "value",
+        header: "مقدار",
+        renderCell: (row) => (
+          <Stack
+            direction="row"
+            alignItems="center"
+            gap={1}
+            sx={{ minWidth: 0, flexWrap: "wrap" }}
+          >
+            <Stack sx={{ minWidth: 0 }}>{row.value}</Stack>
+            {row.valueAdornment}
+          </Stack>
+        ),
+      },
+    ],
+    [],
+  );
+
+  return (
+    <DataTable<SettingsTableRow>
+      columns={columns}
+      data={rows}
+      getRowId={(row) => row.id}
+      isLoading={isLoading}
+      containerSx={settingsSectionTableContainerSx}
+      tableSx={settingsSectionTableSx}
+    />
+  );
+};
+
+export default SettingsRowsTable;
+</file>
+
+<file path="src/components/settings/general/styles.ts">
+import type { SxProps, Theme } from "@mui/material";
+import type { CSSProperties } from "react";
+
+/**
+ * Shared design tokens for the settings panels.
+ *
+ * IMPORTANT (RTL): the app renders MUI through `stylis-plugin-rtl`
+ * (see `src/rtl-cache.ts`), which mirrors *physical* CSS properties.
+ * A hand written `direction: 'rtl'` is therefore flipped to `ltr`, and
+ * `textAlign: 'right'` becomes `left` — which is exactly what broke the
+ * bidi ordering of Persian sentences on the settings page.
+ *
+ * Rule for this folder: never set `direction`, `textAlign: 'right'`, `left`
+ * or `right` by hand. The document is already `dir="rtl"` (see `index.html`)
+ * and the MUI theme is RTL aware, so only logical properties are used below.
+ */
+
+export const settingsCardSx: SxProps<Theme> = {
+  position: "relative",
+  minWidth: 0,
+  height: "100%",
+  // Flex column + `mt: auto` on the footer keeps every action bar pinned to
+  // the bottom edge, so cards in the same row line up perfectly.
+  display: "flex",
+  flexDirection: "column",
+  p: { xs: 2, md: 2.5 },
+  borderRadius: "16px",
+  overflow: "hidden",
+  textAlign: "start",
+  color: "var(--color-text)",
+  background:
+    "linear-gradient(145deg, color-mix(in srgb, var(--color-card-bg) 96%, var(--color-primary) 4%) 0%, var(--color-card-bg) 100%)",
+  border: "1px solid color-mix(in srgb, var(--color-primary) 22%, transparent)",
+  boxShadow: "0 18px 48px -38px rgba(0, 0, 0, 0.72)",
+  transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+  "&:hover": {
+    borderColor: "color-mix(in srgb, var(--color-primary) 34%, transparent)",
+    boxShadow: "0 22px 54px -38px rgba(0, 0, 0, 0.82)",
+  },
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    insetInlineStart: 0,
+    insetBlock: 0,
+    width: "3px",
+    background:
+      "linear-gradient(180deg, var(--color-primary), transparent 78%)",
+    opacity: 0.72,
+  },
+};
+
+export const settingsFieldSx: SxProps<Theme> = {
+  "& .MuiInputBase-root": {
+    color: "var(--color-text)",
+    backgroundColor:
+      "color-mix(in srgb, var(--color-background) 62%, transparent)",
+    borderRadius: "10px",
+  },
+  "& .MuiInputBase-input": {
+    color: "var(--color-text)",
+    WebkitTextFillColor: "var(--color-text)",
+    textAlign: "start",
+  },
+  "& .MuiInputBase-input.Mui-disabled": {
+    color: "var(--color-text)",
+    WebkitTextFillColor: "var(--color-text)",
+    opacity: 0.68,
+  },
+  // Label placement is handled by the RTL-aware theme; only colors here.
+  "& .MuiInputLabel-root": {
+    color: "var(--color-secondary)",
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "var(--color-primary)",
+  },
+  "& .MuiFormHelperText-root": {
+    mx: 0,
+    mt: 0.75,
+    textAlign: "start",
+    color: "var(--color-secondary)",
+    fontSize: "0.75rem",
+    lineHeight: 1.9,
+  },
+  "& .MuiOutlinedInput-notchedOutline": {
+    borderColor: "color-mix(in srgb, var(--color-secondary) 34%, transparent)",
+  },
+  "&:hover .MuiOutlinedInput-notchedOutline": {
+    borderColor: "color-mix(in srgb, var(--color-primary) 50%, transparent)",
+  },
+  "& .MuiSvgIcon-root": {
+    color: "var(--color-secondary)",
+  },
+};
+
+/**
+ * Field that holds an LTR technical value (hostname, IP, timezone id,
+ * timestamp). The *value* is LTR and starts from the left edge of the box,
+ * while the Persian label and helper text stay RTL.
+ */
+export const settingsTechnicalFieldSx: SxProps<Theme> = {
+  ...(settingsFieldSx as Record<string, unknown>),
+  "& .MuiInputBase-input": {
+    color: "var(--color-text)",
+    WebkitTextFillColor: "var(--color-text)",
+    fontVariantNumeric: "tabular-nums",
+    letterSpacing: "0.01em",
+  },
+  "& .MuiInputBase-input.Mui-disabled": {
+    color: "var(--color-text)",
+    WebkitTextFillColor: "var(--color-text)",
+    opacity: 0.68,
+  },
+};
+
+/**
+ * Inline style (NOT emotion) for inputs holding an LTR technical value.
+ *
+ * `stylis-plugin-rtl` mirrors every `direction` / `text-align` declaration it
+ * sees, so writing `direction: 'ltr'` inside `sx` produces `direction: rtl`
+ * in the browser. React inline styles bypass stylis entirely, so they are the
+ * only reliable escape hatch. Pass it through `slotProps.htmlInput`:
+ *
+ * ```tsx
+ * slotProps={{ htmlInput: { dir: 'ltr', style: ltrInputStyle } }}
+ * ```
+ */
+export const ltrInputStyle: CSSProperties = {
+  direction: "ltr",
+  textAlign: "left",
+  unicodeBidi: "isolate",
+};
+
+/** Inline style for read-only console output (hwclock dump). */
+export const ltrBlockStyle: CSSProperties = {
+  direction: "ltr",
+  textAlign: "left",
+  unicodeBidi: "isolate",
+};
+
+export const settingsPrimaryButtonSx: SxProps<Theme> = {
+  minHeight: 40,
+  px: 2.5,
+  borderRadius: "9px",
+  fontWeight: 800,
+  fontSize: "0.86rem",
+  whiteSpace: "nowrap",
+  color: "var(--color-bg)",
+  background:
+    "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)",
+  boxShadow:
+    "0 12px 26px -18px color-mix(in srgb, var(--color-primary) 75%, transparent)",
+  "& .MuiButton-startIcon": {
+    marginInlineEnd: "8px",
+    marginInlineStart: "-2px",
+    marginRight: 0,
+    marginLeft: 0,
+  },
+  "&:hover": {
+    filter: "brightness(1.05)",
+  },
+  "&.Mui-disabled": {
+    color: "color-mix(in srgb, var(--color-bg) 58%, transparent)",
+    background:
+      "color-mix(in srgb, var(--color-primary) 34%, var(--color-card-bg))",
+  },
+};
+
+export const settingsOutlinedButtonSx: SxProps<Theme> = {
+  minHeight: 40,
+  px: 2.25,
+  borderRadius: "9px",
+  fontWeight: 800,
+  fontSize: "0.86rem",
+  whiteSpace: "nowrap",
+  color: "var(--color-primary)",
+  backgroundColor: "transparent",
+  // A bare `borderColor` is invisible on MUI's default text variant, so the
+  // frame itself is declared here to keep every settings button consistent.
+  border: "1px solid color-mix(in srgb, var(--color-primary) 58%, transparent)",
+  "& .MuiButton-startIcon": {
+    marginInlineEnd: "8px",
+    marginInlineStart: "-2px",
+    marginRight: 0,
+    marginLeft: 0,
+  },
+  "&:hover": {
+    borderColor: "var(--color-primary)",
+    backgroundColor: "color-mix(in srgb, var(--color-primary) 9%, transparent)",
+  },
+  "&.Mui-disabled": {
+    color: "color-mix(in srgb, var(--color-text) 38%, transparent)",
+    borderColor: "color-mix(in srgb, var(--color-text) 16%, transparent)",
+    backgroundColor: "transparent",
+  },
+};
+
+export const settingsAlertSx: SxProps<Theme> = {
+  borderRadius: "10px",
+  textAlign: "start",
+  "& .MuiAlert-icon": {
+    marginInlineStart: 0,
+    marginInlineEnd: 1,
+    marginRight: 0,
+    marginLeft: 0,
+  },
+  "& .MuiAlert-message": {
+    width: "100%",
+    textAlign: "start",
+    lineHeight: 2,
+    fontSize: "0.82rem",
+  },
+};
+
+/** Dropdown surface for the timezone Autocomplete. */
+export const settingsPopupSx: SxProps<Theme> = {
+  color: "var(--color-text)",
+  backgroundColor: "var(--color-card-bg)",
+  border: "1px solid color-mix(in srgb, var(--color-primary) 22%, transparent)",
+  "& .MuiAutocomplete-noOptions, & .MuiAutocomplete-loading": {
+    color: "var(--color-secondary)",
+    textAlign: "start",
+    fontSize: "0.85rem",
+  },
+};
+
+/** Read-only console-style output (hwclock dump). */
+export const settingsCodeBlockSx: SxProps<Theme> = {
+  m: 0,
+  p: 1.5,
+  maxHeight: 150,
+  overflow: "auto",
+  borderRadius: "10px",
+  color: "var(--color-text)",
+  backgroundColor:
+    "color-mix(in srgb, var(--color-background) 72%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--color-primary) 14%, transparent)",
+  fontFamily: "monospace",
+  fontSize: "0.82rem",
+};
+
+/**
+ * Action bar at the bottom of a settings card. `mt: auto` pushes it down so
+ * that cards of different heights still align their buttons on one line.
+ */
+export const settingsCardFooterSx: SxProps<Theme> = {
+  mt: "auto",
+  pt: 1.75,
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 1,
+  borderTop:
+    "1px solid color-mix(in srgb, var(--color-secondary) 14%, transparent)",
+};
+
+/** Responsive card grid used instead of nested row/column stacks. */
+export const settingsGridSx = (columns: number): SxProps<Theme> => ({
+  display: "grid",
+  gap: 2,
+  alignItems: "stretch",
+  gridTemplateColumns: {
+    xs: "1fr",
+    md: columns >= 3 ? "repeat(2, minmax(0, 1fr))" : "1fr",
+    lg: `repeat(${columns}, minmax(0, 1fr))`,
+  },
+});
+
+/* ------------------------------------------------------------------ *
+ * Accordion sections of the general-settings tab
+ * ------------------------------------------------------------------ */
+
+/** Outer shell of one collapsible settings section. */
+export const settingsAccordionSx: SxProps<Theme> = {
+  position: "relative",
+  overflow: "hidden",
+  borderRadius: "16px !important",
+  color: "var(--color-text)",
+  backgroundColor: "var(--color-card-bg)",
+  backgroundImage:
+    "linear-gradient(145deg, color-mix(in srgb, var(--color-card-bg) 95%, var(--color-primary) 5%) 0%, var(--color-card-bg) 100%)",
+  border: "1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)",
+  boxShadow: "0 18px 48px -40px rgba(0, 0, 0, 0.7)",
+  transition:
+    "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
+  "&::before": { display: "none" },
+  "&:hover": {
+    borderColor: "color-mix(in srgb, var(--color-primary) 34%, transparent)",
+  },
+  "&.Mui-expanded": {
+    borderColor: "color-mix(in srgb, var(--color-primary) 42%, transparent)",
+    boxShadow: "0 26px 60px -40px rgba(0, 0, 0, 0.85)",
+  },
+  // Accent bar on the inline-start edge, mirrored automatically in RTL.
+  "&::after": {
+    content: '""',
+    position: "absolute",
+    insetInlineStart: 0,
+    insetBlock: 0,
+    width: "3px",
+    background:
+      "linear-gradient(180deg, var(--color-primary), transparent 82%)",
+    opacity: 0.75,
+    pointerEvents: "none",
+  },
+};
+
+/** Clickable header row of a settings section. */
+export const settingsAccordionSummarySx: SxProps<Theme> = {
+  px: { xs: 1.75, md: 2.25 },
+  py: { xs: 1.25, md: 1.5 },
+  minHeight: "unset",
+  gap: 1,
+  "&.Mui-focusVisible": {
+    backgroundColor:
+      "color-mix(in srgb, var(--color-primary) 10%, transparent)",
+  },
+  "& .MuiAccordionSummary-content": {
+    m: 0,
+    minWidth: 0,
+    "&.Mui-expanded": { m: 0 },
+  },
+  "& .MuiAccordionSummary-expandIconWrapper": {
+    color: "var(--color-primary)",
+    backgroundColor:
+      "color-mix(in srgb, var(--color-primary) 10%, transparent)",
+    borderRadius: "50%",
+    width: 30,
+    height: 30,
+    display: "grid",
+    placeItems: "center",
+    transition: "transform 0.25s ease, background-color 0.2s ease",
+  },
+  "&:hover .MuiAccordionSummary-expandIconWrapper": {
+    backgroundColor:
+      "color-mix(in srgb, var(--color-primary) 20%, transparent)",
+  },
+};
+
+/** Body of an expanded settings section. */
+export const settingsAccordionDetailsSx: SxProps<Theme> = {
+  px: { xs: 1.75, md: 2.25 },
+  pt: 2,
+  pb: 2.25,
+  display: "flex",
+  flexDirection: "column",
+  gap: 1.75,
+  borderTop:
+    "1px solid color-mix(in srgb, var(--color-secondary) 16%, transparent)",
+  backgroundColor:
+    "color-mix(in srgb, var(--color-background) 34%, transparent)",
+};
+
+/** Headline value badge shown in a collapsed section header. */
+export const settingsSummaryValueSx: SxProps<Theme> = {
+  px: 1.25,
+  py: 0.5,
+  borderRadius: "10px",
+  maxWidth: { xs: "100%", md: 340 },
+  fontWeight: 800,
+  fontSize: "0.86rem",
+  lineHeight: 1.8,
+  color: "var(--color-primary)",
+  backgroundColor: "color-mix(in srgb, var(--color-primary) 10%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--color-primary) 22%, transparent)",
+  fontVariantNumeric: "tabular-nums",
+  overflowWrap: "anywhere",
+  textAlign: "start",
+};
+
+/** Table container used inside an expanded settings section. */
+export const settingsSectionTableContainerSx: SxProps<Theme> = {
+  mt: 0,
+  borderRadius: "12px",
+  boxShadow: "none",
+  border:
+    "1px solid color-mix(in srgb, var(--color-secondary) 18%, transparent)",
+};
+
+/** Table body used inside an expanded settings section. */
+export const settingsSectionTableSx: SxProps<Theme> = {
+  minWidth: 560,
+  "& .MuiTableCell-root": { py: 1.15 },
+};
+
+/** Toolbar above the section list (expand/collapse all, refresh). */
+export const settingsToolbarSx: SxProps<Theme> = {
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: 1,
+  mb: 1.75,
+};
+
+/** Vertical rhythm shared by every settings section stack. */
+export const SETTINGS_SECTION_GAP = 2.25;
+export const SETTINGS_CARD_GAP = 2;
+
+/** Persian digits for user-facing counters and ordinals. */
+export const toPersianDigits = (value: string | number) =>
+  String(value).replace(/\d/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
 </file>
 
 <file path="src/hooks/useConfigureNetworkInterface.ts">
@@ -45096,6 +45651,288 @@ export const applyInitialSaveToDbPolicy = <T extends AxiosRequestConfig>(
 export const resetInitialSaveToDbPolicy = () => {
   activePageScope = '';
   processedRequestKeys.clear();
+};
+</file>
+
+<file path="src/utils/jalali.ts">
+/**
+ * Self-contained Jalali (Solar Hijri) calendar helpers.
+ *
+ * The backend always speaks Gregorian (`YYYY-MM-DD HH:mm:ss`) and the manual
+ * time picker stays Gregorian too, so these helpers exist purely to render an
+ * extra, read-only Persian representation of a value next to it.
+ *
+ * The conversion is the classic arithmetic algorithm (the same one used by
+ * `jalaali-js`), implemented here so the project does not need a new runtime
+ * dependency.
+ */
+
+const div = (a: number, b: number) => ~~(a / b);
+const mod = (a: number, b: number) => a - ~~(a / b) * b;
+
+/** Years where the 33-year leap cycle of the Jalali calendar breaks. */
+const LEAP_BREAKS = [
+  -61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192,
+  2262, 2324, 2394, 2456, 3178,
+];
+
+export const JALALI_MONTH_NAMES = [
+  "فروردین",
+  "اردیبهشت",
+  "خرداد",
+  "تیر",
+  "مرداد",
+  "شهریور",
+  "مهر",
+  "آبان",
+  "آذر",
+  "دی",
+  "بهمن",
+  "اسفند",
+] as const;
+
+export interface JalaliDateParts {
+  year: number;
+  month: number;
+  day: number;
+}
+
+export interface GregorianDateParts {
+  year: number;
+  month: number;
+  day: number;
+}
+
+interface JalaliCalendarInfo {
+  /** 0 when the given Jalali year is a leap year. */
+  leap: number;
+  gregorianYear: number;
+  /** Day of March that holds 1 Farvardin of the given Jalali year. */
+  march: number;
+}
+
+const jalaliCalendarInfo = (jalaliYear: number): JalaliCalendarInfo => {
+  const lastBreak = LEAP_BREAKS[LEAP_BREAKS.length - 1];
+
+  if (jalaliYear < LEAP_BREAKS[0] || jalaliYear >= lastBreak) {
+    throw new RangeError(
+      `سال شمسی خارج از بازه پشتیبانی‌شده است: ${jalaliYear}`,
+    );
+  }
+
+  const gregorianYear = jalaliYear + 621;
+  let leapJ = -14;
+  let previousBreak = LEAP_BREAKS[0];
+  let jump = 0;
+
+  for (let index = 1; index < LEAP_BREAKS.length; index += 1) {
+    const currentBreak = LEAP_BREAKS[index];
+    jump = currentBreak - previousBreak;
+
+    if (jalaliYear < currentBreak) {
+      break;
+    }
+
+    leapJ = leapJ + div(jump, 33) * 8 + div(mod(jump, 33), 4);
+    previousBreak = currentBreak;
+  }
+
+  let n = jalaliYear - previousBreak;
+  leapJ = leapJ + div(n, 33) * 8 + div(mod(n, 33) + 3, 4);
+
+  if (mod(jump, 33) === 4 && jump - n === 4) {
+    leapJ += 1;
+  }
+
+  const leapG =
+    div(gregorianYear, 4) - div((div(gregorianYear, 100) + 1) * 3, 4) - 150;
+  const march = 20 + leapJ - leapG;
+
+  if (jump - n < 6) {
+    n = n - jump + div(jump + 4, 33) * 33;
+  }
+
+  let leap = mod(mod(n + 1, 33) - 1, 4);
+  if (leap === -1) {
+    leap = 4;
+  }
+
+  return { leap, gregorianYear, march };
+};
+
+/** Gregorian calendar date -> Julian day number. */
+const gregorianToJulianDay = (year: number, month: number, day: number) => {
+  let julianDay =
+    div((year + div(month - 8, 6) + 100100) * 1461, 4) +
+    div(153 * mod(month + 9, 12) + 2, 5) +
+    day -
+    34840408;
+
+  julianDay =
+    julianDay - div(div(year + 100100 + div(month - 8, 6), 100) * 3, 4) + 752;
+
+  return julianDay;
+};
+
+/** Julian day number -> Gregorian calendar date. */
+const julianDayToGregorian = (julianDay: number): GregorianDateParts => {
+  let j = 4 * julianDay + 139361631;
+  j = j + div(div(4 * julianDay + 183187720, 146097) * 3, 4) * 4 - 3908;
+
+  const i = div(mod(j, 1461), 4) * 5 + 308;
+  const day = div(mod(i, 153), 5) + 1;
+  const month = mod(div(i, 153), 12) + 1;
+  const year = div(j, 1461) - 100100 + div(8 - month, 6);
+
+  return { year, month, day };
+};
+
+const jalaliToJulianDay = (year: number, month: number, day: number) => {
+  const info = jalaliCalendarInfo(year);
+
+  return (
+    gregorianToJulianDay(info.gregorianYear, 3, info.march) +
+    (month - 1) * 31 -
+    div(month, 7) * (month - 7) +
+    day -
+    1
+  );
+};
+
+const julianDayToJalali = (julianDay: number): JalaliDateParts => {
+  const gregorianYear = julianDayToGregorian(julianDay).year;
+  let year = gregorianYear - 621;
+  const info = jalaliCalendarInfo(year);
+  const farvardinFirst = gregorianToJulianDay(gregorianYear, 3, info.march);
+
+  let offset = julianDay - farvardinFirst;
+
+  if (offset >= 0) {
+    if (offset <= 185) {
+      return {
+        year,
+        month: 1 + div(offset, 31),
+        day: mod(offset, 31) + 1,
+      };
+    }
+
+    offset -= 186;
+  } else {
+    year -= 1;
+    offset += 179;
+
+    if (info.leap === 1) {
+      offset += 1;
+    }
+  }
+
+  return {
+    year,
+    month: 7 + div(offset, 30),
+    day: mod(offset, 30) + 1,
+  };
+};
+
+export const isJalaliLeapYear = (year: number) =>
+  jalaliCalendarInfo(year).leap === 0;
+
+/** Number of days in a given Jalali month (29/30/31). */
+export const jalaliMonthLength = (year: number, month: number) => {
+  if (month <= 6) {
+    return 31;
+  }
+
+  if (month <= 11) {
+    return 30;
+  }
+
+  return isJalaliLeapYear(year) ? 30 : 29;
+};
+
+export const gregorianToJalali = (
+  year: number,
+  month: number,
+  day: number,
+): JalaliDateParts => julianDayToJalali(gregorianToJulianDay(year, month, day));
+
+export const jalaliToGregorian = (
+  year: number,
+  month: number,
+  day: number,
+): GregorianDateParts =>
+  julianDayToGregorian(jalaliToJulianDay(year, month, day));
+
+/** Persian digits for user-facing dates and clock values. */
+export const toPersianDigits = (value: string | number) =>
+  String(value).replace(/\d/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
+
+const pad = (value: number) => String(value).padStart(2, "0");
+
+export interface WallClockParts {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+}
+
+/**
+ * Parses the Gregorian wall-clock string used across the settings panel
+ * (`YYYY-MM-DDTHH:mm:ss`, also tolerating a space separator and no seconds).
+ */
+export const parseWallClockValue = (value: string): WallClockParts | null => {
+  const match = value
+    .trim()
+    .match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+    hour: Number(match[4]),
+    minute: Number(match[5]),
+    second: Number(match[6] ?? "0"),
+  };
+};
+
+/**
+ * Short Persian label of a Gregorian wall-clock string, e.g.
+ * `۱۴۰۵/۰۵/۰۴ — ۱۶:۳۹:۲۰`.
+ */
+export const formatJalaliWallClockLabel = (value: string) => {
+  const parts = parseWallClockValue(value);
+
+  if (!parts) {
+    return null;
+  }
+
+  const jalali = gregorianToJalali(parts.year, parts.month, parts.day);
+  const date = `${jalali.year}/${pad(jalali.month)}/${pad(jalali.day)}`;
+  const time = `${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`;
+
+  return toPersianDigits(`${time} — ${date}`);
+};
+
+/** Long Persian label, e.g. `۴ مرداد ۱۴۰۵، ساعت ۱۶:۳۹:۲۰`. */
+export const formatJalaliLongLabel = (value: string) => {
+  const parts = parseWallClockValue(value);
+
+  if (!parts) {
+    return null;
+  }
+
+  const jalali = gregorianToJalali(parts.year, parts.month, parts.day);
+  const monthName = JALALI_MONTH_NAMES[jalali.month - 1];
+  const time = `${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`;
+
+  return toPersianDigits(
+    `${jalali.day} ${monthName} ${jalali.year}، ساعت ${time}`,
+  );
 };
 </file>
 
@@ -49173,1328 +50010,6 @@ const NetworkSettingsTable = () => {
 export default NetworkSettingsTable;
 </file>
 
-<file path="src/components/settings/SystemSettingConfirmDialog.tsx">
-import { Box, CircularProgress, Stack, Typography } from "@mui/material";
-import { MdInfoOutline, MdOutlineWarningAmber } from "react-icons/md";
-import BlurModal from "../BlurModal";
-import ModalActionButtons from "../common/ModalActionButtons";
-
-export type SystemSettingConfirmSeverity = "info" | "warning" | "error";
-
-interface SystemSettingConfirmDialogProps {
-  open: boolean;
-  title: string;
-  description: string;
-  confirmLabel?: string;
-  severity?: SystemSettingConfirmSeverity;
-  isLoading?: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
-}
-
-const severityColor = {
-  info: "var(--color-primary)",
-  warning: "var(--color-warning)",
-  error: "var(--color-error)",
-} as const;
-
-const SystemSettingConfirmDialog = ({
-  open,
-  title,
-  description,
-  confirmLabel = "تایید و ادامه",
-  severity = "warning",
-  isLoading = false,
-  onCancel,
-  onConfirm,
-}: SystemSettingConfirmDialogProps) => {
-  const accentColor = severityColor[severity];
-  const Icon = severity === "info" ? MdInfoOutline : MdOutlineWarningAmber;
-
-  return (
-    <BlurModal
-      open={open}
-      onClose={onCancel}
-      closeDisabled={isLoading}
-      direction="rtl"
-      minWidth="min(560px, calc(100vw - 32px))"
-      maxWidth="560px"
-      title={
-        <Stack
-          direction="row"
-          alignItems="center"
-          gap={1.25}
-          sx={{ minWidth: 0 }}
-        >
-          <Box
-            sx={{
-              width: 42,
-              height: 42,
-              borderRadius: "12px",
-              display: "grid",
-              placeItems: "center",
-              color: accentColor,
-              backgroundColor: `color-mix(in srgb, ${accentColor} 12%, transparent)`,
-              border: `1px solid color-mix(in srgb, ${accentColor} 30%, transparent)`,
-              flexShrink: 0,
-            }}
-          >
-            <Icon size={24} />
-          </Box>
-          <Typography
-            component="span"
-            sx={{
-              minWidth: 0,
-              color: "var(--color-text)",
-              fontSize: "1rem",
-              fontWeight: 900,
-              textAlign: "start",
-            }}
-          >
-            {title}
-          </Typography>
-        </Stack>
-      }
-      actions={
-        <Box sx={{ width: "100%" }}>
-          <ModalActionButtons
-            onConfirm={onConfirm}
-            onCancel={onCancel}
-            confirmLabel={confirmLabel}
-            loadingLabel="در حال اعمال..."
-            isLoading={isLoading}
-            disableConfirmGradient
-            confirmProps={{
-              startIcon: isLoading ? (
-                <CircularProgress size={17} color="inherit" />
-              ) : undefined,
-              sx: {
-                minWidth: 148,
-                color: "var(--color-bg)",
-                backgroundColor: accentColor,
-                borderColor: accentColor,
-                "&:hover": {
-                  backgroundColor: accentColor,
-                  borderColor: accentColor,
-                  filter: "brightness(1.06)",
-                },
-              },
-            }}
-            cancelProps={{
-              disabled: isLoading,
-              sx: {
-                minWidth: 112,
-                color: "var(--color-text)",
-                borderColor:
-                  "color-mix(in srgb, var(--color-secondary) 50%, transparent)",
-              },
-            }}
-          />
-        </Box>
-      }
-    >
-      <Box
-        sx={{
-          p: 2,
-          borderRadius: "12px",
-          textAlign: "start",
-          color: "var(--color-text)",
-          backgroundColor: `color-mix(in srgb, ${accentColor} 7%, transparent)`,
-          border: `1px solid color-mix(in srgb, ${accentColor} 24%, transparent)`,
-        }}
-      >
-        <Typography
-          sx={{
-            color: "var(--color-secondary)",
-            textAlign: "start",
-            lineHeight: 2,
-          }}
-        >
-          {description}
-        </Typography>
-      </Box>
-    </BlurModal>
-  );
-};
-
-export default SystemSettingConfirmDialog;
-</file>
-
-<file path="src/components/settings/GeneralSettingsPanel.tsx">
-import {
-  Alert,
-  Autocomplete,
-  Box,
-  Button,
-  FormControl,
-  FormControlLabel,
-  FormLabel,
-  IconButton,
-  Radio,
-  RadioGroup,
-  Stack,
-  Switch,
-  TextField,
-  Tooltip,
-} from "@mui/material";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { FiEdit3 } from "react-icons/fi";
-import { toast } from "react-hot-toast";
-import {
-  MdAccessTime,
-  MdAdd,
-  MdComputer,
-  MdContentCopy,
-  MdDeleteOutline,
-  MdDns,
-  MdInfoOutline,
-  MdMemory,
-  MdPublic,
-  MdRefresh,
-  MdStorage,
-  MdSync,
-  MdUnfoldLess,
-  MdUnfoldMore,
-  MdVisibility,
-} from "react-icons/md";
-import type {
-  HwclockRequest,
-  ManageNtpPayload,
-  SetHostnamePayload,
-  SetManualTimePayload,
-  SetTimezonePayload,
-} from "../../@types/generalSettings";
-import {
-  useHostnameInfo,
-  useManageHwclock,
-  useManageNtp,
-  useSetHostname,
-  useSetManualTime,
-  useSetTimezone,
-  useSystemTimeInfo,
-  useSystemVersion,
-  useTimezoneList,
-} from "../../hooks/useGeneralSystemSettings";
-import { useSystemWallClock } from "../../hooks/useSystemWallClock";
-import { extractApiErrorMessage } from "../../utils/apiError";
-import {
-  formatManualTimeForApi,
-  toDateTimeLocalValue,
-  validateHostname,
-  validateNtpServer,
-} from "../../utils/generalSettings";
-import SystemSettingConfirmDialog, {
-  type SystemSettingConfirmSeverity,
-} from "./SystemSettingConfirmDialog";
-import Ltr from "./general/Ltr";
-import SettingEditModal from "./general/SettingEditModal";
-import SettingsRowsTable from "./general/SettingsRowsTable";
-import SettingsAccordionSection from "./general/SettingsAccordionSection";
-import {
-  settingsAlertSx as alertSx,
-  settingsCodeBlockSx as codeBlockSx,
-  settingsFieldSx as fieldSx,
-  settingsOutlinedButtonSx as outlinedButtonSx,
-  settingsPopupSx as popupSx,
-  settingsPrimaryButtonSx as primaryButtonSx,
-  settingsTechnicalFieldSx as technicalFieldSx,
-  settingsToolbarSx as toolbarSx,
-  ltrBlockStyle,
-  ltrInputStyle,
-} from "./general/styles";
-
-const NOT_AVAILABLE = "در دسترس نیست";
-const NOT_CONFIGURED = "تنظیم نشده";
-
-/** Section ids of the accordion list. */
-const SECTIONS = {
-  version: "version",
-  domain: "domain",
-  time: "time",
-} as const;
-
-type SectionId = (typeof SECTIONS)[keyof typeof SECTIONS];
-
-const ALL_SECTION_IDS: SectionId[] = [
-  SECTIONS.version,
-  SECTIONS.domain,
-  SECTIONS.time,
-];
-
-type EditorKind =
-  "hostname" | "timezone" | "ntp" | "manual-time" | "hwclock" | null;
-
-type PendingAction =
-  | {
-      type: "hostname";
-      payload: SetHostnamePayload;
-      title: string;
-      description: string;
-      confirmLabel: string;
-      severity: SystemSettingConfirmSeverity;
-    }
-  | {
-      type: "timezone";
-      payload: SetTimezonePayload;
-      title: string;
-      description: string;
-      confirmLabel: string;
-      severity: SystemSettingConfirmSeverity;
-    }
-  | {
-      type: "ntp";
-      payload: ManageNtpPayload;
-      title: string;
-      description: string;
-      confirmLabel: string;
-      severity: SystemSettingConfirmSeverity;
-    }
-  | {
-      type: "manual-time";
-      payload: SetManualTimePayload;
-      title: string;
-      description: string;
-      confirmLabel: string;
-      severity: SystemSettingConfirmSeverity;
-    }
-  | {
-      type: "hwclock";
-      payload: HwclockRequest;
-      title: string;
-      description: string;
-      confirmLabel: string;
-      severity: SystemSettingConfirmSeverity;
-    };
-
-const GeneralSettingsPanel = () => {
-  const timeQuery = useSystemTimeInfo();
-  const timezoneQuery = useTimezoneList();
-  const hostnameQuery = useHostnameInfo();
-  const versionQuery = useSystemVersion();
-
-  const setHostnameMutation = useSetHostname();
-  const setTimezoneMutation = useSetTimezone();
-  const manageNtpMutation = useManageNtp();
-  const setManualTimeMutation = useSetManualTime();
-  const manageHwclockMutation = useManageHwclock();
-
-  const [hostname, setHostname] = useState("");
-  const [hostnameError, setHostnameError] = useState<string | null>(null);
-  const [hostnameDirty, setHostnameDirty] = useState(false);
-
-  const [timezone, setTimezone] = useState<string | null>(null);
-  const [timezoneError, setTimezoneError] = useState<string | null>(null);
-  const [timezoneDirty, setTimezoneDirty] = useState(false);
-
-  const [ntpEnabled, setNtpEnabled] = useState(false);
-  const [ntpServers, setNtpServers] = useState<string[]>([]);
-  const [ntpErrors, setNtpErrors] = useState<Record<number, string>>({});
-  const [ntpFormError, setNtpFormError] = useState<string | null>(null);
-  const [ntpDirty, setNtpDirty] = useState(false);
-
-  const [manualTime, setManualTime] = useState(() =>
-    toDateTimeLocalValue(new Date()),
-  );
-  const [manualTimeError, setManualTimeError] = useState<string | null>(null);
-  const manualTimeInitializedRef = useRef(false);
-
-  const [rtcMode, setRtcMode] = useState<"utc" | "local">("utc");
-  const [hwclockDisplay, setHwclockDisplay] = useState<string | null>(null);
-  const [pendingAction, setPendingAction] = useState<PendingAction | null>(
-    null,
-  );
-
-  /** Which row is currently opened for editing. UI-only state. */
-  const [editor, setEditor] = useState<EditorKind>(null);
-
-  /** Which sections are expanded. The time section starts open. */
-  const [expandedSections, setExpandedSections] = useState<SectionId[]>([
-    SECTIONS.time,
-  ]);
-
-  useEffect(() => {
-    if (!hostnameDirty && hostnameQuery.data) {
-      setHostname(
-        hostnameQuery.data.staticHostname ??
-          hostnameQuery.data.currentHostname ??
-          "",
-      );
-    }
-  }, [hostnameDirty, hostnameQuery.data]);
-
-  useEffect(() => {
-    if (!timezoneDirty && timeQuery.data?.timezone) {
-      setTimezone(timeQuery.data.timezone);
-    }
-  }, [timeQuery.data?.timezone, timezoneDirty]);
-
-  useEffect(() => {
-    if (!ntpDirty && timeQuery.data) {
-      setNtpEnabled(timeQuery.data.ntpEnabled ?? false);
-      setNtpServers(timeQuery.data.ntpServers);
-    }
-  }, [ntpDirty, timeQuery.data]);
-
-  useEffect(() => {
-    if (manualTimeInitializedRef.current || !timeQuery.data?.localTime) {
-      return;
-    }
-
-    manualTimeInitializedRef.current = true;
-    setManualTime(toDateTimeLocalValue(timeQuery.data.localTime));
-  }, [timeQuery.data?.localTime]);
-
-  useEffect(() => {
-    if (timeQuery.data?.rtcInLocalTimezone == null) {
-      return;
-    }
-
-    setRtcMode(timeQuery.data.rtcInLocalTimezone ? "local" : "utc");
-  }, [timeQuery.data?.rtcInLocalTimezone]);
-
-  const timezoneOptions = useMemo(() => {
-    const values = new Set(timezoneQuery.data ?? []);
-    if (timeQuery.data?.timezone) values.add(timeQuery.data.timezone);
-    if (timezone) values.add(timezone);
-    return Array.from(values).sort((left, right) =>
-      left.localeCompare(right, "en"),
-    );
-  }, [timeQuery.data?.timezone, timezone, timezoneQuery.data]);
-
-  const queryErrors = [
-    timeQuery.error,
-    timezoneQuery.error,
-    hostnameQuery.error,
-    versionQuery.error,
-  ].filter((error): error is Error => Boolean(error));
-
-  const isMutationPending =
-    setHostnameMutation.isPending ||
-    setTimezoneMutation.isPending ||
-    manageNtpMutation.isPending ||
-    setManualTimeMutation.isPending ||
-    manageHwclockMutation.isPending;
-
-  const handleRequestHostnameChange = () => {
-    const validation = validateHostname(hostname);
-    setHostnameError(validation.error);
-    if (validation.error) return;
-
-    if (
-      validation.value === hostnameQuery.data?.staticHostname?.toLowerCase()
-    ) {
-      toast("نام میزبان تغییری نکرده است.");
-      return;
-    }
-
-    setPendingAction({
-      type: "hostname",
-      payload: { hostname: validation.value },
-      title: "تغییر نام میزبان سامانه",
-      description:
-        "نام میزبان بخشی از هویت شبکه‌ای سامانه است. بعد از اعمال تغییر، برخی سرویس‌ها یا کلاینت‌ها ممکن است برای شناسایی نام جدید به راه‌اندازی مجدد یا بروزرسانی تنظیمات خود نیاز داشته باشند.",
-      confirmLabel: "تغییر نام میزبان",
-      severity: "warning",
-    });
-  };
-
-  const handleRequestTimezoneChange = () => {
-    const normalizedTimezone = timezone?.trim() ?? "";
-    if (!normalizedTimezone) {
-      setTimezoneError("انتخاب منطقه زمانی الزامی است.");
-      return;
-    }
-
-    setTimezoneError(null);
-    if (normalizedTimezone === timeQuery.data?.timezone) {
-      toast("منطقه زمانی تغییری نکرده است.");
-      return;
-    }
-
-    setPendingAction({
-      type: "timezone",
-      payload: { timezone: normalizedTimezone },
-      title: "تغییر منطقه زمانی سیستم",
-      description:
-        "این تغییر روی نمایش زمان در گزارش‌ها، لاگ‌ها و زمان‌بندی سرویس‌ها اثر می‌گذارد. ساعت UTC تغییر نمی‌کند، اما زمان محلی سامانه بر اساس منطقه جدید نمایش داده می‌شود.",
-      confirmLabel: "اعمال منطقه زمانی",
-      severity: "warning",
-    });
-  };
-
-  const handleNtpServerChange = (index: number, value: string) => {
-    setNtpDirty(true);
-    setNtpServers((current) =>
-      current.map((server, serverIndex) =>
-        serverIndex === index ? value : server,
-      ),
-    );
-    setNtpErrors((current) => {
-      const next = { ...current };
-      delete next[index];
-      return next;
-    });
-    setNtpFormError(null);
-  };
-
-  const handleAddNtpServer = () => {
-    setNtpDirty(true);
-    setNtpServers((current) => [...current, ""]);
-  };
-
-  const handleRemoveNtpServer = (index: number) => {
-    setNtpDirty(true);
-    setNtpServers((current) =>
-      current.filter((_, serverIndex) => serverIndex !== index),
-    );
-    setNtpErrors({});
-    setNtpFormError(null);
-  };
-
-  const handleRequestNtpChange = () => {
-    const nextErrors: Record<number, string> = {};
-    const cleanedServers = ntpServers
-      .map((server, index) => {
-        const trimmed = server.trim();
-        if (!trimmed) {
-          if (ntpEnabled) {
-            nextErrors[index] = "این فیلد نمی‌تواند خالی باشد.";
-          }
-          return null;
-        }
-
-        const validation = validateNtpServer(trimmed);
-        if (validation.error) {
-          nextErrors[index] = validation.error;
-          return null;
-        }
-
-        return validation.value;
-      })
-      .filter((server): server is string => Boolean(server));
-
-    const uniqueServers = Array.from(new Set(cleanedServers));
-    setNtpErrors(nextErrors);
-
-    if (Object.keys(nextErrors).length > 0) {
-      setNtpFormError("لطفاً آدرس سرورهای زمان را اصلاح کنید.");
-      return;
-    }
-
-    if (ntpEnabled && uniqueServers.length === 0) {
-      setNtpFormError(
-        "برای فعال‌سازی همگام‌سازی خودکار حداقل یک سرور معتبر وارد کنید.",
-      );
-      return;
-    }
-
-    setNtpFormError(null);
-    setPendingAction({
-      type: "ntp",
-      payload: { enabled: ntpEnabled, servers: uniqueServers },
-      title: ntpEnabled
-        ? "فعال‌سازی همگام‌سازی خودکار زمان"
-        : "غیرفعال‌سازی همگام‌سازی خودکار زمان",
-      description: ntpEnabled
-        ? "پس از تایید، ساعت سیستم به‌صورت خودکار با سرورهای معرفی‌شده همگام می‌شود. صحت نام سرورها و دسترسی شبکه‌ای به آن‌ها را بررسی کنید."
-        : "با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود و مسئولیت تنظیم صحیح ساعت سیستم بر عهده مدیر سامانه خواهد بود.",
-      confirmLabel: ntpEnabled
-        ? "فعال‌سازی همگام‌سازی"
-        : "غیرفعال‌سازی همگام‌سازی",
-      severity: ntpEnabled ? "info" : "warning",
-    });
-  };
-
-  const handleRequestManualTime = () => {
-    if (timeQuery.data?.ntpEnabled === true) {
-      setManualTimeError(
-        "برای تنظیم دستی زمان، ابتدا همگام‌سازی خودکار را غیرفعال و تنظیمات آن را ثبت کنید.",
-      );
-      return;
-    }
-
-    const validation = formatManualTimeForApi(manualTime);
-    setManualTimeError(validation.error);
-    if (validation.error) return;
-
-    setPendingAction({
-      type: "manual-time",
-      payload: { time: validation.value },
-      title: "تنظیم دستی زمان سیستم",
-      description:
-        "تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد. قبل از ادامه از درستی تاریخ، ساعت و منطقه زمانی اطمینان حاصل کنید.",
-      confirmLabel: "تنظیم زمان سیستم",
-      severity: "error",
-    });
-  };
-
-  const handleShowHwclock = async () => {
-    try {
-      const result = await manageHwclockMutation.mutateAsync({
-        action: "show",
-      });
-      setHwclockDisplay(result.displayValue);
-      toast.success(result.message);
-    } catch (error) {
-      toast.error(
-        extractApiErrorMessage(
-          error,
-          "دریافت ساعت سخت‌افزاری با خطا مواجه شد.",
-        ),
-      );
-    }
-  };
-
-  const handleRequestHwclockSync = (action: "hctosys" | "systohc") => {
-    const isHardwareToSystem = action === "hctosys";
-    setPendingAction({
-      type: "hwclock",
-      payload: isHardwareToSystem
-        ? { action, localtime: rtcMode === "local" }
-        : { action },
-      title: isHardwareToSystem
-        ? "خواندن زمان از ساعت مادربرد"
-        : "نوشتن زمان سیستم روی مادربرد",
-      description: isHardwareToSystem
-        ? "زمان سیستم‌عامل با مقدار ساعت سخت‌افزاری جایگزین می‌شود. انتخاب وقت جهانی یا وقت محلی تعیین می‌کند مقدار خام ساعت مادربرد چگونه تفسیر شود؛ انتخاب اشتباه می‌تواند باعث اختلاف چندساعته شود."
-        : "زمان فعلی سیستم‌عامل روی ساعت سخت‌افزاری مادربرد نوشته می‌شود. این عملیات مقدار قبلی ساعت مادربرد را جایگزین می‌کند.",
-      confirmLabel: isHardwareToSystem
-        ? "خواندن زمان از مادربرد"
-        : "نوشتن زمان روی مادربرد",
-      severity: "error",
-    });
-  };
-
-  const handleConfirmAction = async () => {
-    if (!pendingAction || isMutationPending) return;
-
-    try {
-      if (pendingAction.type === "hostname") {
-        const message = await setHostnameMutation.mutateAsync(
-          pendingAction.payload,
-        );
-        setHostnameDirty(false);
-        toast.success(message);
-      } else if (pendingAction.type === "timezone") {
-        const message = await setTimezoneMutation.mutateAsync(
-          pendingAction.payload,
-        );
-        setTimezoneDirty(false);
-        toast.success(message);
-      } else if (pendingAction.type === "ntp") {
-        const message = await manageNtpMutation.mutateAsync(
-          pendingAction.payload,
-        );
-        setNtpDirty(false);
-        toast.success(message);
-      } else if (pendingAction.type === "manual-time") {
-        const message = await setManualTimeMutation.mutateAsync(
-          pendingAction.payload,
-        );
-        manualTimeInitializedRef.current = false;
-        toast.success(message);
-      } else {
-        const result = await manageHwclockMutation.mutateAsync(
-          pendingAction.payload,
-        );
-        setHwclockDisplay(result.displayValue);
-        toast.success(result.message);
-      }
-
-      setPendingAction(null);
-      setEditor(null);
-    } catch (error) {
-      toast.error(
-        extractApiErrorMessage(error, "اعمال تنظیمات سیستم با خطا مواجه شد."),
-      );
-    }
-  };
-
-  /* ------------------------------------------------------------------ *
-   * Derived, presentation-level values
-   * ------------------------------------------------------------------ */
-
-  const currentHostname =
-    hostnameQuery.data?.staticHostname ??
-    hostnameQuery.data?.currentHostname ??
-    NOT_AVAILABLE;
-  const staticHostname = hostnameQuery.data?.staticHostname ?? NOT_AVAILABLE;
-  const transientHostname =
-    hostnameQuery.data?.currentHostname ?? NOT_AVAILABLE;
-  const hostnameLabels = (hostnameQuery.data?.staticHostname ?? "").split(".");
-  const domainSuffix =
-    hostnameLabels.length > 1 ? hostnameLabels.slice(1).join(".") : null;
-  const isHostnameConsistent =
-    Boolean(hostnameQuery.data?.staticHostname) &&
-    hostnameQuery.data?.staticHostname === hostnameQuery.data?.currentHostname;
-
-  const versionLines = versionQuery.data?.lines ?? [];
-  const primaryVersionLine = versionLines[0] ?? NOT_AVAILABLE;
-  const versionText = versionQuery.data?.text ?? "";
-
-  const isNtpActive = timeQuery.data?.ntpEnabled === true;
-  const configuredServers = (timeQuery.data?.ntpServers ?? []).filter(Boolean);
-
-  /** The time section keeps a live 1s ticker while it is expanded. */
-  const isTimeSectionOpen = expandedSections.includes(SECTIONS.time);
-  const localClock = useSystemWallClock(timeQuery.data?.localTime, {
-    enabled: true,
-  });
-  const utcClock = useSystemWallClock(timeQuery.data?.utcTime, {
-    enabled: isTimeSectionOpen,
-  });
-
-  const localTimeDisplay =
-    localClock.timestampLabel ?? timeQuery.data?.localTime ?? NOT_AVAILABLE;
-  const utcTimeDisplay =
-    utcClock.timestampLabel ?? timeQuery.data?.utcTime ?? NOT_AVAILABLE;
-
-  const toggleSection = (id: string) => {
-    setExpandedSections((current) =>
-      current.includes(id as SectionId)
-        ? current.filter((sectionId) => sectionId !== id)
-        : [...current, id as SectionId],
-    );
-  };
-
-  const areAllExpanded = expandedSections.length === ALL_SECTION_IDS.length;
-
-  const handleToggleAll = () =>
-    setExpandedSections(areAllExpanded ? [] : [...ALL_SECTION_IDS]);
-
-  const handleRefreshAll = () => {
-    void Promise.all([
-      timeQuery.refetch(),
-      hostnameQuery.refetch(),
-      versionQuery.refetch(),
-    ]);
-    toast.success("اطلاعات تنظیمات عمومی بروزرسانی شد.");
-  };
-
-  const handleCopy = async (value: string, successMessage: string) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      toast.success(successMessage);
-    } catch {
-      toast.error("کپی کردن مقدار در این مرورگر ممکن نیست.");
-    }
-  };
-
-  const closeEditor = () => setEditor(null);
-
-  /** Compact icon button used inside a tile header. */
-  const renderIconAction = (
-    label: string,
-    icon: ReactNode,
-    onClick: () => void,
-    disabled = false,
-  ) => (
-    <Tooltip title={label} arrow>
-      <span>
-        <IconButton
-          size="small"
-          aria-label={label}
-          onClick={onClick}
-          disabled={disabled || isMutationPending}
-          sx={{
-            color: "var(--color-primary)",
-            backgroundColor:
-              "color-mix(in srgb, var(--color-primary) 8%, transparent)",
-            "&:hover": {
-              backgroundColor:
-                "color-mix(in srgb, var(--color-primary) 18%, transparent)",
-            },
-            "&.Mui-disabled": {
-              color:
-                "color-mix(in srgb, var(--color-secondary) 45%, transparent)",
-            },
-          }}
-        >
-          {icon}
-        </IconButton>
-      </span>
-    </Tooltip>
-  );
-
-  const renderEditAction = (
-    label: string,
-    onClick: () => void,
-    disabled = false,
-  ) => renderIconAction(label, <FiEdit3 size={17} />, onClick, disabled);
-
-  return (
-    <Box dir="rtl" sx={{ width: "100%", color: "var(--color-text)" }}>
-      {queryErrors.length > 0 ? (
-        <Alert severity="error" sx={{ ...alertSx, mb: 2 }}>
-          دریافت بخشی از اطلاعات با خطا مواجه شد.
-        </Alert>
-      ) : null}
-
-      {/* ── نوار ابزار ── */}
-      <Box sx={{ ...toolbarSx, justifyContent: "flex-end" }}>
-        <Button
-          onClick={handleToggleAll}
-          startIcon={areAllExpanded ? <MdUnfoldLess /> : <MdUnfoldMore />}
-          sx={outlinedButtonSx}
-        >
-          {areAllExpanded ? "بستن همه" : "باز کردن همه"}
-        </Button>
-        <Button
-          onClick={handleRefreshAll}
-          startIcon={<MdRefresh />}
-          sx={outlinedButtonSx}
-        >
-          بروزرسانی
-        </Button>
-      </Box>
-
-      <Stack gap={1.75}>
-        {/* ─────── بخش ۱: ورژن ─────── */}
-        <SettingsAccordionSection
-          id={SECTIONS.version}
-          icon={<MdStorage />}
-          title="ورژن"
-          summaryLabel="نسخه فعلی"
-          summaryValue={<Ltr>{primaryVersionLine}</Ltr>}
-          badges={
-            versionQuery.data?.backendError
-              ? [{ label: "خطای خواندن نسخه", color: "warning" as const }]
-              : []
-          }
-          isLoading={versionQuery.isLoading}
-          expanded={expandedSections.includes(SECTIONS.version)}
-          onToggle={toggleSection}
-        >
-          <SettingsRowsTable
-            isLoading={versionQuery.isLoading}
-            showStatus={false}
-            rows={[
-              {
-                id: "version-current",
-                title: "نسخه سامانه",
-                value: <Ltr>{primaryVersionLine}</Ltr>,
-                action: renderIconAction(
-                  "کپی نسخه",
-                  <MdContentCopy size={17} />,
-                  () =>
-                    handleCopy(
-                      versionText || primaryVersionLine,
-                      "نسخه سامانه کپی شد.",
-                    ),
-                ),
-              },
-              {
-                id: "version-path",
-                title: "مسیر فایل نسخه",
-                value: (
-                  <Ltr>{versionQuery.data?.filePath ?? NOT_AVAILABLE}</Ltr>
-                ),
-              },
-              ...(versionLines.length > 1
-                ? [
-                    {
-                      id: "version-extra",
-                      title: "جزئیات نسخه",
-                      value: (
-                        <Stack gap={0.25} sx={{ minWidth: 0 }}>
-                          {versionLines.slice(1).map((line) => (
-                            <Ltr key={line}>{line}</Ltr>
-                          ))}
-                        </Stack>
-                      ),
-                    },
-                  ]
-                : []),
-            ]}
-          />
-
-          {versionQuery.data?.backendError ? (
-            <Alert severity="warning" sx={alertSx}>
-              {versionQuery.data.backendError}
-            </Alert>
-          ) : null}
-        </SettingsAccordionSection>
-
-        {/* ─────── بخش ۲: نام دامنه ─────── */}
-        <SettingsAccordionSection
-          id={SECTIONS.domain}
-          icon={<MdComputer />}
-          title="نام دامنه"
-          summaryLabel="نام میزبان"
-          summaryValue={<Ltr>{currentHostname}</Ltr>}
-          badges={
-            isHostnameConsistent
-              ? []
-              : [{ label: "ناهمسانی نام میزبان", color: "warning" as const }]
-          }
-          isLoading={hostnameQuery.isLoading}
-          expanded={expandedSections.includes(SECTIONS.domain)}
-          onToggle={toggleSection}
-        >
-          <SettingsRowsTable
-            isLoading={hostnameQuery.isLoading}
-            rows={[
-              {
-                id: "hostname-static",
-                title: "نام میزبان پایدار",
-                value: <Ltr>{staticHostname}</Ltr>,
-                status: { label: "قابل ویرایش", color: "info" },
-                action: renderEditAction("ویرایش نام میزبان", () => {
-                  setHostnameError(null);
-                  setEditor("hostname");
-                }),
-              },
-              {
-                id: "hostname-current",
-                title: "نام میزبان جاری",
-                value: <Ltr>{transientHostname}</Ltr>,
-                status: isHostnameConsistent
-                  ? { label: "همسان", color: "success" }
-                  : { label: "ناهمسان", color: "warning" },
-              },
-              {
-                id: "hostname-domain",
-                title: "بخش دامنه",
-                value: domainSuffix ? (
-                  <Ltr>{domainSuffix}</Ltr>
-                ) : (
-                  NOT_CONFIGURED
-                ),
-                action: domainSuffix
-                  ? renderIconAction(
-                      "کپی نام دامنه",
-                      <MdContentCopy size={17} />,
-                      () => handleCopy(domainSuffix, "نام دامنه کپی شد."),
-                    )
-                  : undefined,
-              },
-            ]}
-          />
-        </SettingsAccordionSection>
-
-        {/* ─────── بخش ۳: زمان ─────── */}
-        <SettingsAccordionSection
-          id={SECTIONS.time}
-          icon={<MdAccessTime />}
-          title="زمان"
-          summaryLabel="زمان سیستم"
-          summaryValue={
-            <Stack
-              direction="row"
-              alignItems="center"
-              gap={1}
-              sx={{ minWidth: 0 }}
-            >
-              <Box
-                aria-hidden
-                sx={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                  backgroundColor: localClock.isLive
-                    ? "var(--color-success, #29b96a)"
-                    : "var(--color-secondary)",
-                }}
-              />
-              <Ltr>{localTimeDisplay}</Ltr>
-            </Stack>
-          }
-          badges={[
-            isNtpActive
-              ? { label: "NTP فعال", color: "success" as const }
-              : { label: "NTP غیرفعال", color: "default" as const },
-          ]}
-          isLoading={timeQuery.isLoading}
-          expanded={isTimeSectionOpen}
-          onToggle={toggleSection}
-        >
-          <SettingsRowsTable
-            isLoading={timeQuery.isLoading}
-            rows={[
-              {
-                id: "time-local",
-                title: "زمان محلی",
-                value: <Ltr>{localTimeDisplay}</Ltr>,
-                status: localClock.isLive
-                  ? { label: "زنده", color: "success" }
-                  : { label: "ثابت", color: "default" },
-                action: renderIconAction(
-                  "کپی زمان محلی",
-                  <MdContentCopy size={17} />,
-                  () => handleCopy(localTimeDisplay, "زمان محلی کپی شد."),
-                ),
-              },
-              {
-                id: "time-jalali",
-                title: "تاریخ شمسی",
-                value: localClock.jalaliDateLabel ?? NOT_AVAILABLE,
-              },
-              {
-                id: "time-utc",
-                title: "زمان جهانی (UTC)",
-                value: <Ltr>{utcTimeDisplay}</Ltr>,
-              },
-              {
-                id: "time-timezone",
-                title: "منطقه زمانی",
-                value: <Ltr>{timeQuery.data?.timezone ?? NOT_AVAILABLE}</Ltr>,
-                status: { label: "قابل ویرایش", color: "info" },
-                action: renderEditAction("ویرایش منطقه زمانی", () => {
-                  setTimezoneError(null);
-                  setEditor("timezone");
-                }),
-              },
-              {
-                id: "time-ntp",
-                title: "سرورهای همگام‌سازی (NTP)",
-                value:
-                  configuredServers.length > 0 ? (
-                    <Stack gap={0.25} sx={{ minWidth: 0 }}>
-                      {configuredServers.map((server) => (
-                        <Ltr key={server}>{server}</Ltr>
-                      ))}
-                    </Stack>
-                  ) : (
-                    NOT_CONFIGURED
-                  ),
-                status: isNtpActive
-                  ? { label: "فعال", color: "success" }
-                  : { label: "غیرفعال", color: "default" },
-                action: renderEditAction("ویرایش همگام‌سازی", () => {
-                  setNtpFormError(null);
-                  setEditor("ntp");
-                }),
-              },
-              {
-                id: "time-sync",
-                title: "وضعیت همگامی",
-                value:
-                  timeQuery.data?.ntpSynchronized == null
-                    ? NOT_AVAILABLE
-                    : timeQuery.data.ntpSynchronized
-                      ? "همگام است"
-                      : "هنوز همگام نشده است",
-                status: timeQuery.data?.ntpSynchronized
-                  ? { label: "همگام", color: "success" }
-                  : { label: "ناهمگام", color: "warning" },
-              },
-              {
-                id: "time-manual",
-                title: "تنطیم دستی زمان",
-                value: <Ltr>{manualTime || NOT_CONFIGURED}</Ltr>,
-                status: isNtpActive
-                  ? { label: "غیرفعال", color: "default" }
-                  : { label: "قابل تنطیم", color: "info" },
-                action: renderEditAction(
-                  isNtpActive
-                    ? "ابتدا همگام‌سازی خودکار را غیرفعال کنید"
-                    : "تنطیم دستی زمان",
-                  () => {
-                    setManualTimeError(null);
-                    setEditor("manual-time");
-                  },
-                  isNtpActive,
-                ),
-              },
-              {
-                id: "time-hwclock",
-                title: "ساعت مادربرد",
-                value: (
-                  <Ltr>
-                    {hwclockDisplay ??
-                      (rtcMode === "local"
-                        ? (timeQuery.data?.hardwareLocalTime ?? NOT_AVAILABLE)
-                        : (timeQuery.data?.hardwareUtcTime ?? NOT_AVAILABLE))}
-                  </Ltr>
-                ),
-                status: {
-                  label: rtcMode === "local" ? "وقت محلی" : "وقت جهانی",
-                  color: "info",
-                },
-                action: (
-                  <>
-                    {renderIconAction(
-                      "نمایش ساعت مادربرد",
-                      <MdVisibility size={17} />,
-                      handleShowHwclock,
-                    )}
-                    {renderEditAction("مدیریت ساعت مادربرد", () =>
-                      setEditor("hwclock"),
-                    )}
-                  </>
-                ),
-              },
-            ]}
-          />
-        </SettingsAccordionSection>
-      </Stack>
-
-      {/* ── ویرایش نام میزبان ── */}
-      <SettingEditModal
-        open={editor === "hostname"}
-        onClose={closeEditor}
-        onSubmit={handleRequestHostnameChange}
-        isSubmitting={setHostnameMutation.isPending}
-        submitLabel="ثبت نام میزبان"
-        icon={<MdComputer />}
-        title="ویرایش نام میزبان"
-      >
-        <TextField
-          fullWidth
-          label="نام میزبان"
-          value={hostname}
-          onChange={(event) => {
-            setHostnameDirty(true);
-            setHostname(event.target.value);
-            setHostnameError(null);
-          }}
-          error={Boolean(hostnameError)}
-          helperText={hostnameError}
-          sx={technicalFieldSx}
-          slotProps={{
-            htmlInput: { maxLength: 253, dir: "ltr", style: ltrInputStyle },
-          }}
-        />
-      </SettingEditModal>
-
-      {/* ── ویرایش منطقه زمانی ── */}
-      <SettingEditModal
-        open={editor === "timezone"}
-        onClose={closeEditor}
-        onSubmit={handleRequestTimezoneChange}
-        isSubmitting={setTimezoneMutation.isPending}
-        submitLabel="ثبت منطقه زمانی"
-        icon={<MdPublic />}
-        title="ویرایش منطقه زمانی"
-      >
-        <Autocomplete
-          options={timezoneOptions}
-          value={timezone}
-          loading={timezoneQuery.isLoading}
-          onChange={(_event, newValue) => {
-            setTimezoneDirty(true);
-            setTimezone(newValue);
-            setTimezoneError(null);
-          }}
-          slotProps={{ paper: { sx: popupSx } }}
-          renderOption={(props, option) => (
-            <li {...props} key={option} style={ltrBlockStyle}>
-              {option}
-            </li>
-          )}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="منطقه زمانی"
-              error={Boolean(timezoneError)}
-              helperText={timezoneError}
-              sx={technicalFieldSx}
-              slotProps={{
-                htmlInput: {
-                  ...params.inputProps,
-                  dir: "ltr",
-                  style: ltrInputStyle,
-                },
-              }}
-            />
-          )}
-        />
-      </SettingEditModal>
-
-      {/* ── ویرایش همگام‌سازی خودکار ── */}
-      <SettingEditModal
-        open={editor === "ntp"}
-        onClose={closeEditor}
-        onSubmit={handleRequestNtpChange}
-        isSubmitting={manageNtpMutation.isPending}
-        submitLabel="ثبت سرورهای زمان"
-        errorMessage={ntpFormError}
-        icon={<MdDns />}
-        title="همگام‌سازی خودکار زمان"
-      >
-        <FormControlLabel
-          control={
-            <Switch
-              checked={ntpEnabled}
-              onChange={(event) => {
-                setNtpDirty(true);
-                setNtpEnabled(event.target.checked);
-                setNtpFormError(null);
-              }}
-            />
-          }
-          label={ntpEnabled ? "فعال" : "غیرفعال"}
-          sx={{ mx: 0, gap: 1 }}
-        />
-
-        <Stack gap={1.5}>
-          {ntpServers.map((server, index) => (
-            <Stack
-              key={`ntp-server-${index}`}
-              direction="row"
-              gap={1}
-              sx={{ alignItems: "flex-start" }}
-            >
-              <TextField
-                fullWidth
-                label={`سرور زمان ${index + 1}`}
-                value={server}
-                onChange={(event) =>
-                  handleNtpServerChange(index, event.target.value)
-                }
-                error={Boolean(ntpErrors[index])}
-                helperText={ntpErrors[index]}
-                sx={technicalFieldSx}
-                slotProps={{
-                  htmlInput: { dir: "ltr", style: ltrInputStyle },
-                }}
-              />
-              <Tooltip title="حذف سرور" arrow>
-                <span>
-                  <IconButton
-                    aria-label={`حذف سرور زمان ${index + 1}`}
-                    onClick={() => handleRemoveNtpServer(index)}
-                    sx={{ mt: 1, color: "var(--color-error)" }}
-                  >
-                    <MdDeleteOutline size={20} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Stack>
-          ))}
-
-          <Button
-            onClick={handleAddNtpServer}
-            startIcon={<MdAdd />}
-            sx={{ ...outlinedButtonSx, alignSelf: "flex-start" }}
-          >
-            افزودن سرور زمان
-          </Button>
-        </Stack>
-      </SettingEditModal>
-
-      {/* ── تنظیم دستی زمان ── */}
-      <SettingEditModal
-        open={editor === "manual-time"}
-        onClose={closeEditor}
-        onSubmit={handleRequestManualTime}
-        isSubmitting={setManualTimeMutation.isPending}
-        submitLabel="تنظیم زمان سیستم"
-        icon={<MdMemory />}
-        title="تنظیم دستی زمان"
-      >
-        {isNtpActive ? (
-          <Alert severity="warning" sx={alertSx}>
-            همگام‌سازی خودکار زمان فعال است؛ برای تنظیم دستی، ابتدا آن را
-            غیرفعال کنید.
-          </Alert>
-        ) : null}
-
-        <TextField
-          fullWidth
-          type="datetime-local"
-          label="تاریخ و ساعت سیستم"
-          value={manualTime}
-          onChange={(event) => {
-            setManualTime(event.target.value);
-            setManualTimeError(null);
-          }}
-          error={Boolean(manualTimeError)}
-          helperText={manualTimeError}
-          sx={technicalFieldSx}
-          slotProps={{
-            inputLabel: { shrink: true },
-            htmlInput: { step: 1, dir: "ltr", style: ltrInputStyle },
-          }}
-        />
-      </SettingEditModal>
-
-      {/* ── ساعت سخت‌افزاری مادربرد ── */}
-      <SettingEditModal
-        open={editor === "hwclock"}
-        onClose={closeEditor}
-        onSubmit={undefined}
-        hideSubmit
-        isSubmitting={manageHwclockMutation.isPending}
-        icon={<MdInfoOutline />}
-        title="ساعت سخت‌افزاری مادربرد"
-      >
-        <FormControl sx={fieldSx}>
-          <FormLabel sx={{ fontSize: "0.85rem", mb: 0.5 }}>
-            تفسیر مقدار ساعت مادربرد
-          </FormLabel>
-          <RadioGroup
-            row
-            value={rtcMode}
-            onChange={(event) =>
-              setRtcMode(event.target.value as "utc" | "local")
-            }
-          >
-            <FormControlLabel
-              value="utc"
-              control={<Radio />}
-              label="وقت جهانی UTC"
-            />
-            <FormControlLabel
-              value="local"
-              control={<Radio />}
-              label="وقت محلی"
-            />
-          </RadioGroup>
-        </FormControl>
-
-        {hwclockDisplay ? (
-          <Box component="pre" sx={codeBlockSx} style={ltrBlockStyle}>
-            {hwclockDisplay}
-          </Box>
-        ) : null}
-
-        <Stack direction={{ xs: "column", sm: "row" }} gap={1} flexWrap="wrap">
-          <Button
-            onClick={handleShowHwclock}
-            disabled={isMutationPending}
-            startIcon={<MdVisibility />}
-            sx={outlinedButtonSx}
-          >
-            نمایش ساعت مادربرد
-          </Button>
-          <Button
-            onClick={() => handleRequestHwclockSync("hctosys")}
-            disabled={isMutationPending}
-            startIcon={<MdSync />}
-            sx={outlinedButtonSx}
-          >
-            خواندن زمان از مادربرد
-          </Button>
-          <Button
-            onClick={() => handleRequestHwclockSync("systohc")}
-            disabled={isMutationPending}
-            startIcon={<MdSync />}
-            sx={primaryButtonSx}
-          >
-            نوشتن زمان روی مادربرد
-          </Button>
-        </Stack>
-      </SettingEditModal>
-
-      <SystemSettingConfirmDialog
-        open={Boolean(pendingAction)}
-        title={pendingAction?.title ?? ""}
-        description={pendingAction?.description ?? ""}
-        confirmLabel={pendingAction?.confirmLabel}
-        severity={pendingAction?.severity}
-        isLoading={isMutationPending}
-        onCancel={() => setPendingAction(null)}
-        onConfirm={handleConfirmAction}
-      />
-    </Box>
-  );
-};
-
-export default GeneralSettingsPanel;
-</file>
-
 <file path="src/components/settings/NetworkInterfaceConfigModal.tsx">
 import {
   Alert,
@@ -50958,6 +50473,169 @@ const NetworkInterfaceConfigModal = ({
 export default NetworkInterfaceConfigModal;
 </file>
 
+<file path="src/components/settings/SystemSettingConfirmDialog.tsx">
+import { Box, CircularProgress, Stack, Typography } from "@mui/material";
+import { MdInfoOutline, MdOutlineWarningAmber } from "react-icons/md";
+import BlurModal from "../BlurModal";
+import ModalActionButtons from "../common/ModalActionButtons";
+
+export type SystemSettingConfirmSeverity = "info" | "warning" | "error";
+
+interface SystemSettingConfirmDialogProps {
+  open: boolean;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  severity?: SystemSettingConfirmSeverity;
+  isLoading?: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+const severityColor = {
+  info: "var(--color-primary)",
+  warning: "var(--color-warning)",
+  error: "var(--color-error)",
+} as const;
+
+const SystemSettingConfirmDialog = ({
+  open,
+  title,
+  description,
+  confirmLabel = "تایید و ادامه",
+  severity = "warning",
+  isLoading = false,
+  onCancel,
+  onConfirm,
+}: SystemSettingConfirmDialogProps) => {
+  const accentColor = severityColor[severity];
+  const Icon = severity === "info" ? MdInfoOutline : MdOutlineWarningAmber;
+
+  return (
+    <BlurModal
+      open={open}
+      onClose={onCancel}
+      closeDisabled={isLoading}
+      direction="rtl"
+      minWidth="min(560px, calc(100vw - 32px))"
+      maxWidth="560px"
+      title={
+        <Stack
+          direction="row"
+          alignItems="center"
+          gap={1.25}
+          sx={{ minWidth: 0 }}
+        >
+          <Box
+            sx={{
+              width: 42,
+              height: 42,
+              borderRadius: "12px",
+              display: "grid",
+              placeItems: "center",
+              color: accentColor,
+              backgroundColor: `color-mix(in srgb, ${accentColor} 12%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${accentColor} 30%, transparent)`,
+              flexShrink: 0,
+            }}
+          >
+            <Icon size={24} />
+          </Box>
+          <Typography
+            component="span"
+            sx={{
+              minWidth: 0,
+              color: "var(--color-text)",
+              fontSize: "1rem",
+              fontWeight: 900,
+              textAlign: "start",
+            }}
+          >
+            {title}
+          </Typography>
+        </Stack>
+      }
+      actions={
+        <Box sx={{ width: "100%" }}>
+          <ModalActionButtons
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+            confirmLabel={confirmLabel}
+            loadingLabel="در حال اعمال..."
+            isLoading={isLoading}
+            disableConfirmGradient
+            confirmProps={{
+              startIcon: isLoading ? (
+                <CircularProgress size={17} color="inherit" />
+              ) : undefined,
+              sx: {
+                minWidth: 148,
+                minHeight: 40,
+                borderRadius: "9px",
+                fontWeight: 800,
+                color: "var(--color-bg)",
+                backgroundColor: accentColor,
+                borderColor: accentColor,
+                "&:hover": {
+                  backgroundColor: accentColor,
+                  borderColor: accentColor,
+                  filter: "brightness(1.06)",
+                },
+                "&.Mui-disabled": {
+                  color: "color-mix(in srgb, var(--color-bg) 62%, transparent)",
+                  backgroundColor: `color-mix(in srgb, ${accentColor} 42%, var(--color-card-bg))`,
+                },
+              },
+            }}
+            cancelProps={{
+              disabled: isLoading,
+              sx: {
+                minWidth: 112,
+                minHeight: 40,
+                borderRadius: "9px",
+                fontWeight: 800,
+                color: "var(--color-text)",
+                borderColor:
+                  "color-mix(in srgb, var(--color-text) 26%, transparent)",
+                "&:hover": {
+                  borderColor:
+                    "color-mix(in srgb, var(--color-text) 42%, transparent)",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--color-text) 6%, transparent)",
+                },
+              },
+            }}
+          />
+        </Box>
+      }
+    >
+      <Box
+        sx={{
+          p: 2,
+          borderRadius: "12px",
+          textAlign: "start",
+          color: "var(--color-text)",
+          backgroundColor: `color-mix(in srgb, ${accentColor} 7%, transparent)`,
+          border: `1px solid color-mix(in srgb, ${accentColor} 24%, transparent)`,
+        }}
+      >
+        <Typography
+          sx={{
+            color: "color-mix(in srgb, var(--color-text) 84%, transparent)",
+            textAlign: "start",
+            lineHeight: 2,
+          }}
+        >
+          {description}
+        </Typography>
+      </Box>
+    </BlurModal>
+  );
+};
+
+export default SystemSettingConfirmDialog;
+</file>
+
 <file path="src/pages/Settings.tsx">
 import { Box, Stack, Tab, Tabs, Typography } from '@mui/material';
 import {
@@ -51132,6 +50810,1219 @@ const Settings = () => {
 };
 
 export default Settings;
+</file>
+
+<file path="src/components/settings/GeneralSettingsPanel.tsx">
+import {
+  Alert,
+  Autocomplete,
+  Box,
+  Button,
+  Chip,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  IconButton,
+  Radio,
+  RadioGroup,
+  Stack,
+  Switch,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { FiEdit3 } from "react-icons/fi";
+import { toast } from "react-hot-toast";
+import {
+  MdAccessTime,
+  MdAdd,
+  MdComputer,
+  MdDeleteOutline,
+  MdMemory,
+  MdPublic,
+  MdRefresh,
+  MdSync,
+  MdUnfoldLess,
+  MdUnfoldMore,
+  MdVisibility,
+} from "react-icons/md";
+import type {
+  HwclockRequest,
+  ManageNtpPayload,
+  SetHostnamePayload,
+  SetManualTimePayload,
+  SetTimezonePayload,
+} from "../../@types/generalSettings";
+import {
+  useHostnameInfo,
+  useManageHwclock,
+  useManageNtp,
+  useSetHostname,
+  useSetManualTime,
+  useSetTimezone,
+  useSystemTimeInfo,
+  useSystemVersion,
+  useTimezoneList,
+} from "../../hooks/useGeneralSystemSettings";
+import { useSystemWallClock } from "../../hooks/useSystemWallClock";
+import { extractApiErrorMessage } from "../../utils/apiError";
+import {
+  formatManualTimeForApi,
+  toDateTimeLocalValue,
+  validateHostname,
+  validateNtpServer,
+} from "../../utils/generalSettings";
+import {
+  describeClockDrift,
+  extractHardwareClockTimes,
+  type HardwareClockTimes,
+} from "../../utils/hardwareClock";
+import { formatJalaliWallClockLabel } from "../../utils/jalali";
+import SystemSettingConfirmDialog, {
+  type SystemSettingConfirmSeverity,
+} from "./SystemSettingConfirmDialog";
+import JalaliDateTimeField from "./general/JalaliDateTimeField";
+import Ltr from "./general/Ltr";
+import SettingEditModal from "./general/SettingEditModal";
+import SettingsRowsTable from "./general/SettingsRowsTable";
+import SettingsAccordionSection from "./general/SettingsAccordionSection";
+import {
+  settingsAlertSx as alertSx,
+  settingsFieldSx as fieldSx,
+  settingsOutlinedButtonSx as outlinedButtonSx,
+  settingsPopupSx as popupSx,
+  settingsPrimaryButtonSx as primaryButtonSx,
+  settingsTechnicalFieldSx as technicalFieldSx,
+  settingsToolbarSx as toolbarSx,
+  ltrBlockStyle,
+  ltrInputStyle,
+} from "./general/styles";
+
+const NOT_AVAILABLE = "در دسترس نیست";
+const NOT_CONFIGURED = "تنطیم نشده";
+
+/** Section ids of the accordion list. */
+const SECTIONS = {
+  system: "system",
+  time: "time",
+} as const;
+
+type SectionId = (typeof SECTIONS)[keyof typeof SECTIONS];
+
+const ALL_SECTION_IDS: SectionId[] = [SECTIONS.system, SECTIONS.time];
+
+type EditorKind =
+  "hostname" | "timezone" | "manual-time" | "time-settings" | null;
+
+/** Calendar the manual-time picker is rendered with. */
+type CalendarMode = "jalali" | "gregorian";
+
+const pad = (value: number) => String(value).padStart(2, "0");
+
+/** Browser clock, ticking every second. */
+const useClientClock = () => {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNow(new Date()), 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  return now;
+};
+
+type PendingAction =
+  | {
+      type: "hostname";
+      payload: SetHostnamePayload;
+      title: string;
+      description: string;
+      confirmLabel: string;
+      severity: SystemSettingConfirmSeverity;
+    }
+  | {
+      type: "timezone";
+      payload: SetTimezonePayload;
+      title: string;
+      description: string;
+      confirmLabel: string;
+      severity: SystemSettingConfirmSeverity;
+    }
+  | {
+      type: "ntp";
+      payload: ManageNtpPayload;
+      title: string;
+      description: string;
+      confirmLabel: string;
+      severity: SystemSettingConfirmSeverity;
+    }
+  | {
+      type: "manual-time";
+      payload: SetManualTimePayload;
+      title: string;
+      description: string;
+      confirmLabel: string;
+      severity: SystemSettingConfirmSeverity;
+    }
+  | {
+      type: "hwclock";
+      payload: HwclockRequest;
+      title: string;
+      description: string;
+      confirmLabel: string;
+      severity: SystemSettingConfirmSeverity;
+    };
+
+const GeneralSettingsPanel = () => {
+  const timeQuery = useSystemTimeInfo();
+  const timezoneQuery = useTimezoneList();
+  const hostnameQuery = useHostnameInfo();
+  const versionQuery = useSystemVersion();
+
+  const setHostnameMutation = useSetHostname();
+  const setTimezoneMutation = useSetTimezone();
+  const manageNtpMutation = useManageNtp();
+  const setManualTimeMutation = useSetManualTime();
+  const manageHwclockMutation = useManageHwclock();
+
+  const [hostname, setHostname] = useState("");
+  const [hostnameError, setHostnameError] = useState<string | null>(null);
+  const [hostnameDirty, setHostnameDirty] = useState(false);
+
+  const [timezone, setTimezone] = useState<string | null>(null);
+  const [timezoneError, setTimezoneError] = useState<string | null>(null);
+  const [timezoneDirty, setTimezoneDirty] = useState(false);
+
+  const [ntpEnabled, setNtpEnabled] = useState(false);
+  const [ntpServers, setNtpServers] = useState<string[]>([]);
+  const [ntpErrors, setNtpErrors] = useState<Record<number, string>>({});
+  const [ntpFormError, setNtpFormError] = useState<string | null>(null);
+  const [ntpDirty, setNtpDirty] = useState(false);
+
+  const [manualTime, setManualTime] = useState(() =>
+    toDateTimeLocalValue(new Date()),
+  );
+  const [manualTimeError, setManualTimeError] = useState<string | null>(null);
+  const manualTimeInitializedRef = useRef(false);
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>("jalali");
+
+  const [rtcMode, setRtcMode] = useState<"utc" | "local">("utc");
+  const [hwclockTimes, setHwclockTimes] = useState<HardwareClockTimes | null>(
+    null,
+  );
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(
+    null,
+  );
+
+  /** Which row is currently opened for editing. UI-only state. */
+  const [editor, setEditor] = useState<EditorKind>(null);
+
+  /** Which sections are expanded. The time section starts open. */
+  const [expandedSections, setExpandedSections] = useState<SectionId[]>([
+    SECTIONS.time,
+  ]);
+
+  useEffect(() => {
+    if (!hostnameDirty && hostnameQuery.data) {
+      setHostname(
+        hostnameQuery.data.staticHostname ??
+          hostnameQuery.data.currentHostname ??
+          "",
+      );
+    }
+  }, [hostnameDirty, hostnameQuery.data]);
+
+  useEffect(() => {
+    if (!timezoneDirty && timeQuery.data?.timezone) {
+      setTimezone(timeQuery.data.timezone);
+    }
+  }, [timeQuery.data?.timezone, timezoneDirty]);
+
+  useEffect(() => {
+    if (!ntpDirty && timeQuery.data) {
+      setNtpEnabled(timeQuery.data.ntpEnabled ?? false);
+      setNtpServers(timeQuery.data.ntpServers);
+    }
+  }, [ntpDirty, timeQuery.data]);
+
+  useEffect(() => {
+    if (manualTimeInitializedRef.current || !timeQuery.data?.localTime) {
+      return;
+    }
+
+    manualTimeInitializedRef.current = true;
+    setManualTime(toDateTimeLocalValue(timeQuery.data.localTime));
+  }, [timeQuery.data?.localTime]);
+
+  useEffect(() => {
+    if (timeQuery.data?.rtcInLocalTimezone == null) {
+      return;
+    }
+
+    setRtcMode(timeQuery.data.rtcInLocalTimezone ? "local" : "utc");
+  }, [timeQuery.data?.rtcInLocalTimezone]);
+
+  const timezoneOptions = useMemo(() => {
+    const values = new Set(timezoneQuery.data ?? []);
+    if (timeQuery.data?.timezone) values.add(timeQuery.data.timezone);
+    if (timezone) values.add(timezone);
+    return Array.from(values).sort((left, right) =>
+      left.localeCompare(right, "en"),
+    );
+  }, [timeQuery.data?.timezone, timezone, timezoneQuery.data]);
+
+  const queryErrors = [
+    timeQuery.error,
+    timezoneQuery.error,
+    hostnameQuery.error,
+    versionQuery.error,
+  ].filter((error): error is Error => Boolean(error));
+
+  const isMutationPending =
+    setHostnameMutation.isPending ||
+    setTimezoneMutation.isPending ||
+    manageNtpMutation.isPending ||
+    setManualTimeMutation.isPending ||
+    manageHwclockMutation.isPending;
+
+  const handleRequestHostnameChange = () => {
+    const validation = validateHostname(hostname);
+    setHostnameError(validation.error);
+    if (validation.error) return;
+
+    if (
+      validation.value === hostnameQuery.data?.staticHostname?.toLowerCase()
+    ) {
+      toast("نام میزبان تغییری نکرده است.");
+      return;
+    }
+
+    setPendingAction({
+      type: "hostname",
+      payload: { hostname: validation.value },
+      title: "تغییر نام میزبان سامانه",
+      description:
+        "نام میزبان بخشی از هویت شبکه‌ای سامانه است. بعد از اعمال تغییر، برخی سرویس‌ها یا کلاینت‌ها ممکن است برای شناسایی نام جدید به راه‌اندازی مجدد یا بروزرسانی تنطیمات خود نیاز داشته باشند.",
+      confirmLabel: "تغییر نام میزبان",
+      severity: "warning",
+    });
+  };
+
+  const handleRequestTimezoneChange = () => {
+    const normalizedTimezone = timezone?.trim() ?? "";
+    if (!normalizedTimezone) {
+      setTimezoneError("انتخاب منطقه زمانی الزامی است.");
+      return;
+    }
+
+    setTimezoneError(null);
+    if (normalizedTimezone === timeQuery.data?.timezone) {
+      toast("منطقه زمانی تغییری نکرده است.");
+      return;
+    }
+
+    setPendingAction({
+      type: "timezone",
+      payload: { timezone: normalizedTimezone },
+      title: "تغییر منطقه زمانی سیستم",
+      description:
+        "این تغییر روی نمایش زمان در گزارش‌ها، لاگ‌ها و زمان‌بندی سرویس‌ها اثر می‌گذارد. ساعت UTC تغییر نمی‌کند، اما زمان سرور بر اساس منطقه جدید نمایش داده می‌شود.",
+      confirmLabel: "اعمال منطقه زمانی",
+      severity: "warning",
+    });
+  };
+
+  const handleNtpServerChange = (index: number, value: string) => {
+    setNtpDirty(true);
+    setNtpServers((current) =>
+      current.map((server, serverIndex) =>
+        serverIndex === index ? value : server,
+      ),
+    );
+    setNtpErrors((current) => {
+      const next = { ...current };
+      delete next[index];
+      return next;
+    });
+    setNtpFormError(null);
+  };
+
+  const handleAddNtpServer = () => {
+    setNtpDirty(true);
+    setNtpServers((current) => [...current, ""]);
+  };
+
+  const handleRemoveNtpServer = (index: number) => {
+    setNtpDirty(true);
+    setNtpServers((current) =>
+      current.filter((_, serverIndex) => serverIndex !== index),
+    );
+    setNtpErrors({});
+    setNtpFormError(null);
+  };
+
+  const handleRequestNtpChange = () => {
+    const nextErrors: Record<number, string> = {};
+    const cleanedServers = ntpServers
+      .map((server, index) => {
+        const trimmed = server.trim();
+        if (!trimmed) {
+          if (ntpEnabled) {
+            nextErrors[index] = "این فیلد نمی‌تواند خالی باشد.";
+          }
+          return null;
+        }
+
+        const validation = validateNtpServer(trimmed);
+        if (validation.error) {
+          nextErrors[index] = validation.error;
+          return null;
+        }
+
+        return validation.value;
+      })
+      .filter((server): server is string => Boolean(server));
+
+    const uniqueServers = Array.from(new Set(cleanedServers));
+    setNtpErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      setNtpFormError("لطفاً آدرس سرورهای زمان را اصلاح کنید.");
+      return;
+    }
+
+    if (ntpEnabled && uniqueServers.length === 0) {
+      setNtpFormError(
+        "برای فعال‌سازی همگام‌سازی خودکار حداقل یک سرور معتبر وارد کنید.",
+      );
+      return;
+    }
+
+    setNtpFormError(null);
+    setPendingAction({
+      type: "ntp",
+      payload: { enabled: ntpEnabled, servers: uniqueServers },
+      title: ntpEnabled
+        ? "فعال‌سازی همگام‌سازی خودکار زمان"
+        : "غیرفعال‌سازی همگام‌سازی خودکار زمان",
+      description: ntpEnabled
+        ? "پس از تایید، ساعت سیستم به‌صورت خودکار با سرورهای معرفی‌شده همگام می‌شود. صحت نام سرورها و دسترسی شبکه‌ای به آن‌ها را بررسی کنید."
+        : "با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود و مسئولیت تنطیم صحیح ساعت سیستم بر عهده مدیر سامانه خواهد بود.",
+      confirmLabel: ntpEnabled
+        ? "فعال‌سازی همگام‌سازی"
+        : "غیرفعال‌سازی همگام‌سازی",
+      severity: ntpEnabled ? "info" : "warning",
+    });
+  };
+
+  const handleRequestManualTime = () => {
+    if (timeQuery.data?.ntpEnabled === true) {
+      setManualTimeError(
+        "برای تنطیم دستی زمان، ابتدا همگام‌سازی خودکار را غیرفعال و تنطیمات آن را ثبت کنید.",
+      );
+      return;
+    }
+
+    const validation = formatManualTimeForApi(manualTime);
+    setManualTimeError(validation.error);
+    if (validation.error) return;
+
+    setPendingAction({
+      type: "manual-time",
+      payload: { time: validation.value },
+      title: "تنطیم دستی زمان سیستم",
+      description:
+        "تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد. قبل از ادامه از درستی تاریخ، ساعت و منطقه زمانی اطمینان حاصل کنید.",
+      confirmLabel: "تنطیم زمان سیستم",
+      severity: "error",
+    });
+  };
+
+  const handleShowHwclock = async () => {
+    try {
+      const result = await manageHwclockMutation.mutateAsync({
+        action: "show",
+      });
+      setHwclockTimes(extractHardwareClockTimes(result.raw));
+      toast.success(result.message);
+    } catch (error) {
+      toast.error(
+        extractApiErrorMessage(
+          error,
+          "دریافت ساعت سخت‌افزاری با خطا مواجه شد.",
+        ),
+      );
+    }
+  };
+
+  const handleRequestHwclockSync = (action: "hctosys" | "systohc") => {
+    const isHardwareToSystem = action === "hctosys";
+    setPendingAction({
+      type: "hwclock",
+      payload: isHardwareToSystem
+        ? { action, localtime: rtcMode === "local" }
+        : { action },
+      title: isHardwareToSystem
+        ? "خواندن زمان از ساعت مادربرد"
+        : "نوشتن زمان سیستم روی مادربرد",
+      description: isHardwareToSystem
+        ? "زمان سیستم‌عامل با مقدار ساعت سخت‌افزاری جایگزین می‌شود. انتخاب وقت جهانی یا وقت محلی تعیین می‌کند مقدار خام ساعت مادربرد چگونه تفسیر شود؛ انتخاب اشتباه می‌تواند باعث اختلاف چندساعته شود."
+        : "زمان فعلی سیستم‌عامل روی ساعت سخت‌افزاری مادربرد نوشته می‌شود. این عملیات مقدار قبلی ساعت مادربرد را جایگزین می‌کند.",
+      confirmLabel: isHardwareToSystem
+        ? "خواندن زمان از مادربرد"
+        : "نوشتن زمان روی مادربرد",
+      severity: "error",
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!pendingAction || isMutationPending) return;
+
+    try {
+      if (pendingAction.type === "hostname") {
+        const message = await setHostnameMutation.mutateAsync(
+          pendingAction.payload,
+        );
+        setHostnameDirty(false);
+        toast.success(message);
+      } else if (pendingAction.type === "timezone") {
+        const message = await setTimezoneMutation.mutateAsync(
+          pendingAction.payload,
+        );
+        setTimezoneDirty(false);
+        toast.success(message);
+      } else if (pendingAction.type === "ntp") {
+        const message = await manageNtpMutation.mutateAsync(
+          pendingAction.payload,
+        );
+        setNtpDirty(false);
+        toast.success(message);
+      } else if (pendingAction.type === "manual-time") {
+        const message = await setManualTimeMutation.mutateAsync(
+          pendingAction.payload,
+        );
+        manualTimeInitializedRef.current = false;
+        toast.success(message);
+      } else {
+        const result = await manageHwclockMutation.mutateAsync(
+          pendingAction.payload,
+        );
+        setHwclockTimes(extractHardwareClockTimes(result.raw));
+        toast.success(result.message);
+      }
+
+      setPendingAction(null);
+      setEditor(null);
+    } catch (error) {
+      toast.error(
+        extractApiErrorMessage(error, "اعمال تنطیمات سیستم با خطا مواجه شد."),
+      );
+    }
+  };
+
+  /* ------------------------------------------------------------------ *
+   * Derived, presentation-level values
+   * ------------------------------------------------------------------ */
+
+  const currentHostname =
+    hostnameQuery.data?.staticHostname ??
+    hostnameQuery.data?.currentHostname ??
+    NOT_AVAILABLE;
+
+  const versionLines = versionQuery.data?.lines ?? [];
+  const primaryVersionLine = versionLines[0] ?? NOT_AVAILABLE;
+
+  const isNtpActive = timeQuery.data?.ntpEnabled === true;
+
+  /* ---------------------------- clocks ------------------------------ */
+
+  /** Browser clock of the machine the panel is opened on. */
+  const clientNow = useClientClock();
+  const clientTimeDisplay = `${clientNow.getFullYear()}-${pad(
+    clientNow.getMonth() + 1,
+  )}-${pad(clientNow.getDate())} ${pad(clientNow.getHours())}:${pad(
+    clientNow.getMinutes(),
+  )}:${pad(clientNow.getSeconds())}`;
+
+  /**
+   * Server clocks. Every clock is anchored on the value returned by the API and
+   * then advanced locally once per second, so all rows keep counting without
+   * re-fetching. The tickers stay enabled even while a section is collapsed.
+   */
+  const serverClock = useSystemWallClock(timeQuery.data?.localTime, {
+    enabled: true,
+  });
+  const utcClock = useSystemWallClock(timeQuery.data?.utcTime, {
+    enabled: true,
+  });
+
+  /**
+   * Motherboard clock (RTC). A fresh reading wins over the cached query value;
+   * the radio group only decides which reading is shown (UTC or local).
+   */
+  const hardwareClockSource =
+    (rtcMode === "local"
+      ? (hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime)
+      : (hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime)) ?? null;
+  const hardwareClock = useSystemWallClock(hardwareClockSource, {
+    enabled: true,
+  });
+
+  const serverTimeDisplay =
+    serverClock.timestampLabel ?? timeQuery.data?.localTime ?? NOT_AVAILABLE;
+  const utcTimeDisplay =
+    utcClock.timestampLabel ?? timeQuery.data?.utcTime ?? NOT_AVAILABLE;
+  const hardwareTimeDisplay =
+    hardwareClock.timestampLabel ?? hardwareClockSource ?? NOT_AVAILABLE;
+
+  /** Jalali rendering of the *server* clock, ticking with it. */
+  const serverJalaliDisplay =
+    (serverClock.timestampLabel
+      ? formatJalaliWallClockLabel(serverClock.timestampLabel)
+      : null) ?? NOT_AVAILABLE;
+
+  /** RTC vs. system clock, compared on local time. */
+  const hardwareClockDrift = describeClockDrift(
+    timeQuery.data?.localTime,
+    hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime,
+  );
+  const driftDisplay =
+    hardwareClockDrift.level === "unknown"
+      ? NOT_AVAILABLE
+      : hardwareClockDrift.level === "aligned"
+        ? "بدون اختلاف"
+        : hardwareClockDrift.label;
+
+  const isTimeSectionOpen = expandedSections.includes(SECTIONS.time);
+
+  const toggleSection = (id: string) => {
+    setExpandedSections((current) =>
+      current.includes(id as SectionId)
+        ? current.filter((sectionId) => sectionId !== id)
+        : [...current, id as SectionId],
+    );
+  };
+
+  const areAllExpanded = expandedSections.length === ALL_SECTION_IDS.length;
+
+  const handleToggleAll = () =>
+    setExpandedSections(areAllExpanded ? [] : [...ALL_SECTION_IDS]);
+
+  const handleRefreshAll = () => {
+    void Promise.all([
+      timeQuery.refetch(),
+      hostnameQuery.refetch(),
+      versionQuery.refetch(),
+    ]);
+    toast.success("اطلاعات تنطیمات عمومی بروزرسانی شد.");
+  };
+
+  const closeEditor = () => setEditor(null);
+
+  /**
+   * Edit affordance rendered *inside the value cell*, right next to the value
+   * it changes. The tables have no action column any more.
+   */
+  const renderEditAction = (
+    label: string,
+    onClick: () => void,
+    disabled = false,
+  ) => (
+    <Tooltip title={label} arrow>
+      <span>
+        <IconButton
+          size="small"
+          aria-label={label}
+          onClick={onClick}
+          disabled={disabled || isMutationPending}
+          sx={{
+            width: 28,
+            height: 28,
+            color: "var(--color-primary)",
+            borderRadius: "8px",
+            border:
+              "1px solid color-mix(in srgb, var(--color-primary) 30%, transparent)",
+            backgroundColor:
+              "color-mix(in srgb, var(--color-primary) 8%, transparent)",
+            transition: "background-color 0.2s ease, border-color 0.2s ease",
+            "&:hover": {
+              borderColor: "var(--color-primary)",
+              backgroundColor:
+                "color-mix(in srgb, var(--color-primary) 18%, transparent)",
+            },
+            "&.Mui-disabled": {
+              color: "color-mix(in srgb, var(--color-text) 34%, transparent)",
+              borderColor:
+                "color-mix(in srgb, var(--color-text) 14%, transparent)",
+            },
+          }}
+        >
+          <FiEdit3 size={15} />
+        </IconButton>
+      </span>
+    </Tooltip>
+  );
+
+  /** Manual-time picker, shared by its own modal and the time-settings modal. */
+  const renderManualTimeFields = () => (
+    <Stack gap={1.5}>
+      {isNtpActive ? (
+        <Alert severity="warning" sx={alertSx}>
+          همگام‌سازی خودکار زمان فعال است؛ برای تنطیم دستی، ابتدا آن را غیرفعال
+          کنید.
+        </Alert>
+      ) : null}
+
+      <FormControl sx={fieldSx}>
+        <FormLabel sx={{ fontSize: "0.85rem", mb: 0.5 }}>نوع تقویم</FormLabel>
+        <RadioGroup
+          row
+          value={calendarMode}
+          onChange={(event) =>
+            setCalendarMode(event.target.value as CalendarMode)
+          }
+        >
+          <FormControlLabel
+            value="jalali"
+            control={<Radio />}
+            label="شمسی (جلالی)"
+          />
+          <FormControlLabel
+            value="gregorian"
+            control={<Radio />}
+            label="میلادی"
+          />
+        </RadioGroup>
+      </FormControl>
+
+      {calendarMode === "jalali" ? (
+        <JalaliDateTimeField
+          label="تاریخ و ساعت سیستم"
+          value={manualTime}
+          onChange={(nextValue) => {
+            setManualTime(nextValue);
+            setManualTimeError(null);
+          }}
+          error={Boolean(manualTimeError)}
+          helperText={manualTimeError}
+        />
+      ) : (
+        <TextField
+          fullWidth
+          type="datetime-local"
+          label="تاریخ و ساعت سیستم"
+          value={manualTime}
+          onChange={(event) => {
+            setManualTime(event.target.value);
+            setManualTimeError(null);
+          }}
+          error={Boolean(manualTimeError)}
+          helperText={manualTimeError}
+          sx={technicalFieldSx}
+          slotProps={{
+            inputLabel: { shrink: true },
+            htmlInput: { step: 1, dir: "ltr", style: ltrInputStyle },
+          }}
+        />
+      )}
+    </Stack>
+  );
+
+  /** Small heading used between the groups of the time-settings modal. */
+  const renderModalSectionTitle = (title: string) => (
+    <Typography
+      component="h4"
+      sx={{
+        m: 0,
+        fontWeight: 800,
+        fontSize: "0.92rem",
+        textAlign: "start",
+        color: "var(--color-text)",
+      }}
+    >
+      {title}
+    </Typography>
+  );
+
+  const renderNtpFields = () => (
+    <Stack gap={1.5}>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={ntpEnabled}
+            onChange={(event) => {
+              setNtpDirty(true);
+              setNtpEnabled(event.target.checked);
+              setNtpFormError(null);
+            }}
+          />
+        }
+        label={ntpEnabled ? "فعال" : "غیرفعال"}
+        sx={{ mx: 0, gap: 1 }}
+      />
+
+      {ntpServers.map((server, index) => (
+        <Stack
+          key={`ntp-server-${index}`}
+          direction="row"
+          gap={1}
+          sx={{ alignItems: "flex-start" }}
+        >
+          <TextField
+            fullWidth
+            label={`سرور زمان ${index + 1}`}
+            value={server}
+            onChange={(event) =>
+              handleNtpServerChange(index, event.target.value)
+            }
+            error={Boolean(ntpErrors[index])}
+            helperText={ntpErrors[index]}
+            sx={technicalFieldSx}
+            slotProps={{ htmlInput: { dir: "ltr", style: ltrInputStyle } }}
+          />
+          <Tooltip title="حذف سرور" arrow>
+            <span>
+              <IconButton
+                aria-label={`حذف سرور زمان ${index + 1}`}
+                onClick={() => handleRemoveNtpServer(index)}
+                sx={{ mt: 1, color: "var(--color-error)" }}
+              >
+                <MdDeleteOutline size={20} />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Stack>
+      ))}
+
+      <Stack direction="row" gap={1} flexWrap="wrap">
+        <Button
+          onClick={handleAddNtpServer}
+          startIcon={<MdAdd />}
+          variant="outlined"
+          sx={outlinedButtonSx}
+        >
+          افزودن سرور زمان
+        </Button>
+        <Button
+          onClick={handleRequestNtpChange}
+          disabled={isMutationPending}
+          variant="contained"
+          sx={primaryButtonSx}
+        >
+          ثبت سرورهای زمان
+        </Button>
+      </Stack>
+
+      {ntpFormError ? (
+        <Alert severity="error" sx={alertSx}>
+          {ntpFormError}
+        </Alert>
+      ) : null}
+    </Stack>
+  );
+
+  const renderHardwareClockFields = () => (
+    <Stack gap={1.5}>
+      <FormControl sx={fieldSx}>
+        <FormLabel sx={{ fontSize: "0.85rem", mb: 0.5 }}>
+          تفسیر مقدار ساعت مادربرد
+        </FormLabel>
+        <RadioGroup
+          row
+          value={rtcMode}
+          onChange={(event) =>
+            setRtcMode(event.target.value as "utc" | "local")
+          }
+        >
+          <FormControlLabel
+            value="utc"
+            control={<Radio />}
+            label="وقت جهانی UTC"
+          />
+          <FormControlLabel
+            value="local"
+            control={<Radio />}
+            label="وقت محلی"
+          />
+        </RadioGroup>
+      </FormControl>
+
+      <SettingsRowsTable
+        rows={[
+          {
+            id: "hwclock-hardware",
+            title: "زمان سخت افزار (RTC)",
+            value: <Ltr>{hardwareTimeDisplay}</Ltr>,
+          },
+          {
+            id: "hwclock-system",
+            title: "زمان سرور",
+            value: <Ltr>{serverTimeDisplay}</Ltr>,
+          },
+          {
+            id: "hwclock-drift",
+            title: "وضعیت اختلاف زمانی",
+            hint: "اختلاف زمانی بین rtc و سیستم برحسب زمان محلی",
+            value: driftDisplay,
+          },
+        ]}
+      />
+
+      <Stack direction={{ xs: "column", sm: "row" }} gap={1} flexWrap="wrap">
+        {/* <Button
+          onClick={handleShowHwclock}
+          disabled={isMutationPending}
+          startIcon={<MdVisibility />}
+          variant="outlined"
+          sx={outlinedButtonSx}
+        >
+          خواندن مجدد
+        </Button> */}
+        <Button
+          onClick={() => handleRequestHwclockSync("hctosys")}
+          disabled={isMutationPending}
+          startIcon={<MdSync />}
+          variant="outlined"
+          sx={outlinedButtonSx}
+        >
+          خواندن زمان از مادربرد
+        </Button>
+        <Button
+          onClick={() => handleRequestHwclockSync("systohc")}
+          disabled={isMutationPending}
+          startIcon={<MdSync />}
+          variant="contained"
+          sx={primaryButtonSx}
+        >
+          نوشتن زمان روی مادربرد
+        </Button>
+      </Stack>
+    </Stack>
+  );
+
+  return (
+    <Box dir="rtl" sx={{ width: "100%", color: "var(--color-text)" }}>
+      {queryErrors.length > 0 ? (
+        <Alert severity="error" sx={{ ...alertSx, mb: 2 }}>
+          دریافت بخشی از اطلاعات با خطا مواجه شد.
+        </Alert>
+      ) : null}
+
+      {/* ── نوار ابزار ── */}
+      <Box sx={{ ...toolbarSx, justifyContent: "flex-end" }}>
+        <Button
+          onClick={handleToggleAll}
+          startIcon={areAllExpanded ? <MdUnfoldLess /> : <MdUnfoldMore />}
+          variant="outlined"
+          sx={outlinedButtonSx}
+        >
+          {areAllExpanded ? "بستن همه" : "باز کردن همه"}
+        </Button>
+        <Button
+          onClick={handleRefreshAll}
+          startIcon={<MdRefresh />}
+          variant="outlined"
+          sx={outlinedButtonSx}
+        >
+          بروزرسانی
+        </Button>
+      </Box>
+
+      <Stack gap={1.75}>
+        {/* ─────── بخش ۱: سامانه (نسخه + نام میزبان) ─────── */}
+        <SettingsAccordionSection
+          id={SECTIONS.system}
+          icon={<MdComputer />}
+          title="عمومی"
+          summaryLabel="نام میزبان"
+          summaryValue={<Ltr>{currentHostname}</Ltr>}
+          isLoading={versionQuery.isLoading || hostnameQuery.isLoading}
+          expanded={expandedSections.includes(SECTIONS.system)}
+          onToggle={toggleSection}
+        >
+          <SettingsRowsTable
+            isLoading={versionQuery.isLoading || hostnameQuery.isLoading}
+            rows={[
+              {
+                id: "system-version",
+                title: "نسخه سامانه",
+                value: <Ltr>{primaryVersionLine}</Ltr>,
+              },
+              {
+                id: "system-hostname",
+                title: "نام میزبان",
+                value: <Ltr>{currentHostname}</Ltr>,
+                valueAdornment: renderEditAction("ویرایش نام میزبان", () => {
+                  setHostnameError(null);
+                  setEditor("hostname");
+                }),
+              },
+            ]}
+          />
+
+          {versionQuery.data?.backendError ? (
+            <Alert severity="warning" sx={alertSx}>
+              {versionQuery.data.backendError}
+            </Alert>
+          ) : null}
+        </SettingsAccordionSection>
+
+        {/* ─────── بخش ۲: زمان ─────── */}
+        <SettingsAccordionSection
+          id={SECTIONS.time}
+          icon={<MdAccessTime />}
+          title="زمان"
+          summaryLabel="زمان سرور"
+          summaryValue={
+            <Stack
+              direction="row"
+              alignItems="center"
+              gap={1}
+              sx={{ minWidth: 0 }}
+            >
+              <Box
+                aria-hidden
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  backgroundColor: serverClock.isLive
+                    ? "var(--color-success, #29b96a)"
+                    : "var(--color-secondary)",
+                }}
+              />
+              <Ltr>{serverTimeDisplay}</Ltr>
+            </Stack>
+          }
+          isLoading={timeQuery.isLoading}
+          expanded={isTimeSectionOpen}
+          onToggle={toggleSection}
+        >
+          <SettingsRowsTable
+            isLoading={timeQuery.isLoading}
+            rows={[
+              {
+                id: "time-client",
+                title: "زمان کلاینت",
+                value: <Ltr>{clientTimeDisplay}</Ltr>,
+              },
+              {
+                id: "time-server",
+                title: "زمان سرور",
+                value: <Ltr>{serverTimeDisplay}</Ltr>,
+                valueAdornment: (
+                  <>
+                    <Tooltip title="تنطیمات زمان و همگام‌سازی" arrow>
+                      <Chip
+                        size="small"
+                        variant="outlined"
+                        clickable
+                        onClick={() => {
+                          setNtpFormError(null);
+                          setManualTimeError(null);
+                          setEditor("time-settings");
+                        }}
+                        color={isNtpActive ? "success" : "default"}
+                        label={isNtpActive ? "NTP فعال" : "NTP غیرفعال"}
+                        sx={{ fontWeight: 700, fontSize: "0.72rem" }}
+                      />
+                    </Tooltip>
+                    {/* {renderEditAction(
+                      isNtpActive
+                        ? "ابتدا همگام‌سازی خودکار را غیرفعال کنید"
+                        : "تغییر زمان سرور",
+                      () => {
+                        setManualTimeError(null);
+                        setEditor("manual-time");
+                      },
+                      isNtpActive,
+                    )} */}
+                  </>
+                ),
+              },
+              {
+                id: "time-server-jalali",
+                title: "زمان شمسی سرور",
+                value: serverJalaliDisplay,
+              },
+              {
+                id: "time-utc",
+                title: "زمان جهانی (UTC)",
+                value: <Ltr>{utcTimeDisplay}</Ltr>,
+              },
+              {
+                id: "time-rtc",
+                title: "زمان سخت افزار (RTC)",
+                value: <Ltr>{hardwareTimeDisplay}</Ltr>,
+              },
+              {
+                id: "time-drift",
+                title: "وضعیت اختلاف زمانی",
+                hint: "اختلاف زمانی بین rtc و سیستم برحسب زمان محلی",
+                value: driftDisplay,
+              },
+              {
+                id: "time-timezone",
+                title: "منطقه زمانی",
+                value: <Ltr>{timeQuery.data?.timezone ?? NOT_AVAILABLE}</Ltr>,
+                valueAdornment: renderEditAction("ویرایش منطقه زمانی", () => {
+                  setTimezoneError(null);
+                  setEditor("timezone");
+                }),
+              },
+            ]}
+          />
+        </SettingsAccordionSection>
+      </Stack>
+
+      {/* ── ویرایش نام میزبان ── */}
+      <SettingEditModal
+        open={editor === "hostname"}
+        onClose={closeEditor}
+        onSubmit={handleRequestHostnameChange}
+        isSubmitting={setHostnameMutation.isPending}
+        submitLabel="ثبت نام میزبان"
+        icon={<MdComputer />}
+        title="ویرایش نام میزبان"
+      >
+        <TextField
+          fullWidth
+          label="نام میزبان"
+          value={hostname}
+          onChange={(event) => {
+            setHostnameDirty(true);
+            setHostname(event.target.value);
+            setHostnameError(null);
+          }}
+          error={Boolean(hostnameError)}
+          helperText={hostnameError}
+          sx={technicalFieldSx}
+          slotProps={{
+            htmlInput: { maxLength: 253, dir: "ltr", style: ltrInputStyle },
+          }}
+        />
+      </SettingEditModal>
+
+      {/* ── ویرایش منطقه زمانی ── */}
+      <SettingEditModal
+        open={editor === "timezone"}
+        onClose={closeEditor}
+        onSubmit={handleRequestTimezoneChange}
+        isSubmitting={setTimezoneMutation.isPending}
+        submitLabel="ثبت منطقه زمانی"
+        icon={<MdPublic />}
+        title="ویرایش منطقه زمانی"
+      >
+        <Autocomplete
+          options={timezoneOptions}
+          value={timezone}
+          loading={timezoneQuery.isLoading}
+          onChange={(_event, newValue) => {
+            setTimezoneDirty(true);
+            setTimezone(newValue);
+            setTimezoneError(null);
+          }}
+          slotProps={{ paper: { sx: popupSx } }}
+          renderOption={(props, option) => (
+            <li {...props} key={option} style={ltrBlockStyle}>
+              {option}
+            </li>
+          )}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="منطقه زمانی"
+              error={Boolean(timezoneError)}
+              helperText={timezoneError}
+              sx={technicalFieldSx}
+              slotProps={{
+                htmlInput: {
+                  ...params.inputProps,
+                  dir: "ltr",
+                  style: ltrInputStyle,
+                },
+              }}
+            />
+          )}
+        />
+      </SettingEditModal>
+
+      {/* ── تغییر زمان سرور ── */}
+      <SettingEditModal
+        open={editor === "manual-time"}
+        onClose={closeEditor}
+        onSubmit={handleRequestManualTime}
+        isSubmitting={setManualTimeMutation.isPending}
+        submitLabel="تنطیم زمان سیستم"
+        icon={<MdMemory />}
+        title="تغییر زمان سرور"
+      >
+        {renderManualTimeFields()}
+      </SettingEditModal>
+
+      {/* ── تمام تنطیمات زمان (از طریق چیپ NTP) ── */}
+      <SettingEditModal
+        open={editor === "time-settings"}
+        onClose={closeEditor}
+        onSubmit={undefined}
+        hideSubmit
+        isSubmitting={isMutationPending}
+        icon={<MdAccessTime />}
+        title="تنطیمات زمان"
+      >
+        {renderModalSectionTitle("همگام‌سازی خودکار (NTP)")}
+        {renderNtpFields()}
+
+        <Divider
+          sx={{
+            my: 1,
+            borderColor:
+              "color-mix(in srgb, var(--color-primary) 18%, transparent)",
+          }}
+        />
+
+        {renderModalSectionTitle("تنطیم دستی زمان")}
+        {renderManualTimeFields()}
+        <Button
+          onClick={handleRequestManualTime}
+          disabled={isMutationPending || isNtpActive}
+          variant="contained"
+          sx={{ ...primaryButtonSx, alignSelf: "flex-start" }}
+        >
+          تنطیم زمان سیستم
+        </Button>
+
+        <Divider
+          sx={{
+            my: 1,
+            borderColor:
+              "color-mix(in srgb, var(--color-primary) 18%, transparent)",
+          }}
+        />
+
+        {renderModalSectionTitle("ساعت سخت‌افزاری (RTC)")}
+        {renderHardwareClockFields()}
+      </SettingEditModal>
+
+      <SystemSettingConfirmDialog
+        open={Boolean(pendingAction)}
+        title={pendingAction?.title ?? ""}
+        description={pendingAction?.description ?? ""}
+        confirmLabel={pendingAction?.confirmLabel}
+        severity={pendingAction?.severity}
+        isLoading={isMutationPending}
+        onCancel={() => setPendingAction(null)}
+        onConfirm={handleConfirmAction}
+      />
+    </Box>
+  );
+};
+
+export default GeneralSettingsPanel;
 </file>
 
 </files>

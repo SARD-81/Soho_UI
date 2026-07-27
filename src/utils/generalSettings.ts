@@ -3,20 +3,20 @@ import type {
   HwclockResult,
   SystemTimeInfo,
   SystemVersionInfo,
-} from '../@types/generalSettings';
+} from "../@types/generalSettings";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
-  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  Boolean(value) && typeof value === "object" && !Array.isArray(value);
 
 const normalizeKey = (value: string) =>
-  value.toLowerCase().replace(/[^a-z0-9]/g, '');
+  value.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 const unwrapData = (payload: unknown) => {
   if (!isRecord(payload)) {
     return payload;
   }
 
-  return Object.prototype.hasOwnProperty.call(payload, 'data')
+  return Object.prototype.hasOwnProperty.call(payload, "data")
     ? payload.data
     : payload;
 };
@@ -40,7 +40,7 @@ const getPathValue = (source: unknown, path: readonly string[]): unknown => {
 const findNestedValue = (
   source: unknown,
   aliases: readonly string[],
-  depth = 0
+  depth = 0,
 ): unknown => {
   if (depth > 5 || source == null) {
     return undefined;
@@ -76,12 +76,12 @@ const findNestedValue = (
 };
 
 const normalizeString = (value: unknown): string | null => {
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
   }
 
-  if (typeof value === 'number' && Number.isFinite(value)) {
+  if (typeof value === "number" && Number.isFinite(value)) {
     return String(value);
   }
 
@@ -89,21 +89,29 @@ const normalizeString = (value: unknown): string | null => {
 };
 
 const normalizeBoolean = (value: unknown): boolean | null => {
-  if (typeof value === 'boolean') {
+  if (typeof value === "boolean") {
     return value;
   }
 
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     if (value === 1) return true;
     if (value === 0) return false;
   }
 
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const normalized = value.trim().toLowerCase();
-    if (['true', '1', 'yes', 'on', 'enabled', 'active', 'local'].includes(normalized)) {
+    if (
+      ["true", "1", "yes", "on", "enabled", "active", "local"].includes(
+        normalized,
+      )
+    ) {
       return true;
     }
-    if (['false', '0', 'no', 'off', 'disabled', 'inactive', 'utc'].includes(normalized)) {
+    if (
+      ["false", "0", "no", "off", "disabled", "inactive", "utc"].includes(
+        normalized,
+      )
+    ) {
       return false;
     }
   }
@@ -117,19 +125,19 @@ const normalizeStringArray = (value: unknown): string[] => {
       new Set(
         value
           .map(normalizeString)
-          .filter((item): item is string => Boolean(item))
-      )
+          .filter((item): item is string => Boolean(item)),
+      ),
     );
   }
 
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     return Array.from(
       new Set(
         value
           .split(/[\n,;]+/)
           .map((item) => item.trim())
-          .filter(Boolean)
-      )
+          .filter(Boolean),
+      ),
     );
   }
 
@@ -147,55 +155,55 @@ export const normalizeSystemTimeInfo = (payload: unknown): SystemTimeInfo => {
     normalizeString(osTime?.local) ??
     normalizeString(
       findNestedValue(data, [
-        'local_time',
-        'localtime',
-        'system_local_time',
-        'current_local_time',
-        'local_datetime',
-        'datetime_local',
-      ])
+        "local_time",
+        "localtime",
+        "system_local_time",
+        "current_local_time",
+        "local_datetime",
+        "datetime_local",
+      ]),
     );
 
   const utcTime =
     normalizeString(osTime?.utc) ??
     normalizeString(
       findNestedValue(data, [
-        'utc_time',
-        'utctime',
-        'system_utc_time',
-        'current_utc_time',
-        'utc_datetime',
-      ])
+        "utc_time",
+        "utctime",
+        "system_utc_time",
+        "current_utc_time",
+        "utc_datetime",
+      ]),
     );
 
   const hardwareLocalTime =
     normalizeString(hardwareTime?.local) ??
     normalizeString(
       findNestedValue(data, [
-        'hardware_local_time',
-        'hw_local_time',
-        'rtc_local_time',
-      ])
+        "hardware_local_time",
+        "hw_local_time",
+        "rtc_local_time",
+      ]),
     );
 
   const hardwareUtcTime =
     normalizeString(hardwareTime?.utc) ??
     normalizeString(
       findNestedValue(data, [
-        'hardware_utc_time',
-        'hw_utc_time',
-        'rtc_utc_time',
-      ])
+        "hardware_utc_time",
+        "hw_utc_time",
+        "rtc_utc_time",
+      ]),
     );
 
   const fallbackRtcTime = normalizeString(
     findNestedValue(data, [
-      'rtc_time',
-      'rtctime',
-      'hardware_time',
-      'hardware_clock',
-      'hwclock',
-    ])
+      "rtc_time",
+      "rtctime",
+      "hardware_time",
+      "hardware_clock",
+      "hwclock",
+    ]),
   );
 
   return {
@@ -206,48 +214,48 @@ export const normalizeSystemTimeInfo = (payload: unknown): SystemTimeInfo => {
     rtcTime: hardwareLocalTime ?? hardwareUtcTime ?? fallbackRtcTime,
     timezone:
       normalizeString(dataRecord?.timezone) ??
-      normalizeString(findNestedValue(data, ['time_zone', 'zone'])),
+      normalizeString(findNestedValue(data, ["time_zone", "zone"])),
     ntpEnabled:
       normalizeBoolean(ntp?.enabled) ??
       normalizeBoolean(
         findNestedValue(data, [
-          'ntp_enabled',
-          'ntpenabled',
-          'ntp_active',
-          'ntpactive',
-          'use_ntp',
-        ])
+          "ntp_enabled",
+          "ntpenabled",
+          "ntp_active",
+          "ntpactive",
+          "use_ntp",
+        ]),
       ),
     ntpSynchronized:
       normalizeBoolean(ntp?.synchronized) ??
       normalizeBoolean(
         findNestedValue(data, [
-          'ntp_synchronized',
-          'ntpsynchronized',
-          'ntp_synced',
-          'system_clock_synchronized',
-          'synced',
-        ])
+          "ntp_synchronized",
+          "ntpsynchronized",
+          "ntp_synced",
+          "system_clock_synchronized",
+          "synced",
+        ]),
       ),
     rtcInLocalTimezone: normalizeBoolean(
       findNestedValue(data, [
-        'rtc_in_local_tz',
-        'rtc_in_local_timezone',
-        'rtc_localtime',
-        'rtc_local',
-        'local_rtc',
-      ])
+        "rtc_in_local_tz",
+        "rtc_in_local_timezone",
+        "rtc_localtime",
+        "rtc_local",
+        "local_rtc",
+      ]),
     ),
     ntpServers:
       normalizeStringArray(ntp?.servers).length > 0
         ? normalizeStringArray(ntp?.servers)
         : normalizeStringArray(
             findNestedValue(data, [
-              'ntp_servers',
-              'configured_ntp_servers',
-              'timeservers',
-              'time_servers',
-            ])
+              "ntp_servers",
+              "configured_ntp_servers",
+              "timeservers",
+              "time_servers",
+            ]),
           ),
     raw: data,
   };
@@ -257,10 +265,10 @@ export const normalizeTimezoneList = (payload: unknown): string[] => {
   const data = unwrapData(payload);
   const candidate =
     (Array.isArray(data) ? data : undefined) ??
-    findNestedValue(data, ['timezones', 'zones', 'timezone_list', 'items']);
+    findNestedValue(data, ["timezones", "zones", "timezone_list", "items"]);
 
   return normalizeStringArray(candidate).sort((left, right) =>
-    left.localeCompare(right, 'en')
+    left.localeCompare(right, "en"),
   );
 };
 
@@ -272,19 +280,16 @@ export const normalizeHostnameInfo = (payload: unknown): HostnameInfo => {
     normalizeString(dataRecord?.static_hostname) ??
     normalizeString(
       findNestedValue(data, [
-        'static_hostname',
-        'statichostname',
-        'persistent_hostname',
-      ])
+        "static_hostname",
+        "statichostname",
+        "persistent_hostname",
+      ]),
     );
   const currentHostname =
     exactHostname ??
     normalizeString(dataRecord?.current_hostname) ??
     normalizeString(
-      findNestedValue(data, [
-        'currenthostname',
-        'transient_hostname',
-      ])
+      findNestedValue(data, ["currenthostname", "transient_hostname"]),
     );
 
   return {
@@ -303,7 +308,7 @@ export const normalizeSystemVersion = (payload: unknown): SystemVersionInfo => {
 
   if (Array.isArray(data)) {
     lines = normalizeStringArray(data);
-  } else if (typeof data === 'string') {
+  } else if (typeof data === "string") {
     lines = data
       .split(/\r?\n/)
       .map((line) => line.trim())
@@ -324,14 +329,14 @@ export const normalizeSystemVersion = (payload: unknown): SystemVersionInfo => {
       lines = [version];
     } else {
       lines = normalizeStringArray(
-        findNestedValue(data, ['lines', 'version_lines', 'text'])
+        findNestedValue(data, ["lines", "version_lines", "text"]),
       );
     }
   }
 
   return {
     lines,
-    text: lines.join('\n'),
+    text: lines.join("\n"),
     filePath,
     backendError,
     raw: data,
@@ -358,18 +363,18 @@ const stringifyCompact = (value: unknown): string | null => {
 export const normalizeHwclockResult = (payload: unknown): HwclockResult => {
   const data = unwrapData(payload);
   const message =
-    normalizeString(getPathValue(payload, ['message'])) ??
-    'عملیات ساعت سخت‌افزاری با موفقیت انجام شد.';
+    normalizeString(getPathValue(payload, ["message"])) ??
+    "عملیات ساعت سخت‌افزاری با موفقیت انجام شد.";
   const displayValue = stringifyCompact(
     findNestedValue(data, [
-      'rtc_time',
-      'hardware_time',
-      'hardware_clock',
-      'hwclock',
-      'time',
-      'output',
-      'result',
-    ]) ?? data
+      "rtc_time",
+      "hardware_time",
+      "hardware_clock",
+      "hwclock",
+      "time",
+      "output",
+      "result",
+    ]) ?? data,
   );
 
   return { message, displayValue, raw: data };
@@ -379,70 +384,74 @@ export const validateHostname = (value: string) => {
   const hostname = value.trim().toLowerCase();
 
   if (!hostname) {
-    return { value: hostname, error: 'نام میزبان الزامی است.' };
+    return { value: hostname, error: "نام میزبان الزامی است." };
   }
 
   if (hostname.length > 253) {
     return {
       value: hostname,
-      error: 'طول نام میزبان نباید بیشتر از ۲۵۳ کاراکتر باشد.',
+      error: "طول نام میزبان نباید بیشتر از ۲۵۳ کاراکتر باشد.",
     };
   }
 
-  const labels = hostname.split('.');
+  const labels = hostname.split(".");
   const labelPattern = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
   if (labels.some((label) => !labelPattern.test(label))) {
     return {
       value: hostname,
-      error:
-        'نام میزبان باید مطابق RFC 1123 باشد؛ فقط حروف انگلیسی، عدد، خط تیره و نقطه مجاز است و هر بخش نباید با خط تیره شروع یا تمام شود.',
+      error: HOSTNAME_PATTERN_ERROR,
     };
   }
 
   return { value: hostname, error: null };
 };
 
+/** Characters that are underlined inside the hostname helper error. */
+export const HOSTNAME_ALLOWED_HINT = "حروف انگلیسی، عدد، خط تیره و نقطه";
+
+export const HOSTNAME_PATTERN_ERROR = `فقط ${HOSTNAME_ALLOWED_HINT} مجاز است و هر بخش نباید با خط تیره شروع یا تمام شود.`;
+
 export const validateNtpServer = (value: string) => {
   const server = value.trim();
 
   if (!server) {
-    return { value: server, error: 'آدرس سرور NTP نمی‌تواند خالی باشد.' };
+    return { value: server, error: "آدرس سرور NTP نمی‌تواند خالی باشد." };
   }
 
   if (server.length > 253 || /\s/.test(server)) {
-    return { value: server, error: 'آدرس سرور NTP معتبر نیست.' };
+    return { value: server, error: "آدرس سرور NTP معتبر نیست." };
   }
 
   if (!/^[a-zA-Z0-9._:-]+$/.test(server)) {
     return {
       value: server,
-      error: 'در آدرس سرور NTP کاراکتر غیرمجاز وجود دارد.',
+      error: "در آدرس سرور NTP کاراکتر غیرمجاز وجود دارد.",
     };
   }
 
   return { value: server, error: null };
 };
 
-const padNumber = (value: number) => String(value).padStart(2, '0');
+const padNumber = (value: number) => String(value).padStart(2, "0");
 
 export const toDateTimeLocalValue = (value: unknown): string => {
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const match = value
       .trim()
       .match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
     if (match) {
-      return `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6] ?? '00'}`;
+      return `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6] ?? "00"}`;
     }
   }
 
-  const parsed = value instanceof Date ? value : new Date(String(value ?? ''));
+  const parsed = value instanceof Date ? value : new Date(String(value ?? ""));
   const date = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 
   return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(
-    date.getDate()
+    date.getDate(),
   )}T${padNumber(date.getHours())}:${padNumber(date.getMinutes())}:${padNumber(
-    date.getSeconds()
+    date.getSeconds(),
   )}`;
 };
 
@@ -452,7 +461,7 @@ export const formatManualTimeForApi = (value: string) => {
     .match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
 
   if (!match) {
-    return { value: '', error: 'تاریخ و ساعت واردشده معتبر نیست.' };
+    return { value: "", error: "تاریخ و ساعت واردشده معتبر نیست." };
   }
 
   const year = Number(match[1]);
@@ -460,7 +469,7 @@ export const formatManualTimeForApi = (value: string) => {
   const day = Number(match[3]);
   const hour = Number(match[4]);
   const minute = Number(match[5]);
-  const second = Number(match[6] ?? '0');
+  const second = Number(match[6] ?? "0");
   const parsed = new Date(year, month - 1, day, hour, minute, second);
 
   if (
@@ -471,12 +480,12 @@ export const formatManualTimeForApi = (value: string) => {
     parsed.getMinutes() !== minute ||
     parsed.getSeconds() !== second
   ) {
-    return { value: '', error: 'تاریخ و ساعت واردشده معتبر نیست.' };
+    return { value: "", error: "تاریخ و ساعت واردشده معتبر نیست." };
   }
 
   return {
     value: `${match[1]}-${match[2]}-${match[3]} ${match[4]}:${match[5]}:${padNumber(
-      second
+      second,
     )}`,
     error: null,
   };

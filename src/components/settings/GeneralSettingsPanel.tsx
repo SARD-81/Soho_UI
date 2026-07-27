@@ -28,10 +28,8 @@ import {
   MdMemory,
   MdPublic,
   MdRefresh,
-  MdSync,
   MdUnfoldLess,
   MdUnfoldMore,
-  MdVisibility,
 } from "react-icons/md";
 import type {
   HwclockRequest,
@@ -55,6 +53,7 @@ import { useSystemWallClock } from "../../hooks/useSystemWallClock";
 import { extractApiErrorMessage } from "../../utils/apiError";
 import {
   formatManualTimeForApi,
+  HOSTNAME_ALLOWED_HINT,
   toDateTimeLocalValue,
   validateHostname,
   validateNtpServer,
@@ -194,7 +193,6 @@ const GeneralSettingsPanel = () => {
   const manualTimeInitializedRef = useRef(false);
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("jalali");
 
-  const [rtcMode, setRtcMode] = useState<"utc" | "local">("utc");
   const [hwclockTimes, setHwclockTimes] = useState<HardwareClockTimes | null>(
     null,
   );
@@ -426,43 +424,6 @@ const GeneralSettingsPanel = () => {
     });
   };
 
-  const handleShowHwclock = async () => {
-    try {
-      const result = await manageHwclockMutation.mutateAsync({
-        action: "show",
-      });
-      setHwclockTimes(extractHardwareClockTimes(result.raw));
-      toast.success(result.message);
-    } catch (error) {
-      toast.error(
-        extractApiErrorMessage(
-          error,
-          "دریافت ساعت سخت‌افزاری با خطا مواجه شد.",
-        ),
-      );
-    }
-  };
-
-  const handleRequestHwclockSync = (action: "hctosys" | "systohc") => {
-    const isHardwareToSystem = action === "hctosys";
-    setPendingAction({
-      type: "hwclock",
-      payload: isHardwareToSystem
-        ? { action, localtime: rtcMode === "local" }
-        : { action },
-      title: isHardwareToSystem
-        ? "خواندن زمان از ساعت مادربرد"
-        : "نوشتن زمان سیستم روی مادربرد",
-      description: isHardwareToSystem
-        ? "زمان سیستم‌عامل با مقدار ساعت سخت‌افزاری جایگزین می‌شود. انتخاب وقت جهانی یا وقت محلی تعیین می‌کند مقدار خام ساعت مادربرد چگونه تفسیر شود؛ انتخاب اشتباه می‌تواند باعث اختلاف چندساعته شود."
-        : "زمان فعلی سیستم‌عامل روی ساعت سخت‌افزاری مادربرد نوشته می‌شود. این عملیات مقدار قبلی ساعت مادربرد را جایگزین می‌کند.",
-      confirmLabel: isHardwareToSystem
-        ? "خواندن زمان از مادربرد"
-        : "نوشتن زمان روی مادربرد",
-      severity: "error",
-    });
-  };
-
   const handleConfirmAction = async () => {
     if (!pendingAction || isMutationPending) return;
 
@@ -549,9 +510,7 @@ const GeneralSettingsPanel = () => {
    * the radio group only decides which reading is shown (UTC or local).
    */
   const hardwareClockSource =
-    (rtcMode === "local"
-      ? (hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime)
-      : (hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime)) ?? null;
+    hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime ?? null;
   const hardwareClock = useSystemWallClock(hardwareClockSource, {
     enabled: true,
   });
@@ -580,6 +539,37 @@ const GeneralSettingsPanel = () => {
       : hardwareClockDrift.level === "aligned"
         ? "بدون اختلاف"
         : hardwareClockDrift.label;
+
+  /**
+   * Extra clocks that used to have their own rows. They are shown on hover of
+   * the server-time value instead.
+   */
+  const serverTimeTooltip = (
+    <Box dir="rtl" sx={{ display: "grid", gap: 0.75, py: 0.5 }}>
+      {[
+        { label: "زمان شمسی سرور", value: serverJalaliDisplay, ltr: false },
+        { label: "زمان جهانی (UTC)", value: utcTimeDisplay, ltr: true },
+      ].map((item) => (
+        <Box
+          key={item.label}
+          sx={{ display: "grid", gap: 0.25, fontSize: "0.78rem" }}
+        >
+          <Box component="span" sx={{ fontWeight: 700, opacity: 0.85 }}>
+            {item.label}
+          </Box>
+          <Box component="span" sx={{ fontWeight: 700 }}>
+            {item.ltr ? <Ltr>{item.value}</Ltr> : item.value}
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+
+  /**
+   * Manual time is only offered while automatic sync is off, both on the server
+   * and on the toggle inside the modal.
+   */
+  const isManualTimeAvailable = !isNtpActive && !ntpEnabled;
 
   const isTimeSectionOpen = expandedSections.includes(SECTIONS.time);
 
@@ -650,6 +640,34 @@ const GeneralSettingsPanel = () => {
       </span>
     </Tooltip>
   );
+
+  /**
+   * Hostname helper text. The allowed characters are underlined so the user can
+   * spot them quickly inside the error message.
+   */
+  const renderHostnameHelper = (message: string | null) => {
+    if (!message) return undefined;
+
+    const index = message.indexOf(HOSTNAME_ALLOWED_HINT);
+    if (index === -1) return message;
+
+    return (
+      <>
+        {message.slice(0, index)}
+        <Box
+          component="span"
+          sx={{
+            fontWeight: 700,
+            textDecoration: "underline",
+            textUnderlineOffset: "3px",
+          }}
+        >
+          {HOSTNAME_ALLOWED_HINT}
+        </Box>
+        {message.slice(index + HOSTNAME_ALLOWED_HINT.length)}
+      </>
+    );
+  };
 
   /** Manual-time picker, shared by its own modal and the time-settings modal. */
   const renderManualTimeFields = () => (
@@ -749,55 +767,59 @@ const GeneralSettingsPanel = () => {
         sx={{ mx: 0, gap: 1 }}
       />
 
-      {ntpServers.map((server, index) => (
-        <Stack
-          key={`ntp-server-${index}`}
-          direction="row"
-          gap={1}
-          sx={{ alignItems: "flex-start" }}
-        >
-          <TextField
-            fullWidth
-            label={`سرور زمان ${index + 1}`}
-            value={server}
-            onChange={(event) =>
-              handleNtpServerChange(index, event.target.value)
-            }
-            error={Boolean(ntpErrors[index])}
-            helperText={ntpErrors[index]}
-            sx={technicalFieldSx}
-            slotProps={{ htmlInput: { dir: "ltr", style: ltrInputStyle } }}
-          />
-          <Tooltip title="حذف سرور" arrow>
-            <span>
-              <IconButton
-                aria-label={`حذف سرور زمان ${index + 1}`}
-                onClick={() => handleRemoveNtpServer(index)}
-                sx={{ mt: 1, color: "var(--color-error)" }}
-              >
-                <MdDeleteOutline size={20} />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </Stack>
-      ))}
+      {ntpEnabled
+        ? ntpServers.map((server, index) => (
+            <Stack
+              key={`ntp-server-${index}`}
+              direction="row"
+              gap={1}
+              sx={{ alignItems: "flex-start" }}
+            >
+              <TextField
+                fullWidth
+                label={`سرور زمان ${index + 1}`}
+                value={server}
+                onChange={(event) =>
+                  handleNtpServerChange(index, event.target.value)
+                }
+                error={Boolean(ntpErrors[index])}
+                helperText={ntpErrors[index]}
+                sx={technicalFieldSx}
+                slotProps={{ htmlInput: { dir: "ltr", style: ltrInputStyle } }}
+              />
+              <Tooltip title="حذف سرور" arrow>
+                <span>
+                  <IconButton
+                    aria-label={`حذف سرور زمان ${index + 1}`}
+                    onClick={() => handleRemoveNtpServer(index)}
+                    sx={{ mt: 1, color: "var(--color-error)" }}
+                  >
+                    <MdDeleteOutline size={20} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Stack>
+          ))
+        : null}
 
       <Stack direction="row" gap={1} flexWrap="wrap">
-        <Button
-          onClick={handleAddNtpServer}
-          startIcon={<MdAdd />}
-          variant="outlined"
-          sx={outlinedButtonSx}
-        >
-          افزودن سرور زمان
-        </Button>
+        {ntpEnabled ? (
+          <Button
+            onClick={handleAddNtpServer}
+            startIcon={<MdAdd />}
+            variant="outlined"
+            sx={outlinedButtonSx}
+          >
+            افزودن سرور زمان
+          </Button>
+        ) : null}
         <Button
           onClick={handleRequestNtpChange}
           disabled={isMutationPending}
           variant="contained"
           sx={primaryButtonSx}
         >
-          ثبت سرورهای زمان
+          {ntpEnabled ? "ثبت سرورهای زمان" : "ثبت همگام‌سازی"}
         </Button>
       </Stack>
 
@@ -806,85 +828,6 @@ const GeneralSettingsPanel = () => {
           {ntpFormError}
         </Alert>
       ) : null}
-    </Stack>
-  );
-
-  const renderHardwareClockFields = () => (
-    <Stack gap={1.5}>
-      <FormControl sx={fieldSx}>
-        <FormLabel sx={{ fontSize: "0.85rem", mb: 0.5 }}>
-          تفسیر مقدار ساعت مادربرد
-        </FormLabel>
-        <RadioGroup
-          row
-          value={rtcMode}
-          onChange={(event) =>
-            setRtcMode(event.target.value as "utc" | "local")
-          }
-        >
-          <FormControlLabel
-            value="utc"
-            control={<Radio />}
-            label="وقت جهانی UTC"
-          />
-          <FormControlLabel
-            value="local"
-            control={<Radio />}
-            label="وقت محلی"
-          />
-        </RadioGroup>
-      </FormControl>
-
-      <SettingsRowsTable
-        rows={[
-          {
-            id: "hwclock-hardware",
-            title: "زمان سخت افزار (RTC)",
-            value: <Ltr>{hardwareTimeDisplay}</Ltr>,
-          },
-          {
-            id: "hwclock-system",
-            title: "زمان سرور",
-            value: <Ltr>{serverTimeDisplay}</Ltr>,
-          },
-          {
-            id: "hwclock-drift",
-            title: "وضعیت اختلاف زمانی",
-            hint: "اختلاف زمانی بین rtc و سیستم برحسب زمان محلی",
-            value: driftDisplay,
-          },
-        ]}
-      />
-
-      <Stack direction={{ xs: "column", sm: "row" }} gap={1} flexWrap="wrap">
-        {/* <Button
-          onClick={handleShowHwclock}
-          disabled={isMutationPending}
-          startIcon={<MdVisibility />}
-          variant="outlined"
-          sx={outlinedButtonSx}
-        >
-          خواندن مجدد
-        </Button> */}
-        <Button
-          onClick={() => handleRequestHwclockSync("hctosys")}
-          disabled={isMutationPending}
-          startIcon={<MdSync />}
-          variant="outlined"
-          sx={outlinedButtonSx}
-        >
-          خواندن زمان از مادربرد
-        </Button>
-        <Button
-          onClick={() => handleRequestHwclockSync("systohc")}
-          disabled={isMutationPending}
-          startIcon={<MdSync />}
-          variant="contained"
-          sx={primaryButtonSx}
-        >
-          نوشتن زمان روی مادربرد
-        </Button>
-      </Stack>
     </Stack>
   );
 
@@ -998,7 +941,20 @@ const GeneralSettingsPanel = () => {
               {
                 id: "time-server",
                 title: "زمان سرور",
-                value: <Ltr>{serverTimeDisplay}</Ltr>,
+                value: (
+                  <Tooltip arrow title={serverTimeTooltip}>
+                    <Box
+                      component="span"
+                      sx={{
+                        cursor: "help",
+                        textDecoration: "underline dotted",
+                        textUnderlineOffset: "4px",
+                      }}
+                    >
+                      <Ltr>{serverTimeDisplay}</Ltr>
+                    </Box>
+                  </Tooltip>
+                ),
                 valueAdornment: (
                   <>
                     <Tooltip title="تنطیمات زمان و همگام‌سازی" arrow>
@@ -1016,6 +972,33 @@ const GeneralSettingsPanel = () => {
                         sx={{ fontWeight: 700, fontSize: "0.72rem" }}
                       />
                     </Tooltip>
+                    <Tooltip
+                      arrow
+                      title="اختلاف زمانی بین rtc و سیستم برحسب زمان محلی"
+                    >
+                      <Chip
+                        size="small"
+                        variant="outlined"
+                        color={
+                          hardwareClockDrift.level === "aligned"
+                            ? "success"
+                            : hardwareClockDrift.level === "unknown"
+                              ? "default"
+                              : "error"
+                        }
+                        label={driftDisplay}
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: "0.72rem",
+                          maxWidth: "100%",
+                          "& .MuiChip-label": {
+                            whiteSpace: "normal",
+                            lineHeight: 1.5,
+                            py: 0.25,
+                          },
+                        }}
+                      />
+                    </Tooltip>
                     {/* {renderEditAction(
                       isNtpActive
                         ? "ابتدا همگام‌سازی خودکار را غیرفعال کنید"
@@ -1030,25 +1013,9 @@ const GeneralSettingsPanel = () => {
                 ),
               },
               {
-                id: "time-server-jalali",
-                title: "زمان شمسی سرور",
-                value: serverJalaliDisplay,
-              },
-              {
-                id: "time-utc",
-                title: "زمان جهانی (UTC)",
-                value: <Ltr>{utcTimeDisplay}</Ltr>,
-              },
-              {
                 id: "time-rtc",
                 title: "زمان سخت افزار (RTC)",
                 value: <Ltr>{hardwareTimeDisplay}</Ltr>,
-              },
-              {
-                id: "time-drift",
-                title: "وضعیت اختلاف زمانی",
-                hint: "اختلاف زمانی بین rtc و سیستم برحسب زمان محلی",
-                value: driftDisplay,
               },
               {
                 id: "time-timezone",
@@ -1084,7 +1051,7 @@ const GeneralSettingsPanel = () => {
             setHostnameError(null);
           }}
           error={Boolean(hostnameError)}
-          helperText={hostnameError}
+          helperText={renderHostnameHelper(hostnameError)}
           sx={technicalFieldSx}
           slotProps={{
             htmlInput: { maxLength: 253, dir: "ltr", style: ltrInputStyle },
@@ -1162,35 +1129,28 @@ const GeneralSettingsPanel = () => {
         {renderModalSectionTitle("همگام‌سازی خودکار (NTP)")}
         {renderNtpFields()}
 
-        <Divider
-          sx={{
-            my: 1,
-            borderColor:
-              "color-mix(in srgb, var(--color-primary) 18%, transparent)",
-          }}
-        />
+        {isManualTimeAvailable ? (
+          <>
+            <Divider
+              sx={{
+                my: 1,
+                borderColor:
+                  "color-mix(in srgb, var(--color-primary) 18%, transparent)",
+              }}
+            />
 
-        {renderModalSectionTitle("تنطیم دستی زمان")}
-        {renderManualTimeFields()}
-        <Button
-          onClick={handleRequestManualTime}
-          disabled={isMutationPending || isNtpActive}
-          variant="contained"
-          sx={{ ...primaryButtonSx, alignSelf: "flex-start" }}
-        >
-          تنطیم زمان سیستم
-        </Button>
-
-        <Divider
-          sx={{
-            my: 1,
-            borderColor:
-              "color-mix(in srgb, var(--color-primary) 18%, transparent)",
-          }}
-        />
-
-        {renderModalSectionTitle("ساعت سخت‌افزاری (RTC)")}
-        {renderHardwareClockFields()}
+            {renderModalSectionTitle("تنطیم دستی زمان")}
+            {renderManualTimeFields()}
+            <Button
+              onClick={handleRequestManualTime}
+              disabled={isMutationPending}
+              variant="contained"
+              sx={{ ...primaryButtonSx, alignSelf: "flex-start" }}
+            >
+              تنطیم زمان سیستم
+            </Button>
+          </>
+        ) : null}
       </SettingEditModal>
 
       <SystemSettingConfirmDialog
