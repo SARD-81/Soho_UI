@@ -944,7 +944,7 @@ const GeneralSettingsPanel = () => {
           id={SECTIONS.time}
           icon={<MdAccessTime />}
           title="زمان"
-          summaryLabel="زمان ��رور"
+          summaryLabel="زمان سرور"
           summaryValue={
             <Stack
               direction="row"
