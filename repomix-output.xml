@@ -13834,6 +13834,445 @@ const SelectedNfsSharesDetailsPanel = ({
 export default SelectedNfsSharesDetailsPanel;
 </file>
 
+<file path="src/components/services/ServicesTable.tsx">
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  Switch,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import { useMemo, useState } from 'react';
+import type { IconType } from 'react-icons';
+import {
+  FiAlertCircle,
+  FiCheckCircle,
+  FiPlay,
+  FiRefreshCw,
+  FiSlash,
+  FiStopCircle,
+} from 'react-icons/fi';
+import type { DataTableColumn } from '../../@types/dataTable';
+import type { ServiceActionType, ServiceValue } from '../../@types/service';
+import BlurModal from '../BlurModal';
+import DataTable from '../DataTable';
+import HelpTooltip from '../common/HelpTooltip';
+import ModalActionButtons from '../common/ModalActionButtons';
+
+interface ServiceTableRow {
+  name: string;
+  label: string;
+  details: Record<string, ServiceValue>;
+}
+
+interface ServicesTableProps {
+  services: ServiceTableRow[];
+  isLoading: boolean;
+  error: Error | null;
+  onAction: (serviceName: string, action: ServiceActionType) => void;
+  isActionLoading?: boolean;
+  activeServiceName?: string | null;
+  activeAction?: ServiceActionType | null;
+}
+
+type ServiceStatus =
+  | 'running'
+  | 'stopped'
+  | 'transitioning'
+  | 'error'
+  | 'masked';
+
+const actionLabels: Record<ServiceActionType, string> = {
+  start: 'شروع',
+  restart: 'راه‌اندازی مجدد',
+  stop: 'توقف',
+  reload: 'بارگذاری مجدد',
+  enable: 'فعال‌سازی در زمان راه‌اندازی سیستم',
+  disable: 'غیرفعال‌سازی در زمان راه‌اندازی سیستم',
+  mask: 'ماسک کردن',
+  unmask: 'حذف ماسک',
+};
+
+const statusConfig: Record<
+  ServiceStatus,
+  { label: string; color: string; background: string; icon: IconType }
+> = {
+  running: {
+    label: 'در حال اجرا',
+    color: 'var(--color-success)',
+    background: 'rgba(0, 170, 90, 0.12)',
+    icon: FiCheckCircle,
+  },
+  stopped: {
+    label: 'متوقف',
+    color: 'var(--color-secondary)',
+    background: 'rgba(130, 130, 130, 0.12)',
+    icon: FiStopCircle,
+  },
+  transitioning: {
+    label: 'در حال تغییر وضعیت',
+    color: 'var(--color-primary)',
+    background: 'rgba(0, 123, 255, 0.12)',
+    icon: FiRefreshCw,
+  },
+  error: {
+    label: 'خطا',
+    color: 'var(--color-error)',
+    background: 'rgba(220, 53, 69, 0.12)',
+    icon: FiAlertCircle,
+  },
+  masked: {
+    label: 'ماسک شده',
+    color: '#b26a00',
+    background: 'rgba(255, 193, 7, 0.16)',
+    icon: FiSlash,
+  },
+};
+
+const getNormalizedString = (value: ServiceValue) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+const normalizeServiceFlag = (value: ServiceValue): boolean | null => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    if (value === 1) return true;
+    if (value === 0) return false;
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+
+    if (['true', '1', 'yes', 'on', 'enabled', 'active'].includes(normalized)) {
+      return true;
+    }
+
+    if (
+      ['false', '0', 'no', 'off', 'disabled', 'inactive'].includes(normalized)
+    ) {
+      return false;
+    }
+  }
+
+  return null;
+};
+
+const getServiceStateToken = (value: string) => value.split(/\s+/, 1)[0] ?? '';
+
+const deriveStatus = (
+  row: ServiceTableRow,
+  isRuntimePending: boolean
+): ServiceStatus => {
+  if (isRuntimePending) {
+    return 'transitioning';
+  }
+
+  const activeState =
+    getNormalizedString(row.details.active) ||
+    getNormalizedString(row.details.active_state);
+  const subState =
+    getNormalizedString(row.details.sub) ||
+    getNormalizedString(row.details.sub_state);
+  const subStateToken = getServiceStateToken(subState);
+  const statusValue = getNormalizedString(row.details.status);
+  const statusToken = getServiceStateToken(statusValue);
+  const masked = normalizeServiceFlag(
+    row.details.masked ?? row.details.mask
+  );
+
+  if (masked === true) {
+    return 'masked';
+  }
+
+  if (statusToken === 'failed' || activeState === 'failed') {
+    return 'error';
+  }
+
+  if (
+    activeState === 'active' &&
+    ['running', 'exited', 'listening'].includes(subStateToken)
+  ) {
+    return 'running';
+  }
+
+  if (['running', 'active'].includes(statusToken)) {
+    return 'running';
+  }
+
+  return 'stopped';
+};
+
+const ServicesTable = ({
+  services,
+  isLoading,
+  error,
+  onAction,
+  isActionLoading = false,
+  activeServiceName = null,
+  activeAction = null,
+}: ServicesTableProps) => {
+  const [confirmState, setConfirmState] = useState<{
+    service: string;
+    action: 'stop';
+  } | null>(null);
+
+  const columns = useMemo<DataTableColumn<ServiceTableRow>[]>(() => {
+    const indexColumn: DataTableColumn<ServiceTableRow> = {
+      id: 'service-index',
+      header: 'ردیف',
+      align: 'center',
+      width: 64,
+      renderCell: (_row, index) => (
+        <Typography component="span" sx={{ fontWeight: 500 }}>
+          {(index + 1).toLocaleString('en-US')}
+        </Typography>
+      ),
+    };
+
+    const nameColumn: DataTableColumn<ServiceTableRow> = {
+      id: 'service-name',
+      header: 'نام سرویس',
+      align: 'left',
+      renderCell: (row) => {
+        const description =
+          typeof row.details.description === 'string'
+            ? row.details.description
+            : undefined;
+
+        return (
+          <Stack spacing={0.5} alignItems="flex-start">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <Typography component="span" sx={{ fontWeight: 700 }}>
+                {row.label}
+              </Typography>
+              {description ? (
+                <HelpTooltip title={description} placement="top" />
+              ) : null}
+            </Box>
+            <Typography
+              component="span"
+              sx={{
+                color: 'var(--color-secondary)',
+                fontSize: '0.85rem',
+                direction: 'ltr',
+              }}
+            >
+              {row.name}
+            </Typography>
+          </Stack>
+        );
+      },
+    };
+
+    const statusColumn: DataTableColumn<ServiceTableRow> = {
+      id: 'service-status',
+      header: 'وضعیت اجرا',
+      align: 'center',
+      renderCell: (row) => {
+        const isPending = isActionLoading && activeServiceName === row.name;
+        const isRuntimePending =
+          isPending && !['enable', 'disable'].includes(activeAction ?? '');
+        const status = deriveStatus(row, isRuntimePending);
+        const config = statusConfig[status];
+        const Icon = config.icon;
+
+        return (
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 1,
+              px: 1.5,
+              py: 0.75,
+              borderRadius: 99,
+              backgroundColor: config.background,
+              color: config.color,
+              minWidth: 140,
+              justifyContent: 'center',
+              fontWeight: 600,
+            }}
+          >
+            <Icon size={16} />
+            <span>{config.label}</span>
+          </Box>
+        );
+      },
+    };
+
+    const bootColumn: DataTableColumn<ServiceTableRow> = {
+      id: 'service-boot-state',
+      header: 'راه‌اندازی خودکار',
+      align: 'center',
+      renderCell: (row) => {
+        const enabled = normalizeServiceFlag(row.details.enabled);
+        const isPending =
+          isActionLoading &&
+          activeServiceName === row.name &&
+          ['enable', 'disable'].includes(activeAction ?? '');
+        const nextAction: ServiceActionType = enabled === true ? 'disable' : 'enable';
+        const tooltip =
+          enabled === true
+            ? 'غیرفعال‌سازی در زمان راه‌اندازی سیستم'
+            : 'فعال‌سازی در زمان راه‌اندازی سیستم';
+
+        if (enabled === null) {
+          return (
+            <Tooltip title="وضعیت راه‌اندازی خودکار از API دریافت نشده است." arrow>
+              <span>
+                <Switch disabled checked={false} />
+              </span>
+            </Tooltip>
+          );
+        }
+
+        return (
+          <Stack direction="row" alignItems="center" justifyContent="center" gap={0.75}>
+            {isPending ? <CircularProgress size={16} /> : null}
+            <Tooltip title={tooltip} arrow>
+              <span>
+                <Switch
+                  checked={enabled}
+                  onChange={() => onAction(row.name, nextAction)}
+                  disabled={isPending}
+                  inputProps={{
+                    'aria-label': tooltip,
+                  }}
+                  color="primary"
+                />
+              </span>
+            </Tooltip>
+            <Typography
+              variant="caption"
+              sx={{
+                color: enabled
+                  ? 'var(--color-success)'
+                  : 'var(--color-secondary)',
+                fontWeight: 700,
+                minWidth: 48,
+              }}
+            >
+              {enabled ? 'فعال' : 'غیرفعال'}
+            </Typography>
+          </Stack>
+        );
+      },
+    };
+
+    const actionColumn: DataTableColumn<ServiceTableRow> = {
+      id: 'actions',
+      header: 'عملیات',
+      align: 'right',
+      renderCell: (row) => {
+        const isPending = isActionLoading && activeServiceName === row.name;
+        const isRuntimePending =
+          isPending && !['enable', 'disable'].includes(activeAction ?? '');
+        const status = deriveStatus(row, isRuntimePending);
+        const isRunning = status === 'running';
+        const isMasked = status === 'masked';
+        const action: ServiceActionType = isRunning ? 'stop' : 'start';
+        const PrimaryIcon = isRunning ? FiStopCircle : FiPlay;
+
+        const handleClick = () => {
+          if (action === 'stop') {
+            setConfirmState({ service: row.name, action: 'stop' });
+            return;
+          }
+
+          onAction(row.name, action);
+        };
+
+        return (
+          <Tooltip
+            title={isMasked && action === 'start' ? 'ابتدا باید ماسک سرویس برداشته شود.' : ''}
+            arrow
+          >
+            <span>
+              <Button
+                size="small"
+                variant="contained"
+                color={isRunning ? 'error' : 'success'}
+                onClick={handleClick}
+                disabled={isRuntimePending || (action === 'start' && isMasked)}
+                startIcon={
+                  isRuntimePending ? (
+                    <CircularProgress color="inherit" size={14} />
+                  ) : (
+                    <PrimaryIcon size={16} />
+                  )
+                }
+                sx={{
+                  fontWeight: 700,
+                  '&.Mui-disabled': { opacity: 0.6 },
+                }}
+              >
+                {isRuntimePending
+                  ? action === 'stop'
+                    ? 'در حال توقف...'
+                    : 'در حال شروع...'
+                  : actionLabels[action]}
+              </Button>
+            </span>
+          </Tooltip>
+        );
+      },
+    };
+
+    return [indexColumn, nameColumn, statusColumn, bootColumn, actionColumn];
+  }, [activeAction, activeServiceName, isActionLoading, onAction]);
+
+  return (
+    <>
+      <DataTable<ServiceTableRow>
+        columns={columns}
+        data={services}
+        getRowId={(row) => row.name}
+        isLoading={isLoading}
+        error={error}
+      />
+
+      {confirmState ? (
+        <BlurModal
+          open
+          onClose={() => setConfirmState(null)}
+          title={
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              توقف سرویس؟
+            </Typography>
+          }
+          actions={
+            <ModalActionButtons
+              onCancel={() => setConfirmState(null)}
+              onConfirm={() => {
+                onAction(confirmState.service, confirmState.action);
+                setConfirmState(null);
+              }}
+              confirmLabel="توقف سرویس"
+              cancelLabel="انصراف"
+              confirmProps={{ color: 'error', disableElevation: true }}
+              disableConfirmGradient
+            />
+          }
+          minWidth={420}
+        >
+          <Typography sx={{ color: 'var(--color-secondary)', lineHeight: 1.7 }}>
+            توقف این سرویس ممکن است باعث اختلال در دسترسی کاربران شود. آیا مطمئن
+            هستید؟
+          </Typography>
+        </BlurModal>
+      ) : null}
+    </>
+  );
+};
+
+export type { ServiceTableRow };
+export default ServicesTable;
+</file>
+
 <file path="src/components/settings/ConfirmDeleteWebUserModal.tsx">
 import { Box, Typography } from '@mui/material';
 import BlurModal from '../BlurModal';
@@ -28726,6 +29165,64 @@ export const useServices = () =>
 export type UseServicesReturn = ReturnType<typeof useServices>;
 </file>
 
+<file path="src/hooks/useServiceStatuses.ts">
+import { useQueries } from '@tanstack/react-query';
+import type { ServiceEntry, ServiceFlagValue } from '../@types/service';
+import axiosInstance from '../lib/axiosInstance';
+
+interface ServiceStatusResponse {
+  enabled?: ServiceFlagValue;
+  status?: {
+    enabled?: ServiceFlagValue;
+    [key: string]: unknown;
+  };
+  data?: {
+    enabled?: ServiceFlagValue;
+    status?: {
+      enabled?: ServiceFlagValue;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+}
+
+const fetchServiceStatus = async (unitName: string) => {
+  const encodedName = encodeURIComponent(unitName);
+  const { data } = await axiosInstance.get<ServiceStatusResponse>(
+    `/api/system/service/${encodedName}/`
+  );
+  return data;
+};
+
+const getEnabledState = (
+  response: ServiceStatusResponse | undefined
+): ServiceFlagValue =>
+  response?.data?.status?.enabled ??
+  response?.data?.enabled ??
+  response?.status?.enabled ??
+  response?.enabled;
+
+export const useServiceStatuses = (services: ServiceEntry[]) => {
+  const queries = useQueries({
+    queries: services.map((service) => ({
+      queryKey: ['services', 'status', service.unit],
+      queryFn: () => fetchServiceStatus(service.unit),
+      enabled: Boolean(service.unit),
+      refetchInterval: 5000,
+      refetchIntervalInBackground: false,
+      refetchOnWindowFocus: false,
+    })),
+  });
+
+  return new Map(
+    services.map((service, index) => [
+      service.unit,
+      getEnabledState(queries[index]?.data),
+    ])
+  );
+};
+</file>
+
 <file path="src/hooks/useSetCanmount.ts">
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
@@ -38446,445 +38943,6 @@ const NotificationBootstrapper = ({ userKey }: NotificationBootstrapperProps) =>
 export default NotificationBootstrapper;
 </file>
 
-<file path="src/components/services/ServicesTable.tsx">
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Stack,
-  Switch,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { useMemo, useState } from 'react';
-import type { IconType } from 'react-icons';
-import {
-  FiAlertCircle,
-  FiCheckCircle,
-  FiPlay,
-  FiRefreshCw,
-  FiSlash,
-  FiStopCircle,
-} from 'react-icons/fi';
-import type { DataTableColumn } from '../../@types/dataTable';
-import type { ServiceActionType, ServiceValue } from '../../@types/service';
-import BlurModal from '../BlurModal';
-import DataTable from '../DataTable';
-import HelpTooltip from '../common/HelpTooltip';
-import ModalActionButtons from '../common/ModalActionButtons';
-
-interface ServiceTableRow {
-  name: string;
-  label: string;
-  details: Record<string, ServiceValue>;
-}
-
-interface ServicesTableProps {
-  services: ServiceTableRow[];
-  isLoading: boolean;
-  error: Error | null;
-  onAction: (serviceName: string, action: ServiceActionType) => void;
-  isActionLoading?: boolean;
-  activeServiceName?: string | null;
-  activeAction?: ServiceActionType | null;
-}
-
-type ServiceStatus =
-  | 'running'
-  | 'stopped'
-  | 'transitioning'
-  | 'error'
-  | 'masked';
-
-const actionLabels: Record<ServiceActionType, string> = {
-  start: 'شروع',
-  restart: 'راه‌اندازی مجدد',
-  stop: 'توقف',
-  reload: 'بارگذاری مجدد',
-  enable: 'فعال‌سازی در زمان راه‌اندازی سیستم',
-  disable: 'غیرفعال‌سازی در زمان راه‌اندازی سیستم',
-  mask: 'ماسک کردن',
-  unmask: 'حذف ماسک',
-};
-
-const statusConfig: Record<
-  ServiceStatus,
-  { label: string; color: string; background: string; icon: IconType }
-> = {
-  running: {
-    label: 'در حال اجرا',
-    color: 'var(--color-success)',
-    background: 'rgba(0, 170, 90, 0.12)',
-    icon: FiCheckCircle,
-  },
-  stopped: {
-    label: 'متوقف',
-    color: 'var(--color-secondary)',
-    background: 'rgba(130, 130, 130, 0.12)',
-    icon: FiStopCircle,
-  },
-  transitioning: {
-    label: 'در حال تغییر وضعیت',
-    color: 'var(--color-primary)',
-    background: 'rgba(0, 123, 255, 0.12)',
-    icon: FiRefreshCw,
-  },
-  error: {
-    label: 'خطا',
-    color: 'var(--color-error)',
-    background: 'rgba(220, 53, 69, 0.12)',
-    icon: FiAlertCircle,
-  },
-  masked: {
-    label: 'ماسک شده',
-    color: '#b26a00',
-    background: 'rgba(255, 193, 7, 0.16)',
-    icon: FiSlash,
-  },
-};
-
-const getNormalizedString = (value: ServiceValue) =>
-  typeof value === 'string' ? value.trim().toLowerCase() : '';
-
-const normalizeServiceFlag = (value: ServiceValue): boolean | null => {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-
-  if (typeof value === 'number') {
-    if (value === 1) return true;
-    if (value === 0) return false;
-    return null;
-  }
-
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-
-    if (['true', '1', 'yes', 'on', 'enabled', 'active'].includes(normalized)) {
-      return true;
-    }
-
-    if (
-      ['false', '0', 'no', 'off', 'disabled', 'inactive'].includes(normalized)
-    ) {
-      return false;
-    }
-  }
-
-  return null;
-};
-
-const getServiceStateToken = (value: string) => value.split(/\s+/, 1)[0] ?? '';
-
-const deriveStatus = (
-  row: ServiceTableRow,
-  isRuntimePending: boolean
-): ServiceStatus => {
-  if (isRuntimePending) {
-    return 'transitioning';
-  }
-
-  const activeState =
-    getNormalizedString(row.details.active) ||
-    getNormalizedString(row.details.active_state);
-  const subState =
-    getNormalizedString(row.details.sub) ||
-    getNormalizedString(row.details.sub_state);
-  const subStateToken = getServiceStateToken(subState);
-  const statusValue = getNormalizedString(row.details.status);
-  const statusToken = getServiceStateToken(statusValue);
-  const masked = normalizeServiceFlag(
-    row.details.masked ?? row.details.mask
-  );
-
-  if (masked === true) {
-    return 'masked';
-  }
-
-  if (statusToken === 'failed' || activeState === 'failed') {
-    return 'error';
-  }
-
-  if (
-    activeState === 'active' &&
-    ['running', 'exited', 'listening'].includes(subStateToken)
-  ) {
-    return 'running';
-  }
-
-  if (['running', 'active'].includes(statusToken)) {
-    return 'running';
-  }
-
-  return 'stopped';
-};
-
-const ServicesTable = ({
-  services,
-  isLoading,
-  error,
-  onAction,
-  isActionLoading = false,
-  activeServiceName = null,
-  activeAction = null,
-}: ServicesTableProps) => {
-  const [confirmState, setConfirmState] = useState<{
-    service: string;
-    action: 'stop';
-  } | null>(null);
-
-  const columns = useMemo<DataTableColumn<ServiceTableRow>[]>(() => {
-    const indexColumn: DataTableColumn<ServiceTableRow> = {
-      id: 'service-index',
-      header: 'ردیف',
-      align: 'center',
-      width: 64,
-      renderCell: (_row, index) => (
-        <Typography component="span" sx={{ fontWeight: 500 }}>
-          {(index + 1).toLocaleString('en-US')}
-        </Typography>
-      ),
-    };
-
-    const nameColumn: DataTableColumn<ServiceTableRow> = {
-      id: 'service-name',
-      header: 'نام سرویس',
-      align: 'left',
-      renderCell: (row) => {
-        const description =
-          typeof row.details.description === 'string'
-            ? row.details.description
-            : undefined;
-
-        return (
-          <Stack spacing={0.5} alignItems="flex-start">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <Typography component="span" sx={{ fontWeight: 700 }}>
-                {row.label}
-              </Typography>
-              {description ? (
-                <HelpTooltip title={description} placement="top" />
-              ) : null}
-            </Box>
-            <Typography
-              component="span"
-              sx={{
-                color: 'var(--color-secondary)',
-                fontSize: '0.85rem',
-                direction: 'ltr',
-              }}
-            >
-              {row.name}
-            </Typography>
-          </Stack>
-        );
-      },
-    };
-
-    const statusColumn: DataTableColumn<ServiceTableRow> = {
-      id: 'service-status',
-      header: 'وضعیت اجرا',
-      align: 'center',
-      renderCell: (row) => {
-        const isPending = isActionLoading && activeServiceName === row.name;
-        const isRuntimePending =
-          isPending && !['enable', 'disable'].includes(activeAction ?? '');
-        const status = deriveStatus(row, isRuntimePending);
-        const config = statusConfig[status];
-        const Icon = config.icon;
-
-        return (
-          <Box
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 1,
-              px: 1.5,
-              py: 0.75,
-              borderRadius: 99,
-              backgroundColor: config.background,
-              color: config.color,
-              minWidth: 140,
-              justifyContent: 'center',
-              fontWeight: 600,
-            }}
-          >
-            <Icon size={16} />
-            <span>{config.label}</span>
-          </Box>
-        );
-      },
-    };
-
-    const bootColumn: DataTableColumn<ServiceTableRow> = {
-      id: 'service-boot-state',
-      header: 'راه‌اندازی خودکار',
-      align: 'center',
-      renderCell: (row) => {
-        const enabled = normalizeServiceFlag(row.details.enabled);
-        const isPending =
-          isActionLoading &&
-          activeServiceName === row.name &&
-          ['enable', 'disable'].includes(activeAction ?? '');
-        const nextAction: ServiceActionType = enabled === true ? 'disable' : 'enable';
-        const tooltip =
-          enabled === true
-            ? 'غیرفعال‌سازی در زمان راه‌اندازی سیستم'
-            : 'فعال‌سازی در زمان راه‌اندازی سیستم';
-
-        if (enabled === null) {
-          return (
-            <Tooltip title="وضعیت راه‌اندازی خودکار از API دریافت نشده است." arrow>
-              <span>
-                <Switch disabled checked={false} />
-              </span>
-            </Tooltip>
-          );
-        }
-
-        return (
-          <Stack direction="row" alignItems="center" justifyContent="center" gap={0.75}>
-            {isPending ? <CircularProgress size={16} /> : null}
-            <Tooltip title={tooltip} arrow>
-              <span>
-                <Switch
-                  checked={enabled}
-                  onChange={() => onAction(row.name, nextAction)}
-                  disabled={isPending}
-                  inputProps={{
-                    'aria-label': tooltip,
-                  }}
-                  color="primary"
-                />
-              </span>
-            </Tooltip>
-            <Typography
-              variant="caption"
-              sx={{
-                color: enabled
-                  ? 'var(--color-success)'
-                  : 'var(--color-secondary)',
-                fontWeight: 700,
-                minWidth: 48,
-              }}
-            >
-              {enabled ? 'فعال' : 'غیرفعال'}
-            </Typography>
-          </Stack>
-        );
-      },
-    };
-
-    const actionColumn: DataTableColumn<ServiceTableRow> = {
-      id: 'actions',
-      header: 'عملیات',
-      align: 'right',
-      renderCell: (row) => {
-        const isPending = isActionLoading && activeServiceName === row.name;
-        const isRuntimePending =
-          isPending && !['enable', 'disable'].includes(activeAction ?? '');
-        const status = deriveStatus(row, isRuntimePending);
-        const isRunning = status === 'running';
-        const isMasked = status === 'masked';
-        const action: ServiceActionType = isRunning ? 'stop' : 'start';
-        const PrimaryIcon = isRunning ? FiStopCircle : FiPlay;
-
-        const handleClick = () => {
-          if (action === 'stop') {
-            setConfirmState({ service: row.name, action: 'stop' });
-            return;
-          }
-
-          onAction(row.name, action);
-        };
-
-        return (
-          <Tooltip
-            title={isMasked && action === 'start' ? 'ابتدا باید ماسک سرویس برداشته شود.' : ''}
-            arrow
-          >
-            <span>
-              <Button
-                size="small"
-                variant="contained"
-                color={isRunning ? 'error' : 'success'}
-                onClick={handleClick}
-                disabled={isRuntimePending || (action === 'start' && isMasked)}
-                startIcon={
-                  isRuntimePending ? (
-                    <CircularProgress color="inherit" size={14} />
-                  ) : (
-                    <PrimaryIcon size={16} />
-                  )
-                }
-                sx={{
-                  fontWeight: 700,
-                  '&.Mui-disabled': { opacity: 0.6 },
-                }}
-              >
-                {isRuntimePending
-                  ? action === 'stop'
-                    ? 'در حال توقف...'
-                    : 'در حال شروع...'
-                  : actionLabels[action]}
-              </Button>
-            </span>
-          </Tooltip>
-        );
-      },
-    };
-
-    return [indexColumn, nameColumn, statusColumn, bootColumn, actionColumn];
-  }, [activeAction, activeServiceName, isActionLoading, onAction]);
-
-  return (
-    <>
-      <DataTable<ServiceTableRow>
-        columns={columns}
-        data={services}
-        getRowId={(row) => row.name}
-        isLoading={isLoading}
-        error={error}
-      />
-
-      {confirmState ? (
-        <BlurModal
-          open
-          onClose={() => setConfirmState(null)}
-          title={
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
-              توقف سرویس؟
-            </Typography>
-          }
-          actions={
-            <ModalActionButtons
-              onCancel={() => setConfirmState(null)}
-              onConfirm={() => {
-                onAction(confirmState.service, confirmState.action);
-                setConfirmState(null);
-              }}
-              confirmLabel="توقف سرویس"
-              cancelLabel="انصراف"
-              confirmProps={{ color: 'error', disableElevation: true }}
-              disableConfirmGradient
-            />
-          }
-          minWidth={420}
-        >
-          <Typography sx={{ color: 'var(--color-secondary)', lineHeight: 1.7 }}>
-            توقف این سرویس ممکن است باعث اختلال در دسترسی کاربران شود. آیا مطمئن
-            هستید؟
-          </Typography>
-        </BlurModal>
-      ) : null}
-    </>
-  );
-};
-
-export type { ServiceTableRow };
-export default ServicesTable;
-</file>
-
 <file path="src/components/settings/general/InfoRow.tsx">
 import { Divider, Stack, Typography } from '@mui/material';
 import { Fragment, type ReactNode } from 'react';
@@ -40885,64 +40943,6 @@ export const useLocalNotifications = (userKey?: string) => {
     markAllAsRead,
     clearNotification,
   };
-};
-</file>
-
-<file path="src/hooks/useServiceStatuses.ts">
-import { useQueries } from '@tanstack/react-query';
-import type { ServiceEntry, ServiceFlagValue } from '../@types/service';
-import axiosInstance from '../lib/axiosInstance';
-
-interface ServiceStatusResponse {
-  enabled?: ServiceFlagValue;
-  status?: {
-    enabled?: ServiceFlagValue;
-    [key: string]: unknown;
-  };
-  data?: {
-    enabled?: ServiceFlagValue;
-    status?: {
-      enabled?: ServiceFlagValue;
-      [key: string]: unknown;
-    };
-    [key: string]: unknown;
-  };
-}
-
-const fetchServiceStatus = async (unitName: string) => {
-  const encodedName = encodeURIComponent(unitName);
-  const { data } = await axiosInstance.get<ServiceStatusResponse>(
-    `/api/system/service/${encodedName}/`
-  );
-  return data;
-};
-
-const getEnabledState = (
-  response: ServiceStatusResponse | undefined
-): ServiceFlagValue =>
-  response?.data?.status?.enabled ??
-  response?.data?.enabled ??
-  response?.status?.enabled ??
-  response?.enabled;
-
-export const useServiceStatuses = (services: ServiceEntry[]) => {
-  const queries = useQueries({
-    queries: services.map((service) => ({
-      queryKey: ['services', 'status', service.unit],
-      queryFn: () => fetchServiceStatus(service.unit),
-      enabled: Boolean(service.unit),
-      refetchInterval: 5000,
-      refetchIntervalInBackground: false,
-      refetchOnWindowFocus: false,
-    })),
-  });
-
-  return new Map(
-    services.map((service, index) => [
-      service.unit,
-      getEnabledState(queries[index]?.data),
-    ])
-  );
 };
 </file>
 
@@ -48870,492 +48870,6 @@ export const useNetwork = (enabled = true) => {
 };
 </file>
 
-<file path="src/utils/generalSettings.ts">
-import type {
-  HostnameInfo,
-  HwclockResult,
-  SystemTimeInfo,
-  SystemVersionInfo,
-} from '../@types/generalSettings';
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-
-const normalizeKey = (value: string) =>
-  value.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-const unwrapData = (payload: unknown) => {
-  if (!isRecord(payload)) {
-    return payload;
-  }
-
-  return Object.prototype.hasOwnProperty.call(payload, 'data')
-    ? payload.data
-    : payload;
-};
-
-const getRecord = (value: unknown): Record<string, unknown> | null =>
-  isRecord(value) ? value : null;
-
-const getPathValue = (source: unknown, path: readonly string[]): unknown => {
-  let current: unknown = source;
-
-  for (const segment of path) {
-    if (!isRecord(current)) {
-      return undefined;
-    }
-    current = current[segment];
-  }
-
-  return current;
-};
-
-const findNestedValue = (
-  source: unknown,
-  aliases: readonly string[],
-  depth = 0
-): unknown => {
-  if (depth > 5 || source == null) {
-    return undefined;
-  }
-
-  const normalizedAliases = new Set(aliases.map(normalizeKey));
-
-  if (isRecord(source)) {
-    for (const [key, value] of Object.entries(source)) {
-      if (normalizedAliases.has(normalizeKey(key))) {
-        return value;
-      }
-    }
-
-    for (const value of Object.values(source)) {
-      const nestedValue = findNestedValue(value, aliases, depth + 1);
-      if (nestedValue !== undefined) {
-        return nestedValue;
-      }
-    }
-  }
-
-  if (Array.isArray(source)) {
-    for (const item of source) {
-      const nestedValue = findNestedValue(item, aliases, depth + 1);
-      if (nestedValue !== undefined) {
-        return nestedValue;
-      }
-    }
-  }
-
-  return undefined;
-};
-
-const normalizeString = (value: unknown): string | null => {
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  }
-
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return String(value);
-  }
-
-  return null;
-};
-
-const normalizeBoolean = (value: unknown): boolean | null => {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-
-  if (typeof value === 'number') {
-    if (value === 1) return true;
-    if (value === 0) return false;
-  }
-
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    if (['true', '1', 'yes', 'on', 'enabled', 'active', 'local'].includes(normalized)) {
-      return true;
-    }
-    if (['false', '0', 'no', 'off', 'disabled', 'inactive', 'utc'].includes(normalized)) {
-      return false;
-    }
-  }
-
-  return null;
-};
-
-const normalizeStringArray = (value: unknown): string[] => {
-  if (Array.isArray(value)) {
-    return Array.from(
-      new Set(
-        value
-          .map(normalizeString)
-          .filter((item): item is string => Boolean(item))
-      )
-    );
-  }
-
-  if (typeof value === 'string') {
-    return Array.from(
-      new Set(
-        value
-          .split(/[\n,;]+/)
-          .map((item) => item.trim())
-          .filter(Boolean)
-      )
-    );
-  }
-
-  return [];
-};
-
-export const normalizeSystemTimeInfo = (payload: unknown): SystemTimeInfo => {
-  const data = unwrapData(payload);
-  const dataRecord = getRecord(data);
-  const osTime = getRecord(dataRecord?.os_time);
-  const hardwareTime = getRecord(dataRecord?.hw_time);
-  const ntp = getRecord(dataRecord?.ntp);
-
-  const localTime =
-    normalizeString(osTime?.local) ??
-    normalizeString(
-      findNestedValue(data, [
-        'local_time',
-        'localtime',
-        'system_local_time',
-        'current_local_time',
-        'local_datetime',
-        'datetime_local',
-      ])
-    );
-
-  const utcTime =
-    normalizeString(osTime?.utc) ??
-    normalizeString(
-      findNestedValue(data, [
-        'utc_time',
-        'utctime',
-        'system_utc_time',
-        'current_utc_time',
-        'utc_datetime',
-      ])
-    );
-
-  const hardwareLocalTime =
-    normalizeString(hardwareTime?.local) ??
-    normalizeString(
-      findNestedValue(data, [
-        'hardware_local_time',
-        'hw_local_time',
-        'rtc_local_time',
-      ])
-    );
-
-  const hardwareUtcTime =
-    normalizeString(hardwareTime?.utc) ??
-    normalizeString(
-      findNestedValue(data, [
-        'hardware_utc_time',
-        'hw_utc_time',
-        'rtc_utc_time',
-      ])
-    );
-
-  const fallbackRtcTime = normalizeString(
-    findNestedValue(data, [
-      'rtc_time',
-      'rtctime',
-      'hardware_time',
-      'hardware_clock',
-      'hwclock',
-    ])
-  );
-
-  return {
-    localTime,
-    utcTime,
-    hardwareLocalTime,
-    hardwareUtcTime,
-    rtcTime: hardwareLocalTime ?? hardwareUtcTime ?? fallbackRtcTime,
-    timezone:
-      normalizeString(dataRecord?.timezone) ??
-      normalizeString(findNestedValue(data, ['time_zone', 'zone'])),
-    ntpEnabled:
-      normalizeBoolean(ntp?.enabled) ??
-      normalizeBoolean(
-        findNestedValue(data, [
-          'ntp_enabled',
-          'ntpenabled',
-          'ntp_active',
-          'ntpactive',
-          'use_ntp',
-        ])
-      ),
-    ntpSynchronized:
-      normalizeBoolean(ntp?.synchronized) ??
-      normalizeBoolean(
-        findNestedValue(data, [
-          'ntp_synchronized',
-          'ntpsynchronized',
-          'ntp_synced',
-          'system_clock_synchronized',
-          'synced',
-        ])
-      ),
-    rtcInLocalTimezone: normalizeBoolean(
-      findNestedValue(data, [
-        'rtc_in_local_tz',
-        'rtc_in_local_timezone',
-        'rtc_localtime',
-        'rtc_local',
-        'local_rtc',
-      ])
-    ),
-    ntpServers:
-      normalizeStringArray(ntp?.servers).length > 0
-        ? normalizeStringArray(ntp?.servers)
-        : normalizeStringArray(
-            findNestedValue(data, [
-              'ntp_servers',
-              'configured_ntp_servers',
-              'timeservers',
-              'time_servers',
-            ])
-          ),
-    raw: data,
-  };
-};
-
-export const normalizeTimezoneList = (payload: unknown): string[] => {
-  const data = unwrapData(payload);
-  const candidate =
-    (Array.isArray(data) ? data : undefined) ??
-    findNestedValue(data, ['timezones', 'zones', 'timezone_list', 'items']);
-
-  return normalizeStringArray(candidate).sort((left, right) =>
-    left.localeCompare(right, 'en')
-  );
-};
-
-export const normalizeHostnameInfo = (payload: unknown): HostnameInfo => {
-  const data = unwrapData(payload);
-  const dataRecord = getRecord(data);
-  const exactHostname = normalizeString(dataRecord?.hostname);
-  const staticHostname =
-    normalizeString(dataRecord?.static_hostname) ??
-    normalizeString(
-      findNestedValue(data, [
-        'static_hostname',
-        'statichostname',
-        'persistent_hostname',
-      ])
-    );
-  const currentHostname =
-    exactHostname ??
-    normalizeString(dataRecord?.current_hostname) ??
-    normalizeString(
-      findNestedValue(data, [
-        'currenthostname',
-        'transient_hostname',
-      ])
-    );
-
-  return {
-    currentHostname: currentHostname ?? staticHostname,
-    staticHostname: staticHostname ?? currentHostname,
-    raw: data,
-  };
-};
-
-export const normalizeSystemVersion = (payload: unknown): SystemVersionInfo => {
-  const data = unwrapData(payload);
-  const dataRecord = getRecord(data);
-  const filePath = normalizeString(dataRecord?.file_path);
-  const backendError = normalizeString(dataRecord?.error);
-  let lines: string[] = [];
-
-  if (Array.isArray(data)) {
-    lines = normalizeStringArray(data);
-  } else if (typeof data === 'string') {
-    lines = data
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-  } else if (dataRecord) {
-    const contentLines = normalizeStringArray(dataRecord.content);
-    const rawText = normalizeString(dataRecord.raw_text);
-    const version = normalizeString(dataRecord.version);
-
-    if (contentLines.length > 0) {
-      lines = contentLines;
-    } else if (rawText) {
-      lines = rawText
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter(Boolean);
-    } else if (version) {
-      lines = [version];
-    } else {
-      lines = normalizeStringArray(
-        findNestedValue(data, ['lines', 'version_lines', 'text'])
-      );
-    }
-  }
-
-  return {
-    lines,
-    text: lines.join('\n'),
-    filePath,
-    backendError,
-    raw: data,
-  };
-};
-
-const stringifyCompact = (value: unknown): string | null => {
-  const normalized = normalizeString(value);
-  if (normalized) {
-    return normalized;
-  }
-
-  if (value == null) {
-    return null;
-  }
-
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
-};
-
-export const normalizeHwclockResult = (payload: unknown): HwclockResult => {
-  const data = unwrapData(payload);
-  const message =
-    normalizeString(getPathValue(payload, ['message'])) ??
-    'عملیات ساعت سخت‌افزاری با موفقیت انجام شد.';
-  const displayValue = stringifyCompact(
-    findNestedValue(data, [
-      'rtc_time',
-      'hardware_time',
-      'hardware_clock',
-      'hwclock',
-      'time',
-      'output',
-      'result',
-    ]) ?? data
-  );
-
-  return { message, displayValue, raw: data };
-};
-
-export const validateHostname = (value: string) => {
-  const hostname = value.trim().toLowerCase();
-
-  if (!hostname) {
-    return { value: hostname, error: 'نام میزبان الزامی است.' };
-  }
-
-  if (hostname.length > 253) {
-    return {
-      value: hostname,
-      error: 'طول نام میزبان نباید بیشتر از ۲۵۳ کاراکتر باشد.',
-    };
-  }
-
-  const labels = hostname.split('.');
-  const labelPattern = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-
-  if (labels.some((label) => !labelPattern.test(label))) {
-    return {
-      value: hostname,
-      error:
-        'نام میزبان باید مطابق RFC 1123 باشد؛ فقط حروف انگلیسی، عدد، خط تیره و نقطه مجاز است و هر بخش نباید با خط تیره شروع یا تمام شود.',
-    };
-  }
-
-  return { value: hostname, error: null };
-};
-
-export const validateNtpServer = (value: string) => {
-  const server = value.trim();
-
-  if (!server) {
-    return { value: server, error: 'آدرس سرور NTP نمی‌تواند خالی باشد.' };
-  }
-
-  if (server.length > 253 || /\s/.test(server)) {
-    return { value: server, error: 'آدرس سرور NTP معتبر نیست.' };
-  }
-
-  if (!/^[a-zA-Z0-9._:-]+$/.test(server)) {
-    return {
-      value: server,
-      error: 'در آدرس سرور NTP کاراکتر غیرمجاز وجود دارد.',
-    };
-  }
-
-  return { value: server, error: null };
-};
-
-const padNumber = (value: number) => String(value).padStart(2, '0');
-
-export const toDateTimeLocalValue = (value: unknown): string => {
-  if (typeof value === 'string') {
-    const match = value
-      .trim()
-      .match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
-    if (match) {
-      return `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6] ?? '00'}`;
-    }
-  }
-
-  const parsed = value instanceof Date ? value : new Date(String(value ?? ''));
-  const date = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-
-  return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(
-    date.getDate()
-  )}T${padNumber(date.getHours())}:${padNumber(date.getMinutes())}:${padNumber(
-    date.getSeconds()
-  )}`;
-};
-
-export const formatManualTimeForApi = (value: string) => {
-  const match = value
-    .trim()
-    .match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
-
-  if (!match) {
-    return { value: '', error: 'تاریخ و ساعت واردشده معتبر نیست.' };
-  }
-
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const hour = Number(match[4]);
-  const minute = Number(match[5]);
-  const second = Number(match[6] ?? '0');
-  const parsed = new Date(year, month - 1, day, hour, minute, second);
-
-  if (
-    parsed.getFullYear() !== year ||
-    parsed.getMonth() !== month - 1 ||
-    parsed.getDate() !== day ||
-    parsed.getHours() !== hour ||
-    parsed.getMinutes() !== minute ||
-    parsed.getSeconds() !== second
-  ) {
-    return { value: '', error: 'تاریخ و ساعت واردشده معتبر نیست.' };
-  }
-
-  return {
-    value: `${match[1]}-${match[2]}-${match[3]} ${match[4]}:${match[5]}:${padNumber(
-      second
-    )}`,
-    error: null,
-  };
-};
-</file>
-
 <file path="src/components/tabs/styles.ts">
 import type { SxProps, Theme } from '@mui/material';
 
@@ -49509,6 +49023,501 @@ const PageContainer = ({ children, sx }: PageContainerProps) => {
 };
 
 export default PageContainer;
+</file>
+
+<file path="src/utils/generalSettings.ts">
+import type {
+  HostnameInfo,
+  HwclockResult,
+  SystemTimeInfo,
+  SystemVersionInfo,
+} from "../@types/generalSettings";
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+const normalizeKey = (value: string) =>
+  value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const unwrapData = (payload: unknown) => {
+  if (!isRecord(payload)) {
+    return payload;
+  }
+
+  return Object.prototype.hasOwnProperty.call(payload, "data")
+    ? payload.data
+    : payload;
+};
+
+const getRecord = (value: unknown): Record<string, unknown> | null =>
+  isRecord(value) ? value : null;
+
+const getPathValue = (source: unknown, path: readonly string[]): unknown => {
+  let current: unknown = source;
+
+  for (const segment of path) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+    current = current[segment];
+  }
+
+  return current;
+};
+
+const findNestedValue = (
+  source: unknown,
+  aliases: readonly string[],
+  depth = 0,
+): unknown => {
+  if (depth > 5 || source == null) {
+    return undefined;
+  }
+
+  const normalizedAliases = new Set(aliases.map(normalizeKey));
+
+  if (isRecord(source)) {
+    for (const [key, value] of Object.entries(source)) {
+      if (normalizedAliases.has(normalizeKey(key))) {
+        return value;
+      }
+    }
+
+    for (const value of Object.values(source)) {
+      const nestedValue = findNestedValue(value, aliases, depth + 1);
+      if (nestedValue !== undefined) {
+        return nestedValue;
+      }
+    }
+  }
+
+  if (Array.isArray(source)) {
+    for (const item of source) {
+      const nestedValue = findNestedValue(item, aliases, depth + 1);
+      if (nestedValue !== undefined) {
+        return nestedValue;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const normalizeString = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return null;
+};
+
+const normalizeBoolean = (value: unknown): boolean | null => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    if (value === 1) return true;
+    if (value === 0) return false;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (
+      ["true", "1", "yes", "on", "enabled", "active", "local"].includes(
+        normalized,
+      )
+    ) {
+      return true;
+    }
+    if (
+      ["false", "0", "no", "off", "disabled", "inactive", "utc"].includes(
+        normalized,
+      )
+    ) {
+      return false;
+    }
+  }
+
+  return null;
+};
+
+const normalizeStringArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return Array.from(
+      new Set(
+        value
+          .map(normalizeString)
+          .filter((item): item is string => Boolean(item)),
+      ),
+    );
+  }
+
+  if (typeof value === "string") {
+    return Array.from(
+      new Set(
+        value
+          .split(/[\n,;]+/)
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ),
+    );
+  }
+
+  return [];
+};
+
+export const normalizeSystemTimeInfo = (payload: unknown): SystemTimeInfo => {
+  const data = unwrapData(payload);
+  const dataRecord = getRecord(data);
+  const osTime = getRecord(dataRecord?.os_time);
+  const hardwareTime = getRecord(dataRecord?.hw_time);
+  const ntp = getRecord(dataRecord?.ntp);
+
+  const localTime =
+    normalizeString(osTime?.local) ??
+    normalizeString(
+      findNestedValue(data, [
+        "local_time",
+        "localtime",
+        "system_local_time",
+        "current_local_time",
+        "local_datetime",
+        "datetime_local",
+      ]),
+    );
+
+  const utcTime =
+    normalizeString(osTime?.utc) ??
+    normalizeString(
+      findNestedValue(data, [
+        "utc_time",
+        "utctime",
+        "system_utc_time",
+        "current_utc_time",
+        "utc_datetime",
+      ]),
+    );
+
+  const hardwareLocalTime =
+    normalizeString(hardwareTime?.local) ??
+    normalizeString(
+      findNestedValue(data, [
+        "hardware_local_time",
+        "hw_local_time",
+        "rtc_local_time",
+      ]),
+    );
+
+  const hardwareUtcTime =
+    normalizeString(hardwareTime?.utc) ??
+    normalizeString(
+      findNestedValue(data, [
+        "hardware_utc_time",
+        "hw_utc_time",
+        "rtc_utc_time",
+      ]),
+    );
+
+  const fallbackRtcTime = normalizeString(
+    findNestedValue(data, [
+      "rtc_time",
+      "rtctime",
+      "hardware_time",
+      "hardware_clock",
+      "hwclock",
+    ]),
+  );
+
+  return {
+    localTime,
+    utcTime,
+    hardwareLocalTime,
+    hardwareUtcTime,
+    rtcTime: hardwareLocalTime ?? hardwareUtcTime ?? fallbackRtcTime,
+    timezone:
+      normalizeString(dataRecord?.timezone) ??
+      normalizeString(findNestedValue(data, ["time_zone", "zone"])),
+    ntpEnabled:
+      normalizeBoolean(ntp?.enabled) ??
+      normalizeBoolean(
+        findNestedValue(data, [
+          "ntp_enabled",
+          "ntpenabled",
+          "ntp_active",
+          "ntpactive",
+          "use_ntp",
+        ]),
+      ),
+    ntpSynchronized:
+      normalizeBoolean(ntp?.synchronized) ??
+      normalizeBoolean(
+        findNestedValue(data, [
+          "ntp_synchronized",
+          "ntpsynchronized",
+          "ntp_synced",
+          "system_clock_synchronized",
+          "synced",
+        ]),
+      ),
+    rtcInLocalTimezone: normalizeBoolean(
+      findNestedValue(data, [
+        "rtc_in_local_tz",
+        "rtc_in_local_timezone",
+        "rtc_localtime",
+        "rtc_local",
+        "local_rtc",
+      ]),
+    ),
+    ntpServers:
+      normalizeStringArray(ntp?.servers).length > 0
+        ? normalizeStringArray(ntp?.servers)
+        : normalizeStringArray(
+            findNestedValue(data, [
+              "ntp_servers",
+              "configured_ntp_servers",
+              "timeservers",
+              "time_servers",
+            ]),
+          ),
+    raw: data,
+  };
+};
+
+export const normalizeTimezoneList = (payload: unknown): string[] => {
+  const data = unwrapData(payload);
+  const candidate =
+    (Array.isArray(data) ? data : undefined) ??
+    findNestedValue(data, ["timezones", "zones", "timezone_list", "items"]);
+
+  return normalizeStringArray(candidate).sort((left, right) =>
+    left.localeCompare(right, "en"),
+  );
+};
+
+export const normalizeHostnameInfo = (payload: unknown): HostnameInfo => {
+  const data = unwrapData(payload);
+  const dataRecord = getRecord(data);
+  const exactHostname = normalizeString(dataRecord?.hostname);
+  const staticHostname =
+    normalizeString(dataRecord?.static_hostname) ??
+    normalizeString(
+      findNestedValue(data, [
+        "static_hostname",
+        "statichostname",
+        "persistent_hostname",
+      ]),
+    );
+  const currentHostname =
+    exactHostname ??
+    normalizeString(dataRecord?.current_hostname) ??
+    normalizeString(
+      findNestedValue(data, ["currenthostname", "transient_hostname"]),
+    );
+
+  return {
+    currentHostname: currentHostname ?? staticHostname,
+    staticHostname: staticHostname ?? currentHostname,
+    raw: data,
+  };
+};
+
+export const normalizeSystemVersion = (payload: unknown): SystemVersionInfo => {
+  const data = unwrapData(payload);
+  const dataRecord = getRecord(data);
+  const filePath = normalizeString(dataRecord?.file_path);
+  const backendError = normalizeString(dataRecord?.error);
+  let lines: string[] = [];
+
+  if (Array.isArray(data)) {
+    lines = normalizeStringArray(data);
+  } else if (typeof data === "string") {
+    lines = data
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  } else if (dataRecord) {
+    const contentLines = normalizeStringArray(dataRecord.content);
+    const rawText = normalizeString(dataRecord.raw_text);
+    const version = normalizeString(dataRecord.version);
+
+    if (contentLines.length > 0) {
+      lines = contentLines;
+    } else if (rawText) {
+      lines = rawText
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+    } else if (version) {
+      lines = [version];
+    } else {
+      lines = normalizeStringArray(
+        findNestedValue(data, ["lines", "version_lines", "text"]),
+      );
+    }
+  }
+
+  return {
+    lines,
+    text: lines.join("\n"),
+    filePath,
+    backendError,
+    raw: data,
+  };
+};
+
+const stringifyCompact = (value: unknown): string | null => {
+  const normalized = normalizeString(value);
+  if (normalized) {
+    return normalized;
+  }
+
+  if (value == null) {
+    return null;
+  }
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+};
+
+export const normalizeHwclockResult = (payload: unknown): HwclockResult => {
+  const data = unwrapData(payload);
+  const message =
+    normalizeString(getPathValue(payload, ["message"])) ??
+    "عملیات ساعت سخت‌افزاری با موفقیت انجام شد.";
+  const displayValue = stringifyCompact(
+    findNestedValue(data, [
+      "rtc_time",
+      "hardware_time",
+      "hardware_clock",
+      "hwclock",
+      "time",
+      "output",
+      "result",
+    ]) ?? data,
+  );
+
+  return { message, displayValue, raw: data };
+};
+
+export const validateHostname = (value: string) => {
+  const hostname = value.trim().toLowerCase();
+
+  if (!hostname) {
+    return { value: hostname, error: "نام میزبان الزامی است." };
+  }
+
+  if (hostname.length > 253) {
+    return {
+      value: hostname,
+      error: "طول نام میزبان نباید بیشتر از ۲۵۳ کاراکتر باشد.",
+    };
+  }
+
+  const labels = hostname.split(".");
+  const labelPattern = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
+  if (labels.some((label) => !labelPattern.test(label))) {
+    return {
+      value: hostname,
+      error: HOSTNAME_PATTERN_ERROR,
+    };
+  }
+
+  return { value: hostname, error: null };
+};
+
+/** Characters that are underlined inside the hostname helper error. */
+export const HOSTNAME_ALLOWED_HINT = "حروف انگلیسی، عدد، خط تیره و نقطه";
+
+export const HOSTNAME_PATTERN_ERROR = `فقط ${HOSTNAME_ALLOWED_HINT} مجاز است و هر بخش نباید با خط تیره شروع یا تمام شود.`;
+
+export const validateNtpServer = (value: string) => {
+  const server = value.trim();
+
+  if (!server) {
+    return { value: server, error: "آدرس سرور NTP نمی‌تواند خالی باشد." };
+  }
+
+  if (server.length > 253 || /\s/.test(server)) {
+    return { value: server, error: "آدرس سرور NTP معتبر نیست." };
+  }
+
+  if (!/^[a-zA-Z0-9._:-]+$/.test(server)) {
+    return {
+      value: server,
+      error: "در آدرس سرور NTP کاراکتر غیرمجاز وجود دارد.",
+    };
+  }
+
+  return { value: server, error: null };
+};
+
+const padNumber = (value: number) => String(value).padStart(2, "0");
+
+export const toDateTimeLocalValue = (value: unknown): string => {
+  if (typeof value === "string") {
+    const match = value
+      .trim()
+      .match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (match) {
+      return `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6] ?? "00"}`;
+    }
+  }
+
+  const parsed = value instanceof Date ? value : new Date(String(value ?? ""));
+  const date = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+
+  return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(
+    date.getDate(),
+  )}T${padNumber(date.getHours())}:${padNumber(date.getMinutes())}:${padNumber(
+    date.getSeconds(),
+  )}`;
+};
+
+export const formatManualTimeForApi = (value: string) => {
+  const match = value
+    .trim()
+    .match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+
+  if (!match) {
+    return { value: "", error: "تاریخ و ساعت واردشده معتبر نیست." };
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = Number(match[6] ?? "0");
+  const parsed = new Date(year, month - 1, day, hour, minute, second);
+
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day ||
+    parsed.getHours() !== hour ||
+    parsed.getMinutes() !== minute ||
+    parsed.getSeconds() !== second
+  ) {
+    return { value: "", error: "تاریخ و ساعت واردشده معتبر نیست." };
+  }
+
+  return {
+    value: `${match[1]}-${match[2]}-${match[3]} ${match[4]}:${match[5]}:${padNumber(
+      second,
+    )}`,
+    error: null,
+  };
+};
 </file>
 
 <file path="src/components/services/ServiceStoppedAlert.tsx">
@@ -50843,10 +50852,8 @@ import {
   MdMemory,
   MdPublic,
   MdRefresh,
-  MdSync,
   MdUnfoldLess,
   MdUnfoldMore,
-  MdVisibility,
 } from "react-icons/md";
 import type {
   HwclockRequest,
@@ -50870,6 +50877,7 @@ import { useSystemWallClock } from "../../hooks/useSystemWallClock";
 import { extractApiErrorMessage } from "../../utils/apiError";
 import {
   formatManualTimeForApi,
+  HOSTNAME_ALLOWED_HINT,
   toDateTimeLocalValue,
   validateHostname,
   validateNtpServer,
@@ -51009,7 +51017,6 @@ const GeneralSettingsPanel = () => {
   const manualTimeInitializedRef = useRef(false);
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("jalali");
 
-  const [rtcMode, setRtcMode] = useState<"utc" | "local">("utc");
   const [hwclockTimes, setHwclockTimes] = useState<HardwareClockTimes | null>(
     null,
   );
@@ -51241,43 +51248,6 @@ const GeneralSettingsPanel = () => {
     });
   };
 
-  const handleShowHwclock = async () => {
-    try {
-      const result = await manageHwclockMutation.mutateAsync({
-        action: "show",
-      });
-      setHwclockTimes(extractHardwareClockTimes(result.raw));
-      toast.success(result.message);
-    } catch (error) {
-      toast.error(
-        extractApiErrorMessage(
-          error,
-          "دریافت ساعت سخت‌افزاری با خطا مواجه شد.",
-        ),
-      );
-    }
-  };
-
-  const handleRequestHwclockSync = (action: "hctosys" | "systohc") => {
-    const isHardwareToSystem = action === "hctosys";
-    setPendingAction({
-      type: "hwclock",
-      payload: isHardwareToSystem
-        ? { action, localtime: rtcMode === "local" }
-        : { action },
-      title: isHardwareToSystem
-        ? "خواندن زمان از ساعت مادربرد"
-        : "نوشتن زمان سیستم روی مادربرد",
-      description: isHardwareToSystem
-        ? "زمان سیستم‌عامل با مقدار ساعت سخت‌افزاری جایگزین می‌شود. انتخاب وقت جهانی یا وقت محلی تعیین می‌کند مقدار خام ساعت مادربرد چگونه تفسیر شود؛ انتخاب اشتباه می‌تواند باعث اختلاف چندساعته شود."
-        : "زمان فعلی سیستم‌عامل روی ساعت سخت‌افزاری مادربرد نوشته می‌شود. این عملیات مقدار قبلی ساعت مادربرد را جایگزین می‌کند.",
-      confirmLabel: isHardwareToSystem
-        ? "خواندن زمان از مادربرد"
-        : "نوشتن زمان روی مادربرد",
-      severity: "error",
-    });
-  };
-
   const handleConfirmAction = async () => {
     if (!pendingAction || isMutationPending) return;
 
@@ -51364,9 +51334,7 @@ const GeneralSettingsPanel = () => {
    * the radio group only decides which reading is shown (UTC or local).
    */
   const hardwareClockSource =
-    (rtcMode === "local"
-      ? (hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime)
-      : (hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime)) ?? null;
+    hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime ?? null;
   const hardwareClock = useSystemWallClock(hardwareClockSource, {
     enabled: true,
   });
@@ -51395,6 +51363,37 @@ const GeneralSettingsPanel = () => {
       : hardwareClockDrift.level === "aligned"
         ? "بدون اختلاف"
         : hardwareClockDrift.label;
+
+  /**
+   * Extra clocks that used to have their own rows. They are shown on hover of
+   * the server-time value instead.
+   */
+  const serverTimeTooltip = (
+    <Box dir="rtl" sx={{ display: "grid", gap: 1.5, py: 0.5 }}>
+      {[
+        { label: "زمان شمسی سرور: ", value: serverJalaliDisplay, ltr: false },
+        { label: "زمان جهانی (UTC): ", value: utcTimeDisplay, ltr: true },
+      ].map((item) => (
+        <Box
+          key={item.label}
+          // sx={{ display: "grid", gap: 0.25, fontSize: "0.78rem" }}
+        >
+          <Box component="span" sx={{ fontWeight: 700, opacity: 0.85 }}>
+            {item.label}
+          </Box>
+          <Box component="span" sx={{ fontWeight: 700 }}>
+            {item.ltr ? <Ltr>{item.value}</Ltr> : item.value}
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+
+  /**
+   * Manual time is only offered while automatic sync is off, both on the server
+   * and on the toggle inside the modal.
+   */
+  const isManualTimeAvailable = !isNtpActive && !ntpEnabled;
 
   const isTimeSectionOpen = expandedSections.includes(SECTIONS.time);
 
@@ -51465,6 +51464,34 @@ const GeneralSettingsPanel = () => {
       </span>
     </Tooltip>
   );
+
+  /**
+   * Hostname helper text. The allowed characters are underlined so the user can
+   * spot them quickly inside the error message.
+   */
+  const renderHostnameHelper = (message: string | null) => {
+    if (!message) return undefined;
+
+    const index = message.indexOf(HOSTNAME_ALLOWED_HINT);
+    if (index === -1) return message;
+
+    return (
+      <>
+        {message.slice(0, index)}
+        <Box
+          component="span"
+          sx={{
+            fontWeight: 700,
+            textDecoration: "underline",
+            textUnderlineOffset: "3px",
+          }}
+        >
+          {HOSTNAME_ALLOWED_HINT}
+        </Box>
+        {message.slice(index + HOSTNAME_ALLOWED_HINT.length)}
+      </>
+    );
+  };
 
   /** Manual-time picker, shared by its own modal and the time-settings modal. */
   const renderManualTimeFields = () => (
@@ -51564,55 +51591,59 @@ const GeneralSettingsPanel = () => {
         sx={{ mx: 0, gap: 1 }}
       />
 
-      {ntpServers.map((server, index) => (
-        <Stack
-          key={`ntp-server-${index}`}
-          direction="row"
-          gap={1}
-          sx={{ alignItems: "flex-start" }}
-        >
-          <TextField
-            fullWidth
-            label={`سرور زمان ${index + 1}`}
-            value={server}
-            onChange={(event) =>
-              handleNtpServerChange(index, event.target.value)
-            }
-            error={Boolean(ntpErrors[index])}
-            helperText={ntpErrors[index]}
-            sx={technicalFieldSx}
-            slotProps={{ htmlInput: { dir: "ltr", style: ltrInputStyle } }}
-          />
-          <Tooltip title="حذف سرور" arrow>
-            <span>
-              <IconButton
-                aria-label={`حذف سرور زمان ${index + 1}`}
-                onClick={() => handleRemoveNtpServer(index)}
-                sx={{ mt: 1, color: "var(--color-error)" }}
-              >
-                <MdDeleteOutline size={20} />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </Stack>
-      ))}
+      {ntpEnabled
+        ? ntpServers.map((server, index) => (
+            <Stack
+              key={`ntp-server-${index}`}
+              direction="row"
+              gap={1}
+              sx={{ alignItems: "flex-start" }}
+            >
+              <TextField
+                fullWidth
+                label={`سرور زمان ${index + 1}`}
+                value={server}
+                onChange={(event) =>
+                  handleNtpServerChange(index, event.target.value)
+                }
+                error={Boolean(ntpErrors[index])}
+                helperText={ntpErrors[index]}
+                sx={technicalFieldSx}
+                slotProps={{ htmlInput: { dir: "ltr", style: ltrInputStyle } }}
+              />
+              <Tooltip title="حذف سرور" arrow>
+                <span>
+                  <IconButton
+                    aria-label={`حذف سرور زمان ${index + 1}`}
+                    onClick={() => handleRemoveNtpServer(index)}
+                    sx={{ mt: 1, color: "var(--color-error)" }}
+                  >
+                    <MdDeleteOutline size={20} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Stack>
+          ))
+        : null}
 
       <Stack direction="row" gap={1} flexWrap="wrap">
-        <Button
-          onClick={handleAddNtpServer}
-          startIcon={<MdAdd />}
-          variant="outlined"
-          sx={outlinedButtonSx}
-        >
-          افزودن سرور زمان
-        </Button>
+        {ntpEnabled ? (
+          <Button
+            onClick={handleAddNtpServer}
+            startIcon={<MdAdd />}
+            variant="outlined"
+            sx={outlinedButtonSx}
+          >
+            افزودن سرور زمان
+          </Button>
+        ) : null}
         <Button
           onClick={handleRequestNtpChange}
           disabled={isMutationPending}
           variant="contained"
           sx={primaryButtonSx}
         >
-          ثبت سرورهای زمان
+          {ntpEnabled ? "ثبت سرورهای زمان" : "ثبت همگام‌سازی"}
         </Button>
       </Stack>
 
@@ -51621,85 +51652,6 @@ const GeneralSettingsPanel = () => {
           {ntpFormError}
         </Alert>
       ) : null}
-    </Stack>
-  );
-
-  const renderHardwareClockFields = () => (
-    <Stack gap={1.5}>
-      <FormControl sx={fieldSx}>
-        <FormLabel sx={{ fontSize: "0.85rem", mb: 0.5 }}>
-          تفسیر مقدار ساعت مادربرد
-        </FormLabel>
-        <RadioGroup
-          row
-          value={rtcMode}
-          onChange={(event) =>
-            setRtcMode(event.target.value as "utc" | "local")
-          }
-        >
-          <FormControlLabel
-            value="utc"
-            control={<Radio />}
-            label="وقت جهانی UTC"
-          />
-          <FormControlLabel
-            value="local"
-            control={<Radio />}
-            label="وقت محلی"
-          />
-        </RadioGroup>
-      </FormControl>
-
-      <SettingsRowsTable
-        rows={[
-          {
-            id: "hwclock-hardware",
-            title: "زمان سخت افزار (RTC)",
-            value: <Ltr>{hardwareTimeDisplay}</Ltr>,
-          },
-          {
-            id: "hwclock-system",
-            title: "زمان سرور",
-            value: <Ltr>{serverTimeDisplay}</Ltr>,
-          },
-          {
-            id: "hwclock-drift",
-            title: "وضعیت اختلاف زمانی",
-            hint: "اختلاف زمانی بین rtc و سیستم برحسب زمان محلی",
-            value: driftDisplay,
-          },
-        ]}
-      />
-
-      <Stack direction={{ xs: "column", sm: "row" }} gap={1} flexWrap="wrap">
-        {/* <Button
-          onClick={handleShowHwclock}
-          disabled={isMutationPending}
-          startIcon={<MdVisibility />}
-          variant="outlined"
-          sx={outlinedButtonSx}
-        >
-          خواندن مجدد
-        </Button> */}
-        <Button
-          onClick={() => handleRequestHwclockSync("hctosys")}
-          disabled={isMutationPending}
-          startIcon={<MdSync />}
-          variant="outlined"
-          sx={outlinedButtonSx}
-        >
-          خواندن زمان از مادربرد
-        </Button>
-        <Button
-          onClick={() => handleRequestHwclockSync("systohc")}
-          disabled={isMutationPending}
-          startIcon={<MdSync />}
-          variant="contained"
-          sx={primaryButtonSx}
-        >
-          نوشتن زمان روی مادربرد
-        </Button>
-      </Stack>
     </Stack>
   );
 
@@ -51813,7 +51765,20 @@ const GeneralSettingsPanel = () => {
               {
                 id: "time-server",
                 title: "زمان سرور",
-                value: <Ltr>{serverTimeDisplay}</Ltr>,
+                value: (
+                  <Tooltip arrow title={serverTimeTooltip}>
+                    <Box
+                      component="span"
+                      sx={{
+                        cursor: "help",
+                        textDecoration: "underline dotted",
+                        textUnderlineOffset: "4px",
+                      }}
+                    >
+                      <Ltr>{serverTimeDisplay}</Ltr>
+                    </Box>
+                  </Tooltip>
+                ),
                 valueAdornment: (
                   <>
                     <Tooltip title="تنطیمات زمان و همگام‌سازی" arrow>
@@ -51831,6 +51796,33 @@ const GeneralSettingsPanel = () => {
                         sx={{ fontWeight: 700, fontSize: "0.72rem" }}
                       />
                     </Tooltip>
+                    <Tooltip
+                      arrow
+                      title="اختلاف زمانی بین RTC و سیستم برحسب زمان محلی"
+                    >
+                      <Chip
+                        size="small"
+                        variant="outlined"
+                        color={
+                          hardwareClockDrift.level === "aligned"
+                            ? "success"
+                            : hardwareClockDrift.level === "unknown"
+                              ? "default"
+                              : "error"
+                        }
+                        label={driftDisplay}
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: "0.72rem",
+                          maxWidth: "100%",
+                          "& .MuiChip-label": {
+                            whiteSpace: "normal",
+                            lineHeight: 1.5,
+                            py: 0.25,
+                          },
+                        }}
+                      />
+                    </Tooltip>
                     {/* {renderEditAction(
                       isNtpActive
                         ? "ابتدا همگام‌سازی خودکار را غیرفعال کنید"
@@ -51845,25 +51837,9 @@ const GeneralSettingsPanel = () => {
                 ),
               },
               {
-                id: "time-server-jalali",
-                title: "زمان شمسی سرور",
-                value: serverJalaliDisplay,
-              },
-              {
-                id: "time-utc",
-                title: "زمان جهانی (UTC)",
-                value: <Ltr>{utcTimeDisplay}</Ltr>,
-              },
-              {
                 id: "time-rtc",
                 title: "زمان سخت افزار (RTC)",
                 value: <Ltr>{hardwareTimeDisplay}</Ltr>,
-              },
-              {
-                id: "time-drift",
-                title: "وضعیت اختلاف زمانی",
-                hint: "اختلاف زمانی بین rtc و سیستم برحسب زمان محلی",
-                value: driftDisplay,
               },
               {
                 id: "time-timezone",
@@ -51899,7 +51875,7 @@ const GeneralSettingsPanel = () => {
             setHostnameError(null);
           }}
           error={Boolean(hostnameError)}
-          helperText={hostnameError}
+          helperText={renderHostnameHelper(hostnameError)}
           sx={technicalFieldSx}
           slotProps={{
             htmlInput: { maxLength: 253, dir: "ltr", style: ltrInputStyle },
@@ -51977,35 +51953,28 @@ const GeneralSettingsPanel = () => {
         {renderModalSectionTitle("همگام‌سازی خودکار (NTP)")}
         {renderNtpFields()}
 
-        <Divider
-          sx={{
-            my: 1,
-            borderColor:
-              "color-mix(in srgb, var(--color-primary) 18%, transparent)",
-          }}
-        />
+        {isManualTimeAvailable ? (
+          <>
+            <Divider
+              sx={{
+                my: 1,
+                borderColor:
+                  "color-mix(in srgb, var(--color-primary) 18%, transparent)",
+              }}
+            />
 
-        {renderModalSectionTitle("تنطیم دستی زمان")}
-        {renderManualTimeFields()}
-        <Button
-          onClick={handleRequestManualTime}
-          disabled={isMutationPending || isNtpActive}
-          variant="contained"
-          sx={{ ...primaryButtonSx, alignSelf: "flex-start" }}
-        >
-          تنطیم زمان سیستم
-        </Button>
-
-        <Divider
-          sx={{
-            my: 1,
-            borderColor:
-              "color-mix(in srgb, var(--color-primary) 18%, transparent)",
-          }}
-        />
-
-        {renderModalSectionTitle("ساعت سخت‌افزاری (RTC)")}
-        {renderHardwareClockFields()}
+            {renderModalSectionTitle("تنطیم دستی زمان")}
+            {renderManualTimeFields()}
+            <Button
+              onClick={handleRequestManualTime}
+              disabled={isMutationPending}
+              variant="contained"
+              sx={{ ...primaryButtonSx, alignSelf: "flex-start" }}
+            >
+              تنطیم زمان سیستم
+            </Button>
+          </>
+        ) : null}
       </SettingEditModal>
 
       <SystemSettingConfirmDialog

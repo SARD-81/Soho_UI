@@ -98,7 +98,10 @@ type SectionId = (typeof SECTIONS)[keyof typeof SECTIONS];
 const ALL_SECTION_IDS: SectionId[] = [SECTIONS.system, SECTIONS.time];
 
 type EditorKind =
-  "hostname" | "timezone" | "manual-time" | "time-settings" | null;
+  "hostname" | "timezone" | "manual-time" | "time-settings" | "rtc-sync" | null;
+
+/** Direction of a motherboard-clock synchronisation. */
+type RtcSyncDirection = "hctosys" | "systohc";
 
 /** Calendar the manual-time picker is rendered with. */
 type CalendarMode = "jalali" | "gregorian";
@@ -146,6 +149,8 @@ type PendingAction =
   | {
       type: "manual-time";
       payload: SetManualTimePayload;
+      /** When true, automatic sync is switched off before the time is set. */
+      disableNtpFirst?: boolean;
       title: string;
       description: string;
       confirmLabel: string;
@@ -193,6 +198,8 @@ const GeneralSettingsPanel = () => {
   const manualTimeInitializedRef = useRef(false);
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("jalali");
 
+  const [rtcSyncDirection, setRtcSyncDirection] =
+    useState<RtcSyncDirection>("systohc");
   const [hwclockTimes, setHwclockTimes] = useState<HardwareClockTimes | null>(
     null,
   );
@@ -393,7 +400,7 @@ const GeneralSettingsPanel = () => {
         : "غیرفعال‌سازی همگام‌سازی خودکار زمان",
       description: ntpEnabled
         ? "پس از تایید، ساعت سیستم به‌صورت خودکار با سرورهای معرفی‌شده همگام می‌شود. صحت نام سرورها و دسترسی شبکه‌ای به آن‌ها را بررسی کنید."
-        : "با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود و مسئولیت تنطیم صحیح ساعت سیستم بر عهده مدیر سامانه خواهد بود.",
+        : "با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود و مس��ولیت تنطیم صحیح ساعت سیستم بر عهده مدیر سامانه خواهد بود.",
       confirmLabel: ntpEnabled
         ? "فعال‌سازی همگام‌سازی"
         : "غیرفعال‌سازی همگام‌سازی",
@@ -402,9 +409,16 @@ const GeneralSettingsPanel = () => {
   };
 
   const handleRequestManualTime = () => {
-    if (timeQuery.data?.ntpEnabled === true) {
+    /**
+     * The user may switch the NTP toggle off inside the modal without saving it
+     * first. In that case automatic sync is disabled and only then the new time
+     * is written, inside a single confirmation.
+     */
+    const shouldDisableNtpFirst = isNtpActive && !ntpEnabled;
+
+    if (isNtpActive && ntpEnabled) {
       setManualTimeError(
-        "برای تنطیم دستی زمان، ابتدا همگام‌سازی خودکار را غیرفعال و تنطیمات آن را ثبت کنید.",
+        "برای تنطیم دستی زمان، ابتدا همگام‌سازی خودکار را غیرفعال کنید.",
       );
       return;
     }
@@ -416,10 +430,32 @@ const GeneralSettingsPanel = () => {
     setPendingAction({
       type: "manual-time",
       payload: { time: validation.value },
+      disableNtpFirst: shouldDisableNtpFirst,
       title: "تنطیم دستی زمان سیستم",
-      description:
-        "تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد. قبل از ادامه از درستی تاریخ، ساعت و منطقه زمانی اطمینان حاصل کنید.",
+      description: shouldDisableNtpFirst
+        ? "ابتدا همگام‌سازی خودکار زمان غیرفعال می‌شود و سپس زمان انتخابی روی سیستم تنطیم می‌گردد. تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد."
+        : "تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد. قبل از ادامه از درستی تاریخ، ساعت و منطقه زمانی اطمینان حاصل کنید.",
       confirmLabel: "تنطیم زمان سیستم",
+      severity: "error",
+    });
+  };
+
+  /** Minimal RTC synchronisation, opened from the drift chip. */
+  const handleRequestRtcSync = () => {
+    const isHardwareToSystem = rtcSyncDirection === "hctosys";
+
+    setPendingAction({
+      type: "hwclock",
+      payload: isHardwareToSystem
+        ? { action: "hctosys", localtime: true }
+        : { action: "systohc" },
+      title: isHardwareToSystem
+        ? "یکسان‌سازی زمان سیستم با مادربرد"
+        : "یکسان‌سازی زمان مادربرد با سیستم",
+      description: isHardwareToSystem
+        ? "زمان سیستم‌عامل با مقدار ساعت مادربرد جایگزین می‌شود."
+        : "زمان فعلی سیستم‌عامل روی ساعت مادربرد نوشته می‌شود.",
+      confirmLabel: "یکسان‌سازی زمان",
       severity: "error",
     });
   };
@@ -447,6 +483,16 @@ const GeneralSettingsPanel = () => {
         setNtpDirty(false);
         toast.success(message);
       } else if (pendingAction.type === "manual-time") {
+        if (pendingAction.disableNtpFirst) {
+          await manageNtpMutation.mutateAsync({
+            enabled: false,
+            servers: ntpServers
+              .map((server) => server.trim())
+              .filter((server) => Boolean(server)),
+          });
+          setNtpDirty(false);
+        }
+
         const message = await setManualTimeMutation.mutateAsync(
           pendingAction.payload,
         );
@@ -569,7 +615,12 @@ const GeneralSettingsPanel = () => {
    * Manual time is only offered while automatic sync is off, both on the server
    * and on the toggle inside the modal.
    */
-  const isManualTimeAvailable = !isNtpActive && !ntpEnabled;
+  const isManualTimeAvailable = !ntpEnabled;
+
+  /** The drift chip is only actionable when the two clocks really differ. */
+  const isClockDrifting =
+    hardwareClockDrift.level === "minor" ||
+    hardwareClockDrift.level === "major";
 
   const isTimeSectionOpen = expandedSections.includes(SECTIONS.time);
 
@@ -672,13 +723,6 @@ const GeneralSettingsPanel = () => {
   /** Manual-time picker, shared by its own modal and the time-settings modal. */
   const renderManualTimeFields = () => (
     <Stack gap={1.5}>
-      {isNtpActive ? (
-        <Alert severity="warning" sx={alertSx}>
-          همگام‌سازی خودکار زمان فعال است؛ برای تنطیم دستی، ابتدا آن را غیرفعال
-          کنید.
-        </Alert>
-      ) : null}
-
       <FormControl sx={fieldSx}>
         <FormLabel sx={{ fontSize: "0.85rem", mb: 0.5 }}>نوع تقویم</FormLabel>
         <RadioGroup
@@ -813,14 +857,16 @@ const GeneralSettingsPanel = () => {
             افزودن سرور زمان
           </Button>
         ) : null}
-        <Button
-          onClick={handleRequestNtpChange}
-          disabled={isMutationPending}
-          variant="contained"
-          sx={primaryButtonSx}
-        >
-          {ntpEnabled ? "ثبت سرورهای زمان" : "ثبت همگام‌سازی"}
-        </Button>
+        {ntpEnabled || isNtpActive ? (
+          <Button
+            onClick={handleRequestNtpChange}
+            disabled={isMutationPending}
+            variant="contained"
+            sx={primaryButtonSx}
+          >
+            {ntpEnabled ? "ثبت سرورهای زمان" : "ثبت غیرفعال‌سازی"}
+          </Button>
+        ) : null}
       </Stack>
 
       {ntpFormError ? (
@@ -957,28 +1003,30 @@ const GeneralSettingsPanel = () => {
                 ),
                 valueAdornment: (
                   <>
-                    <Tooltip title="تنطیمات زمان و همگام‌سازی" arrow>
-                      <Chip
-                        size="small"
-                        variant="outlined"
-                        clickable
-                        onClick={() => {
-                          setNtpFormError(null);
-                          setManualTimeError(null);
-                          setEditor("time-settings");
-                        }}
-                        color={isNtpActive ? "success" : "default"}
-                        label={isNtpActive ? "NTP فعال" : "NTP غیرفعال"}
-                        sx={{ fontWeight: 700, fontSize: "0.72rem" }}
-                      />
-                    </Tooltip>
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      color={isNtpActive ? "success" : "default"}
+                      label={isNtpActive ? "NTP فعال" : "NTP غیرفعال"}
+                      sx={{ fontWeight: 700, fontSize: "0.72rem" }}
+                    />
                     <Tooltip
                       arrow
-                      title="اختلاف زمانی بین RTC و سیستم برحسب زمان محلی"
+                      title={
+                        isClockDrifting
+                          ? "برای یکسان‌سازی زمان مادربرد و سیستم کلیک کنید"
+                          : "اختلاف زمانی بین RTC و سیستم برحسب زمان محلی"
+                      }
                     >
                       <Chip
                         size="small"
                         variant="outlined"
+                        clickable={isClockDrifting}
+                        onClick={
+                          isClockDrifting
+                            ? () => setEditor("rtc-sync")
+                            : undefined
+                        }
                         color={
                           hardwareClockDrift.level === "aligned"
                             ? "success"
@@ -991,6 +1039,7 @@ const GeneralSettingsPanel = () => {
                           fontWeight: 700,
                           fontSize: "0.72rem",
                           maxWidth: "100%",
+                          cursor: isClockDrifting ? "pointer" : "default",
                           "& .MuiChip-label": {
                             whiteSpace: "normal",
                             lineHeight: 1.5,
@@ -999,16 +1048,11 @@ const GeneralSettingsPanel = () => {
                         }}
                       />
                     </Tooltip>
-                    {/* {renderEditAction(
-                      isNtpActive
-                        ? "ابتدا همگام‌سازی خودکار را غیرفعال کنید"
-                        : "تغییر زمان سرور",
-                      () => {
-                        setManualTimeError(null);
-                        setEditor("manual-time");
-                      },
-                      isNtpActive,
-                    )} */}
+                    {renderEditAction("تنطیمات زمان و همگام‌سازی", () => {
+                      setNtpFormError(null);
+                      setManualTimeError(null);
+                      setEditor("time-settings");
+                    })}
                   </>
                 ),
               },
@@ -1116,7 +1160,38 @@ const GeneralSettingsPanel = () => {
         {renderManualTimeFields()}
       </SettingEditModal>
 
-      {/* ── تمام تنطیمات زمان (از طریق چیپ NTP) ── */}
+      {/* ── یکسان‌سازی ساعت مادربرد (از طریق چیپ اختلاف زمانی) ── */}
+      <SettingEditModal
+        open={editor === "rtc-sync"}
+        onClose={closeEditor}
+        onSubmit={handleRequestRtcSync}
+        isSubmitting={manageHwclockMutation.isPending}
+        submitLabel="یکسان‌سازی زمان"
+        icon={<MdMemory />}
+        title="یکسان‌سازی ساعت مادربرد و سیستم"
+      >
+        <FormControl sx={fieldSx}>
+          <RadioGroup
+            value={rtcSyncDirection}
+            onChange={(event) =>
+              setRtcSyncDirection(event.target.value as RtcSyncDirection)
+            }
+          >
+            <FormControlLabel
+              value="systohc"
+              control={<Radio />}
+              label="زمان مادربرد برابر زمان سیستم شود"
+            />
+            <FormControlLabel
+              value="hctosys"
+              control={<Radio />}
+              label="زمان سیستم برابر زمان مادربرد شود"
+            />
+          </RadioGroup>
+        </FormControl>
+      </SettingEditModal>
+
+      {/* ── تمام تنطیمات زمان (از طریق آیکون ویرایش) ── */}
       <SettingEditModal
         open={editor === "time-settings"}
         onClose={closeEditor}
