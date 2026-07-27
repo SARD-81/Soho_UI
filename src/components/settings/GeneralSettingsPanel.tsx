@@ -545,14 +545,14 @@ const GeneralSettingsPanel = () => {
    * the server-time value instead.
    */
   const serverTimeTooltip = (
-    <Box dir="rtl" sx={{ display: "grid", gap: 0.75, py: 0.5 }}>
+    <Box dir="rtl" sx={{ display: "grid", gap: 1.5, py: 0.5 }}>
       {[
-        { label: "زمان شمسی سرور", value: serverJalaliDisplay, ltr: false },
-        { label: "زمان جهانی (UTC)", value: utcTimeDisplay, ltr: true },
+        { label: "زمان شمسی سرور: ", value: serverJalaliDisplay, ltr: false },
+        { label: "زمان جهانی (UTC): ", value: utcTimeDisplay, ltr: true },
       ].map((item) => (
         <Box
           key={item.label}
-          sx={{ display: "grid", gap: 0.25, fontSize: "0.78rem" }}
+          // sx={{ display: "grid", gap: 0.25, fontSize: "0.78rem" }}
         >
           <Box component="span" sx={{ fontWeight: 700, opacity: 0.85 }}>
             {item.label}
@@ -974,7 +974,7 @@ const GeneralSettingsPanel = () => {
                     </Tooltip>
                     <Tooltip
                       arrow
-                      title="اختلاف زمانی بین rtc و سیستم برحسب زمان محلی"
+                      title="اختلاف زمانی بین RTC و سیستم برحسب زمان محلی"
                     >
                       <Chip
                         size="small"
