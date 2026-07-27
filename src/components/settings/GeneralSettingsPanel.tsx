@@ -17,10 +17,10 @@ import {
   TextField,
   Tooltip,
   Typography,
-} from "@mui/material";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { FiEdit3 } from "react-icons/fi";
-import { toast } from "react-hot-toast";
+} from '@mui/material';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { FiEdit3 } from 'react-icons/fi';
 import {
   MdAccessTime,
   MdAdd,
@@ -31,14 +31,14 @@ import {
   MdRefresh,
   MdUnfoldLess,
   MdUnfoldMore,
-} from "react-icons/md";
+} from 'react-icons/md';
 import type {
   HwclockRequest,
   ManageNtpPayload,
   SetHostnamePayload,
   SetManualTimePayload,
   SetTimezonePayload,
-} from "../../@types/generalSettings";
+} from '../../@types/generalSettings';
 import {
   useHostnameInfo,
   useManageHwclock,
@@ -49,49 +49,54 @@ import {
   useSystemTimeInfo,
   useSystemVersion,
   useTimezoneList,
-} from "../../hooks/useGeneralSystemSettings";
-import { useSystemWallClock } from "../../hooks/useSystemWallClock";
-import { extractApiErrorMessage } from "../../utils/apiError";
+} from '../../hooks/useGeneralSystemSettings';
+import { useSystemWallClock } from '../../hooks/useSystemWallClock';
+import { extractApiErrorMessage } from '../../utils/apiError';
 import {
   formatManualTimeForApi,
   HOSTNAME_ALLOWED_HINT,
   toDateTimeLocalValue,
   validateHostname,
   validateNtpServer,
-} from "../../utils/generalSettings";
+} from '../../utils/generalSettings';
 import {
   describeClockDrift,
   extractHardwareClockTimes,
   type HardwareClockTimes,
-} from "../../utils/hardwareClock";
-import { formatJalaliWallClockLabel } from "../../utils/jalali";
+} from '../../utils/hardwareClock';
+import {
+  formatJalaliWallClockLabel,
+  gregorianToJalali,
+  JALALI_MONTH_NAMES,
+  toPersianDigits,
+} from '../../utils/jalali';
 import SystemSettingConfirmDialog, {
   type SystemSettingConfirmSeverity,
-} from "./SystemSettingConfirmDialog";
-import JalaliDateTimeField from "./general/JalaliDateTimeField";
-import Ltr from "./general/Ltr";
-import SettingEditModal from "./general/SettingEditModal";
-import SettingsRowsTable from "./general/SettingsRowsTable";
-import SettingsAccordionSection from "./general/SettingsAccordionSection";
+} from './SystemSettingConfirmDialog';
+import JalaliDateTimeField from './general/JalaliDateTimeField';
+import Ltr from './general/Ltr';
+import SettingEditModal from './general/SettingEditModal';
+import SettingsAccordionSection from './general/SettingsAccordionSection';
+import SettingsRowsTable from './general/SettingsRowsTable';
 import {
   settingsAlertSx as alertSx,
   settingsFieldSx as fieldSx,
+  ltrBlockStyle,
+  ltrInputStyle,
   settingsOutlinedButtonSx as outlinedButtonSx,
   settingsPopupSx as popupSx,
   settingsPrimaryButtonSx as primaryButtonSx,
   settingsTechnicalFieldSx as technicalFieldSx,
   settingsToolbarSx as toolbarSx,
-  ltrBlockStyle,
-  ltrInputStyle,
-} from "./general/styles";
+} from './general/styles';
 
-const NOT_AVAILABLE = "در دسترس نیست";
-const NOT_CONFIGURED = "تنطیم نشده";
+const NOT_AVAILABLE = 'در دسترس نیست';
+const NOT_CONFIGURED = 'تنطیم نشده';
 
 /** Section ids of the accordion list. */
 const SECTIONS = {
-  system: "system",
-  time: "time",
+  system: 'system',
+  time: 'time',
 } as const;
 
 type SectionId = (typeof SECTIONS)[keyof typeof SECTIONS];
@@ -99,12 +104,16 @@ type SectionId = (typeof SECTIONS)[keyof typeof SECTIONS];
 const ALL_SECTION_IDS: SectionId[] = [SECTIONS.system, SECTIONS.time];
 
 type EditorKind =
-  "hostname" | "timezone" | "manual-time" | "time-settings" | null;
+  | 'hostname'
+  | 'timezone'
+  | 'manual-time'
+  | 'time-settings'
+  | null;
 
 /** Calendar the manual-time picker is rendered with. */
-type CalendarMode = "jalali" | "gregorian";
+type CalendarMode = 'jalali' | 'gregorian';
 
-const pad = (value: number) => String(value).padStart(2, "0");
+const pad = (value: number) => String(value).padStart(2, '0');
 
 /** Browser clock, ticking every second. */
 const useClientClock = () => {
@@ -121,7 +130,7 @@ const useClientClock = () => {
 
 type PendingAction =
   | {
-      type: "hostname";
+      type: 'hostname';
       payload: SetHostnamePayload;
       title: string;
       description: string;
@@ -129,7 +138,7 @@ type PendingAction =
       severity: SystemSettingConfirmSeverity;
     }
   | {
-      type: "timezone";
+      type: 'timezone';
       payload: SetTimezonePayload;
       title: string;
       description: string;
@@ -137,7 +146,7 @@ type PendingAction =
       severity: SystemSettingConfirmSeverity;
     }
   | {
-      type: "ntp";
+      type: 'ntp';
       payload: ManageNtpPayload;
       title: string;
       description: string;
@@ -145,7 +154,7 @@ type PendingAction =
       severity: SystemSettingConfirmSeverity;
     }
   | {
-      type: "manual-time";
+      type: 'manual-time';
       payload: SetManualTimePayload;
       /** When true, automatic sync is switched off before the time is set. */
       disableNtpFirst?: boolean;
@@ -155,7 +164,7 @@ type PendingAction =
       severity: SystemSettingConfirmSeverity;
     }
   | {
-      type: "hwclock";
+      type: 'hwclock';
       payload: HwclockRequest;
       title: string;
       description: string;
@@ -175,7 +184,7 @@ const GeneralSettingsPanel = () => {
   const setManualTimeMutation = useSetManualTime();
   const manageHwclockMutation = useManageHwclock();
 
-  const [hostname, setHostname] = useState("");
+  const [hostname, setHostname] = useState('');
   const [hostnameError, setHostnameError] = useState<string | null>(null);
   const [hostnameDirty, setHostnameDirty] = useState(false);
 
@@ -190,19 +199,19 @@ const GeneralSettingsPanel = () => {
   const [ntpDirty, setNtpDirty] = useState(false);
 
   const [manualTime, setManualTime] = useState(() =>
-    toDateTimeLocalValue(new Date()),
+    toDateTimeLocalValue(new Date())
   );
   const [manualTimeError, setManualTimeError] = useState<string | null>(null);
   const manualTimeInitializedRef = useRef(false);
-  const [calendarMode, setCalendarMode] = useState<CalendarMode>("jalali");
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>('jalali');
   /** When checked, the system time is set from the client clock on submit. */
   const [useClientTime, setUseClientTime] = useState(false);
 
   const [hwclockTimes, setHwclockTimes] = useState<HardwareClockTimes | null>(
-    null,
+    null
   );
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(
-    null,
+    null
   );
 
   /** Which row is currently opened for editing. UI-only state. */
@@ -218,7 +227,7 @@ const GeneralSettingsPanel = () => {
       setHostname(
         hostnameQuery.data.staticHostname ??
           hostnameQuery.data.currentHostname ??
-          "",
+          ''
       );
     }
   }, [hostnameDirty, hostnameQuery.data]);
@@ -250,7 +259,7 @@ const GeneralSettingsPanel = () => {
       return;
     }
 
-    setRtcMode(timeQuery.data.rtcInLocalTimezone ? "local" : "utc");
+    setRtcMode(timeQuery.data.rtcInLocalTimezone ? 'local' : 'utc');
   }, [timeQuery.data?.rtcInLocalTimezone]);
 
   const timezoneOptions = useMemo(() => {
@@ -258,7 +267,7 @@ const GeneralSettingsPanel = () => {
     if (timeQuery.data?.timezone) values.add(timeQuery.data.timezone);
     if (timezone) values.add(timezone);
     return Array.from(values).sort((left, right) =>
-      left.localeCompare(right, "en"),
+      left.localeCompare(right, 'en')
     );
   }, [timeQuery.data?.timezone, timezone, timezoneQuery.data]);
 
@@ -284,42 +293,42 @@ const GeneralSettingsPanel = () => {
     if (
       validation.value === hostnameQuery.data?.staticHostname?.toLowerCase()
     ) {
-      toast("نام میزبان تغییری نکرده است.");
+      toast('نام میزبان تغییری نکرده است.');
       return;
     }
 
     setPendingAction({
-      type: "hostname",
+      type: 'hostname',
       payload: { hostname: validation.value },
-      title: "تغییر نام میزبان سامانه",
+      title: 'تغییر نام میزبان سامانه',
       description:
-        "نام میزبان بخشی از هویت شبکه‌ای سامانه است. بعد از اعمال تغییر، برخی سرویس‌ها یا کلاینت‌ها ممکن است برای شناسایی نام جدید به راه‌اندازی مجدد یا بروزرسانی تنطیمات خود نیاز داشته باشند.",
-      confirmLabel: "تغییر نام میزبان",
-      severity: "warning",
+        'نام میزبان بخشی از هویت شبکه‌ای سامانه است. بعد از اعمال تغییر، برخی سرویس‌ها یا کلاینت‌ها ممکن است برای شناسایی نام جدید به راه‌اندازی مجدد یا بروزرسانی تنطیمات خود نیاز داشته باشند.',
+      confirmLabel: 'تغییر نام میزبان',
+      severity: 'warning',
     });
   };
 
   const handleRequestTimezoneChange = () => {
-    const normalizedTimezone = timezone?.trim() ?? "";
+    const normalizedTimezone = timezone?.trim() ?? '';
     if (!normalizedTimezone) {
-      setTimezoneError("انتخاب منطقه زمانی الزامی است.");
+      setTimezoneError('انتخاب منطقه زمانی الزامی است.');
       return;
     }
 
     setTimezoneError(null);
     if (normalizedTimezone === timeQuery.data?.timezone) {
-      toast("منطقه زمانی تغییری نکرده است.");
+      toast('منطقه زمانی تغییری نکرده است.');
       return;
     }
 
     setPendingAction({
-      type: "timezone",
+      type: 'timezone',
       payload: { timezone: normalizedTimezone },
-      title: "تغییر منطقه زمانی سیستم",
+      title: 'تغییر منطقه زمانی سیستم',
       description:
-        "این تغییر روی نمایش زمان در گزارش‌ها، لاگ‌ها و زمان‌بندی سرویس‌ها اثر می‌گذارد. ساعت UTC تغییر نمی‌کند، اما زمان سرور بر اساس منطقه جدید نمایش داده می‌شود.",
-      confirmLabel: "اعمال منطقه زمانی",
-      severity: "warning",
+        'این تغییر روی نمایش زمان در گزارش‌ها، لاگ‌ها و زمان‌بندی سرویس‌ها اثر می‌گذارد. ساعت UTC تغییر نمی‌کند، اما زمان سرور بر اساس منطقه جدید نمایش داده می‌شود.',
+      confirmLabel: 'اعمال منطقه زمانی',
+      severity: 'warning',
     });
   };
 
@@ -327,8 +336,8 @@ const GeneralSettingsPanel = () => {
     setNtpDirty(true);
     setNtpServers((current) =>
       current.map((server, serverIndex) =>
-        serverIndex === index ? value : server,
-      ),
+        serverIndex === index ? value : server
+      )
     );
     setNtpErrors((current) => {
       const next = { ...current };
@@ -340,13 +349,13 @@ const GeneralSettingsPanel = () => {
 
   const handleAddNtpServer = () => {
     setNtpDirty(true);
-    setNtpServers((current) => [...current, ""]);
+    setNtpServers((current) => [...current, '']);
   };
 
   const handleRemoveNtpServer = (index: number) => {
     setNtpDirty(true);
     setNtpServers((current) =>
-      current.filter((_, serverIndex) => serverIndex !== index),
+      current.filter((_, serverIndex) => serverIndex !== index)
     );
     setNtpErrors({});
     setNtpFormError(null);
@@ -359,7 +368,7 @@ const GeneralSettingsPanel = () => {
         const trimmed = server.trim();
         if (!trimmed) {
           if (ntpEnabled) {
-            nextErrors[index] = "این فیلد نمی‌تواند خالی باشد.";
+            nextErrors[index] = 'این فیلد نمی‌تواند خالی باشد.';
           }
           return null;
         }
@@ -378,31 +387,31 @@ const GeneralSettingsPanel = () => {
     setNtpErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
-      setNtpFormError("لطفاً آدرس سرورهای زمان را اصلاح کنید.");
+      setNtpFormError('لطفاً آدرس سرورهای زمان را اصلاح کنید.');
       return;
     }
 
     if (ntpEnabled && uniqueServers.length === 0) {
       setNtpFormError(
-        "برای فعال‌سازی همگام‌سازی خودکار حداقل یک سرور معتبر وارد کنید.",
+        'برای فعال‌سازی همگام‌سازی خودکار حداقل یک سرور معتبر وارد کنید.'
       );
       return;
     }
 
     setNtpFormError(null);
     setPendingAction({
-      type: "ntp",
+      type: 'ntp',
       payload: { enabled: ntpEnabled, servers: uniqueServers },
       title: ntpEnabled
-        ? "فعال‌سازی همگام‌سازی خودکار زمان"
-        : "غیرفعال‌سازی همگام‌سازی خودکار زمان",
+        ? 'فعال‌سازی همگام‌سازی خودکار زمان'
+        : 'غیرفعال‌سازی همگام‌سازی خودکار زمان',
       description: ntpEnabled
-        ? "پس از تایید، ساعت سیستم به‌صورت خودکار با سرورهای معرفی‌شده همگام می‌شود. صحت نام سرورها و دسترسی شبکه‌ای به آن‌ها را بررسی کنید."
-        : "با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود و مس����ولیت تنطیم صحیح ساعت سیستم بر عهده مدیر سامانه خواهد بود.",
+        ? 'پس از تایید، ساعت سیستم به‌صورت خودکار با سرورهای معرفی‌شده همگام می‌شود. صحت نام سرورها و دسترسی شبکه‌ای به آن‌ها را بررسی کنید.'
+        : 'با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود و مس����ولیت تنطیم صحی�� ساعت سیستم بر عهده مدی�� سامانه خواهد بود.',
       confirmLabel: ntpEnabled
-        ? "فعال‌سازی همگام‌سازی"
-        : "غیرفعال‌سازی همگام‌سازی",
-      severity: ntpEnabled ? "info" : "warning",
+        ? 'فعال‌سازی همگام‌سازی'
+        : 'غیرفعال‌سازی همگام‌سازی',
+      severity: ntpEnabled ? 'info' : 'warning',
     });
   };
 
@@ -416,7 +425,7 @@ const GeneralSettingsPanel = () => {
 
     if (isNtpActive && ntpEnabled) {
       setManualTimeError(
-        "برای تنطیم دستی زمان، ابتدا همگام‌سازی خودکار را غیرفعال کنید.",
+        'برای تنطیم دستی زمان، ابتدا همگام‌سازی خودکار را غیرفعال کنید.'
       );
       return;
     }
@@ -431,15 +440,15 @@ const GeneralSettingsPanel = () => {
     if (validation.error) return;
 
     setPendingAction({
-      type: "manual-time",
+      type: 'manual-time',
       payload: { time: validation.value },
       disableNtpFirst: shouldDisableNtpFirst,
-      title: "تنطیم دستی زمان سیستم",
+      title: 'تنطیم دستی زمان سیستم',
       description: shouldDisableNtpFirst
-        ? "ابتدا همگام‌سازی خودکار زمان غیرفعال می‌شود و سپس زمان انتخابی روی سیستم تنطیم می‌گردد. تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد."
-        : "تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد. قبل از ادامه از درستی تاریخ، ساعت و منطقه زمانی اطمینان حاصل کنید.",
-      confirmLabel: "تنطیم زمان سیستم",
-      severity: "error",
+        ? 'ابتدا همگام‌سازی خودکار زمان غیرفعال می‌شود و سپس زمان انتخابی روی سیستم تنطیم می‌گردد. تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد.'
+        : 'تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد. قبل از ادامه از درستی تاریخ، ساعت و منطقه زمانی اطمینان حاصل کنید.',
+      confirmLabel: 'تنطیم زمان سیستم',
+      severity: 'error',
     });
   };
 
@@ -452,13 +461,13 @@ const GeneralSettingsPanel = () => {
 
     try {
       const result = await manageHwclockMutation.mutateAsync({
-        action: "systohc",
+        action: 'systohc',
       });
       setHwclockTimes(extractHardwareClockTimes(result.raw));
       toast.success(result.message);
     } catch (error) {
       toast.error(
-        extractApiErrorMessage(error, "تنطیم زمان مادربرد با خطا مواجه شد."),
+        extractApiErrorMessage(error, 'تنطیم زمان مادربرد با خطا مواجه شد.')
       );
     }
   };
@@ -467,25 +476,25 @@ const GeneralSettingsPanel = () => {
     if (!pendingAction || isMutationPending) return;
 
     try {
-      if (pendingAction.type === "hostname") {
+      if (pendingAction.type === 'hostname') {
         const message = await setHostnameMutation.mutateAsync(
-          pendingAction.payload,
+          pendingAction.payload
         );
         setHostnameDirty(false);
         toast.success(message);
-      } else if (pendingAction.type === "timezone") {
+      } else if (pendingAction.type === 'timezone') {
         const message = await setTimezoneMutation.mutateAsync(
-          pendingAction.payload,
+          pendingAction.payload
         );
         setTimezoneDirty(false);
         toast.success(message);
-      } else if (pendingAction.type === "ntp") {
+      } else if (pendingAction.type === 'ntp') {
         const message = await manageNtpMutation.mutateAsync(
-          pendingAction.payload,
+          pendingAction.payload
         );
         setNtpDirty(false);
         toast.success(message);
-      } else if (pendingAction.type === "manual-time") {
+      } else if (pendingAction.type === 'manual-time') {
         if (pendingAction.disableNtpFirst) {
           await manageNtpMutation.mutateAsync({
             enabled: false,
@@ -497,13 +506,13 @@ const GeneralSettingsPanel = () => {
         }
 
         const message = await setManualTimeMutation.mutateAsync(
-          pendingAction.payload,
+          pendingAction.payload
         );
         manualTimeInitializedRef.current = false;
         toast.success(message);
       } else {
         const result = await manageHwclockMutation.mutateAsync(
-          pendingAction.payload,
+          pendingAction.payload
         );
         setHwclockTimes(extractHardwareClockTimes(result.raw));
         toast.success(result.message);
@@ -513,7 +522,7 @@ const GeneralSettingsPanel = () => {
       setEditor(null);
     } catch (error) {
       toast.error(
-        extractApiErrorMessage(error, "اعمال تنطیمات سیستم با خطا مواجه شد."),
+        extractApiErrorMessage(error, 'اعمال تنطیمات سیستم با خطا مواجه شد.')
       );
     }
   };
@@ -537,9 +546,9 @@ const GeneralSettingsPanel = () => {
   /** Browser clock of the machine the panel is opened on. */
   const clientNow = useClientClock();
   const clientTimeDisplay = `${clientNow.getFullYear()}-${pad(
-    clientNow.getMonth() + 1,
+    clientNow.getMonth() + 1
   )}-${pad(clientNow.getDate())} ${pad(clientNow.getHours())}:${pad(
-    clientNow.getMinutes(),
+    clientNow.getMinutes()
   )}:${pad(clientNow.getSeconds())}`;
 
   /**
@@ -580,13 +589,13 @@ const GeneralSettingsPanel = () => {
   /** RTC vs. system clock, compared on local time. */
   const hardwareClockDrift = describeClockDrift(
     timeQuery.data?.localTime,
-    hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime,
+    hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime
   );
   const driftDisplay =
-    hardwareClockDrift.level === "unknown"
+    hardwareClockDrift.level === 'unknown'
       ? NOT_AVAILABLE
-      : hardwareClockDrift.level === "aligned"
-        ? "بدون اختلاف"
+      : hardwareClockDrift.level === 'aligned'
+        ? 'بدون اختلاف'
         : hardwareClockDrift.label;
 
   /**
@@ -594,10 +603,10 @@ const GeneralSettingsPanel = () => {
    * the server-time value instead.
    */
   const serverTimeTooltip = (
-    <Box dir="rtl" sx={{ display: "grid", gap: 1.5, py: 0.5 }}>
+    <Box dir="rtl" sx={{ display: 'grid', gap: 1.5, py: 0.5 }}>
       {[
-        { label: "زمان شمسی سرور: ", value: serverJalaliDisplay, ltr: false },
-        { label: "زمان جهانی (UTC): ", value: utcTimeDisplay, ltr: true },
+        { label: 'زمان شمسی سرور: ', value: serverJalaliDisplay, ltr: false },
+        { label: 'زمان جهانی (UTC): ', value: utcTimeDisplay, ltr: true },
       ].map((item) => (
         <Box
           key={item.label}
@@ -622,8 +631,8 @@ const GeneralSettingsPanel = () => {
 
   /** The drift chip is only actionable when the two clocks really differ. */
   const isClockDrifting =
-    hardwareClockDrift.level === "minor" ||
-    hardwareClockDrift.level === "major";
+    hardwareClockDrift.level === 'minor' ||
+    hardwareClockDrift.level === 'major';
 
   const isTimeSectionOpen = expandedSections.includes(SECTIONS.time);
 
@@ -631,7 +640,7 @@ const GeneralSettingsPanel = () => {
     setExpandedSections((current) =>
       current.includes(id as SectionId)
         ? current.filter((sectionId) => sectionId !== id)
-        : [...current, id as SectionId],
+        : [...current, id as SectionId]
     );
   };
 
@@ -646,7 +655,7 @@ const GeneralSettingsPanel = () => {
       hostnameQuery.refetch(),
       versionQuery.refetch(),
     ]);
-    toast.success("اطلاعات تنطیمات عمومی بروزرسانی شد.");
+    toast.success('اطلاعات تنطیمات عمومی بروزرسانی شد.');
   };
 
   const closeEditor = () => setEditor(null);
@@ -658,7 +667,7 @@ const GeneralSettingsPanel = () => {
   const renderEditAction = (
     label: string,
     onClick: () => void,
-    disabled = false,
+    disabled = false
   ) => (
     <Tooltip title={label} arrow>
       <span>
@@ -670,22 +679,22 @@ const GeneralSettingsPanel = () => {
           sx={{
             width: 28,
             height: 28,
-            color: "var(--color-primary)",
-            borderRadius: "8px",
+            color: 'var(--color-primary)',
+            borderRadius: '8px',
             border:
-              "1px solid color-mix(in srgb, var(--color-primary) 30%, transparent)",
+              '1px solid color-mix(in srgb, var(--color-primary) 30%, transparent)',
             backgroundColor:
-              "color-mix(in srgb, var(--color-primary) 8%, transparent)",
-            transition: "background-color 0.2s ease, border-color 0.2s ease",
-            "&:hover": {
-              borderColor: "var(--color-primary)",
+              'color-mix(in srgb, var(--color-primary) 8%, transparent)',
+            transition: 'background-color 0.2s ease, border-color 0.2s ease',
+            '&:hover': {
+              borderColor: 'var(--color-primary)',
               backgroundColor:
-                "color-mix(in srgb, var(--color-primary) 18%, transparent)",
+                'color-mix(in srgb, var(--color-primary) 18%, transparent)',
             },
-            "&.Mui-disabled": {
-              color: "color-mix(in srgb, var(--color-text) 34%, transparent)",
+            '&.Mui-disabled': {
+              color: 'color-mix(in srgb, var(--color-text) 34%, transparent)',
               borderColor:
-                "color-mix(in srgb, var(--color-text) 14%, transparent)",
+                'color-mix(in srgb, var(--color-text) 14%, transparent)',
             },
           }}
         >
@@ -712,14 +721,97 @@ const GeneralSettingsPanel = () => {
           component="span"
           sx={{
             fontWeight: 700,
-            textDecoration: "underline",
-            textUnderlineOffset: "3px",
+            textDecoration: 'underline',
+            textUnderlineOffset: '3px',
           }}
         >
           {HOSTNAME_ALLOWED_HINT}
         </Box>
         {message.slice(index + HOSTNAME_ALLOWED_HINT.length)}
       </>
+    );
+  };
+
+  /**
+   * Live client clock, shown in place of the picker while the "use client time"
+   * checkbox is on. The seconds keep ticking so it is obvious that the value
+   * submitted is the moment the button is pressed.
+   */
+  const renderLiveClientClock = () => {
+    const timeLabel = toPersianDigits(
+      `${pad(clientNow.getHours())}:${pad(clientNow.getMinutes())}:${pad(
+        clientNow.getSeconds()
+      )}`
+    );
+    /** Date only; the ticking time above must not be repeated. */
+    const jalali = gregorianToJalali(
+      clientNow.getFullYear(),
+      clientNow.getMonth() + 1,
+      clientNow.getDate()
+    );
+    const jalaliLabel = toPersianDigits(
+      `${jalali.day} ${JALALI_MONTH_NAMES[jalali.month - 1]} ${jalali.year}`
+    );
+
+    return (
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="flex-end"
+        gap={1.25}
+        sx={{
+          px: 1.75,
+          py: 1.25,
+          borderRadius: '12px',
+          border:
+            '1px solid color-mix(in srgb, var(--color-primary) 22%, transparent)',
+          backgroundColor:
+            'color-mix(in srgb, var(--color-primary) 6%, transparent)',
+        }}
+      >
+        {jalaliLabel ? (
+          <Typography
+            sx={{
+              minWidth: 0,
+              fontSize: '0.8rem',
+              color: 'var(--color-secondary)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {jalaliLabel}
+          </Typography>
+        ) : null}
+
+        <Typography
+          sx={{
+            fontWeight: 800,
+            fontSize: '1.25rem',
+            lineHeight: 1.2,
+            letterSpacing: '0.02em',
+            fontVariantNumeric: 'tabular-nums',
+            color: 'var(--color-primary)',
+          }}
+        >
+          {timeLabel}
+        </Typography>
+        <Box
+          aria-hidden
+          sx={{
+            width: 7,
+            height: 7,
+            flex: '0 0 auto',
+            borderRadius: '50%',
+            backgroundColor: 'var(--color-success)',
+            animation: 'soho-clock-pulse 1.8s ease-in-out infinite',
+            '@keyframes soho-clock-pulse': {
+              '0%, 100%': { opacity: 1 },
+              '50%': { opacity: 0.3 },
+            },
+          }}
+        />
+      </Stack>
     );
   };
 
@@ -743,60 +835,72 @@ const GeneralSettingsPanel = () => {
         label="تنطیم برابر زمان کلاینت"
       />
 
-      <FormControl sx={fieldSx} disabled={useClientTime}>
-        <FormLabel sx={{ fontSize: "0.85rem", mb: 0.5 }}>نوع تقویم</FormLabel>
-        <RadioGroup
-          row
-          value={calendarMode}
-          onChange={(event) =>
-            setCalendarMode(event.target.value as CalendarMode)
-          }
-        >
-          <FormControlLabel
-            value="jalali"
-            control={<Radio />}
-            label="شمسی (جلالی)"
-          />
-          <FormControlLabel
-            value="gregorian"
-            control={<Radio />}
-            label="میلادی"
-          />
-        </RadioGroup>
-      </FormControl>
-
-      {calendarMode === "jalali" ? (
-        <JalaliDateTimeField
-          label="تاریخ و ساعت سیستم"
-          value={manualTime}
-          onChange={(nextValue) => {
-            setManualTime(nextValue);
-            setManualTimeError(null);
-          }}
-          error={Boolean(manualTimeError)}
-          helperText={manualTimeError}
-          disabled={useClientTime}
-        />
+      {useClientTime ? (
+        renderLiveClientClock()
       ) : (
-        <TextField
-          fullWidth
-          type="datetime-local"
-          label="تاریخ و ساعت سیستم"
-          value={manualTime}
-          onChange={(event) => {
-            setManualTime(event.target.value);
-            setManualTimeError(null);
-          }}
-          error={Boolean(manualTimeError)}
-          helperText={manualTimeError}
-          disabled={useClientTime}
-          sx={technicalFieldSx}
-          slotProps={{
-            inputLabel: { shrink: true },
-            htmlInput: { step: 1, dir: "ltr", style: ltrInputStyle },
-          }}
-        />
+        <>
+          <FormControl sx={fieldSx}>
+            <FormLabel sx={{ fontSize: '0.85rem', mb: 0.5 }}>
+              نوع تقویم
+            </FormLabel>
+            <RadioGroup
+              row
+              value={calendarMode}
+              onChange={(event) =>
+                setCalendarMode(event.target.value as CalendarMode)
+              }
+            >
+              <FormControlLabel
+                value="jalali"
+                control={<Radio />}
+                label="شمسی (جلالی)"
+              />
+              <FormControlLabel
+                value="gregorian"
+                control={<Radio />}
+                label="میلادی"
+              />
+            </RadioGroup>
+          </FormControl>
+
+          {calendarMode === 'jalali' ? (
+            <JalaliDateTimeField
+              label="تاریخ و ساعت سیستم"
+              value={manualTime}
+              onChange={(nextValue) => {
+                setManualTime(nextValue);
+                setManualTimeError(null);
+              }}
+              error={Boolean(manualTimeError)}
+              helperText={manualTimeError}
+            />
+          ) : (
+            <TextField
+              fullWidth
+              type="datetime-local"
+              label="تاریخ و ساعت سیستم"
+              value={manualTime}
+              onChange={(event) => {
+                setManualTime(event.target.value);
+                setManualTimeError(null);
+              }}
+              error={Boolean(manualTimeError)}
+              helperText={manualTimeError}
+              sx={technicalFieldSx}
+              slotProps={{
+                inputLabel: { shrink: true },
+                htmlInput: { step: 1, dir: 'ltr', style: ltrInputStyle },
+              }}
+            />
+          )}
+        </>
       )}
+
+      {manualTimeError && useClientTime ? (
+        <Alert severity="error" sx={alertSx}>
+          {manualTimeError}
+        </Alert>
+      ) : null}
     </Stack>
   );
 
@@ -807,9 +911,9 @@ const GeneralSettingsPanel = () => {
       sx={{
         m: 0,
         fontWeight: 800,
-        fontSize: "0.92rem",
-        textAlign: "start",
-        color: "var(--color-text)",
+        fontSize: '0.92rem',
+        textAlign: 'start',
+        color: 'var(--color-text)',
       }}
     >
       {title}
@@ -829,7 +933,7 @@ const GeneralSettingsPanel = () => {
             }}
           />
         }
-        label={ntpEnabled ? "فعال" : "غیرفعال"}
+        label={ntpEnabled ? 'فعال' : 'غیرفعال'}
         sx={{ mx: 0, gap: 1 }}
       />
 
@@ -839,7 +943,7 @@ const GeneralSettingsPanel = () => {
               key={`ntp-server-${index}`}
               direction="row"
               gap={1}
-              sx={{ alignItems: "flex-start" }}
+              sx={{ alignItems: 'flex-start' }}
             >
               <TextField
                 fullWidth
@@ -851,14 +955,14 @@ const GeneralSettingsPanel = () => {
                 error={Boolean(ntpErrors[index])}
                 helperText={ntpErrors[index]}
                 sx={technicalFieldSx}
-                slotProps={{ htmlInput: { dir: "ltr", style: ltrInputStyle } }}
+                slotProps={{ htmlInput: { dir: 'ltr', style: ltrInputStyle } }}
               />
               <Tooltip title="حذف سرور" arrow>
                 <span>
                   <IconButton
                     aria-label={`حذف سرور زمان ${index + 1}`}
                     onClick={() => handleRemoveNtpServer(index)}
-                    sx={{ mt: 1, color: "var(--color-error)" }}
+                    sx={{ mt: 1, color: 'var(--color-error)' }}
                   >
                     <MdDeleteOutline size={20} />
                   </IconButton>
@@ -886,7 +990,7 @@ const GeneralSettingsPanel = () => {
             variant="contained"
             sx={primaryButtonSx}
           >
-            {ntpEnabled ? "ثبت سرورهای زمان" : "ثبت غیرفعال‌سازی"}
+            {ntpEnabled ? 'ثبت سرورهای زمان' : 'ثبت غیرفعال‌سازی'}
           </Button>
         ) : null}
       </Stack>
@@ -900,7 +1004,7 @@ const GeneralSettingsPanel = () => {
   );
 
   return (
-    <Box dir="rtl" sx={{ width: "100%", color: "var(--color-text)" }}>
+    <Box dir="rtl" sx={{ width: '100%', color: 'var(--color-text)' }}>
       {queryErrors.length > 0 ? (
         <Alert severity="error" sx={{ ...alertSx, mb: 2 }}>
           دریافت بخشی از اطلاعات با خطا مواجه شد.
@@ -908,14 +1012,14 @@ const GeneralSettingsPanel = () => {
       ) : null}
 
       {/* ── نوار ابزار ── */}
-      <Box sx={{ ...toolbarSx, justifyContent: "flex-end" }}>
+      <Box sx={{ ...toolbarSx, justifyContent: 'flex-end' }}>
         <Button
           onClick={handleToggleAll}
           startIcon={areAllExpanded ? <MdUnfoldLess /> : <MdUnfoldMore />}
           variant="outlined"
           sx={outlinedButtonSx}
         >
-          {areAllExpanded ? "بستن همه" : "باز کردن همه"}
+          {areAllExpanded ? 'بستن همه' : 'باز کردن همه'}
         </Button>
         <Button
           onClick={handleRefreshAll}
@@ -943,17 +1047,17 @@ const GeneralSettingsPanel = () => {
             isLoading={versionQuery.isLoading || hostnameQuery.isLoading}
             rows={[
               {
-                id: "system-version",
-                title: "نسخه سامانه",
+                id: 'system-version',
+                title: 'نسخه سامانه',
                 value: <Ltr>{primaryVersionLine}</Ltr>,
               },
               {
-                id: "system-hostname",
-                title: "نام میزبان",
+                id: 'system-hostname',
+                title: 'نام میزبان',
                 value: <Ltr>{currentHostname}</Ltr>,
-                valueAdornment: renderEditAction("ویرایش نام میزبان", () => {
+                valueAdornment: renderEditAction('ویرایش نام میزبان', () => {
                   setHostnameError(null);
-                  setEditor("hostname");
+                  setEditor('hostname');
                 }),
               },
             ]}
@@ -971,7 +1075,7 @@ const GeneralSettingsPanel = () => {
           id={SECTIONS.time}
           icon={<MdAccessTime />}
           title="زمان"
-          summaryLabel="زمان سرور"
+          summaryLabel="زمان ��رور"
           summaryValue={
             <Stack
               direction="row"
@@ -984,11 +1088,11 @@ const GeneralSettingsPanel = () => {
                 sx={{
                   width: 8,
                   height: 8,
-                  borderRadius: "50%",
+                  borderRadius: '50%',
                   flexShrink: 0,
                   backgroundColor: serverClock.isLive
-                    ? "var(--color-success, #29b96a)"
-                    : "var(--color-secondary)",
+                    ? 'var(--color-success, #29b96a)'
+                    : 'var(--color-secondary)',
                 }}
               />
               <Ltr>{serverTimeDisplay}</Ltr>
@@ -1002,21 +1106,21 @@ const GeneralSettingsPanel = () => {
             isLoading={timeQuery.isLoading}
             rows={[
               {
-                id: "time-client",
-                title: "زمان کلاینت",
+                id: 'time-client',
+                title: 'زمان کلاینت',
                 value: <Ltr>{clientTimeDisplay}</Ltr>,
               },
               {
-                id: "time-server",
-                title: "زمان سرور",
+                id: 'time-server',
+                title: 'زمان سرور',
                 value: (
                   <Tooltip arrow title={serverTimeTooltip}>
                     <Box
                       component="span"
                       sx={{
-                        cursor: "help",
-                        textDecoration: "underline dotted",
-                        textUnderlineOffset: "4px",
+                        cursor: 'help',
+                        textDecoration: 'underline dotted',
+                        textUnderlineOffset: '4px',
                       }}
                     >
                       <Ltr>{serverTimeDisplay}</Ltr>
@@ -1025,24 +1129,24 @@ const GeneralSettingsPanel = () => {
                 ),
                 valueAdornment: (
                   <>
-                    {renderEditAction("تنطیمات زمان و همگام‌سازی", () => {
+                    {renderEditAction('تنطیمات زمان و همگام‌سازی', () => {
                       setNtpFormError(null);
                       setManualTimeError(null);
-                      setEditor("time-settings");
+                      setEditor('time-settings');
                     })}
                     <Chip
                       size="small"
                       variant="outlined"
-                      color={isNtpActive ? "success" : "default"}
-                      label={isNtpActive ? "NTP فعال" : "NTP غیرفعال"}
-                      sx={{ fontWeight: 700, fontSize: "0.72rem" }}
+                      color={isNtpActive ? 'success' : 'default'}
+                      label={isNtpActive ? 'NTP فعال' : 'NTP غیرفعال'}
+                      sx={{ fontWeight: 700, fontSize: '0.72rem' }}
                     />
                     <Tooltip
                       arrow
                       title={
                         isClockDrifting
-                          ? "برای تنطیم زمان مادربرد برابر زمان سیستم کلیک کنید"
-                          : "اختلاف زمانی بین RTC و سیستم برحسب زمان محلی"
+                          ? 'برای تنطیم زمان مادربرد برابر زمان سیستم کلیک کنید'
+                          : 'اختلاف زمانی بین RTC و سیستم برحسب زمان محلی'
                       }
                     >
                       <Chip
@@ -1054,20 +1158,20 @@ const GeneralSettingsPanel = () => {
                           isClockDrifting ? handleSyncHardwareClock : undefined
                         }
                         color={
-                          hardwareClockDrift.level === "aligned"
-                            ? "success"
-                            : hardwareClockDrift.level === "unknown"
-                              ? "default"
-                              : "error"
+                          hardwareClockDrift.level === 'aligned'
+                            ? 'success'
+                            : hardwareClockDrift.level === 'unknown'
+                              ? 'default'
+                              : 'error'
                         }
                         label={driftDisplay}
                         sx={{
                           fontWeight: 700,
-                          fontSize: "0.72rem",
-                          maxWidth: "100%",
-                          cursor: isClockDrifting ? "pointer" : "default",
-                          "& .MuiChip-label": {
-                            whiteSpace: "normal",
+                          fontSize: '0.72rem',
+                          maxWidth: '100%',
+                          cursor: isClockDrifting ? 'pointer' : 'default',
+                          '& .MuiChip-label': {
+                            whiteSpace: 'normal',
                             lineHeight: 1.5,
                             py: 0.25,
                           },
@@ -1078,17 +1182,17 @@ const GeneralSettingsPanel = () => {
                 ),
               },
               {
-                id: "time-rtc",
-                title: "زمان سخت افزار (RTC)",
+                id: 'time-rtc',
+                title: 'زمان سخت افزار (RTC)',
                 value: <Ltr>{hardwareTimeDisplay}</Ltr>,
               },
               {
-                id: "time-timezone",
-                title: "منطقه زمانی",
+                id: 'time-timezone',
+                title: 'منطقه زمانی',
                 value: <Ltr>{timeQuery.data?.timezone ?? NOT_AVAILABLE}</Ltr>,
-                valueAdornment: renderEditAction("ویرایش منطقه زمانی", () => {
+                valueAdornment: renderEditAction('ویرایش منطقه زمانی', () => {
                   setTimezoneError(null);
-                  setEditor("timezone");
+                  setEditor('timezone');
                 }),
               },
             ]}
@@ -1098,7 +1202,7 @@ const GeneralSettingsPanel = () => {
 
       {/* ── ویرایش نام میزبان ── */}
       <SettingEditModal
-        open={editor === "hostname"}
+        open={editor === 'hostname'}
         onClose={closeEditor}
         onSubmit={handleRequestHostnameChange}
         isSubmitting={setHostnameMutation.isPending}
@@ -1119,14 +1223,14 @@ const GeneralSettingsPanel = () => {
           helperText={renderHostnameHelper(hostnameError)}
           sx={technicalFieldSx}
           slotProps={{
-            htmlInput: { maxLength: 253, dir: "ltr", style: ltrInputStyle },
+            htmlInput: { maxLength: 253, dir: 'ltr', style: ltrInputStyle },
           }}
         />
       </SettingEditModal>
 
       {/* ── ویرایش منطقه زمانی ── */}
       <SettingEditModal
-        open={editor === "timezone"}
+        open={editor === 'timezone'}
         onClose={closeEditor}
         onSubmit={handleRequestTimezoneChange}
         isSubmitting={setTimezoneMutation.isPending}
@@ -1152,14 +1256,14 @@ const GeneralSettingsPanel = () => {
           renderInput={(params) => (
             <TextField
               {...params}
-              label="منطقه زمانی"
+              label="منطقه زم��نی"
               error={Boolean(timezoneError)}
               helperText={timezoneError}
               sx={technicalFieldSx}
               slotProps={{
                 htmlInput: {
                   ...params.inputProps,
-                  dir: "ltr",
+                  dir: 'ltr',
                   style: ltrInputStyle,
                 },
               }}
@@ -1170,7 +1274,7 @@ const GeneralSettingsPanel = () => {
 
       {/* ── تغییر زمان سرور ── */}
       <SettingEditModal
-        open={editor === "manual-time"}
+        open={editor === 'manual-time'}
         onClose={closeEditor}
         onSubmit={handleRequestManualTime}
         isSubmitting={setManualTimeMutation.isPending}
@@ -1183,7 +1287,7 @@ const GeneralSettingsPanel = () => {
 
       {/* ── تمام تنطیمات زمان (از طریق آیکون ویرایش) ── */}
       <SettingEditModal
-        open={editor === "time-settings"}
+        open={editor === 'time-settings'}
         onClose={closeEditor}
         onSubmit={undefined}
         hideSubmit
@@ -1191,7 +1295,7 @@ const GeneralSettingsPanel = () => {
         icon={<MdAccessTime />}
         title="تنطیمات زمان"
       >
-        {renderModalSectionTitle("همگام‌سازی خودکار (NTP)")}
+        {renderModalSectionTitle('همگام‌سازی خودکار (NTP)')}
         {renderNtpFields()}
 
         {isManualTimeAvailable ? (
@@ -1200,17 +1304,17 @@ const GeneralSettingsPanel = () => {
               sx={{
                 my: 1,
                 borderColor:
-                  "color-mix(in srgb, var(--color-primary) 18%, transparent)",
+                  'color-mix(in srgb, var(--color-primary) 18%, transparent)',
               }}
             />
 
-            {renderModalSectionTitle("تنطیم دستی زمان")}
+            {renderModalSectionTitle('تنطیم دستی زمان')}
             {renderManualTimeFields()}
             <Button
               onClick={handleRequestManualTime}
               disabled={isMutationPending}
               variant="contained"
-              sx={{ ...primaryButtonSx, alignSelf: "flex-start" }}
+              sx={{ ...primaryButtonSx, alignSelf: 'flex-start' }}
             >
               تنطیم زمان سیستم
             </Button>
@@ -1220,8 +1324,8 @@ const GeneralSettingsPanel = () => {
 
       <SystemSettingConfirmDialog
         open={Boolean(pendingAction)}
-        title={pendingAction?.title ?? ""}
-        description={pendingAction?.description ?? ""}
+        title={pendingAction?.title ?? ''}
+        description={pendingAction?.description ?? ''}
         confirmLabel={pendingAction?.confirmLabel}
         severity={pendingAction?.severity}
         isLoading={isMutationPending}
