@@ -98,10 +98,7 @@ type SectionId = (typeof SECTIONS)[keyof typeof SECTIONS];
 const ALL_SECTION_IDS: SectionId[] = [SECTIONS.system, SECTIONS.time];
 
 type EditorKind =
-  "hostname" | "timezone" | "manual-time" | "time-settings" | "rtc-sync" | null;
-
-/** Direction of a motherboard-clock synchronisation. */
-type RtcSyncDirection = "hctosys" | "systohc";
+  "hostname" | "timezone" | "manual-time" | "time-settings" | null;
 
 /** Calendar the manual-time picker is rendered with. */
 type CalendarMode = "jalali" | "gregorian";
@@ -198,8 +195,6 @@ const GeneralSettingsPanel = () => {
   const manualTimeInitializedRef = useRef(false);
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("jalali");
 
-  const [rtcSyncDirection, setRtcSyncDirection] =
-    useState<RtcSyncDirection>("systohc");
   const [hwclockTimes, setHwclockTimes] = useState<HardwareClockTimes | null>(
     null,
   );
@@ -400,7 +395,7 @@ const GeneralSettingsPanel = () => {
         : "غیرفعال‌سازی همگام‌سازی خودکار زمان",
       description: ntpEnabled
         ? "پس از تایید، ساعت سیستم به‌صورت خودکار با سرورهای معرفی‌شده همگام می‌شود. صحت نام سرورها و دسترسی شبکه‌ای به آن‌ها را بررسی کنید."
-        : "با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود و مس��ولیت تنطیم صحیح ساعت سیستم بر عهده مدیر سامانه خواهد بود.",
+        : "با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود و مس����ولیت تنطیم صحیح ساعت سیستم بر عهده مدیر سامانه خواهد بود.",
       confirmLabel: ntpEnabled
         ? "فعال‌سازی همگام‌سازی"
         : "غیرفعال‌سازی همگام‌سازی",
@@ -440,24 +435,24 @@ const GeneralSettingsPanel = () => {
     });
   };
 
-  /** Minimal RTC synchronisation, opened from the drift chip. */
-  const handleRequestRtcSync = () => {
-    const isHardwareToSystem = rtcSyncDirection === "hctosys";
+  /**
+   * Writes the current system time onto the motherboard clock. Triggered
+   * directly by the drift chip, without any intermediate dialog.
+   */
+  const handleSyncHardwareClock = async () => {
+    if (isMutationPending) return;
 
-    setPendingAction({
-      type: "hwclock",
-      payload: isHardwareToSystem
-        ? { action: "hctosys", localtime: true }
-        : { action: "systohc" },
-      title: isHardwareToSystem
-        ? "یکسان‌سازی زمان سیستم با مادربرد"
-        : "یکسان‌سازی زمان مادربرد با سیستم",
-      description: isHardwareToSystem
-        ? "زمان سیستم‌عامل با مقدار ساعت مادربرد جایگزین می‌شود."
-        : "زمان فعلی سیستم‌عامل روی ساعت مادربرد نوشته می‌شود.",
-      confirmLabel: "یکسان‌سازی زمان",
-      severity: "error",
-    });
+    try {
+      const result = await manageHwclockMutation.mutateAsync({
+        action: "systohc",
+      });
+      setHwclockTimes(extractHardwareClockTimes(result.raw));
+      toast.success(result.message);
+    } catch (error) {
+      toast.error(
+        extractApiErrorMessage(error, "تنطیم زمان مادربرد با خطا مواجه شد."),
+      );
+    }
   };
 
   const handleConfirmAction = async () => {
@@ -949,7 +944,7 @@ const GeneralSettingsPanel = () => {
           id={SECTIONS.time}
           icon={<MdAccessTime />}
           title="زمان"
-          summaryLabel="زمان سرور"
+          summaryLabel="زمان ��رور"
           summaryValue={
             <Stack
               direction="row"
@@ -1003,6 +998,11 @@ const GeneralSettingsPanel = () => {
                 ),
                 valueAdornment: (
                   <>
+                    {renderEditAction("تنطیمات زمان و همگام‌سازی", () => {
+                      setNtpFormError(null);
+                      setManualTimeError(null);
+                      setEditor("time-settings");
+                    })}
                     <Chip
                       size="small"
                       variant="outlined"
@@ -1014,7 +1014,7 @@ const GeneralSettingsPanel = () => {
                       arrow
                       title={
                         isClockDrifting
-                          ? "برای یکسان‌سازی زمان مادربرد و سیستم کلیک کنید"
+                          ? "برای تنطیم زمان مادربرد برابر زمان سیستم کلیک کنید"
                           : "اختلاف زمانی بین RTC و سیستم برحسب زمان محلی"
                       }
                     >
@@ -1022,10 +1022,9 @@ const GeneralSettingsPanel = () => {
                         size="small"
                         variant="outlined"
                         clickable={isClockDrifting}
+                        disabled={isMutationPending}
                         onClick={
-                          isClockDrifting
-                            ? () => setEditor("rtc-sync")
-                            : undefined
+                          isClockDrifting ? handleSyncHardwareClock : undefined
                         }
                         color={
                           hardwareClockDrift.level === "aligned"
@@ -1048,11 +1047,6 @@ const GeneralSettingsPanel = () => {
                         }}
                       />
                     </Tooltip>
-                    {renderEditAction("تنطیمات زمان و همگام‌سازی", () => {
-                      setNtpFormError(null);
-                      setManualTimeError(null);
-                      setEditor("time-settings");
-                    })}
                   </>
                 ),
               },
@@ -1158,37 +1152,6 @@ const GeneralSettingsPanel = () => {
         title="تغییر زمان سرور"
       >
         {renderManualTimeFields()}
-      </SettingEditModal>
-
-      {/* ── یکسان‌سازی ساعت مادربرد (از طریق چیپ اختلاف زمانی) ── */}
-      <SettingEditModal
-        open={editor === "rtc-sync"}
-        onClose={closeEditor}
-        onSubmit={handleRequestRtcSync}
-        isSubmitting={manageHwclockMutation.isPending}
-        submitLabel="یکسان‌سازی زمان"
-        icon={<MdMemory />}
-        title="یکسان‌سازی ساعت مادربرد و سیستم"
-      >
-        <FormControl sx={fieldSx}>
-          <RadioGroup
-            value={rtcSyncDirection}
-            onChange={(event) =>
-              setRtcSyncDirection(event.target.value as RtcSyncDirection)
-            }
-          >
-            <FormControlLabel
-              value="systohc"
-              control={<Radio />}
-              label="زمان مادربرد برابر زمان سیستم شود"
-            />
-            <FormControlLabel
-              value="hctosys"
-              control={<Radio />}
-              label="زمان سیستم برابر زمان مادربرد شود"
-            />
-          </RadioGroup>
-        </FormControl>
       </SettingEditModal>
 
       {/* ── تمام تنطیمات زمان (از طریق آیکون ویرایش) ── */}
