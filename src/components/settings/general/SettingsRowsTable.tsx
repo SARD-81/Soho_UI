@@ -1,9 +1,8 @@
-import { Chip, Stack } from "@mui/material";
+import { Stack, Tooltip } from "@mui/material";
 import { useMemo } from "react";
 import type { ReactNode } from "react";
 import type { DataTableColumn } from "../../../@types/dataTable";
 import DataTable from "../../DataTable";
-import type { SettingsBadgeColor } from "./SettingsAccordionSection";
 import {
   settingsSectionTableContainerSx,
   settingsSectionTableSx,
@@ -13,35 +12,35 @@ import {
 export interface SettingsTableRow {
   id: string;
   title: string;
+  /** Optional tooltip that explains the row title. */
+  hint?: string;
   value: ReactNode;
-  status?: { label: string; color?: SettingsBadgeColor };
-  action?: ReactNode;
+  /**
+   * Inline control rendered right next to the value (edit icon, status chip).
+   * The table has no dedicated action column any more, so every interaction
+   * lives here.
+   */
+  valueAdornment?: ReactNode;
 }
 
 export interface SettingsRowsTableProps {
   rows: SettingsTableRow[];
   isLoading?: boolean;
-  /** Hide the status column for sections that have nothing to report. */
-  showStatus?: boolean;
-  /** Hide the action column for read-only sections. */
-  showAction?: boolean;
 }
 
 /**
  * Table used inside an expanded settings section.
  *
- * Keeps the exact look of the previous flat settings table (same DataTable,
- * same header row, same hover behaviour) but scoped to a single section, so
- * every section stays readable and comparable.
+ * Only three columns are rendered: the row number, the setting name and its
+ * value. Status chips and edit icons sit inside the value cell, next to the
+ * data they belong to.
  */
 const SettingsRowsTable = ({
   rows,
   isLoading = false,
-  showStatus = true,
-  showAction = true,
 }: SettingsRowsTableProps) => {
-  const columns = useMemo<DataTableColumn<SettingsTableRow>[]>(() => {
-    const base: DataTableColumn<SettingsTableRow>[] = [
+  const columns = useMemo<DataTableColumn<SettingsTableRow>[]>(
+    () => [
       {
         id: "index",
         header: "#",
@@ -50,57 +49,44 @@ const SettingsRowsTable = ({
       },
       {
         id: "title",
-        header: "تنظیم",
-        width: "26%",
+        header: "تنطیم",
+        width: "30%",
         cellSx: { fontWeight: 700 },
-        renderCell: (row) => row.title,
+        renderCell: (row) =>
+          row.hint ? (
+            <Tooltip title={row.hint} arrow>
+              <span
+                style={{
+                  textDecoration: "underline dotted",
+                  textUnderlineOffset: "4px",
+                  cursor: "help",
+                }}
+              >
+                {row.title}
+              </span>
+            </Tooltip>
+          ) : (
+            row.title
+          ),
       },
       {
         id: "value",
         header: "مقدار",
-        renderCell: (row) => row.value,
+        renderCell: (row) => (
+          <Stack
+            direction="row"
+            alignItems="center"
+            gap={1}
+            sx={{ minWidth: 0, flexWrap: "wrap" }}
+          >
+            <Stack sx={{ minWidth: 0 }}>{row.value}</Stack>
+            {row.valueAdornment}
+          </Stack>
+        ),
       },
-    ];
-
-    if (showStatus) {
-      base.push({
-        id: "status",
-        header: "وضعیت",
-        width: "18%",
-        renderCell: (row) =>
-          row.status ? (
-            <Chip
-              size="small"
-              variant="outlined"
-              label={row.status.label}
-              color={row.status.color ?? "default"}
-              sx={{ fontWeight: 700, fontSize: "0.72rem" }}
-            />
-          ) : (
-            "—"
-          ),
-      });
-    }
-
-    if (showAction) {
-      base.push({
-        id: "action",
-        header: "عملیات",
-        align: "center",
-        width: 110,
-        renderCell: (row) =>
-          row.action ? (
-            <Stack direction="row" gap={0.5} justifyContent="center">
-              {row.action}
-            </Stack>
-          ) : (
-            "—"
-          ),
-      });
-    }
-
-    return base;
-  }, [showAction, showStatus]);
+    ],
+    [],
+  );
 
   return (
     <DataTable<SettingsTableRow>

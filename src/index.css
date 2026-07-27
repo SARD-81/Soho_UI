@@ -35,6 +35,7 @@
     --color-input-border: rgba(0, 0, 0, 0.12);
     --color-input-focus-border: var(--color-primary);
     --color-error : #ef4444;
+    --color-warning: #f59e0b;
     --color-success: #10b981;
 }
 
@@ -51,6 +52,7 @@
     --color-input-border: rgba(255, 255, 255, 0.12);
     --color-input-focus-border: var(--color-primary);
     --color-error : #ef4444;
+    --color-warning: #f59e0b;
     --color-success: #10b981;
 }
 

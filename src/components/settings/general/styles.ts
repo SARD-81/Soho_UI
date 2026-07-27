@@ -173,7 +173,10 @@ export const settingsOutlinedButtonSx: SxProps<Theme> = {
   fontSize: "0.86rem",
   whiteSpace: "nowrap",
   color: "var(--color-primary)",
-  borderColor: "color-mix(in srgb, var(--color-primary) 58%, transparent)",
+  backgroundColor: "transparent",
+  // A bare `borderColor` is invisible on MUI's default text variant, so the
+  // frame itself is declared here to keep every settings button consistent.
+  border: "1px solid color-mix(in srgb, var(--color-primary) 58%, transparent)",
   "& .MuiButton-startIcon": {
     marginInlineEnd: "8px",
     marginInlineStart: "-2px",
@@ -183,6 +186,11 @@ export const settingsOutlinedButtonSx: SxProps<Theme> = {
   "&:hover": {
     borderColor: "var(--color-primary)",
     backgroundColor: "color-mix(in srgb, var(--color-primary) 9%, transparent)",
+  },
+  "&.Mui-disabled": {
+    color: "color-mix(in srgb, var(--color-text) 38%, transparent)",
+    borderColor: "color-mix(in srgb, var(--color-text) 16%, transparent)",
+    backgroundColor: "transparent",
   },
 };
 

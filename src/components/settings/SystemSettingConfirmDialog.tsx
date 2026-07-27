@@ -94,6 +94,9 @@ const SystemSettingConfirmDialog = ({
               ) : undefined,
               sx: {
                 minWidth: 148,
+                minHeight: 40,
+                borderRadius: "9px",
+                fontWeight: 800,
                 color: "var(--color-bg)",
                 backgroundColor: accentColor,
                 borderColor: accentColor,
@@ -102,15 +105,28 @@ const SystemSettingConfirmDialog = ({
                   borderColor: accentColor,
                   filter: "brightness(1.06)",
                 },
+                "&.Mui-disabled": {
+                  color: "color-mix(in srgb, var(--color-bg) 62%, transparent)",
+                  backgroundColor: `color-mix(in srgb, ${accentColor} 42%, var(--color-card-bg))`,
+                },
               },
             }}
             cancelProps={{
               disabled: isLoading,
               sx: {
                 minWidth: 112,
+                minHeight: 40,
+                borderRadius: "9px",
+                fontWeight: 800,
                 color: "var(--color-text)",
                 borderColor:
-                  "color-mix(in srgb, var(--color-secondary) 50%, transparent)",
+                  "color-mix(in srgb, var(--color-text) 26%, transparent)",
+                "&:hover": {
+                  borderColor:
+                    "color-mix(in srgb, var(--color-text) 42%, transparent)",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--color-text) 6%, transparent)",
+                },
               },
             }}
           />
@@ -129,7 +145,7 @@ const SystemSettingConfirmDialog = ({
       >
         <Typography
           sx={{
-            color: "var(--color-secondary)",
+            color: "color-mix(in srgb, var(--color-text) 84%, transparent)",
             textAlign: "start",
             lineHeight: 2,
           }}

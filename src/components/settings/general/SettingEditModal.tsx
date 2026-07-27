@@ -1,11 +1,11 @@
-import { Alert, Box, Button, Stack, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
-import BlurModal from '../../BlurModal';
+import { Alert, Box, Button, Stack, Typography } from "@mui/material";
+import type { ReactNode } from "react";
+import BlurModal from "../../BlurModal";
 import {
   settingsAlertSx as alertSx,
   settingsOutlinedButtonSx as outlinedButtonSx,
   settingsPrimaryButtonSx as primaryButtonSx,
-} from './styles';
+} from "./styles";
 
 export interface SettingEditModalProps {
   open: boolean;
@@ -33,7 +33,7 @@ const SettingEditModal = ({
   icon,
   errorMessage,
   isSubmitting = false,
-  submitLabel = 'ثبت تغییرات',
+  submitLabel = "ثبت تغییرات",
   hideSubmit = false,
   onClose,
   onSubmit,
@@ -61,15 +61,15 @@ const SettingEditModal = ({
                 width: 42,
                 height: 42,
                 flexShrink: 0,
-                borderRadius: '12px',
-                display: 'grid',
-                placeItems: 'center',
+                borderRadius: "12px",
+                display: "grid",
+                placeItems: "center",
                 fontSize: 22,
-                color: 'var(--color-primary)',
+                color: "var(--color-primary)",
                 backgroundColor:
-                  'color-mix(in srgb, var(--color-primary) 12%, transparent)',
+                  "color-mix(in srgb, var(--color-primary) 12%, transparent)",
                 border:
-                  '1px solid color-mix(in srgb, var(--color-primary) 24%, transparent)',
+                  "1px solid color-mix(in srgb, var(--color-primary) 24%, transparent)",
               }}
             >
               {icon}
@@ -81,8 +81,8 @@ const SettingEditModal = ({
               component="h2"
               sx={{
                 fontWeight: 700,
-                fontSize: '1.05rem',
-                color: 'var(--color-text)',
+                fontSize: "1.05rem",
+                color: "var(--color-text)",
               }}
             >
               {title}
@@ -91,9 +91,9 @@ const SettingEditModal = ({
               <Typography
                 sx={{
                   mt: 0.25,
-                  fontSize: '0.8rem',
+                  fontSize: "0.8rem",
                   lineHeight: 1.7,
-                  color: 'var(--color-secondary)',
+                  color: "var(--color-secondary)",
                 }}
               >
                 {description}
@@ -105,6 +105,7 @@ const SettingEditModal = ({
       actions={
         <>
           <Button
+            variant="outlined"
             onClick={onClose}
             disabled={isSubmitting}
             sx={outlinedButtonSx}
@@ -113,6 +114,7 @@ const SettingEditModal = ({
           </Button>
           {hideSubmit ? null : (
             <Button
+              variant="contained"
               onClick={onSubmit}
               disabled={isSubmitting}
               sx={primaryButtonSx}
