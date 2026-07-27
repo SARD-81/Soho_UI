@@ -551,7 +551,7 @@ const GeneralSettingsPanel = () => {
   const hardwareClockSource =
     (rtcMode === "local"
       ? (hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime)
-      : (hwclockTimes?.utc ?? timeQuery.data?.hardwareUtcTime)) ?? null;
+      : (hwclockTimes?.local ?? timeQuery.data?.hardwareLocalTime)) ?? null;
   const hardwareClock = useSystemWallClock(hardwareClockSource, {
     enabled: true,
   });
@@ -921,7 +921,7 @@ const GeneralSettingsPanel = () => {
         <SettingsAccordionSection
           id={SECTIONS.system}
           icon={<MdComputer />}
-          title="سامانه"
+          title="عمومی"
           summaryLabel="نام میزبان"
           summaryValue={<Ltr>{currentHostname}</Ltr>}
           isLoading={versionQuery.isLoading || hostnameQuery.isLoading}

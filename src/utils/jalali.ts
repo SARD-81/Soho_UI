@@ -258,7 +258,7 @@ export const formatJalaliWallClockLabel = (value: string) => {
   const date = `${jalali.year}/${pad(jalali.month)}/${pad(jalali.day)}`;
   const time = `${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`;
 
-  return toPersianDigits(`${date} — ${time}`);
+  return toPersianDigits(`${time} — ${date}`);
 };
 
 /** Long Persian label, e.g. `۴ مرداد ۱۴۰۵، ساعت ۱۶:۳۹:۲۰`. */
