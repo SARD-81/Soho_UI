@@ -24,6 +24,7 @@ import DashboardLayoutPanel, {
   type DashboardLayoutPanelWidget,
 } from '../components/dashboard/DashboardLayoutPanel';
 import SortableWidget from '../components/dashboard/SortableWidget';
+import SystemUptimeBadge from '../components/dashboard/SystemUptimeBadge';
 import PageContainer from '../components/PageContainer';
 import Zpool from '../components/Zpool';
 import { useAuth } from '../contexts/AuthContext';
@@ -778,6 +779,9 @@ const Dashboard = () => {
             </Typography>
           </Stack> */}
         </Box>
+
+        <SystemUptimeBadge />
+
         {isCustomizing ? (
           <Stack
             direction="row"
