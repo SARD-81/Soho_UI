@@ -67,6 +67,7 @@ const SystemUptimeBadge = () => {
         gap={1.25}
         sx={{
           alignSelf: { xs: 'flex-start', md: 'center' },
+          marginInlineStart: { xs: 0, md: 'auto' },
           minWidth: { xs: 0, sm: 250 },
           px: 1.5,
           py: 0.9,
