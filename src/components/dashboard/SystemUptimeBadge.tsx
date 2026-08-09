@@ -26,7 +26,7 @@ const SystemUptimeBadge = () => {
           borderRadius: '12px',
           color: 'var(--color-text)',
           background:
-            'linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 11%, var(--color-card-bg)) 0%, color-mix(in srgb, var(--color-card-bg) 96%, transparent) 100%)',
+            'linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 70%, var(--color-card-bg)) 0%, color-mix(in srgb, var(--color-card-bg) 96%, transparent) 100%)',
           border:
             '1px solid color-mix(in srgb, var(--color-primary) 26%, transparent)',
           boxShadow:
