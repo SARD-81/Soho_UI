@@ -187,7 +187,7 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
     title: 'تجمیع فضاهای یکپارچه',
     description: 'تصویر کلی از سلامت و ظرفیت فضاهای یکپارچه',
     component: Zpool,
-    columns: { xs: 12, md: 10, xl: 10 },
+    columns: { xs: 12, md: 10, xl: 12 },
     layoutOptions: [
       {
         id: 'zpool-short',

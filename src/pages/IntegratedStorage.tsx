@@ -244,7 +244,7 @@ const IntegratedStorage = () => {
         title="فضای یکپارچه"
         // subtitle="مدیریت Poolها، دیسک‌ها و عملیات نگهداری فضای ذخیره‌سازی"
         primaryAction={{ label: 'ایجاد', onClick: handleOpenCreate }}
-        actions={[{ label: 'فراخوانی', onClick: poolImport.openModal, tooltip: 'فراخوانی فضای یکپارچه آزاد شده از سیستم' }]}
+        actions={[{ label: 'فراخوانی', onClick: poolImport.openModal, tooltip: 'Import فضای یکپارچه Export شده از سیستم' }]}
       />
 
       <Suspense fallback={null}>

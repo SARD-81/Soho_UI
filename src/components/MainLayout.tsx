@@ -288,12 +288,12 @@ const MainLayout: React.FC = () => {
                     sx={{
                       color: 'var(--color-primary)',
                       flexShrink: 0,
-                      fontFamily: 'var(--font-didot)',
+                      fontFamily: 'var(--font-vazir)',
                       fontWeight: 900,
                       lineHeight: 1,
                     }}
                   >
-                    استورکس
+                    StoreX
                   </Typography>
                   <Typography
                     component="div"
@@ -303,11 +303,11 @@ const MainLayout: React.FC = () => {
                       fontWeight: "bold",
                       fontSize: 13,
                       letterSpacing: '0.13em',
-                      lineHeight: 2.4,
+                      lineHeight: 1.4,
                       textTransform: 'uppercase',
                     }}
                   >
-                    ذخیره‌ساز اداری هوشمند
+                    ذخیره‌ساز اداری
                   </Typography>
                 </Box>
               </Box>

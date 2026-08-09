@@ -371,7 +371,7 @@ const PoolsTable = ({
                 <MdAddCircleOutline size={20} />
               </IconButton>
             </Tooltip>
-            <Tooltip title="آزادسازی">
+            <Tooltip title="Export">
               <IconButton
                 size="small"
                 color="primary"
