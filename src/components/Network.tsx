@@ -7,14 +7,14 @@ import {
 } from '@mui/material';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FaNetworkWired } from 'react-icons/fa6';
-import type { History, HistoryPoint } from '../@types/network';
-import { formatBytes } from '../utils/formatters';
+import type { History } from '../@types/network';
 import { useNetwork } from '../hooks/useNetwork';
+import { formatBytes } from '../utils/formatters';
 import { extractIPv4Info, formatInterfaceSpeed } from '../utils/networkDetails';
-import DashboardWidgetHeader from './dashboard/DashboardWidgetHeader';
 import { createCardSx } from './cardStyles.ts';
 import AppLineChart from './charts/AppLineChart';
 import ResponsiveChartContainer from './charts/ResponsiveChartContainer';
+import DashboardWidgetHeader from './dashboard/DashboardWidgetHeader';
 
 const MAX_HISTORY_MS = 90 * 1000;
 
@@ -26,7 +26,7 @@ const formatTimeTo24Hour = (date: Date): string =>
     second: '2-digit',
   });
 
-const getChartRange = (history: HistoryPoint[], startTime: number) => {
+const getChartRange = (startTime: number) => {
   const now = Date.now();
   const elapsed = now - startTime;
   const min = elapsed < MAX_HISTORY_MS ? startTime : now - MAX_HISTORY_MS;
@@ -161,13 +161,9 @@ const Network = () => {
             speedFormatter
           );
           const interfaceHistory = history[name] ?? [];
-          const { min, max } = getChartRange(
-            interfaceHistory,
-            startTimeRef.current
-          );
+          const { min, max } = getChartRange(startTimeRef.current);
           const maxTrafficValue = interfaceHistory.reduce(
-            (maximum, point) =>
-              Math.max(maximum, point.download, point.upload),
+            (maximum, point) => Math.max(maximum, point.download, point.upload),
             0
           );
           const maxCurrentSpeedValue = interfaceHistory.reduce(
@@ -188,7 +184,8 @@ const Network = () => {
                 bgcolor: 'var(--color-card-bg)',
                 mb: 2,
                 borderRadius: '8px',
-                border: '1px solid color-mix(in srgb, var(--color-primary) 55%, transparent)',
+                border:
+                  '1px solid color-mix(in srgb, var(--color-primary) 55%, transparent)',
                 width: '100%',
               }}
             >
@@ -258,7 +255,9 @@ const Network = () => {
                     ]}
                     margin={{ left: 40, right: 24, top: 20, bottom: 20 }}
                     slotProps={{
-                      noDataOverlay: { message: 'اطلاعات ترافیک در دسترس نیست' },
+                      noDataOverlay: {
+                        message: 'اطلاعات ترافیک در دسترس نیست',
+                      },
                     }}
                   />
                 )}
@@ -266,7 +265,12 @@ const Network = () => {
 
               <Typography
                 variant="subtitle2"
-                sx={{ mt: 2.5, mb: 0.5, color: 'var(--color-text)', fontWeight: 700 }}
+                sx={{
+                  mt: 2.5,
+                  mb: 0.5,
+                  color: 'var(--color-text)',
+                  fontWeight: 700,
+                }}
               >
                 سرعت لحظه‌ای آپلود و دانلود
               </Typography>

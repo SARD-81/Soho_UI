@@ -91,7 +91,6 @@ import {
 } from './general/styles';
 
 const NOT_AVAILABLE = 'در دسترس نیست';
-const NOT_CONFIGURED = 'تنطیم نشده';
 
 /** Section ids of the accordion list. */
 const SECTIONS = {
@@ -253,14 +252,6 @@ const GeneralSettingsPanel = () => {
     manualTimeInitializedRef.current = true;
     setManualTime(toDateTimeLocalValue(timeQuery.data.localTime));
   }, [timeQuery.data?.localTime]);
-
-  useEffect(() => {
-    if (timeQuery.data?.rtcInLocalTimezone == null) {
-      return;
-    }
-
-    setRtcMode(timeQuery.data.rtcInLocalTimezone ? 'local' : 'utc');
-  }, [timeQuery.data?.rtcInLocalTimezone]);
 
   const timezoneOptions = useMemo(() => {
     const values = new Set(timezoneQuery.data ?? []);
