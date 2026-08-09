@@ -8,7 +8,13 @@ interface SystemUptimeApiResponse {
   message?: unknown;
   data?: {
     numeric?: unknown;
+    human_readable?: unknown;
   };
+}
+
+export interface SystemUptimeInfo {
+  numeric: string;
+  humanReadable: string | null;
 }
 
 const readResponseMessage = (
@@ -19,7 +25,9 @@ const readResponseMessage = (
     ? payload.message.trim()
     : fallback;
 
-const fetchSystemUptimeNumeric = async (signal?: AbortSignal): Promise<string> => {
+const fetchSystemUptime = async (
+  signal?: AbortSignal
+): Promise<SystemUptimeInfo> => {
   const response = await axiosInstance.get<SystemUptimeApiResponse>(
     SYSTEM_UPTIME_ENDPOINT,
     { signal }
@@ -38,22 +46,28 @@ const fetchSystemUptimeNumeric = async (signal?: AbortSignal): Promise<string> =
     throw new Error('مقدار numeric در پاسخ آپ‌تایم سامانه موجود نیست.');
   }
 
-  return numeric.trim();
+  const humanReadable = payload.data?.human_readable;
+
+  return {
+    numeric: numeric.trim(),
+    humanReadable:
+      typeof humanReadable === 'string' && humanReadable.trim().length > 0
+        ? humanReadable.trim()
+        : null,
+  };
 };
 
 export const systemUptimeQueryKey = ['system', 'uptime'] as const;
 
 /**
- * Reads only `data.numeric` from GET /api/system/uptime/.
- *
- * The dashboard intentionally does not depend on uptime_seconds,
- * human_readable, boot_time, or idle_seconds. The backend numeric format is
- * rendered as-is and refreshed once per second while the dashboard is visible.
+ * Reads `data.numeric` for the compact dashboard value and
+ * `data.human_readable` for the explanatory tooltip.
+ * Other uptime response fields intentionally stay outside the presentation API.
  */
 export const useSystemUptime = () =>
-  useQuery<string, Error>({
+  useQuery<SystemUptimeInfo, Error>({
     queryKey: systemUptimeQueryKey,
-    queryFn: ({ signal }) => fetchSystemUptimeNumeric(signal),
+    queryFn: ({ signal }) => fetchSystemUptime(signal),
     staleTime: 0,
     refetchInterval: 1_000,
     refetchIntervalInBackground: false,
