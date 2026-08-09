@@ -1,35 +1,16 @@
-import { Box, Stack, Tooltip, Typography } from '@mui/material';
+import { Box, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
 import { MdAccessTime } from 'react-icons/md';
 import { useSystemUptime } from '../../hooks/useSystemUptime';
 
-const toPersianDigits = (value: string | number) =>
-  String(value).replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]);
-
-const pad = (value: number) => String(value).padStart(2, '0');
-
-const splitUptime = (totalSeconds: number) => {
-  const safeSeconds = Math.max(0, Math.floor(totalSeconds));
-  const days = Math.floor(safeSeconds / 86_400);
-  const hours = Math.floor((safeSeconds % 86_400) / 3_600);
-  const minutes = Math.floor((safeSeconds % 3_600) / 60);
-  const seconds = safeSeconds % 60;
-
-  return {
-    days,
-    clock: `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`,
-  };
-};
-
 const SystemUptimeBadge = () => {
-  const { uptimeSeconds, isMock } = useSystemUptime();
-  const { days, clock } = splitUptime(uptimeSeconds);
+  const { data: numeric, isLoading, isFetching, error } = useSystemUptime();
 
   return (
     <Tooltip
       arrow
       title={
-        isMock
-          ? 'این مقدار فعلاً نمونه است و بعداً مستقیماً به API آپ‌تایم متصل می‌شود.'
+        error
+          ? error.message
           : 'مدت زمان فعال بودن سامانه از آخرین راه‌اندازی'
       }
     >
@@ -70,96 +51,88 @@ const SystemUptimeBadge = () => {
             display: 'grid',
             placeItems: 'center',
             borderRadius: '10px',
-            color: 'var(--color-primary)',
-            backgroundColor:
-              'color-mix(in srgb, var(--color-primary) 12%, transparent)',
-            border:
-              '1px solid color-mix(in srgb, var(--color-primary) 28%, transparent)',
+            color: error ? 'var(--color-error)' : 'var(--color-primary)',
+            backgroundColor: error
+              ? 'color-mix(in srgb, var(--color-error) 10%, transparent)'
+              : 'color-mix(in srgb, var(--color-primary) 12%, transparent)',
+            border: error
+              ? '1px solid color-mix(in srgb, var(--color-error) 28%, transparent)'
+              : '1px solid color-mix(in srgb, var(--color-primary) 28%, transparent)',
           }}
         >
           <MdAccessTime size={21} />
         </Box>
 
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Stack direction="row" alignItems="center" gap={0.75} mb={0.2}>
-            <Typography
-              variant="caption"
+          <Typography
+            variant="caption"
+            sx={{
+              display: 'block',
+              mb: 0.2,
+              color: 'var(--color-secondary)',
+              fontWeight: 700,
+              lineHeight: 1.4,
+            }}
+          >
+            آپ‌تایم سامانه
+          </Typography>
+
+          <Stack direction="row" alignItems="center" gap={0.8}>
+            <Box
+              aria-hidden
               sx={{
-                color: 'var(--color-secondary)',
-                fontWeight: 700,
-                lineHeight: 1.4,
+                width: 7,
+                height: 7,
+                flexShrink: 0,
+                borderRadius: '50%',
+                backgroundColor: error
+                  ? 'var(--color-error)'
+                  : 'var(--color-success)',
+                boxShadow: error
+                  ? '0 0 0 4px color-mix(in srgb, var(--color-error) 12%, transparent)'
+                  : '0 0 0 4px color-mix(in srgb, var(--color-success) 12%, transparent)',
+                animation:
+                  !error && (isLoading || isFetching)
+                    ? 'soho-uptime-pulse 1.2s ease-in-out infinite'
+                    : 'soho-uptime-pulse 1.8s ease-in-out infinite',
+                '@keyframes soho-uptime-pulse': {
+                  '0%, 100%': { opacity: 1 },
+                  '50%': { opacity: 0.38 },
+                },
               }}
-            >
-              آپ‌تایم سامانه
-            </Typography>
+            />
 
-            {isMock ? (
+            {isLoading && !numeric ? (
+              <Skeleton variant="text" width={150} height={28} />
+            ) : error && !numeric ? (
               <Typography
                 component="span"
                 sx={{
-                  px: 0.7,
-                  py: 0.1,
-                  borderRadius: '999px',
-                  fontSize: '0.62rem',
-                  lineHeight: 1.6,
+                  color: 'var(--color-error)',
                   fontWeight: 800,
-                  color: 'var(--color-secondary)',
-                  backgroundColor:
-                    'color-mix(in srgb, var(--color-secondary) 9%, transparent)',
-                  border:
-                    '1px solid color-mix(in srgb, var(--color-secondary) 18%, transparent)',
-                }}
-              >
-                نمونه
-              </Typography>
-            ) : null}
-          </Stack>
-
-          <Stack direction="row" alignItems="baseline" gap={0.8}>
-            <Stack direction="row" alignItems="center" gap={0.55}>
-              <Box
-                aria-hidden
-                sx={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--color-success)',
-                  boxShadow:
-                    '0 0 0 4px color-mix(in srgb, var(--color-success) 12%, transparent)',
-                  animation: 'soho-uptime-pulse 1.8s ease-in-out infinite',
-                  '@keyframes soho-uptime-pulse': {
-                    '0%, 100%': { opacity: 1 },
-                    '50%': { opacity: 0.38 },
-                  },
-                }}
-              />
-              <Typography
-                component="span"
-                sx={{
-                  color: 'var(--color-text)',
-                  fontWeight: 900,
-                  fontSize: '0.9rem',
+                  fontSize: '0.84rem',
                   whiteSpace: 'nowrap',
                 }}
               >
-                {toPersianDigits(days)} روز
+                در دسترس نیست
               </Typography>
-            </Stack>
-
-            <Typography
-              component="span"
-              style={{ direction: 'ltr', unicodeBidi: 'isolate' }}
-              sx={{
-                color: 'var(--color-primary)',
-                fontWeight: 900,
-                fontSize: '0.98rem',
-                fontVariantNumeric: 'tabular-nums',
-                letterSpacing: '0.04em',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {toPersianDigits(clock)}
-            </Typography>
+            ) : (
+              <Typography
+                component="span"
+                dir="ltr"
+                sx={{
+                  color: 'var(--color-primary)',
+                  fontWeight: 900,
+                  fontSize: '1rem',
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '0.045em',
+                  whiteSpace: 'nowrap',
+                  unicodeBidi: 'isolate',
+                }}
+              >
+                {numeric}
+              </Typography>
+            )}
           </Stack>
         </Box>
       </Stack>
