@@ -1,56 +1,63 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import axiosInstance from '../lib/axiosInstance';
 
-export type SystemUptimeSource = 'mock' | 'api';
+const SYSTEM_UPTIME_ENDPOINT = '/api/system/uptime/';
 
-export interface SystemUptimeSnapshot {
-  uptimeSeconds: number;
-  sampledAt: number;
-  source: SystemUptimeSource;
+interface SystemUptimeApiResponse {
+  ok?: boolean;
+  message?: unknown;
+  data?: {
+    numeric?: unknown;
+  };
 }
 
-/**
- * Temporary uptime source until the backend endpoint is available.
- *
- * API integration boundary:
- * Replace this snapshot with the normalized response from the uptime endpoint.
- * The presentation layer does not need to change as long as the API adapter
- * returns `uptimeSeconds`, `sampledAt`, and `source: 'api'`.
- */
-const MOCK_UPTIME_SNAPSHOT: SystemUptimeSnapshot = {
-  uptimeSeconds: 12 * 24 * 60 * 60 + 4 * 60 * 60 + 32 * 60 + 18,
-  sampledAt: Date.now(),
-  source: 'mock',
-};
+const readResponseMessage = (
+  payload: SystemUptimeApiResponse,
+  fallback: string
+): string =>
+  typeof payload.message === 'string' && payload.message.trim().length > 0
+    ? payload.message.trim()
+    : fallback;
 
-const useSystemUptimeSource = (): SystemUptimeSnapshot => {
-  // TODO(api): replace this return value with the real uptime query result.
-  return MOCK_UPTIME_SNAPSHOT;
-};
+const fetchSystemUptimeNumeric = async (signal?: AbortSignal): Promise<string> => {
+  const response = await axiosInstance.get<SystemUptimeApiResponse>(
+    SYSTEM_UPTIME_ENDPOINT,
+    { signal }
+  );
 
-export const useSystemUptime = () => {
-  const snapshot = useSystemUptimeSource();
-  const [now, setNow] = useState(() => Date.now());
+  const payload = response.data;
 
-  useEffect(() => {
-    const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(intervalId);
-  }, []);
-
-  const uptimeSeconds = useMemo(() => {
-    const baseSeconds = Math.max(0, Math.floor(snapshot.uptimeSeconds));
-    const elapsedSeconds = Math.max(
-      0,
-      Math.floor((now - snapshot.sampledAt) / 1000)
+  if (payload.ok === false) {
+    throw new Error(
+      readResponseMessage(payload, 'دریافت آپ‌تایم سامانه با خطا مواجه شد.')
     );
+  }
 
-    return baseSeconds + elapsedSeconds;
-  }, [now, snapshot.sampledAt, snapshot.uptimeSeconds]);
+  const numeric = payload.data?.numeric;
+  if (typeof numeric !== 'string' || numeric.trim().length === 0) {
+    throw new Error('مقدار numeric در پاسخ آپ‌تایم سامانه موجود نیست.');
+  }
 
-  return {
-    uptimeSeconds,
-    source: snapshot.source,
-    isMock: snapshot.source === 'mock',
-  } as const;
+  return numeric.trim();
 };
+
+export const systemUptimeQueryKey = ['system', 'uptime'] as const;
+
+/**
+ * Reads only `data.numeric` from GET /api/system/uptime/.
+ *
+ * The dashboard intentionally does not depend on uptime_seconds,
+ * human_readable, boot_time, or idle_seconds. The backend numeric format is
+ * rendered as-is and refreshed once per second while the dashboard is visible.
+ */
+export const useSystemUptime = () =>
+  useQuery<string, Error>({
+    queryKey: systemUptimeQueryKey,
+    queryFn: ({ signal }) => fetchSystemUptimeNumeric(signal),
+    staleTime: 0,
+    refetchInterval: 1_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
+  });
 
 export default useSystemUptime;
