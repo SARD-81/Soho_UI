@@ -2,8 +2,54 @@ import { Box, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
 import { MdAccessTime } from 'react-icons/md';
 import { useSystemUptime } from '../../hooks/useSystemUptime';
 
+const toPersianDigits = (value: string | number) =>
+  String(value).replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]);
+
+interface ParsedUptimeNumeric {
+  durationLabel: string;
+  clockLabel: string;
+}
+
+/**
+ * Backend numeric format: YY/MM/DD-HH:MM:SS.
+ * For the common case (less than one month) this renders for example:
+ * `۱۲ روز ۰۴:۳۲:۱۸`.
+ * If the backend reports non-zero year/month parts, they are kept explicitly
+ * instead of guessing a month/year-to-days conversion.
+ */
+const formatUptimeNumeric = (numeric: string): ParsedUptimeNumeric | null => {
+  const match = numeric
+    .trim()
+    .match(/^(\d+)\/(\d+)\/(\d+)-(\d{1,2}):(\d{1,2}):(\d{1,2})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, yearsRaw, monthsRaw, daysRaw, hoursRaw, minutesRaw, secondsRaw] =
+    match;
+  const years = Number(yearsRaw);
+  const months = Number(monthsRaw);
+  const days = Number(daysRaw);
+
+  const durationParts: string[] = [];
+  if (years > 0) durationParts.push(`${toPersianDigits(years)} سال`);
+  if (months > 0) durationParts.push(`${toPersianDigits(months)} ماه`);
+  durationParts.push(`${toPersianDigits(days)} روز`);
+
+  const clockLabel = [hoursRaw, minutesRaw, secondsRaw]
+    .map((part) => toPersianDigits(part.padStart(2, '0')))
+    .join(':');
+
+  return {
+    durationLabel: durationParts.join(' '),
+    clockLabel,
+  };
+};
+
 const SystemUptimeBadge = () => {
-  const { data: numeric, isLoading, isFetching, error } = useSystemUptime();
+  const { data, isLoading, isFetching, error } = useSystemUptime();
+  const formatted = data?.numeric ? formatUptimeNumeric(data.numeric) : null;
 
   return (
     <Tooltip
@@ -11,7 +57,8 @@ const SystemUptimeBadge = () => {
       title={
         error
           ? error.message
-          : 'مدت زمان فعال بودن سامانه از آخرین راه‌اندازی'
+          : data?.humanReadable ??
+            'مدت زمان فعال بودن سامانه از آخرین راه‌اندازی'
       }
     >
       <Stack
@@ -102,9 +149,9 @@ const SystemUptimeBadge = () => {
               }}
             />
 
-            {isLoading && !numeric ? (
+            {isLoading && !data ? (
               <Skeleton variant="text" width={150} height={28} />
-            ) : error && !numeric ? (
+            ) : error && !data ? (
               <Typography
                 component="span"
                 sx={{
@@ -116,6 +163,34 @@ const SystemUptimeBadge = () => {
               >
                 در دسترس نیست
               </Typography>
+            ) : formatted ? (
+              <Stack direction="row" alignItems="baseline" gap={0.75}>
+                <Typography
+                  component="span"
+                  sx={{
+                    color: 'var(--color-text)',
+                    fontWeight: 900,
+                    fontSize: '0.9rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {formatted.durationLabel}
+                </Typography>
+                <Typography
+                  component="span"
+                  style={{ direction: 'ltr', unicodeBidi: 'isolate' }}
+                  sx={{
+                    color: 'var(--color-primary)',
+                    fontWeight: 900,
+                    fontSize: '1rem',
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '0.04em',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {formatted.clockLabel}
+                </Typography>
+              </Stack>
             ) : (
               <Typography
                 component="span"
@@ -130,7 +205,7 @@ const SystemUptimeBadge = () => {
                   unicodeBidi: 'isolate',
                 }}
               >
-                {numeric}
+                {toPersianDigits(data?.numeric ?? '')}
               </Typography>
             )}
           </Stack>
