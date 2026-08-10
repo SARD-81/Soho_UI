@@ -20,8 +20,11 @@ import {
 } from '../lib/authApi';
 import { AUTH_EVENTS, authEventTarget } from '../lib/authEvents';
 import axiosInstance from '../lib/axiosInstance';
+import {
+  resetStateSyncManager,
+  syncAllStateDomainsOnce,
+} from '../lib/stateSyncManager';
 import tokenStorage from '../lib/tokenStorage';
-import { resetInitialSaveToDbPolicy } from '../utils/initialSaveToDb';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -90,10 +93,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     applyAccessTokenHeader(accessToken);
   }, [accessToken, applyAccessTokenHeader]);
 
+  const startBaselineStateSync = useCallback(() => {
+    void syncAllStateDomainsOnce().catch((error) => {
+      if (import.meta.env.DEV) {
+        console.error('[state-sync] initial session sync failed', error);
+      }
+    });
+  }, []);
+
   const clearAuthState = useCallback(() => {
     tokenStorage.clear();
     clearSessionActivityTimestamp();
-    resetInitialSaveToDbPolicy();
+    resetStateSyncManager();
     setAccessToken(null);
     setRefreshToken(null);
     setIsAuthenticated(false);
@@ -126,6 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setRefreshToken(storedRefresh);
           setUsername(savedUsername);
           setIsAuthenticated(true);
+          startBaselineStateSync();
           setIsAuthLoading(false);
           return;
         } catch (error) {
@@ -146,6 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setRefreshToken(storedRefresh);
         setUsername(savedUsername);
         setIsAuthenticated(true);
+        startBaselineStateSync();
       } catch (error) {
         console.error('Unable to restore session', error);
         clearAuthState();
@@ -155,7 +168,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     void initializeAuth();
-  }, [clearAuthState, setAccessToken, setRefreshToken, setUsername]);
+  }, [
+    clearAuthState,
+    setAccessToken,
+    setRefreshToken,
+    setUsername,
+    startBaselineStateSync,
+  ]);
 
   useEffect(() => {
     const handleTokenRefresh = (event: Event) => {
@@ -194,14 +213,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loginAction = useCallback(
     (access: string, refresh: string, user: string) => {
+      resetStateSyncManager();
       setAccessToken(access);
       setRefreshToken(refresh);
       setIsAuthenticated(true);
       setUsername(user);
       startSessionActivityWindow();
-      resetInitialSaveToDbPolicy();
-    },
-    [setAccessToken, setRefreshToken, setUsername]
+      startBaselineStateSync();
+    }, [setAccessToken, setRefreshToken, setUsername, startBaselineStateSync]
   );
 
   const logout = useCallback(async () => {
