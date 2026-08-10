@@ -76,13 +76,45 @@ const setSaveToDbParam = (
 };
 
 const forceExistingBodySaveFlagFalse = (data: unknown) => {
-  if (
-    !data ||
-    typeof data !== 'object' ||
-    Array.isArray(data) ||
-    data instanceof FormData ||
-    data instanceof URLSearchParams
-  ) {
+  if (data instanceof FormData) {
+    if (data.has('save_to_db')) {
+      data.set('save_to_db', 'false');
+    }
+    return data;
+  }
+
+  if (data instanceof URLSearchParams) {
+    if (data.has('save_to_db')) {
+      const nextData = new URLSearchParams(data);
+      nextData.set('save_to_db', 'false');
+      return nextData;
+    }
+    return data;
+  }
+
+  if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data) as unknown;
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        !Array.isArray(parsed) &&
+        Object.prototype.hasOwnProperty.call(parsed, 'save_to_db')
+      ) {
+        return JSON.stringify({
+          ...(parsed as Record<string, unknown>),
+          save_to_db: false,
+        });
+      }
+    } catch {
+      // Non-JSON string payloads are left untouched. The query parameter still
+      // carries the authoritative save_to_db=false value.
+    }
+
+    return data;
+  }
+
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return data;
   }
 
@@ -102,8 +134,16 @@ const readInternalStateSyncFlag = (config: StateSyncAxiosConfig) => {
     return true;
   }
 
-  const headers = config.headers as Record<string, unknown> | undefined;
-  const rawHeader = headers?.[STATE_SYNC_HEADER];
+  const headers = config.headers as unknown as {
+    get?: (name: string) => unknown;
+    [key: string]: unknown;
+  } | undefined;
+
+  const rawHeader =
+    typeof headers?.get === 'function'
+      ? headers.get(STATE_SYNC_HEADER)
+      : headers?.[STATE_SYNC_HEADER];
+
   return String(rawHeader ?? '').trim() === '1';
 };
 
