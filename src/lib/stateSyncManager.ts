@@ -4,6 +4,7 @@ export type StateSyncDomain =
   | 'disk'
   | 'nfs'
   | 'samba-users'
+  | 'samba-groups'
   | 'samba-shares'
   | 'webshare'
   | 'snmp';
@@ -32,6 +33,10 @@ const STATE_SYNC_DEFINITIONS: Record<StateSyncDomain, StateSyncDefinition> = {
   'samba-users': {
     endpoint: '/api/samba/users/',
     params: { property: 'all' },
+  },
+  'samba-groups': {
+    endpoint: '/api/samba/groups/',
+    params: { property: 'all', contain_system_groups: false },
   },
   'samba-shares': {
     endpoint: '/api/samba/sharepoints/',
@@ -99,12 +104,16 @@ export const resolveStateDomainsForMutation = (
     return ['samba-users'];
   }
 
+  if (path.includes('/api/samba/groups')) {
+    return ['samba-groups'];
+  }
+
   if (path.includes('/api/samba/sharepoints')) {
     return ['samba-shares'];
   }
 
   if (path.includes('/api/samba')) {
-    return ['samba-users', 'samba-shares'];
+    return ['samba-users', 'samba-groups', 'samba-shares'];
   }
 
   if (path.includes('/api/webshare')) {
