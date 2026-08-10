@@ -8,7 +8,7 @@ const configureSnmp = async (payload: SnmpConfigPayload) => {
     '/api/snmp/config/',
     {
       ...payload,
-      save_to_db: true,
+      save_to_db: false,
     }
   );
   return data;
