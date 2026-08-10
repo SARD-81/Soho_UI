@@ -10,7 +10,7 @@ const exportPool = async (poolName: string) => {
   try {
     await axiosInstance.post('/api/zpool/export/', {
       pool_name: poolName,
-      save_to_db: true,
+      save_to_db: false,
     });
   } catch (error) {
     throw new Error(extractApiErrorMessage(error, DEFAULT_EXPORT_POOL_ERROR_MESSAGE));
