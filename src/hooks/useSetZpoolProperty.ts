@@ -16,7 +16,7 @@ export const useSetZpoolProperty = (poolName: string) => {
     mutationFn: async (payload) => {
       await axiosInstance.post(endpoint, {
         ...payload,
-        save_to_db: true,
+        save_to_db: false,
       });
     },
     onSuccess: () => {
