@@ -16,9 +16,10 @@ const createAppQueryClient = () => {
   let client: QueryClient;
 
   const mutationCache = new MutationCache({
-    onSettled: async () => {
-      // Every completed API action refreshes the queries currently mounted on
-      // the active page, whether the action succeeded or returned an error.
+    onSuccess: async () => {
+      // Refresh active UI data only after a mutation actually succeeded.
+      // Database persistence is handled separately by StateSyncManager, so a
+      // failed mutation cannot trigger either a snapshot or a global refetch.
       await client.invalidateQueries({ type: 'active' });
     },
   });
