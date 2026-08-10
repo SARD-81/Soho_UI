@@ -7,7 +7,7 @@ import { sambaSharesQueryKey } from './useSambaShares';
 const deleteShareRequest = async (shareName: string) => {
   const encodedName = encodeURIComponent(shareName);
   await axiosInstance.delete(`/api/samba/sharepoints/${encodedName}/`, {
-    params: { save_to_db: true },
+    params: { save_to_db: false },
   });
 };
 
