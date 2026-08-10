@@ -77,7 +77,8 @@ const normalizePath = (url: string) => {
 /**
  * Maps a successful mutation to the state domains that can have changed.
  * Cross-domain dependencies are intentionally explicit: zpool operations can
- * change free-disk state, while filesystem operations can change pool capacity.
+ * change free-disk state, filesystem operations can change pool capacity, and
+ * Samba user/group mutations can change membership views on both sides.
  */
 export const resolveStateDomainsForMutation = (
   url: string
@@ -101,11 +102,11 @@ export const resolveStateDomainsForMutation = (
   }
 
   if (path.includes('/api/samba/users')) {
-    return ['samba-users'];
+    return ['samba-users', 'samba-groups'];
   }
 
   if (path.includes('/api/samba/groups')) {
-    return ['samba-groups'];
+    return ['samba-groups', 'samba-users'];
   }
 
   if (path.includes('/api/samba/sharepoints')) {
