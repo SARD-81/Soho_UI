@@ -1,43 +1,114 @@
-## PreInstallation
+# SOHO UI
 
-- ابتدا باید کتابخانه curl را برای انتقال داده نصب کنیم
+SOHO UI is the React/TypeScript administrative frontend for the StoreX storage management system.
 
-```shell
+It provides authenticated operators with interfaces for monitoring system health and managing storage pools, disks, filesystems, block storage, shares, users, services, settings, SNMP, and related system operations.
+
+## Documentation
+
+The maintained engineering documentation starts at:
+
+- [`docs/index.md`](./docs/index.md) — documentation map and reading order
+- [`docs/01-overview/project-overview.md`](./docs/01-overview/project-overview.md) — system purpose, scope, and major runtime contracts
+- [`docs/02-architecture/frontend-architecture.md`](./docs/02-architecture/frontend-architecture.md) — frontend architecture and ownership boundaries
+- [`docs/03-development/project-structure.md`](./docs/03-development/project-structure.md) — repository navigation and change entry points
+- [`docs/03-development/code-commenting-guidelines.md`](./docs/03-development/code-commenting-guidelines.md) — Clean Code rules for useful source comments
+
+Existing detailed runtime notes are preserved under `docs/`, including state synchronization, API polling, notifications/data refresh, and general settings.
+
+## Tech stack
+
+Core technologies include React 19, TypeScript, Vite, React Router, TanStack React Query, Axios, Material UI, Zustand, React Hook Form, Zod, Tailwind CSS, and Three.js/React Three Fiber.
+
+See `package.json` for the exact dependency versions.
+
+## Prerequisites
+
+Use a supported Node.js LTS release with npm.
+
+On Debian/Ubuntu systems, one way to install Node.js through NodeSource is:
+
+```bash
 sudo apt install -y curl software-properties-common
-```
-
-- بعد از آن باید مخزن NodeSource را مطابق ورژن مورد نیاز اضافه کنیم (این کد آخرین ورژن LTS را اضافه میکند)
-
-```shell
 curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt install -y nodejs
 ```
 
-- سپس باید ماژول مدیریت بسته های `Node.js` و `NPM` را نصب نماییم
+Verify the installation:
 
-```shell
-sudo apt install -y nodejs
+```bash
+node --version
+npm --version
 ```
 
 ## Installation
 
-- در این مرحله ابتدا باید dependencies های پروژه را نصب نمایم
+Install project dependencies from the repository root:
 
-```shell
-npm i
+```bash
+npm install
 ```
 
-- و سپس پروژه را شروع میکنیم
+## Environment configuration
 
-```shell
-npm run dev -- --host --port 5173
+The frontend reads its backend base URL from Vite environment configuration:
+
+```env
+VITE_API_BASE_URL=https://your-backend.example.com
 ```
 
-## Deploy
+The codebase also supports development-oriented flags such as mock API mode and an explicit development auth bypass. Do not enable development bypass behavior in production configuration.
 
-- در این مرحله ابتدا باید پروژه را build کنیم تا فولدر dist/ در ریپازیتوری پروژه ایجاد گردد
+## Development
 
-```shell
+Start the Vite development server:
+
+```bash
+npm run dev
+```
+
+The Vite configuration currently binds the dev server to `0.0.0.0:5173`.
+
+## Quality checks
+
+Run ESLint:
+
+```bash
+npm run lint
+```
+
+A dedicated automated test script is not currently defined in `package.json`. Do not treat a successful build as a substitute for future test coverage.
+
+## Production build
+
+Create a production bundle:
+
+```bash
 npm run build
 ```
 
-- سپس باید که آدرس فولدر dist/ را به Nginx یا هر وب سرور دیگری بدهیم تا بتوانیم پروژه را مشاهده کنیم
+The build script runs TypeScript project compilation and then Vite build. The generated static output is written to `dist/`.
+
+Preview the production bundle locally with Vite:
+
+```bash
+npm run preview
+```
+
+## Deployment model
+
+This repository builds to static frontend assets. A production web server such as Nginx should serve the generated `dist/` directory.
+
+Deployment-specific server configuration belongs in operations documentation rather than application source code.
+
+## Important maintenance contracts
+
+Before modifying authentication, Axios interceptors, token storage, React Query global defaults, state persistence, or polling behavior, read the corresponding documents under `docs/`.
+
+In particular, normal API requests and mutations do not own database snapshot persistence. Canonical persisted snapshots are coordinated by `StateSyncManager`; see [`docs/state-sync-save-to-db.md`](./docs/state-sync-save-to-db.md).
+
+## Source comments
+
+Source comments are intentionally selective. They should explain reasons, invariants, security constraints, lifecycle ordering, race protection, or non-obvious compatibility behavior—not restate readable code.
+
+Follow [`docs/03-development/code-commenting-guidelines.md`](./docs/03-development/code-commenting-guidelines.md) when adding or reviewing comments.
