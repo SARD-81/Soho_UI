@@ -246,10 +246,7 @@ export const fetchZpools = async (
 ): Promise<ZpoolQueryResult> => {
   const { data: listResponse } = await axiosInstance.get<ZpoolListResponse>(
     ZPOOL_LIST_ENDPOINT,
-    {
-      params: { save_to_db: true },
-      signal,
-    }
+    { signal }
   );
 
   if (!Array.isArray(listResponse?.data)) {
