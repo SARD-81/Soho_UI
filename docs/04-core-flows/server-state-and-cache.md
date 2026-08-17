@@ -8,7 +8,7 @@ The most important rule is that **UI freshness and database snapshot persistence
 - Axios owns transport-wide request/response policy.
 - `StateSyncManager` owns canonical backend snapshot persistence for the domains that support `save_to_db`.
 - Feature hooks own query keys, endpoint-specific normalization, and feature-specific refresh cadence.
-- Notification hooks observe shared server state and should avoid creating redundant polling loops.
+- Notification monitoring also uses React Query, but currently mixes ordinary shared resource keys with dedicated monitoring keys.
 
 Do not merge these responsibilities into one mechanism.
 
@@ -33,12 +33,12 @@ flowchart TD
     SNAP --> AX
     AX --> DB[(Backend snapshot persistence)]
 
-    N[Notification Hooks] --> RQ
+    N[Notification Monitors] --> RQ
 ```
 
 The two arrows after a successful mutation serve different goals:
 
-1. React Query invalidation refreshes data visible to the user.
+1. React Query invalidation refreshes client-side server state used by the UI and observers.
 2. StateSyncManager schedules canonical persisted snapshots where the backend contract requires them.
 
 A developer should never rely on query invalidation to persist backend state, and should never use `save_to_db=true` as a way to refresh the UI.
@@ -94,13 +94,14 @@ Feature hooks may also invalidate focused query keys in their own `onSuccess` ha
 
 ## Query keys are contracts
 
-Query keys identify shared backend state. Components that represent the same backend resource should reuse the same key rather than inventing page-local variants without a reason.
+Query keys identify cache entries and query lifecycles.
 
 Examples include:
 
 - `['zpool']`
 - `['disk']`
 - `['disk', 'partitioned']`
+- `['disk', 'inventory']`
 - `['filesystems']`
 - `['services']`
 - `['service-status', serviceName]`
@@ -108,10 +109,49 @@ Examples include:
 - `['system', 'memory']`
 - `['network']`
 - `['network-bandwidth', interfaces]`
+- `['notifications', 'capacity', 'zpool']`
+- `['notifications', 'capacity', 'filesystems']`
 
-Reusing query keys allows React Query to deduplicate requests, share data between pages and notification observers, and apply invalidation predictably.
+Consumers using the same key can share cache state and request lifecycle. Consumers using different keys are independent React Query entries even when they call the same endpoint or fetch function.
 
-Before changing a query key, search for all consumers and invalidation calls that depend on it.
+Therefore a query key is not just a label. It defines ownership and invalidation behavior.
+
+Before changing a query key, search for:
+
+- all consumers;
+- targeted invalidation calls;
+- notification monitors;
+- polling configuration;
+- any code relying on the existing cache lifecycle.
+
+## Shared resource keys versus dedicated monitor keys
+
+The codebase currently uses both patterns.
+
+### Shared/ordinary resource keys
+
+Status-change notifications use ordinary resource hooks:
+
+- zpool status observes `useZpool()` / `['zpool']`;
+- disk status observes `useDisk()` / `['disk']`;
+- service status observes `useServices()` / `['services']`.
+
+When a page uses the same key, React Query can share that entry.
+
+### Dedicated monitoring keys
+
+Capacity notifications intentionally create separate entries:
+
+- `['notifications','capacity','zpool']`;
+- `['notifications','capacity','filesystems']`.
+
+These reuse the resource fetch functions but have their own 60-second monitoring lifecycle.
+
+Disk-temperature monitoring uses `['disk','inventory']` at 30 seconds.
+
+Different keys can result in separate backend requests. Do not assume React Query deduplicates by URL or fetch function; query-key identity is what matters.
+
+When introducing a dedicated key, document why its cadence/lifecycle should be independent from the ordinary resource query.
 
 ## Cache data is not application persistence
 
@@ -119,10 +159,10 @@ React Query cache is temporary browser memory. It is not an authoritative persis
 
 The cache may disappear when:
 
-- the page reloads,
-- the application process is restarted,
-- a query is garbage-collected,
-- a user signs out,
+- the page reloads;
+- the application process is restarted;
+- a query is garbage-collected;
+- a user signs out;
 - query configuration changes.
 
 Therefore:
@@ -136,10 +176,10 @@ Therefore:
 
 Use local React state for ephemeral UI concerns such as:
 
-- modal open/closed state,
-- selected rows,
-- unsaved form values,
-- temporary confirmation state,
+- modal open/closed state;
+- selected rows;
+- unsaved form values;
+- temporary confirmation state;
 - countdowns and animations.
 
 Use React Query for data whose authoritative value comes from the backend.
@@ -148,16 +188,17 @@ A useful test is: **if another operator or backend process could change the valu
 
 ## Polling is an endpoint-specific policy
 
-There is deliberately no global polling interval. Each hook decides whether its data needs continuous refresh.
+There is deliberately no global polling interval. Each hook or monitoring query decides whether its data needs continuous refresh.
 
 Examples:
 
-- CPU and memory telemetry refresh quickly.
-- Network bandwidth refreshes quickly while observed.
-- Zpool/storage views refresh more slowly.
-- Filesystem list data currently relies on mount/refetch/invalidation rather than continuous polling.
-- Some detail queries poll only while the relevant UI is enabled.
-- Some resource lists do not poll continuously at all.
+- CPU and memory telemetry refresh quickly;
+- network bandwidth refreshes quickly while observed;
+- zpool/storage views refresh more slowly;
+- filesystem list data currently relies on mount/refetch/invalidation rather than continuous polling;
+- some detail queries poll only while the relevant UI is enabled;
+- notification capacity monitors use dedicated 60-second queries;
+- disk-temperature monitoring uses a 30-second inventory query.
 
 The canonical polling inventory is maintained in [`polling-and-data-refresh.md`](./polling-and-data-refresh.md).
 
@@ -169,16 +210,17 @@ This matters because administrative dashboards can otherwise continue generating
 
 If a future feature truly requires background polling, document the operational reason before enabling it.
 
-## Notifications observe shared state
+## Notifications are React Query consumers with their own bookkeeping
 
-Notification hooks are consumers of server state, not a second data platform.
+Notifications are not a second backend state platform, but they do not all use the same cache entries as pages.
 
-The notification subsystem follows two patterns:
+Current patterns are:
 
-1. startup/capacity checks subscribe to existing query keys and let React Query coalesce matching requests;
-2. status-change observers explicitly disable their own polling when they only need to react to cache updates produced elsewhere.
+1. status-change monitoring uses ordinary zpool/disk/services resource hooks;
+2. capacity monitoring uses dedicated notification query keys and a 60-second cadence;
+3. temperature monitoring uses the disk-inventory query key and a 30-second cadence.
 
-Local notification history or status baselines stored in browser storage are notification bookkeeping only. They are not authoritative backend state.
+Notification history, prior-status snapshots, check timestamps, and fingerprints stored in browser storage are local bookkeeping only. They are not authoritative backend state.
 
 See [`notifications.md`](./notifications.md).
 
@@ -186,9 +228,11 @@ See [`notifications.md`](./notifications.md).
 
 Normal React Query requests are observational reads and must not persist snapshots.
 
-Even when a legacy hook accidentally includes `save_to_db` in a request, the centralized Axios transport policy normalizes normal API traffic to `save_to_db=false`.
+The centralized Axios transport policy normalizes normal API traffic to `save_to_db=false`.
 
 Only canonical internal state-sync requests created by `StateSyncManager` are allowed to request `save_to_db=true`.
+
+Legacy caller-level persistence flags are being removed from hooks because they are misleading even when Axios neutralizes them.
 
 See [`state-sync-save-to-db.md`](./state-sync-save-to-db.md).
 
@@ -197,14 +241,16 @@ See [`state-sync-save-to-db.md`](./state-sync-save-to-db.md).
 When adding a new query:
 
 1. identify the authoritative backend endpoint;
-2. choose a stable query key representing the resource, not the component;
-3. normalize API data in the hook or API layer rather than in many components;
-4. decide whether continuous polling is actually necessary;
-5. if polling is required, define the interval intentionally and disable background polling unless justified;
-6. define `staleTime` based on how quickly the resource changes;
-7. identify mutations that must invalidate the query;
-8. determine whether the resource is a persisted StateSync domain or UI-only server state;
-9. document non-obvious lifecycle constraints.
+2. choose a stable query key representing the intended cache/lifecycle owner;
+3. check whether an existing key already represents the same state and cadence;
+4. use a dedicated key only when an independent lifecycle is intentional;
+5. normalize API data in the hook or API layer rather than in many components;
+6. decide whether continuous polling is actually necessary;
+7. if polling is required, define the interval intentionally and disable background polling unless justified;
+8. define `staleTime` based on how quickly the resource changes;
+9. identify mutations that must invalidate the query;
+10. determine whether the resource is a persisted StateSync domain or UI-only server state;
+11. document non-obvious lifecycle constraints.
 
 ## Adding a mutation
 
@@ -229,15 +275,29 @@ If the mutation affects multiple persisted domains, extend `resolveStateDomainsF
 When the UI appears stale, inspect in this order:
 
 1. Is the expected query mounted and enabled?
-2. Is its query key the same key that the mutation invalidates?
-3. Does the hook intentionally poll, or is refresh expected only on invalidation/mount?
-4. Is `staleTime` delaying a behavior you expected to be immediate?
-5. Did the mutation actually succeed?
-6. Is the endpoint response correct before normalization?
-7. Are multiple hooks representing the same backend state under different query keys?
-8. Is a notification observer intentionally configured with polling disabled?
+2. What exact query key owns the data?
+3. Is it an ordinary resource key or a dedicated monitor key?
+4. Is its query key the same key that a targeted mutation invalidates?
+5. Does the query intentionally poll, or is refresh expected only on invalidation/mount?
+6. Is `staleTime` delaying a behavior you expected to be immediate?
+7. Did the mutation actually succeed?
+8. Is the endpoint response correct before normalization?
+9. Are multiple hooks representing equivalent backend data under intentionally different keys?
 
 Do not solve a UI freshness issue by enabling `save_to_db=true`.
+
+## Debugging duplicate network requests
+
+If equivalent endpoint traffic appears multiple times:
+
+1. compare the query keys, not only the URLs;
+2. check notification-specific monitoring keys;
+3. compare polling intervals and enabled lifecycles;
+4. check whether mutation invalidation occurred at the same time as a scheduled poll;
+5. inspect mount/unmount revalidation;
+6. only then investigate framework-level causes such as StrictMode.
+
+Different query keys are independent entries and can legitimately create separate requests.
 
 ## Debugging persistence
 
@@ -255,13 +315,14 @@ If the backend database snapshot is stale while the live UI is correct, inspect 
 
 Preserve these rules when refactoring:
 
-- React Query owns UI server-state freshness, not database persistence.
-- `StateSyncManager` is the only frontend owner of `save_to_db=true` snapshots.
-- failed mutations must not schedule persistence snapshots.
-- polling should be scoped to mounted/enabled consumers and normally stop in the background.
-- notification observers should reuse shared query state where possible.
-- query keys should represent resources consistently across the application.
-- feature code should not call persistence snapshots ad hoc.
+- React Query owns client-side server-state freshness, not database persistence;
+- `StateSyncManager` is the only frontend owner of `save_to_db=true` snapshots;
+- failed mutations must not schedule persistence snapshots;
+- polling should be scoped to mounted/enabled consumers and normally stop in the background;
+- identical query keys may share lifecycle, while different keys represent independent entries;
+- dedicated notification monitoring keys must be documented as independent traffic when applicable;
+- browser notification storage is bookkeeping, not authoritative server state;
+- feature code must not call persistence snapshots ad hoc.
 
 ## Related files
 
@@ -271,9 +332,13 @@ Preserve these rules when refactoring:
 - `src/hooks/useZpool.ts`
 - `src/hooks/useFileSystems.ts`
 - `src/hooks/useDisk.ts`
+- `src/hooks/useDiskInventory.ts`
 - `src/hooks/useServices.ts`
 - `src/hooks/useServiceStatuses.ts`
 - `src/hooks/useNetwork.ts`
+- `src/hooks/useStartupNotificationChecks.ts`
+- `src/hooks/useResourceStatusChangeNotifications.ts`
+- `src/hooks/useDiskTemperatureNotifications.ts`
 - `src/components/notifications/NotificationBootstrapper.tsx`
 
 ## Related documentation
