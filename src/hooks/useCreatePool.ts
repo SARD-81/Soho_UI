@@ -16,7 +16,6 @@ interface CreatePoolPayload {
   pool_name: string;
   devices: string[];
   vdev_type: string;
-  save_to_db: boolean;
 }
 
 export type VdevType = 'disk' | 'mirror' | 'raidz' | '';
@@ -24,7 +23,10 @@ export type VdevType = 'disk' | 'mirror' | 'raidz' | '';
 const validatePoolName = (trimmedName: string): string | null =>
   validateEnglishStorageName(trimmedName, 'نام فضای یکپارچه');
 
-const vdevSpecificDeviceRules: Record<Exclude<VdevType, ''>, (count: number) => string | null> = {
+const vdevSpecificDeviceRules: Record<
+  Exclude<VdevType, ''>,
+  (count: number) => string | null
+> = {
   disk: () => null,
   mirror: (count) => {
     if (count < 2 || count % 2 !== 0) {
@@ -199,7 +201,6 @@ export const useCreatePool = ({
         pool_name: trimmedName,
         devices: selectedDevices,
         vdev_type: vdevType,
-        save_to_db: true,
       });
     },
     [createPoolMutation, poolName, selectedDevices, vdevType]
