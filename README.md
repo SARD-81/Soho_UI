@@ -13,8 +13,12 @@ The maintained engineering documentation starts at:
 - [`docs/02-architecture/frontend-architecture.md`](./docs/02-architecture/frontend-architecture.md) — frontend architecture and ownership boundaries
 - [`docs/03-development/project-structure.md`](./docs/03-development/project-structure.md) — repository navigation and change entry points
 - [`docs/03-development/code-commenting-guidelines.md`](./docs/03-development/code-commenting-guidelines.md) — Clean Code rules for useful source comments
+- [`docs/04-core-flows/server-state-and-cache.md`](./docs/04-core-flows/server-state-and-cache.md) — React Query server-state ownership, cache, and invalidation
+- [`docs/04-core-flows/state-sync-save-to-db.md`](./docs/04-core-flows/state-sync-save-to-db.md) — canonical backend snapshot persistence contract
+- [`docs/04-core-flows/polling-and-data-refresh.md`](./docs/04-core-flows/polling-and-data-refresh.md) — maintained polling and refresh inventory
+- [`docs/04-core-flows/notifications.md`](./docs/04-core-flows/notifications.md) — notification observation, baselines, and duplicate suppression
 
-Existing detailed runtime notes are preserved under `docs/`, including state synchronization, API polling, notifications/data refresh, and general settings.
+See [`docs/index.md`](./docs/index.md) for the complete reading order and documentation map.
 
 ## Tech stack
 
@@ -103,9 +107,11 @@ Deployment-specific server configuration belongs in operations documentation rat
 
 ## Important maintenance contracts
 
-Before modifying authentication, Axios interceptors, token storage, React Query global defaults, state persistence, or polling behavior, read the corresponding documents under `docs/`.
+Before modifying authentication, Axios interceptors, token storage, React Query global defaults, state persistence, polling, or notification behavior, read the corresponding documents under `docs/04-core-flows/`.
 
-In particular, normal API requests and mutations do not own database snapshot persistence. Canonical persisted snapshots are coordinated by `StateSyncManager`; see [`docs/state-sync-save-to-db.md`](./docs/state-sync-save-to-db.md).
+In particular, normal API requests and mutations do not own database snapshot persistence. Canonical persisted snapshots are coordinated by `StateSyncManager`; see [`docs/04-core-flows/state-sync-save-to-db.md`](./docs/04-core-flows/state-sync-save-to-db.md).
+
+UI freshness is a separate concern owned by React Query; see [`docs/04-core-flows/server-state-and-cache.md`](./docs/04-core-flows/server-state-and-cache.md).
 
 ## Source comments
 
