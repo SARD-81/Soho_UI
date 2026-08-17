@@ -12,7 +12,10 @@ If you return to the project after a long break, read the documents in this orde
 2. [`02-architecture/frontend-architecture.md`](./02-architecture/frontend-architecture.md) — how the frontend is structured at runtime.
 3. [`03-development/project-structure.md`](./03-development/project-structure.md) — where code belongs and where to start when changing a feature.
 4. [`03-development/code-commenting-guidelines.md`](./03-development/code-commenting-guidelines.md) — the project rules for useful in-code comments.
-5. The relevant feature or flow document before modifying behavior that crosses multiple modules.
+5. [`04-core-flows/authentication.md`](./04-core-flows/authentication.md) — login, token storage, session restore, refresh, idle timeout, and logout.
+6. [`04-core-flows/routing-and-access-control.md`](./04-core-flows/routing-and-access-control.md) — protected routing and frontend access-control boundaries.
+7. [`04-core-flows/api-request-lifecycle.md`](./04-core-flows/api-request-lifecycle.md) — Axios, React Query, 401 recovery, persistence policy, and mutation state sync.
+8. The relevant feature document before modifying feature-specific behavior.
 
 ## Documentation map
 
@@ -28,6 +31,12 @@ If you return to the project after a long break, read the documents in this orde
 
 - [`03-development/project-structure.md`](./03-development/project-structure.md)
 - [`03-development/code-commenting-guidelines.md`](./03-development/code-commenting-guidelines.md)
+
+### Core flows
+
+- [`04-core-flows/authentication.md`](./04-core-flows/authentication.md)
+- [`04-core-flows/routing-and-access-control.md`](./04-core-flows/routing-and-access-control.md)
+- [`04-core-flows/api-request-lifecycle.md`](./04-core-flows/api-request-lifecycle.md)
 
 ### Existing runtime notes
 
