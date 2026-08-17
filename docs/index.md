@@ -15,7 +15,11 @@ If you return to the project after a long break, read the documents in this orde
 5. [`04-core-flows/authentication.md`](./04-core-flows/authentication.md) — login, token storage, session restore, refresh, idle timeout, and logout.
 6. [`04-core-flows/routing-and-access-control.md`](./04-core-flows/routing-and-access-control.md) — protected routing and frontend access-control boundaries.
 7. [`04-core-flows/api-request-lifecycle.md`](./04-core-flows/api-request-lifecycle.md) — Axios, React Query, 401 recovery, persistence policy, and mutation state sync.
-8. The relevant feature document before modifying feature-specific behavior.
+8. [`04-core-flows/server-state-and-cache.md`](./04-core-flows/server-state-and-cache.md) — ownership of server state, cache, invalidation, and UI freshness.
+9. [`04-core-flows/state-sync-save-to-db.md`](./04-core-flows/state-sync-save-to-db.md) — canonical backend snapshot persistence and `save_to_db` invariants.
+10. [`04-core-flows/polling-and-data-refresh.md`](./04-core-flows/polling-and-data-refresh.md) — the maintained polling inventory and refresh policy.
+11. [`04-core-flows/notifications.md`](./04-core-flows/notifications.md) — notification baselines, shared-query observation, and duplicate suppression.
+12. The relevant feature document before modifying feature-specific behavior.
 
 ## Documentation map
 
@@ -37,15 +41,22 @@ If you return to the project after a long break, read the documents in this orde
 - [`04-core-flows/authentication.md`](./04-core-flows/authentication.md)
 - [`04-core-flows/routing-and-access-control.md`](./04-core-flows/routing-and-access-control.md)
 - [`04-core-flows/api-request-lifecycle.md`](./04-core-flows/api-request-lifecycle.md)
+- [`04-core-flows/server-state-and-cache.md`](./04-core-flows/server-state-and-cache.md)
+- [`04-core-flows/state-sync-save-to-db.md`](./04-core-flows/state-sync-save-to-db.md)
+- [`04-core-flows/polling-and-data-refresh.md`](./04-core-flows/polling-and-data-refresh.md)
+- [`04-core-flows/notifications.md`](./04-core-flows/notifications.md)
 
-### Existing runtime notes
+### Other maintained notes
 
-The following documents predate this documentation structure and contain important implementation details. They remain valid references until they are reorganized into the final structure:
-
-- [`api-polling-audit.md`](./api-polling-audit.md)
 - [`general-settings.md`](./general-settings.md)
-- [`notifications-and-data-refresh.md`](./notifications-and-data-refresh.md)
-- [`state-sync-save-to-db.md`](./state-sync-save-to-db.md)
+
+### Legacy compatibility redirects
+
+These files remain only so older links do not break. Do not add live behavior documentation to them:
+
+- [`api-polling-audit.md`](./api-polling-audit.md) → canonical polling documentation
+- [`notifications-and-data-refresh.md`](./notifications-and-data-refresh.md) → canonical notification/refresh documentation
+- [`state-sync-save-to-db.md`](./state-sync-save-to-db.md) → canonical StateSync documentation
 
 ## Documentation principles
 
