@@ -9,6 +9,9 @@ interface ProtectedRouteProps {
 const isTruthyEnv = (value: unknown) =>
   ['1', 'true', 'yes', 'on'].includes(String(value ?? '').trim().toLowerCase());
 
+// Keep the bypass impossible in production even if VITE_AUTH_BYPASS is
+// accidentally present in a production environment. It exists only to unblock
+// explicit local development workflows.
 const SHOULD_BYPASS_AUTH =
   import.meta.env.DEV && isTruthyEnv(import.meta.env.VITE_AUTH_BYPASS);
 
