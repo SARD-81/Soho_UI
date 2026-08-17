@@ -11,6 +11,10 @@ interface RememberUsernameFields {
   rememberMe?: boolean;
 }
 
+/**
+ * Persists only the username for login-form convenience. This hook must not be
+ * expanded to persist passwords, tokens, or authenticated-session state.
+ */
 export function useRememberUsername<T extends RememberUsernameFields>(
   watch: UseFormWatch<T>,
   setValue: UseFormSetValue<T>
