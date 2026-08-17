@@ -3,6 +3,8 @@ export const AUTH_EVENTS = {
   SESSION_CLEARED: 'auth:session-cleared',
 } as const;
 
+// Bridge interceptor-driven auth changes back to React without coupling the
+// transport layer to AuthContext or React lifecycle code.
 export const authEventTarget = new EventTarget();
 
 export const emitTokenRefreshed = (accessToken: string) => {
