@@ -271,30 +271,7 @@ function LoginForm() {
           {isPending ? 'در حال ورود...' : 'ورود به StoreX'}
         </Button>
 
-        <Box
-          sx={{
-            pt: 1.2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {/* <Typography
-            variant="body2"
-            sx={{
-              px: 1.4,
-              py: 0.7,
-              borderRadius: '999px',
-              color: 'var(--color-secondary)',
-              border: '1px solid var(--color-input-border)',
-              backgroundColor: 'var(--color-input-bg)',
-              fontSize: 12,
-              fontWeight: 700,
-            }}
-          >
-            نسخه 2
-          </Typography> */}
-        </Box>
+        <Box sx={{ pt: 1.2 }} />
       </Stack>
     </Box>
   );
