@@ -1,281 +1,329 @@
 # Notifications
 
-This document describes the frontend notification subsystem, especially how it observes server state without becoming a second polling or persistence system.
+This document describes the frontend notification subsystem as implemented today.
 
-## Ownership
+Notifications observe backend state through React Query and store notification bookkeeping in browser storage. They **do not** own backend database snapshot persistence.
 
-`NotificationBootstrapper` mounts notification-monitoring hooks inside the authenticated application layout.
+## Bootstrap ownership
 
-The current bootstrapper composes three responsibilities:
+`NotificationBootstrapper` is mounted from the authenticated application layout and starts three monitoring flows:
 
-- startup capacity checks;
-- resource status-change notifications;
-- disk temperature notifications.
-
-Notifications consume backend state through existing hooks and React Query. They do not own backend database snapshot persistence.
-
-## Runtime model
+- capacity notifications via `useStartupNotificationChecks`;
+- pool/disk/service status-transition notifications via `useResourceStatusChangeNotifications`;
+- disk-temperature notifications via `useDiskTemperatureNotifications`.
 
 ```mermaid
 flowchart TD
     ML[MainLayout] --> NB[NotificationBootstrapper]
-    NB --> SC[Startup capacity checks]
-    NB --> RC[Resource status-change checks]
-    NB --> DT[Disk temperature checks]
+    NB --> CAP[Capacity checks]
+    NB --> STATUS[Status-change checks]
+    NB --> TEMP[Disk-temperature checks]
 
-    SC --> RQ[Shared React Query cache]
-    RC --> RQ
-    DT --> RQ
+    CAP --> RQ[React Query]
+    STATUS --> RQ
+    TEMP --> RQ
 
     RQ --> API[Backend API]
 
-    RC --> BASE[(Per-user browser baseline)]
-    DT --> HOT[In-memory warned-hot set]
-
-    SC --> LN[Local notifications]
-    RC --> LN
-    DT --> LN
+    CAP --> STORE[(Per-user notification storage)]
+    STATUS --> SNAP[(Per-user status baseline)]
+    STATUS --> STORE
+    TEMP --> STORE
 ```
 
-## Important separation
+## Notification storage is bookkeeping, not system state
 
-Notification state can include browser-local bookkeeping such as:
+The notification subsystem stores browser-local information such as:
 
-- previous observed resource state;
 - notification history;
-- per-user baseline data;
-- whether a hot disk has already produced a warning.
+- read/unread timestamps;
+- expiration timestamps;
+- prior resource-status snapshots;
+- last capacity-check timestamps.
 
-This data is **not authoritative managed-system state**.
+This information is not authoritative state for pools, disks, filesystems, services, users, shares, or system configuration.
 
-The backend remains the source of truth for pools, disks, filesystems, services, shares, users, and configuration.
+The backend remains the source of truth for managed-system state.
 
-Do not use notification local storage as an application cache or persistence source.
+## Local notification lifecycle
 
-## Startup capacity checks
+`src/utils/notificationStorage.ts` stores notifications under a per-user key:
 
-`useStartupNotificationChecks` performs capacity-oriented checks after the notification bootstrapper obtains usable data.
+```text
+soho:notifications:<userKey>
+```
 
-The current checks include high-utilization conditions for resources such as:
+The default notification TTL is 10 days.
+
+`upsertNotification` deduplicates by `fingerprint`:
+
+- if no matching fingerprint exists, a new notification is created;
+- if one exists, the existing notification is updated instead of adding another row;
+- its `updatedAt` and expiration time are refreshed;
+- escalation from warning to critical clears `readAt` so the stronger state becomes unread again.
+
+This fingerprint behavior is a major part of duplicate suppression throughout the subsystem.
+
+## Capacity checks
+
+`useStartupNotificationChecks` monitors capacity for:
 
 - zpools;
-- filesystems;
-- volumes.
+- filesystems.
 
-The current warning threshold is 80% where the hook applies percentage-based capacity checks.
+It does not currently check volumes.
 
-### One-shot behavior
+### Thresholds
 
-A ref tracks whether startup checks have already been performed for the current bootstrapper lifecycle/user context.
+The canonical thresholds are defined in `notificationCapacityRules.ts`:
 
-The hook should not create repeated identical startup notifications every time the same query data re-renders.
+| Capacity | Severity |
+| ---: | --- |
+| below 75% | no capacity notification |
+| 75% to below 90% | warning |
+| 90% and above | critical |
 
-### Query reuse
+Do not duplicate these numbers in feature code. Use the exported constants/rules.
 
-Startup checks subscribe to normal resource hooks. For zpool data, the notification code uses the shared zpool query and current zpool refresh policy.
+### Polling cadence
 
-React Query is expected to coalesce consumers of the same query key. Do not create a separate notification-specific fetch loop when the same resource can be observed through the shared cache.
+Capacity monitoring creates two dedicated React Query entries:
+
+- `['notifications', 'capacity', 'zpool']`
+- `['notifications', 'capacity', 'filesystems']`
+
+Both execute every 60 seconds while the bootstrapper is mounted, with background polling disabled.
+
+These are **separate cache entries** from normal page-level zpool/filesystem queries even though they reuse `fetchZpools` and `fetchFileSystems`.
+
+This is current behavior and means capacity monitoring can produce an independent request cadence. Do not describe these queries as shared page-query consumers unless the implementation is later changed to use shared keys.
+
+### Check throttling
+
+The hook stores the last completed capacity-check timestamp per user:
+
+```text
+soho:notifications:last-capacity-check:<userKey>
+```
+
+Even when fresh query data arrives, the notification rule itself will not be processed more often than the configured 60-second capacity-check interval.
+
+`processedCompleteFetchAtRef` also prevents processing the same completed pair of zpool/filesystem query results twice during one mounted lifecycle.
+
+### Capacity notification fingerprints
+
+Pool capacity notifications use a fingerprint based on the pool name.
+
+Filesystem capacity notifications use a fingerprint based on the pool/filesystem identity.
+
+Because storage uses upsert semantics, an ongoing capacity condition updates an existing notification instead of creating an unbounded stream of duplicates.
 
 ## Resource status-change notifications
 
-`useResourceStatusChangeNotifications` detects transitions rather than merely reporting the current state on every render.
+`useResourceStatusChangeNotifications` observes three resource families:
 
-Conceptually:
+- pools via `useZpool()`;
+- disks via `useDisk()`;
+- services via `useServices()`.
+
+### Current refresh behavior
+
+This observer does not disable the underlying resource hooks' polling.
+
+Current behavior is therefore determined by those hooks:
+
+- zpool uses its default 30-second interval;
+- services use their current 5-second interval;
+- `useDisk()` has no interval unless one is supplied by its caller.
+
+Where multiple consumers use the same query key, React Query can share the query/cache. However, notification-specific capacity queries use different keys and are independent.
+
+### First observation establishes the baseline
+
+Status-change notification logic compares current normalized state with a previously saved per-user snapshot.
 
 ```mermaid
 flowchart LR
-    NOW[Current backend observation] --> CMP{Compare with baseline}
-    BASE[(Saved per-user baseline)] --> CMP
-    CMP -- First observation --> INIT[Initialize baseline only]
-    CMP -- No change --> KEEP[No notification]
-    CMP -- State changed --> NOTIFY[Create notification]
-    NOTIFY --> SAVE[Update baseline]
-    KEEP --> SAVE
+    CURRENT[Current observation] --> COMPARE{Previous baseline exists?}
+    PREV[(Saved per-user snapshot)] --> COMPARE
+    COMPARE -- No --> INIT[Save initial baseline]
+    COMPARE -- Yes --> CHANGED{Status changed?}
+    CHANGED -- No --> SAVE[Save current baseline]
+    CHANGED -- Yes --> NOTIFY[Upsert transition notification]
+    NOTIFY --> SAVE
 ```
 
-### First observation
+The first observation is not a status transition. It initializes the comparison baseline.
 
-The first valid observation establishes the baseline. It should not be treated as a change event simply because the frontend did not previously know the state.
+### Resource identity
 
-### Per-user baseline
+Pool identity uses the normalized pool name.
 
-The baseline is scoped to the current notification user key so one user's observation history does not become another user's comparison baseline.
+Service identity uses the service unit name.
 
-### Stable disk identity
+Disk identity currently prefers:
 
-Disk comparison cannot safely rely only on a display name. A slot/device may later contain a physically different disk.
+1. `details.wwn`;
+2. `details.wwid`;
+3. the resolved disk display/device name as fallback.
 
-The hook uses available identity fields such as serial/WWN/path identifiers to decide whether the currently observed device is the same physical resource. If identity changes, the saved baseline is replaced rather than interpreting the replacement as an ordinary status transition on the old disk.
+This identity is used to match the current disk against the previous snapshot.
 
-This is a maintenance-critical behavior. Do not simplify identity matching to only a UI label without understanding replacement scenarios.
+If disk identity semantics change in the backend, review this logic before modifying labels or snapshot formats.
 
-### No dedicated zpool polling loop
+### Unavailable resource families
 
-The resource-status observer can subscribe to zpool data with its own interval disabled. It reacts to updates in the shared cache rather than owning a second periodic request for the same resource.
+When one resource family cannot be observed successfully during a check, previous baseline entries for that unavailable family are retained instead of being silently deleted.
 
-This avoids duplicate background work.
+This prevents a temporary query failure from looking like all resources of that type disappeared.
 
-## Disk temperature notifications
+### Transition fingerprints
 
-`useDiskTemperatureNotifications` monitors normalized disk temperature data.
+Status transition fingerprints include:
 
-The current high-temperature threshold is 60°C.
+- resource type;
+- resource ID;
+- previous status;
+- current status.
 
-### Duplicate suppression
+As a result, the same transition fingerprint is updated rather than duplicated, while a different transition can produce a distinct notification.
 
-A disk that remains above the threshold should not generate a new warning on every refresh interval.
+## Disk-temperature notifications
 
-The hook remembers which disks have already produced a hot warning.
+`useDiskTemperatureNotifications` observes `useDiskInventory` every 30 seconds while mounted.
 
-```mermaid
-flowchart TD
-    TEMP[Temperature observation] --> HIGH{>= 60°C?}
-    HIGH -- No --> CLEAR[Clear warned state]
-    HIGH -- Yes --> WARNED{Already warned?}
-    WARNED -- Yes --> NONE[No duplicate notification]
-    WARNED -- No --> ADD[Create warning and mark warned]
+Background polling is disabled by `useDiskInventory`.
+
+### Temperature thresholds
+
+The rules are defined in `notificationTemperatureRules.ts`:
+
+| Temperature | Behavior |
+| ---: | --- |
+| below 60°C | no temperature notification |
+| 60°C to below 70°C | warning |
+| 70°C and above | critical |
+
+### Stable fingerprint
+
+Temperature rule identity prefers:
+
+1. `wwn`;
+2. `wwid`;
+3. `uuid`;
+4. disk name.
+
+The generated fingerprint is:
+
+```text
+disk-temperature:<entityId>
 ```
 
-If the disk cools below the threshold, the warned marker is cleared. A later new over-temperature event can therefore produce a new warning.
+A disk that remains hot therefore updates the same stored notification rather than generating a new notification every 30 seconds.
 
-If a disk disappears from the observed set, stale warning state for that disk should not remain indefinitely.
+If severity escalates from warning to critical, `upsertNotification` marks that notification unread again.
 
-## Notification data and polling
+### Signature guard
 
-Notification hooks should follow this priority:
+The hook also calculates a signature from disk name, WWN, WWID, and temperature. The same successful inventory result is not processed twice during the same mounted lifecycle.
 
-1. reuse a shared query already providing the resource;
-2. explicitly disable an observer's own polling if it only needs cache updates;
-3. add notification-specific polling only when the required signal is otherwise unavailable and the operational need justifies it.
+This guard prevents duplicate rule execution caused by React re-renders; fingerprint upsert remains the durable duplicate-control mechanism in storage.
 
-See [`polling-and-data-refresh.md`](./polling-and-data-refresh.md) for the canonical polling inventory.
+## Polling summary for notifications
 
-## Notification data and `save_to_db`
+| Monitor | Data source | Interval |
+| --- | --- | ---: |
+| Capacity: zpool | dedicated notification query using `fetchZpools` | 60 s |
+| Capacity: filesystems | dedicated notification query using `fetchFileSystems` | 60 s |
+| Status: pools | `useZpool()` / `['zpool']` | 30 s default |
+| Status: disks | `useDisk()` / `['disk']` | no interval by this caller |
+| Status: services | `useServices()` / `['services']` | 5 s |
+| Temperature | `useDiskInventory()` / `['disk','inventory']` | 30 s |
 
-Notification reads are observational reads.
+See [`polling-and-data-refresh.md`](./polling-and-data-refresh.md) for the application-wide inventory.
 
-They must not persist backend snapshots and must never set `save_to_db=true`.
+## Notification reads never persist backend snapshots
 
-Normal requests are forced to `save_to_db=false` by the Axios transport policy. StateSync remains the only frontend persistence owner.
+All notification data reads are observational.
 
-## Relationship to mutations
+They must not set `save_to_db=true`.
 
-After a successful mutation, active React Query data can be invalidated/refetched. Notification observers that consume the same query keys may then see the new state.
+The Axios transport policy forces normal API traffic to `save_to_db=false`; only `StateSyncManager` owns canonical persistence snapshots.
 
-This is desirable: notifications should react to the same canonical UI server-state stream rather than maintaining separate copies.
+## Relationship to successful mutations
 
-A failed mutation should not be treated as a successful resource state change merely because an optimistic UI action occurred unless a feature explicitly implements and documents optimistic updates.
+A successful mutation can invalidate active React Query state. Notification observers sharing those query keys may then receive fresh data before their next scheduled interval.
 
-## Local notification storage
+Notification-specific capacity queries use dedicated keys, so they are not automatically the same cache entry as page-level queries.
 
-Browser storage used by notification hooks is appropriate for small client-local concerns such as:
-
-- notification history;
-- read/unread markers;
-- previous observation baselines.
-
-It is not appropriate for:
-
-- authoritative disk inventory;
-- current pool capacity source of truth;
-- user/account authorization;
-- backend settings;
-- persistence snapshots.
-
-When browser storage is unavailable or cleared, notification bookkeeping may reset. The managed system itself must remain unaffected.
+Do not assume that all notification monitors receive every feature invalidation unless their exact query key is covered by that invalidation/global active refetch behavior.
 
 ## User isolation
 
-Any persisted notification baseline or history that depends on an authenticated user should include user scoping.
+Notification history, capacity-check timestamps, and resource-status snapshots are user-scoped where the current storage helpers accept `userKey`.
 
-When changing the notification storage format:
+When changing storage keys or formats:
 
-- preserve per-user separation;
-- consider migration/cleanup of old storage keys;
-- do not leak one user's administrative observations into another user's session.
+- preserve user separation;
+- migrate or safely discard obsolete formats;
+- never expose one user's administrative notification history in another user's session.
 
-## Adding a notification rule
+## Adding a new notification rule
 
-Before implementing a new rule, answer these questions:
+Before implementing a new rule, answer:
 
-1. What authoritative backend data drives the rule?
-2. Is that data already available through a shared query key?
-3. Is the rule based on current state or a transition between states?
-4. Does it need a baseline?
-5. What is the stable identity of the observed resource?
-6. How are duplicate notifications suppressed?
-7. When should duplicate suppression reset?
-8. Should the state survive reloads?
-9. Must stored notification state be scoped per user?
-10. Does the rule need new polling, or can it observe existing cache updates?
+1. What authoritative backend state drives it?
+2. Is an existing query key sufficient, or is a dedicated query intentionally required?
+3. What refresh cadence is operationally justified?
+4. Is the rule about current state or a state transition?
+5. What stable entity identity should be used?
+6. What fingerprint prevents duplicate notifications?
+7. Does severity escalation need to reset read state?
+8. Does the rule require a persisted baseline?
+9. Must browser bookkeeping be scoped per user?
+10. How does the rule behave when a resource query fails temporarily?
 
-## Current notification rule types
-
-### Capacity threshold
-
-Use when a resource is considered noteworthy above a defined utilization percentage.
-
-Required safeguards:
-
-- normalize capacity values before comparison;
-- avoid repeated startup duplicates;
-- ensure a query failure is not interpreted as zero/full capacity.
-
-### Status transition
-
-Use when a resource changes from one operational state to another.
-
-Required safeguards:
-
-- establish baseline first;
-- compare stable resource identity;
-- only notify on actual transitions;
-- update baseline after processing.
-
-### Temperature threshold
-
-Use for over-temperature events.
-
-Required safeguards:
-
-- threshold is explicit;
-- duplicate warnings are suppressed while continuously hot;
-- suppression resets after recovery;
-- removed resources clean up warning state.
+Do not add polling and then separately add a second timer in the notification rule itself unless both layers are explicitly necessary.
 
 ## Debugging missing notifications
 
-1. Confirm `NotificationBootstrapper` is mounted in the authenticated layout.
-2. Confirm the user key is what you expect.
-3. Confirm the underlying React Query data is loading successfully.
-4. If transition-based, inspect the saved baseline.
-5. Confirm this is not intentionally the first observation.
-6. Confirm the resource identity did not change and reset the baseline.
-7. For temperature alerts, confirm the threshold and normalized temperature value.
-8. Confirm duplicate suppression is not intentionally active.
-9. Confirm notification storage is available.
+1. Confirm `NotificationBootstrapper` is mounted under the authenticated layout.
+2. Confirm the expected data query is successful.
+3. Check the exact query key and polling cadence for that monitor.
+4. For capacity alerts, inspect the per-user last-check timestamp.
+5. For status changes, inspect the saved prior snapshot and current normalized status.
+6. Confirm this is not intentionally the first baseline observation.
+7. Verify entity identity is stable.
+8. For temperature, verify 60°C/70°C thresholds and normalized inventory temperature.
+9. Inspect the generated fingerprint and any existing notification with that fingerprint.
 
-## Debugging duplicate notifications
+## Debugging duplicate notifications or requests
 
-1. Determine whether multiple bootstrapper instances are mounted.
-2. Check whether a notification hook created its own polling loop in addition to a shared resource query.
-3. Verify duplicate-suppression state survives the expected lifecycle.
-4. Verify baseline keys are stable and user-scoped.
-5. Check whether unstable resource identifiers make one device appear as many different resources.
-6. Check whether mount/unmount cycles repeatedly reset one-shot refs.
+Separate two questions:
+
+### Duplicate notifications
+
+Inspect fingerprints, status baselines, and signature guards.
+
+### Duplicate network requests
+
+Inspect React Query keys. Capacity monitoring intentionally uses notification-specific keys, while status monitors may share ordinary resource keys.
+
+A request visible twice with different query keys is not React Query deduplication failure; it represents two independent query entries.
 
 ## Maintenance invariants
 
 Preserve these rules:
 
-- notification hooks observe authoritative backend state through shared data hooks;
-- notifications do not own `save_to_db` persistence;
-- local notification storage is bookkeeping, not application source of truth;
-- first observations establish baselines rather than fabricating change events;
-- stable hardware/resource identity matters for transition detection;
-- repeated hot/status observations should not spam duplicate notifications;
-- notification observers should avoid redundant polling whenever shared cache data is sufficient;
-- user-specific notification state remains isolated by user key.
+- notifications never own backend snapshot persistence;
+- browser notification storage is bookkeeping, not managed-system source of truth;
+- thresholds come from centralized rule modules;
+- first status observations establish a baseline rather than fabricating a transition;
+- resource identity and fingerprints must remain stable enough for deduplication;
+- temporary unavailable resource families must not erase valid prior baselines accidentally;
+- capacity checks currently use dedicated 60-second notification queries;
+- temperature checks currently use a 30-second disk-inventory query;
+- notification documentation must describe actual query keys/cadences, not an assumed ideal sharing model.
 
 ## Related files
 
@@ -283,9 +331,11 @@ Preserve these rules:
 - `src/hooks/useStartupNotificationChecks.ts`
 - `src/hooks/useResourceStatusChangeNotifications.ts`
 - `src/hooks/useDiskTemperatureNotifications.ts`
-- `src/hooks/useLocalNotifications.ts`
-- `src/hooks/useZpool.ts`
-- `src/lib/axiosInstance.ts`
+- `src/hooks/useDiskInventory.ts`
+- `src/utils/notificationStorage.ts`
+- `src/utils/notificationCapacityRules.ts`
+- `src/utils/notificationStatusRules.ts`
+- `src/utils/notificationTemperatureRules.ts`
 
 ## Related documentation
 
