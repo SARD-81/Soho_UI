@@ -1,58 +1,11 @@
-# قرارداد اعلان‌ها و به‌روزرسانی داده‌ها
+# Notifications and data refresh
 
-## به‌روزرسانی داده‌های صفحات
+This historical note has been superseded by the maintained core-flow documentation.
 
-تمام Queryهای فعال پروژه از این قرارداد پیروی می‌کنند:
+Use:
 
-1. هنگام mount شدن صفحه، داده حتی در صورت وجود cache دوباره از API خوانده می‌شود (`refetchOnMount: 'always'`).
-2. پس از پایان هر mutation، تمام Queryهای فعال همان صفحه invalidate و refetch می‌شوند.
-3. صفحه فضای یکپارچه (`/Integrated-space`) علاوه بر دو حالت بالا، تمام Queryهای فعال با ریشه `zpool` را هر ۱۰ ثانیه دوباره می‌خواند. این interval با خروج از صفحه پاک می‌شود.
+- [`04-core-flows/notifications.md`](./04-core-flows/notifications.md)
+- [`04-core-flows/polling-and-data-refresh.md`](./04-core-flows/polling-and-data-refresh.md)
+- [`04-core-flows/server-state-and-cache.md`](./04-core-flows/server-state-and-cache.md)
 
-## اعلان ظرفیت Pool و FileSystem
-
-در شروع نشست، ظرفیت Poolها و FileSystemها بلافاصله از API دریافت و بررسی می‌شود. پس از آن، Queryهای اختصاصی اعلان ظرفیت هر ۶۰ ثانیه دوباره اجرا می‌شوند.
-
-- polling اعلان ظرفیت در تب پس‌زمینه اجرا نمی‌شود.
-- Queryهای اعلان ظرفیت کلید مستقل دارند و cadence آن‌ها با Queryهای صفحه Pool یا FileSystem تداخل ندارد.
-- صفحه `/Integrated-space` همچنان refresh ده‌ثانیه‌ای خودش را حفظ می‌کند.
-- کمتر از ۷۵٪: بدون اعلان
-- از ۷۵٪ تا کمتر از ۹۰٪: Warning
-- ۹۰٪ و بیشتر: Critical
-- fingerprint و upsert مانع ایجاد اعلان تکراری در هر دقیقه می‌شوند.
-
-## اعلان تغییر وضعیت منابع
-
-وضعیت Poolها، دیسک‌ها و سرویس‌ها در Local Storage به‌صورت snapshot ذخیره می‌شود. اولین دریافت فقط baseline را می‌سازد و اعلان تولید نمی‌کند. از دریافت بعدی، هر تغییر نسبت به snapshot قبلی اعلان می‌سازد.
-
-### سرویس‌ها
-
-- `RUNNING -> STOPPED/ERROR/MASKED`: اعلان Critical
-- `STOPPED/ERROR/MASKED -> RUNNING`: اعلان Info
-- تغییر وضعیت `enabled/disabled` در زمان boot به‌عنوان start/stop محسوب نمی‌شود؛ فقط runtime state بررسی می‌شود.
-- متن وضعیت‌های فنی مانند `RUNNING` و `STOPPED` در پیام اعلان با معادل فارسی نمایش داده می‌شود.
-
-## هشدار داخل صفحات سرویس
-
-در صفحات زیر وضعیت runtime سرویس مرتبط بررسی می‌شود:
-
-- `/share`: `smbd.service`
-- `/share-nfs`: `nfs-server.service`
-- `/snmp-service`: `snmpd.service`
-
-اگر سرویس Running نباشد، یک Alert قرمز در ابتدای صفحه نمایش داده می‌شود. با بازگشت سرویس به Running، Alert پس از refetch بعدی حذف می‌شود.
-
-## اعلان دمای دیسک
-
-- کمتر از ۶۰ درجه: بدون اعلان
-- از ۶۰ تا کمتر از ۷۰ درجه: Warning
-- ۷۰ درجه و بیشتر: Critical
-
-اطلاعات دما هر ۳۰ ثانیه بررسی می‌شود. اگر هشدار قبلی از Warning به Critical ارتقا پیدا کند، اعلان دوباره unread می‌شود.
-
-## قرارداد نمایش RTL
-
-Popover اعلان‌ها، کارت هر اعلان، عنوان، متن، تاریخ، chipها و Alertهای قرمز سرویس‌ها با `direction: rtl` و `textAlign: right` نمایش داده می‌شوند. مقادیر فنی فقط در صورت نیاز به‌صورت مستقل LTR باقی می‌مانند تا ترتیب IP، WWN و شناسه‌ها خراب نشود.
-
-## نگهداری اعلان‌ها
-
-اعلان‌ها بر اساس fingerprint به‌روزرسانی می‌شوند تا یک وضعیت تکراری، چند اعلان همسان نسازد. اعلان‌ها برای هر کاربر جداگانه ذخیره می‌شوند و بعد از مدت TTL پاک می‌شوند.
+The previous content contained point-in-time polling and invalidation details that no longer match the current implementation. This compatibility file is intentionally kept so older links do not break. Do not add new behavior documentation here.
