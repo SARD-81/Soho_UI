@@ -10,11 +10,13 @@ Polling exists only where data changes often enough that passive invalidation or
 
 The application tries to avoid:
 
-- duplicate polling loops for the same resource;
+- accidental duplicate polling for equivalent resources;
 - hidden-tab background traffic;
 - global window-focus refetch storms;
 - fast polling for slowly changing configuration data;
 - persistence side effects from observational reads.
+
+Dedicated query keys are allowed when a subsystem intentionally needs an independent monitoring lifecycle or cadence. When that is done, document it because React Query will treat the dedicated key as a separate cache entry.
 
 ## Global defaults
 
@@ -33,17 +35,20 @@ Feature hooks may override these defaults.
 
 The following intervals were verified from the current source on the documentation branch.
 
-| Resource | Query / endpoint | Interval | Scope / behavior |
+| Resource / monitor | Query / endpoint | Interval | Scope / behavior |
 | --- | --- | ---: | --- |
 | CPU | `['system','cpu']` → `/api/system/cpu/` | 2 s | While mounted; background polling disabled. |
 | Memory | `['system','memory']` → `/api/system/memory/` | 2 s | While mounted; background polling disabled. |
-| Network bandwidth | `['network-bandwidth', interfaces]` → `/api/network/bandwidth/` | 2 s | Only while the bandwidth hook is active; background polling disabled. |
-| Zpool list | `['zpool']` → `/api/zpool/` | 30 s default | Shared by storage UI and notification startup checks; background polling disabled. |
-| Partitioned disks used by storage dialogs | `['disk','partitioned']` | typically 5 s from the caller | Enabled only while create/add/replace workflows need it. |
+| Network bandwidth | `['network-bandwidth', interfaces]` → `/api/network/bandwidth/` | 2 s | While the bandwidth hook is active; background polling disabled. |
+| Zpool list | `['zpool']` → `/api/zpool/` | 30 s default | Used by ordinary zpool consumers and status monitoring; background polling disabled. |
+| Partitioned disks used by storage dialogs | `['disk','partitioned']` | 5 s in Integrated Storage | Enabled only while create/add/replace storage workflows need it. |
 | Pool device slots | `['zpool','devices','slots', ...]` | 30 s default | Only while the consuming view is enabled/mounted; background polling disabled. |
 | Selected zpool details | `['zpool', poolName, 'details']` | 30 s when enabled | Stops when the detail query is disabled. |
-| Services list | `['services']` → `/api/system/service/` | 5 s | Current source polls while mounted; background polling disabled. |
+| Services list | `['services']` → `/api/system/service/` | 5 s | While mounted; background polling disabled. |
 | Individual service status | `['service-status', name]` | 5 s | One query per displayed service; background polling disabled. |
+| Notification capacity: zpool | `['notifications','capacity','zpool']` using `fetchZpools` | 60 s | Dedicated notification query; separate cache entry from `['zpool']`. |
+| Notification capacity: filesystems | `['notifications','capacity','filesystems']` using `fetchFileSystems` | 60 s | Dedicated notification query; separate cache entry from ordinary filesystem queries. |
+| Notification temperature: disk inventory | `['disk','inventory']` → `/api/disk/?detail=true` | 30 s | Used by disk-temperature monitoring; background polling disabled. |
 
 The exact caller can override some hook defaults. When documenting a page, describe the interval actually supplied by that page, not only the hook default.
 
@@ -59,6 +64,7 @@ Examples verified from current source:
 | Volume type list | Fetch on mount and mutation invalidation; no continuous interval. |
 | Network interfaces | Cached query with `staleTime` 30 s; no continuous interval. |
 | Network interface detail | Enabled per selected interface, `staleTime` 10 s; no continuous interval. |
+| Disk status query used by status notifications | `useDisk()` has no interval when called without an override. |
 | Samba/NFS/Web-share configuration | Primarily mount/invalidation driven unless a specific hook explicitly adds an interval. |
 | System/configuration information | Treat as non-polling unless the current hook explicitly declares otherwise. |
 
@@ -86,7 +92,7 @@ Continuous polling hooks should normally set:
 refetchIntervalInBackground: false
 ```
 
-This avoids continuing expensive administrative monitoring traffic when the tab is hidden.
+This avoids continuing administrative monitoring traffic when the tab is hidden.
 
 A future exception must document why hidden-tab updates are required and what backend load is acceptable.
 
@@ -119,15 +125,34 @@ Database snapshot persistence is scheduled separately by `StateSyncManager` afte
 
 Never add `save_to_db=true` to a polling hook.
 
-## Shared query consumers
+## Shared versus dedicated query consumers
 
-Multiple components may subscribe to the same query key. React Query can share/cache that resource instead of each component running an unrelated request loop.
+React Query shares requests and cache only when consumers use the same query key and compatible query lifecycle.
 
-This is especially important for notifications.
+The current notification subsystem demonstrates both models.
 
-For example, the startup notification checker observes the zpool query with the same zpool key. It should not create a second independent timer for an equivalent resource.
+### Shared/ordinary resource keys
 
-Status-change notification observers may explicitly disable their own interval and react to cache updates supplied by other mounted consumers.
+Status-change monitoring uses ordinary resource hooks:
+
+- pools through `useZpool()` / `['zpool']` at the default 30-second cadence;
+- disks through `useDisk()` / `['disk']` with no interval supplied by that caller;
+- services through `useServices()` / `['services']` at 5 seconds.
+
+Where page-level consumers use the same key, React Query can share the cache/query lifecycle.
+
+### Dedicated notification keys
+
+Capacity monitoring intentionally has independent query entries:
+
+- `['notifications','capacity','zpool']` every 60 seconds;
+- `['notifications','capacity','filesystems']` every 60 seconds.
+
+These use the same fetch functions as ordinary resource queries but not the same query keys. They can therefore generate independent network requests.
+
+Disk-temperature monitoring also uses the dedicated inventory key `['disk','inventory']` every 30 seconds.
+
+Do not describe two different query keys as deduplicated merely because they hit the same endpoint or reuse the same fetch function.
 
 ## Conditional polling
 
@@ -138,9 +163,10 @@ Examples:
 - partitioned-disk polling is enabled only while storage mutation dialogs need that state;
 - zpool detail polling runs only for selected/enabled details;
 - pool-slot mapping only runs while a storage visualization consuming it is mounted;
-- bandwidth polling depends on the interfaces being actively observed.
+- bandwidth polling depends on the interfaces being actively observed;
+- notification monitors exist while `NotificationBootstrapper` is mounted in the authenticated layout.
 
-Prefer `enabled` or `refetchInterval: false/undefined` over leaving a hidden timer alive.
+Prefer `enabled` or `refetchInterval: false/undefined` over leaving a hidden feature timer alive.
 
 ## Choosing an interval
 
@@ -151,9 +177,10 @@ When adding or changing polling, consider:
 3. How expensive is the endpoint?
 4. How many instances of the query can be mounted simultaneously?
 5. Does the endpoint fan out to hardware/system commands?
-6. Can React Query share the same key across consumers?
-7. Should the timer stop when a modal/page/detail view closes?
-8. Is event-driven invalidation available instead?
+6. Can an existing query key satisfy the same semantics and cadence?
+7. Is a dedicated query key intentionally required?
+8. Should the timer stop when a modal/page/detail view closes?
+9. Is invalidation sufficient instead of polling?
 
 Avoid arbitrary intervals. If a value only needs to update every 30 seconds, do not poll it every 2 seconds.
 
@@ -163,7 +190,8 @@ A practical mental model for the existing application is:
 
 - **2 seconds:** high-frequency dashboard telemetry such as CPU, memory, and bandwidth;
 - **5 seconds:** operational status or short-lived workflow state such as services and modal-scoped partition availability;
-- **30 seconds:** slower storage-state monitoring such as zpools, pool details, and device-slot mapping;
+- **30 seconds:** slower storage-state monitoring, pool details, device-slot mapping, and disk-temperature inventory;
+- **60 seconds:** notification-specific capacity monitoring;
 - **no interval:** configuration/inventory data refreshed by lifecycle and invalidation.
 
 These are conventions observed in the current code, not immutable constants. Any change should be justified by product and backend behavior.
@@ -181,29 +209,31 @@ It must not:
 
 ## Notifications and polling
 
-Notifications are documented separately because they often consume polling results without owning the timer.
+Notifications use a mix of ordinary shared resource keys and dedicated monitoring queries.
 
-See [`notifications.md`](./notifications.md).
+Current examples:
 
-Important examples:
+- capacity monitoring uses dedicated zpool/filesystem keys at 60 seconds;
+- pool status monitoring uses the ordinary zpool key at its 30-second default;
+- service status-change monitoring observes the ordinary 5-second services query;
+- disk status-change monitoring calls the ordinary disk hook without adding an interval;
+- temperature monitoring uses the disk-inventory key at 30 seconds.
 
-- startup capacity checks reuse resource queries;
-- status-change notifications compare cached observations with a local baseline;
-- disk-temperature notifications suppress duplicate warnings while a disk remains above the threshold.
+See [`notifications.md`](./notifications.md) for thresholds, baselines, fingerprints, and duplicate suppression.
 
 ## Debugging duplicate requests
 
 If an endpoint appears more often than expected in DevTools:
 
 1. identify the React Query key for each request;
-2. check whether two hooks use different keys for equivalent data;
-3. inspect whether both a page and a notification observer configured independent intervals;
-4. inspect React StrictMode only after checking query-key sharing and actual network behavior;
-5. check whether mutation invalidation occurred near a scheduled interval;
-6. check whether a mount/unmount cycle is causing revalidation;
-7. verify the query is not accidentally enabled in a hidden modal/detail component.
+2. check whether two consumers intentionally use different keys for equivalent backend data;
+3. inspect notification-specific capacity keys before assuming React Query deduplication failed;
+4. check whether mutation invalidation occurred near a scheduled interval;
+5. check whether a mount/unmount cycle is causing revalidation;
+6. verify the query is not accidentally enabled in a hidden modal/detail component;
+7. inspect React StrictMode only after query ownership and keys are understood.
 
-Do not solve duplicates by disabling necessary refresh blindly; first identify ownership.
+A request visible twice with different keys is two independent query entries, not a cache-deduplication bug.
 
 ## Debugging missing refreshes
 
@@ -221,9 +251,9 @@ If a view does not update:
 
 Whenever a hook adds/removes/changes a `refetchInterval`, update this inventory in the same change.
 
-When a page overrides a hook's default interval in a meaningful way, document the page-specific behavior.
+When a page or notification monitor overrides a hook's default interval or creates a dedicated query key in a meaningful way, document that behavior here.
 
-Historical audit files should not be edited as if they are live configuration; they are retained only as migration pointers once this document becomes canonical.
+Historical audit files are compatibility redirects and are not live configuration.
 
 ## Related files
 
@@ -237,7 +267,10 @@ Historical audit files should not be edited as if they are live configuration; t
 - `src/hooks/useZpoolDetails.ts`
 - `src/hooks/useServices.ts`
 - `src/hooks/useServiceStatuses.ts`
-- `src/hooks/useVolumes.ts`
+- `src/hooks/useDiskInventory.ts`
+- `src/hooks/useStartupNotificationChecks.ts`
+- `src/hooks/useResourceStatusChangeNotifications.ts`
+- `src/hooks/useDiskTemperatureNotifications.ts`
 - `src/pages/IntegratedStorage.tsx`
 
 ## Related documentation
