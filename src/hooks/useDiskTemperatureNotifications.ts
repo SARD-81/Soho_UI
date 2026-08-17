@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { cleanupExpiredNotifications, upsertNotification } from '../utils/notificationStorage';
+import {
+  cleanupExpiredNotifications,
+  upsertNotification,
+} from '../utils/notificationStorage';
 import { createDiskTemperatureNotification } from '../utils/notificationTemperatureRules';
 import { useDiskInventory } from './useDiskInventory';
 
@@ -11,6 +14,9 @@ export const useDiskTemperatureNotifications = (userKey?: string) => {
   });
   const checkedSignatureRef = useRef<string | null>(null);
 
+  // This signature prevents the same successful inventory snapshot from being
+  // reprocessed because of React re-renders. Persistent duplicate suppression
+  // is still handled by notification fingerprints inside upsertNotification().
   const temperatureSignature = useMemo(
     () =>
       JSON.stringify(
@@ -58,7 +64,12 @@ export const useDiskTemperatureNotifications = (userKey?: string) => {
         })
       );
     }
-  }, [diskInventoryQuery.data, diskInventoryQuery.isSuccess, temperatureSignature, userKey]);
+  }, [
+    diskInventoryQuery.data,
+    diskInventoryQuery.isSuccess,
+    temperatureSignature,
+    userKey,
+  ]);
 
   return {
     isChecking: diskInventoryQuery.isFetching,
