@@ -1,7 +1,10 @@
-import { isAxiosError } from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import { useCallback, useState } from 'react';
-import type { FileSystemEntry, FileSystemQueryResult } from '../@types/filesystem';
+import type {
+  FileSystemEntry,
+  FileSystemQueryResult,
+} from '../@types/filesystem';
 import axiosInstance from '../lib/axiosInstance';
 
 interface DeleteFileSystemPayload {
@@ -17,16 +20,26 @@ interface DeleteFileSystemResponse {
   [key: string]: unknown;
 }
 
-const DEFAULT_DELETE_FILESYSTEM_ERROR_MESSAGE = 'امکان حذف فضای فایلی وجود ندارد.';
+const DEFAULT_DELETE_FILESYSTEM_ERROR_MESSAGE =
+  'امکان حذف فضای فایلی وجود ندارد.';
 
-const extractDeleteFileSystemErrorMessage = (error: unknown, fallback: string) => {
+const extractDeleteFileSystemErrorMessage = (
+  error: unknown,
+  fallback: string
+) => {
   if (isAxiosError(error)) {
     const responseData = error.response?.data;
     if (responseData && typeof responseData === 'object') {
-      if (typeof responseData.detail === 'string' && responseData.detail.trim().length > 0) {
+      if (
+        typeof responseData.detail === 'string' &&
+        responseData.detail.trim().length > 0
+      ) {
         return responseData.detail;
       }
-      if (typeof responseData.message === 'string' && responseData.message.trim().length > 0) {
+      if (
+        typeof responseData.message === 'string' &&
+        responseData.message.trim().length > 0
+      ) {
         return responseData.message;
       }
     }
@@ -39,18 +52,25 @@ const extractDeleteFileSystemErrorMessage = (error: unknown, fallback: string) =
   return fallback;
 };
 
-const deleteFileSystemRequest = async ({ poolName, filesystemName }: DeleteFileSystemPayload): Promise<DeleteFileSystemResponse> => {
+const deleteFileSystemRequest = async ({
+  poolName,
+  filesystemName,
+}: DeleteFileSystemPayload): Promise<DeleteFileSystemResponse> => {
   try {
-    // Real backend: DELETE /api/filesystem/delete/?name=Pool/fs&save_to_db=false
-    const response = await axiosInstance.delete<DeleteFileSystemResponse>('/api/filesystem/delete/', {
-      params: {
-        name: `${poolName}/${filesystemName}`,
-        save_to_db: false,
-      },
-    });
+    const response = await axiosInstance.delete<DeleteFileSystemResponse>(
+      '/api/filesystem/delete/',
+      {
+        params: { name: `${poolName}/${filesystemName}` },
+      }
+    );
     return response.data;
   } catch (error) {
-    throw new Error(extractDeleteFileSystemErrorMessage(error, DEFAULT_DELETE_FILESYSTEM_ERROR_MESSAGE));
+    throw new Error(
+      extractDeleteFileSystemErrorMessage(
+        error,
+        DEFAULT_DELETE_FILESYSTEM_ERROR_MESSAGE
+      )
+    );
   }
 };
 
@@ -59,21 +79,37 @@ interface UseDeleteFileSystemOptions {
   onError?: (error: Error, filesystemName: string) => void;
 }
 
-export const useDeleteFileSystem = ({ onSuccess, onError }: UseDeleteFileSystemOptions = {}) => {
+export const useDeleteFileSystem = ({
+  onSuccess,
+  onError,
+}: UseDeleteFileSystemOptions = {}) => {
   const queryClient = useQueryClient();
-  const [targetFileSystem, setTargetFileSystem] = useState<FileSystemEntry | null>(null);
+  const [targetFileSystem, setTargetFileSystem] =
+    useState<FileSystemEntry | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const deleteMutation = useMutation<DeleteFileSystemResponse, Error, DeleteFileSystemPayload>({
+  const deleteMutation = useMutation<
+    DeleteFileSystemResponse,
+    Error,
+    DeleteFileSystemPayload
+  >({
     mutationFn: deleteFileSystemRequest,
     onSuccess: (_data, variables) => {
-      queryClient.setQueryData<FileSystemQueryResult | undefined>(['filesystems'], (current) => {
-        if (!current) return current;
-        return {
-          ...current,
-          filesystems: current.filesystems.filter((fs) => fs.fullName !== variables.fullName),
-        };
-      });
+      queryClient.setQueryData<FileSystemQueryResult | undefined>(
+        ['filesystems'],
+        (current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+            filesystems: current.filesystems.filter(
+              (filesystem) => filesystem.fullName !== variables.fullName
+            ),
+          };
+        }
+      );
       queryClient.invalidateQueries({ queryKey: ['filesystems'] });
     },
   });
@@ -89,7 +125,9 @@ export const useDeleteFileSystem = ({ onSuccess, onError }: UseDeleteFileSystemO
   }, []);
 
   const confirmDelete = useCallback(() => {
-    if (!targetFileSystem || deleteMutation.isPending) return;
+    if (!targetFileSystem || deleteMutation.isPending) {
+      return;
+    }
 
     setErrorMessage(null);
 
