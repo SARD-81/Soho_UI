@@ -3,6 +3,7 @@ import type { AxiosError } from 'axios';
 import type { FormEvent } from 'react';
 import { useCallback, useState } from 'react';
 import axiosInstance from '../lib/axiosInstance';
+import { encodeUtf8ToBase64 } from '../utils/base64';
 
 interface ApiErrorResponse {
   detail?: string;
@@ -20,7 +21,6 @@ interface CreateFileSystemPayload {
   mountpoint: string;
   encryption: 'on' | 'off';
   passphrase: string;
-  save_to_db: boolean;
 }
 
 interface CreateFileSystemSubmitOptions {
@@ -32,17 +32,6 @@ interface UseCreateFileSystemOptions {
   onSuccess?: (filesystemName: string) => void;
   onError?: (errorMessage: string) => void;
 }
-
-const encodePassphraseToBase64 = (passphrase: string) => {
-  const bytes = new TextEncoder().encode(passphrase);
-  let binaryValue = '';
-
-  bytes.forEach((byte) => {
-    binaryValue += String.fromCharCode(byte);
-  });
-
-  return window.btoa(binaryValue);
-};
 
 const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
   const payload = error.response?.data;
@@ -117,9 +106,7 @@ export const useCreateFileSystem = ({
     CreateFileSystemPayload
   >({
     mutationFn: async (payload) => {
-      await axiosInstance.post('/api/filesystem/', payload, {
-        params: { save_to_db: true },
-      });
+      await axiosInstance.post('/api/filesystem/', payload);
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['filesystems'] });
@@ -161,10 +148,9 @@ export const useCreateFileSystem = ({
         setNameError('نام فضای فایلی را وارد کنید.');
         hasError = true;
       } else if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(trimmedName)) {
-        setNameError('نام فضای فایلی باید فقط شامل حروف انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد و با حرف انگلیسی شروع شود.');
-        hasError = true;
-      } else if (/^[0-9_-]/.test(trimmedName)) {
-        setNameError('نام فضای فایلی باید با حرف انگلیسی شروع شود.');
+        setNameError(
+          'نام فضای فایلی باید فقط شامل حروف انگلیسی، اعداد، خط تیره (-) و زیرخط (_) باشد و با حرف انگلیسی شروع شود.'
+        );
         hasError = true;
       }
 
@@ -174,7 +160,9 @@ export const useCreateFileSystem = ({
       } else {
         const quotaValue = Number(trimmedQuota);
         if (!Number.isFinite(quotaValue) || quotaValue <= 0) {
-          setQuotaError('حجم واردشده باید یک عدد معتبر بزرگ‌تر از صفر باشد.');
+          setQuotaError(
+            'حجم واردشده باید یک عدد معتبر بزرگ‌تر از صفر باشد.'
+          );
           hasError = true;
         }
       }
@@ -188,7 +176,7 @@ export const useCreateFileSystem = ({
       const formattedQuota = `${trimmedQuota}${quotaUnit}`;
       const mountpoint = `/${sanitizedPool}/${sanitizedName}`;
 
-      const payload: CreateFileSystemPayload = {
+      createFileSystemMutation.mutate({
         pool_name: sanitizedPool,
         fs_name: sanitizedName,
         quota: formattedQuota,
@@ -196,14 +184,17 @@ export const useCreateFileSystem = ({
         mountpoint,
         encryption: encryptionEnabled ? 'on' : 'off',
         passphrase: encryptionEnabled
-          ? encodePassphraseToBase64(encryptionPassphrase)
+          ? encodeUtf8ToBase64(encryptionPassphrase)
           : '',
-        save_to_db: true,
-      };
-
-      createFileSystemMutation.mutate(payload);
+      });
     },
-    [createFileSystemMutation, filesystemName, quotaAmount, quotaUnit, selectedPool]
+    [
+      createFileSystemMutation,
+      filesystemName,
+      quotaAmount,
+      quotaUnit,
+      selectedPool,
+    ]
   );
 
   return {
