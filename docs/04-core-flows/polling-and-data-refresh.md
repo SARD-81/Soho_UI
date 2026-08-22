@@ -47,12 +47,14 @@ The following intervals were verified from the current source on the documentati
 | Dashboard 3D pool device slots | same pool-slot query family | 10 s caller override | `ServerSlots3DWidget` intentionally refreshes physical slot mapping faster than the hook default. |
 | Selected zpool details | `['zpool', poolName, 'details']` | 30 s when enabled | Stops when the detail query is disabled. |
 | Services list | `['services']` → `/api/system/service/` | 5 s | While mounted; background polling disabled. |
-| Individual service status | `['service-status', name]` | 5 s | One query per displayed service; background polling disabled. |
+| Individual service status | `['services','status', service.unit]` → `/api/system/service/{unit}/` | 5 s | One query per displayed service; background polling disabled. |
 | Notification capacity: zpool | `['notifications','capacity','zpool']` using `fetchZpools` | 60 s | Dedicated notification query; separate cache entry from `['zpool']`. |
 | Notification capacity: filesystems | `['notifications','capacity','filesystems']` using `fetchFileSystems` | 60 s | Dedicated notification query; separate cache entry from ordinary filesystem queries. |
 | Notification temperature: disk inventory | `['disk','inventory']` → `/api/disk/` | 30 s | Used by disk-temperature monitoring; background polling disabled. |
 
 The exact caller can override some hook defaults. When documenting a page, describe the interval actually supplied by that page, not only the hook default.
+
+The Services page deserves special attention because it runs one list query plus one per-unit status query every five seconds. Its request count therefore grows with the number of displayed service units.
 
 ## Resources without continuous polling
 
@@ -63,7 +65,7 @@ Examples verified from current source:
 | Resource | Refresh model |
 | --- | --- |
 | Filesystem list | Fetch on mount/revalidation/invalidation; `staleTime` 15 s; no continuous interval in `useFileSystems`. |
-| Volume type list | Fetch on mount and mutation invalidation; no continuous interval. |
+| Volume list | Fetch on mount and mutation invalidation/manual refetch; no continuous interval. |
 | Network interface/detail discovery | `useNetwork()` loads the interface list and per-interface details without a continuous base-data interval; only bandwidth snapshots poll continuously. |
 | Disk status query used by status notifications | `useDisk()` has no interval when called without an override. |
 | Samba/NFS/Web-share configuration | Primarily mount/invalidation driven unless a specific hook explicitly adds an interval. |
@@ -81,7 +83,7 @@ Values such as uptime, CPU, memory, bandwidth, temperatures, and actively observ
 
 ### Configuration and inventory
 
-Values such as users, shares, settings, filesystems, or one-time detail data generally change through explicit operations. Prefer query invalidation, mount-time fetches, and targeted refetches.
+Values such as users, shares, settings, filesystems, volumes, or one-time detail data generally change through explicit operations. Prefer query invalidation, mount-time fetches, manual refresh, and targeted refetches.
 
 Storage health can sit between these categories; slower polling is used where backend/system state may change independently.
 
@@ -212,6 +214,8 @@ It must not:
 - duplicate a mutation;
 - reset unrelated caches.
 
+Block Storage currently exposes a manual Volume refresh through the page header while leaving `['volumes']` non-polling.
+
 ## Notifications and polling
 
 Notifications use a mix of ordinary shared resource keys and dedicated monitoring queries.
@@ -233,11 +237,12 @@ If an endpoint appears more often than expected in DevTools:
 1. identify the React Query key for each request;
 2. check whether two consumers intentionally use different keys for equivalent backend data;
 3. inspect notification-specific capacity keys before assuming React Query deduplication failed;
-4. check whether mutation invalidation occurred near a scheduled interval;
-5. check whether a mount/unmount cycle is causing revalidation;
-6. verify the query is not accidentally enabled in a hidden modal/detail component;
-7. inspect caller-specific interval overrides such as the 3D server slot view;
-8. inspect React StrictMode only after query ownership and keys are understood.
+4. for Services, account for the intentional one-list-plus-N-status query model;
+5. check whether mutation invalidation occurred near a scheduled interval;
+6. check whether a mount/unmount cycle is causing revalidation;
+7. verify the query is not accidentally enabled in a hidden modal/detail component;
+8. inspect caller-specific interval overrides such as the 3D server slot view;
+9. inspect React StrictMode only after query ownership and keys are understood.
 
 A request visible twice with different keys is two independent query entries, not a cache-deduplication bug.
 
@@ -246,7 +251,7 @@ A request visible twice with different keys is two independent query entries, no
 If a view does not update:
 
 1. determine whether the resource is supposed to poll;
-2. if not, identify the expected invalidation source;
+2. if not, identify the expected invalidation or manual-refresh source;
 3. check `enabled` conditions;
 4. verify the mutation succeeded;
 5. verify query-key alignment between the consumer and invalidation;
@@ -270,6 +275,7 @@ Historical audit files are compatibility redirects and are not live configuratio
 - `src/hooks/useSystemUptime.ts`
 - `src/hooks/useZpool.ts`
 - `src/hooks/useFileSystems.ts`
+- `src/hooks/useVolumes.ts`
 - `src/hooks/usePoolDeviceSlots.ts`
 - `src/hooks/useZpoolDetails.ts`
 - `src/hooks/useDisk.ts`
@@ -281,6 +287,8 @@ Historical audit files are compatibility redirects and are not live configuratio
 - `src/hooks/useDiskTemperatureNotifications.ts`
 - `src/components/dashboard/server-3d/ServerSlots3DWidget.tsx`
 - `src/pages/IntegratedStorage.tsx`
+- `src/pages/BlockStorage.tsx`
+- `src/pages/Services.tsx`
 
 ## Related documentation
 
@@ -290,3 +298,5 @@ Historical audit files are compatibility redirects and are not live configuratio
 - [`api-request-lifecycle.md`](./api-request-lifecycle.md)
 - [`../05-features/dashboard.md`](../05-features/dashboard.md)
 - [`../05-features/integrated-storage.md`](../05-features/integrated-storage.md)
+- [`../05-features/block-storage.md`](../05-features/block-storage.md)
+- [`../05-features/services.md`](../05-features/services.md)
