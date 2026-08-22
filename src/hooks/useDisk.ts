@@ -69,7 +69,7 @@ const fetchDiskNames = async (signal?: AbortSignal): Promise<string[]> => {
   return normalizeDiskNames(data.data?.disk_names);
 };
 
-const fetchDiskPartitionStatus = async (
+const fetchDiskIsUnpartitioned = async (
   diskName: string,
   signal?: AbortSignal
 ): Promise<boolean> => {
@@ -90,7 +90,7 @@ const fetchDiskPartitionStatus = async (
       throw new Error(message);
     }
 
-    return Boolean(!data.data?.has_partitions);
+    return !Boolean(data.data?.has_partitions);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       return false;
@@ -143,9 +143,12 @@ const fetchDiskMetadata = async (
 
     throw error;
   }
-  return { wwn: null, slotNumber: null };
 };
 
+/**
+ * Historical name kept for compatibility with current consumers.
+ * These entries are actually disks that passed the "no partitions" eligibility check.
+ */
 export interface PartitionedDiskInfo {
   name: string;
   path: string;
@@ -162,7 +165,7 @@ const normalizeDiskPath = (diskName: string) => {
   return trimmedName.startsWith('/dev/') ? trimmedName : `/dev/${trimmedName}`;
 };
 
-const fetchPartitionedDisks = async (
+const fetchAvailableUnpartitionedDisks = async (
   signal?: AbortSignal
 ): Promise<PartitionedDiskInfo[]> => {
   const diskNames = await fetchDiskNames(signal);
@@ -171,11 +174,14 @@ const fetchPartitionedDisks = async (
     return [];
   }
 
-  const disksWithPartitions = await Promise.all(
+  const eligibleDiskNames = await Promise.all(
     diskNames.map(async (diskName) => {
       try {
-        const hasPartitions = await fetchDiskPartitionStatus(diskName, signal);
-        return hasPartitions ? diskName : null;
+        const isUnpartitioned = await fetchDiskIsUnpartitioned(
+          diskName,
+          signal
+        );
+        return isUnpartitioned ? diskName : null;
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 404) {
           return null;
@@ -186,8 +192,8 @@ const fetchPartitionedDisks = async (
     })
   );
 
-  const filteredNames = disksWithPartitions.filter(
-    (diskName): diskName is string => !!diskName
+  const filteredNames = eligibleDiskNames.filter(
+    (diskName): diskName is string => Boolean(diskName)
   );
 
   if (filteredNames.length === 0) {
@@ -232,10 +238,14 @@ export const useDisk = (options?: UseDiskOptions) => {
   });
 };
 
+/**
+ * Legacy exported name/query key: consumers use this hook to select disks with
+ * no partitions for create/add/replace storage workflows.
+ */
 export const usePartitionedDisks = (options?: UseDiskOptions) => {
   return useQuery<PartitionedDiskInfo[], Error>({
     queryKey: ['disk', 'partitioned'],
-    queryFn: ({ signal }) => fetchPartitionedDisks(signal),
+    queryFn: ({ signal }) => fetchAvailableUnpartitionedDisks(signal),
     refetchInterval: options?.refetchInterval,
     refetchIntervalInBackground: false,
     enabled: options?.enabled ?? true,
