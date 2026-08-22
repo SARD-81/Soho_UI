@@ -12,13 +12,16 @@ interface UseMountFileSystemOptions {
   onError?: (error: Error, name: string) => void;
 }
 
-export const useMountFileSystem = ({ onSuccess, onError }: UseMountFileSystemOptions = {}) => {
+export const useMountFileSystem = ({
+  onSuccess,
+  onError,
+}: UseMountFileSystemOptions = {}) => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<unknown, Error, MountPayload>({
     mutationFn: async ({ poolName, filesystemName }) => {
       await axiosInstance.post('/api/filesystem/mount/', null, {
-        params: { name: `${poolName}/${filesystemName}`, save_to_db: false },
+        params: { name: `${poolName}/${filesystemName}` },
       });
     },
     onSuccess: (_data, variables) => {
@@ -30,9 +33,12 @@ export const useMountFileSystem = ({ onSuccess, onError }: UseMountFileSystemOpt
     },
   });
 
-  const mount = useCallback((poolName: string, filesystemName: string) => {
-    mutation.mutate({ poolName, filesystemName });
-  }, [mutation]);
+  const mount = useCallback(
+    (poolName: string, filesystemName: string) => {
+      mutation.mutate({ poolName, filesystemName });
+    },
+    [mutation]
+  );
 
   return {
     mount,
