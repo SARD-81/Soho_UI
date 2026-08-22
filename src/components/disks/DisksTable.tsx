@@ -1,10 +1,10 @@
 import { Box, Chip, Tooltip, Typography } from '@mui/material';
 import { useCallback, useMemo } from 'react';
+import { PiBroomFill } from 'react-icons/pi';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { DiskInventoryItem } from '../../@types/disk';
 import { formatBytes } from '../../utils/formatters';
 import DataTable from '../DataTable';
-import { PiBroomFill } from 'react-icons/pi';
 
 interface DisksTableProps {
   detailViewId: string;
@@ -88,11 +88,7 @@ const DisksTable = ({
     []
   );
 
-  const handleRowClick = useCallback((disk: DiskInventoryItem) => {
-    // DataTable will manage the active selection; this callback simply
-    // preserves row click behavior without mutating shared state.
-    return disk;
-  }, []);
+  const handleRowClick = useCallback((disk: DiskInventoryItem) => disk, []);
 
   const columns = useMemo<DataTableColumn<DiskInventoryItem>[]>(() => {
     return [
@@ -107,29 +103,28 @@ const DisksTable = ({
         ),
       },
       {
-        id: 'disk',
+        id: 'slot_number',
         header: 'شماره اسلات',
         align: 'center',
         renderCell: (disk) => (
           <Chip
-                      label={`اسلات ${disk.slot_number}`}
-                      
-                      sx={{
-                        cursor: 'pointer',
-                        fontWeight: 800,
-                        color: 'var(--color-text)',
-                        letterSpacing: '0.2px',
-                        background:
-                          'linear-gradient(135deg, rgba(25,123,255,0.12) 0%, rgba(21,196,197,0.2) 100%)',
-                        border: '1px solid rgba(25,123,255,0.35)',
-                        boxShadow: '0 16px 34px -26px rgba(25,123,255,0.9)',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 16px 36px -24px rgba(14,174,164,0.9)',
-                        },
-                      }}
-                    />
+            label={`اسلات ${disk.slot_number}`}
+            sx={{
+              cursor: 'pointer',
+              fontWeight: 800,
+              color: 'var(--color-text)',
+              letterSpacing: '0.2px',
+              background:
+                'linear-gradient(135deg, rgba(25,123,255,0.12) 0%, rgba(21,196,197,0.2) 100%)',
+              border: '1px solid rgba(25,123,255,0.35)',
+              boxShadow: '0 16px 34px -26px rgba(25,123,255,0.9)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 16px 36px -24px rgba(14,174,164,0.9)',
+              },
+            }}
+          />
         ),
       },
       {
@@ -137,8 +132,14 @@ const DisksTable = ({
         header: 'حجم کل',
         align: 'center',
         renderCell: (disk) => (
-          <Typography sx={{ fontWeight: 600, color: 'var(--color-text)',direction: 'rtl' }}>
-            {formatBytes(disk.total_bytes , { fallback: '-' })}
+          <Typography
+            sx={{
+              fontWeight: 600,
+              color: 'var(--color-text)',
+              direction: 'rtl',
+            }}
+          >
+            {formatBytes(disk.total_bytes, { fallback: '-' })}
           </Typography>
         ),
       },
@@ -178,8 +179,7 @@ const DisksTable = ({
         width: 140,
         renderCell: (disk) =>
           renderStateChip(
-            disk.state === 'running' ? 'فعال' :
-            formatStateLabel(disk.state),
+            disk.state === 'running' ? 'فعال' : formatStateLabel(disk.state),
             resolveStateColor(disk.state)
           ),
       },
@@ -221,38 +221,22 @@ const DisksTable = ({
           return (
             <Tooltip title="پاکسازی دیسک" arrow>
               <span>
-                {/* <Button
-                  variant="contained"
-                  size="small"
-                  color="error"
-                  disabled={
-                    isDisabled ||
-                    !onWipe ||
-                    isPartitionLoading ||
-                    hasNoPartitions ||
-                    !hasPartitions
-                  }
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onWipe?.(disk);
-                  }}
-                > */}
                 <Chip
                   label={<PiBroomFill size={18} />}
                   clickable={!isActionDisabled}
                   disabled={isActionDisabled}
                   onClick={(event) => {
                     event.stopPropagation();
-                    if (isActionDisabled) return;
+                    if (isActionDisabled) {
+                      return;
+                    }
                     onWipe?.(disk);
                   }}
-                  color= "error"
+                  color="error"
                   variant="filled"
                   size="small"
                   sx={{ fontWeight: 600, px: 0.5 }}
                 />
-                {/* <PiBroomFill size={18} /> */}
-                {/* </Button> */}
               </span>
             </Tooltip>
           );
@@ -269,11 +253,11 @@ const DisksTable = ({
   ]);
 
   return (
-      <DataTable<DiskInventoryItem>
-        detailViewId={detailViewId}
-        columns={columns}
-        data={disks}
-        getRowId={(disk) => disk.disk}
+    <DataTable<DiskInventoryItem>
+      detailViewId={detailViewId}
+      columns={columns}
+      data={disks}
+      getRowId={(disk) => disk.disk}
       isLoading={isLoading}
       error={error}
       onRowClick={handleRowClick}
