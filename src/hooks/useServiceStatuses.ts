@@ -35,12 +35,15 @@ const getEnabledState = (
   response?.enabled;
 
 export const useServiceStatuses = (services: ServiceEntry[]) => {
+  // The list endpoint does not currently provide the authoritative enabled flag,
+  // so the Services page intentionally owns one 5-second detail query per unit.
+  // Replace this fan-out only when the backend exposes equivalent batch/list data.
   const queries = useQueries({
     queries: services.map((service) => ({
       queryKey: ['services', 'status', service.unit],
       queryFn: () => fetchServiceStatus(service.unit),
       enabled: Boolean(service.unit),
-      refetchInterval: 5000,
+      refetchInterval: 5_000,
       refetchIntervalInBackground: false,
       refetchOnWindowFocus: false,
     })),
