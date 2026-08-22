@@ -53,6 +53,9 @@ Feature documents describe the actual page-level user flow, query/mutation owner
 - [`05-features/dashboard.md`](./05-features/dashboard.md) — live monitoring widgets, per-user layout customization, polling, uptime, and 3D server slots.
 - [`05-features/disks.md`](./05-features/disks.md) — disk inventory/details, pool ownership, partition safety checks, and destructive cleanup flow.
 - [`05-features/integrated-storage.md`](./05-features/integrated-storage.md) — zpool lifecycle, create/add/replace/delete/import/export, slot mapping, properties, and conditional storage polling.
+- [`05-features/block-storage.md`](./05-features/block-storage.md) — Volume list/create/delete, manual refresh, dynamic attributes, and the current Volume StateSync boundary.
+- [`05-features/file-system.md`](./05-features/file-system.md) — filesystem CRUD, mount/canmount, encryption key lifecycle, passphrase handling, detail state, and cross-domain StateSync.
+- [`05-features/services.md`](./05-features/services.md) — service list/status polling, Start/Stop, boot enablement, status normalization, and per-unit query fan-out.
 
 More feature documents are added incrementally as their implementation is audited.
 
@@ -127,7 +130,10 @@ docs/
 ├── 05-features/
 │   ├── dashboard.md
 │   ├── disks.md
-│   └── integrated-storage.md
+│   ├── integrated-storage.md
+│   ├── block-storage.md
+│   ├── file-system.md
+│   └── services.md
 ├── 06-api/
 └── 07-operations/
 ```
