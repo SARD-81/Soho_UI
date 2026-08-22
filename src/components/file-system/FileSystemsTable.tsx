@@ -1,10 +1,24 @@
-import { Box, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useMemo } from 'react';
-import { MdDeleteOutline, MdLockReset, MdOutlineLink, MdOutlineLinkOff, MdVpnKey, MdVpnKeyOff } from 'react-icons/md';
-import ToggleBtn from '../ToggleBtn';
+import {
+  MdDeleteOutline,
+  MdLockReset,
+  MdOutlineLink,
+  MdOutlineLinkOff,
+  MdVpnKey,
+  MdVpnKeyOff,
+} from 'react-icons/md';
 import type { DataTableColumn } from '../../@types/dataTable';
 import type { FileSystemEntry } from '../../@types/filesystem';
 import DataTable from '../DataTable';
+import ToggleBtn from '../ToggleBtn';
 
 interface FileSystemsTableProps {
   detailViewId: string;
@@ -28,9 +42,60 @@ interface FileSystemsTableProps {
   isSettingCanmount?: boolean;
 }
 
+const isTruthyAttribute = (value: string | undefined, truthyValues: string[]) =>
+  typeof value === 'string' && truthyValues.includes(value.toLowerCase().trim());
+
+const isCanmountOn = (filesystem: FileSystemEntry) =>
+  isTruthyAttribute(filesystem.attributeMap?.canmount, [
+    'on',
+    'yes',
+    'true',
+    '1',
+  ]);
+
+const isMounted = (filesystem: FileSystemEntry) =>
+  isTruthyAttribute(filesystem.attributeMap?.mounted, [
+    'yes',
+    'on',
+    'true',
+    'mounted',
+  ]);
+
+const isKeyLoaded = (filesystem: FileSystemEntry) =>
+  isTruthyAttribute(filesystem.attributeMap?.keystatus, [
+    'available',
+    'loaded',
+    'on',
+    'yes',
+    'true',
+  ]);
+
+const hasEncryption = (filesystem: FileSystemEntry) => {
+  const value =
+    filesystem.attributeMap?.encryption ??
+    filesystem.attributeMap?.encrypted ??
+    filesystem.attributeMap?.['رمزگذاری'];
+
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  return ![
+    'off',
+    'false',
+    'no',
+    'disabled',
+    'none',
+    '—',
+    '-',
+    '',
+  ].includes(value.toLowerCase().trim());
+};
+
 const FileSystemsTable = ({
   detailViewId,
   filesystems,
+  attributeKeys,
   isLoading,
   error,
   onDeleteFilesystem,
@@ -48,146 +113,205 @@ const FileSystemsTable = ({
   isChangingPassphrase = false,
   isSettingCanmount = false,
 }: FileSystemsTableProps) => {
-
-  const getCanmountOn = (fs: FileSystemEntry) => {
-    const v = fs.attributeMap?.canmount || fs.attributeMap?.['canmount'];
-    return typeof v === 'string' && ['on','yes','true','1'].includes(v.toLowerCase().trim());
-  };
-
-  const getIsMounted = (fs: FileSystemEntry) => {
-    const v = fs.attributeMap?.mounted || fs.attributeMap?.['mounted'];
-    return typeof v === 'string' && ['yes','on','true','mounted'].includes(v.toLowerCase().trim());
-  };
-
-  const getIsKeyLoaded = (fs: FileSystemEntry) => {
-    const v = fs.attributeMap?.keystatus || fs.attributeMap?.['keystatus'];
-    return typeof v === 'string' && ['available','loaded','on','yes','true'].includes(v.toLowerCase().trim());
-  };
-
-  const getCanShowEncryptionActions = (fs: FileSystemEntry) => {
-    const value =
-      fs.attributeMap?.encryption ??
-      fs.attributeMap?.encrypted ??
-      fs.attributeMap?.['رمزگذاری'];
-
-    if (typeof value !== 'string') {
-      return false;
-    }
-
-    const normalized = value.toLowerCase().trim();
-    return !['off', 'false', 'no', 'disabled', 'none', '—', '-', ''].includes(normalized);
-  };
-
   const columns = useMemo<DataTableColumn<FileSystemEntry>[]>(() => {
-    const getAttr = (fs: FileSystemEntry, key: string) => {
-      if (!fs.attributeMap) return '—';
-      return fs.attributeMap[key] ?? fs.attributeMap[key.toLowerCase()] ?? '—';
+    const getAttribute = (filesystem: FileSystemEntry, key: string) => {
+      if (!filesystem.attributeMap) {
+        return '—';
+      }
+
+      return (
+        filesystem.attributeMap[key] ??
+        filesystem.attributeMap[key.toLowerCase()] ??
+        '—'
+      );
     };
 
     const dataColumns: DataTableColumn<FileSystemEntry>[] = [
-      { id: 'filesystem', header: 'نام فضای فایلی', align: 'left', renderCell: (fs) => <Typography sx={{ fontWeight: 700 }}>{fs.filesystemName}</Typography> },
-      { id: 'mountpoint', header: 'نقطه اتصال', align: 'left', renderCell: (fs) => <Typography>{fs.mountpoint}</Typography> },
-      { id: 'used', header: 'فضای استفاده‌شده', align: 'left', renderCell: (fs) => <Typography>{getAttr(fs, 'used')}</Typography> },
-      { id: 'available', header: 'فضای در دسترس', align: 'left', renderCell: (fs) => <Typography>{getAttr(fs, 'available')}</Typography> },
-      { id: 'referenced', header: 'فضای ارجاع‌شده', align: 'left', renderCell: (fs) => <Typography>{getAttr(fs, 'referenced')}</Typography> },
+      {
+        id: 'filesystem',
+        header: 'نام فضای فایلی',
+        align: 'left',
+        renderCell: (filesystem) => (
+          <Typography sx={{ fontWeight: 700 }}>
+            {filesystem.filesystemName}
+          </Typography>
+        ),
+      },
+      {
+        id: 'mountpoint',
+        header: 'نقطه اتصال',
+        align: 'left',
+        renderCell: (filesystem) => (
+          <Typography>{filesystem.mountpoint}</Typography>
+        ),
+      },
+      {
+        id: 'used',
+        header: 'فضای استفاده‌شده',
+        align: 'left',
+        renderCell: (filesystem) => (
+          <Typography>{getAttribute(filesystem, 'used')}</Typography>
+        ),
+      },
+      {
+        id: 'available',
+        header: 'فضای در دسترس',
+        align: 'left',
+        renderCell: (filesystem) => (
+          <Typography>{getAttribute(filesystem, 'available')}</Typography>
+        ),
+      },
+      {
+        id: 'referenced',
+        header: 'فضای ارجاع‌شده',
+        align: 'left',
+        renderCell: (filesystem) => (
+          <Typography>{getAttribute(filesystem, 'referenced')}</Typography>
+        ),
+      },
     ];
 
-    // Canmount column - only ToggleBtn (no Chip)
     const canmountColumn: DataTableColumn<FileSystemEntry> = {
       id: 'canmount',
       header: 'اتصال خودکار',
       align: 'center',
-      renderCell: (fs) => {
-        const isOn = getCanmountOn(fs);
-        const toggleId = `canmount-${fs.id}`;
-        return (
-          <ToggleBtn
-            id={toggleId}
-            checked={isOn}
-            disabled={!onSetCanmount || isSettingCanmount}
-            onChange={(checked) => onSetCanmount?.(fs, checked ? 'on' : 'off')}
-          />
-        );
-      },
+      renderCell: (filesystem) => (
+        <ToggleBtn
+          id={`canmount-${filesystem.id}`}
+          checked={isCanmountOn(filesystem)}
+          disabled={!onSetCanmount || isSettingCanmount}
+          onChange={(checked) =>
+            onSetCanmount?.(filesystem, checked ? 'on' : 'off')
+          }
+        />
+      ),
     };
 
     const actionsColumn: DataTableColumn<FileSystemEntry> = {
       id: 'actions',
       header: 'عملیات',
       align: 'center',
-      renderCell: (fs) => {
-        const isMounted = getIsMounted(fs);
-        const isKeyLoaded = getIsKeyLoaded(fs);
-        const canShowEncryptionActions = getCanShowEncryptionActions(fs);
-        const anyPending = isMounting || isUnmounting || isKeyLoading || isKeyUnloading || isChangingPassphrase || isSettingCanmount;
+      renderCell: (filesystem) => {
+        const mounted = isMounted(filesystem);
+        const keyLoaded = isKeyLoaded(filesystem);
+        const encryptionEnabled = hasEncryption(filesystem);
+        const anyPending =
+          isMounting ||
+          isUnmounting ||
+          isKeyLoading ||
+          isKeyUnloading ||
+          isChangingPassphrase ||
+          isSettingCanmount;
 
         return (
-          <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
-            {(onMount && onUnmount) && (
-              <Tooltip title={isMounted ? 'آنمانت فضای فایلی' : 'مانت فضای فایلی'}>
+          <Stack
+            direction="row"
+            spacing={0.5}
+            justifyContent="center"
+            alignItems="center"
+          >
+            {onMount && onUnmount ? (
+              <Tooltip
+                title={mounted ? 'آنمانت فضای فایلی' : 'مانت فضای فایلی'}
+              >
                 <span>
                   <IconButton
                     size="small"
-                    color={isMounted ? 'warning' : 'success'}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isMounted) onUnmount(fs);
-                      else onMount(fs);
+                    color={mounted ? 'warning' : 'success'}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (mounted) {
+                        onUnmount(filesystem);
+                      } else {
+                        onMount(filesystem);
+                      }
                     }}
                     disabled={anyPending}
-                    aria-label={isMounted ? 'آنمانت فضای فایلی' : 'مانت فضای فایلی'}
+                    aria-label={
+                      mounted ? 'آنمانت فضای فایلی' : 'مانت فضای فایلی'
+                    }
                   >
-                    {isMounted ? <MdOutlineLinkOff size={18} /> : <MdOutlineLink size={18} />}
+                    {mounted ? (
+                      <MdOutlineLinkOff size={18} />
+                    ) : (
+                      <MdOutlineLink size={18} />
+                    )}
                   </IconButton>
                 </span>
               </Tooltip>
-            )}
+            ) : null}
 
-            {canShowEncryptionActions && (onLoadKey && onUnloadKey) && (
-              <Tooltip title={isKeyLoaded ? 'تخلیه کلید رمزنگاری' : 'بارگذاری کلید رمزنگاری'}>
+            {encryptionEnabled && onLoadKey && onUnloadKey ? (
+              <Tooltip
+                title={
+                  keyLoaded
+                    ? 'تخلیه کلید رمزنگاری'
+                    : 'بارگذاری کلید رمزنگاری'
+                }
+              >
                 <span>
                   <IconButton
                     size="small"
-                    color={isKeyLoaded ? 'secondary' : 'primary'}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isKeyLoaded) onUnloadKey(fs);
-                      else onLoadKey(fs);
+                    color={keyLoaded ? 'secondary' : 'primary'}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (keyLoaded) {
+                        onUnloadKey(filesystem);
+                      } else {
+                        onLoadKey(filesystem);
+                      }
                     }}
                     disabled={anyPending}
-                    aria-label={isKeyLoaded ? 'تخلیه کلید رمزنگاری' : 'بارگذاری کلید رمزنگاری'}
+                    aria-label={
+                      keyLoaded
+                        ? 'تخلیه کلید رمزنگاری'
+                        : 'بارگذاری کلید رمزنگاری'
+                    }
                   >
-                    {isKeyLoaded ? <MdVpnKeyOff size={18} /> : <MdVpnKey size={18} />}
+                    {keyLoaded ? (
+                      <MdVpnKeyOff size={18} />
+                    ) : (
+                      <MdVpnKey size={18} />
+                    )}
                   </IconButton>
                 </span>
               </Tooltip>
-            )}
+            ) : null}
 
-            {canShowEncryptionActions && onChangePassphrase && (
-              <Tooltip title={isKeyLoaded ? 'تغییر رمز فایل سیستم' : 'برای تغییر رمز، ابتدا کلید را بارگذاری کنید'}>
+            {encryptionEnabled && onChangePassphrase ? (
+              <Tooltip
+                title={
+                  keyLoaded
+                    ? 'تغییر رمز فایل سیستم'
+                    : 'برای تغییر رمز، ابتدا کلید را بارگذاری کنید'
+                }
+              >
                 <span>
                   <IconButton
                     size="small"
                     color="info"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onChangePassphrase(fs);
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onChangePassphrase(filesystem);
                     }}
-                    disabled={anyPending || !isKeyLoaded}
+                    disabled={anyPending || !keyLoaded}
                     aria-label="تغییر گذرواژه فایل سیستم"
                   >
                     <MdLockReset size={18} />
                   </IconButton>
                 </span>
               </Tooltip>
-            )}
+            ) : null}
 
             <Tooltip title="حذف فضای فایلی">
               <span>
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={(e) => { e.stopPropagation(); onDeleteFilesystem(fs); }}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDeleteFilesystem(filesystem);
+                  }}
                   disabled={isDeleteDisabled || anyPending}
                   aria-label="حذف فضای فایلی"
                 >
@@ -202,9 +326,20 @@ const FileSystemsTable = ({
 
     return [...dataColumns, canmountColumn, actionsColumn];
   }, [
-    isDeleteDisabled, onDeleteFilesystem,
-    onMount, onUnmount, onLoadKey, onUnloadKey, onChangePassphrase, onSetCanmount,
-    isMounting, isUnmounting, isKeyLoading, isKeyUnloading, isChangingPassphrase, isSettingCanmount
+    isChangingPassphrase,
+    isDeleteDisabled,
+    isKeyLoading,
+    isKeyUnloading,
+    isMounting,
+    isSettingCanmount,
+    isUnmounting,
+    onChangePassphrase,
+    onDeleteFilesystem,
+    onLoadKey,
+    onMount,
+    onSetCanmount,
+    onUnloadKey,
+    onUnmount,
   ]);
 
   return (
@@ -212,17 +347,26 @@ const FileSystemsTable = ({
       detailViewId={detailViewId}
       columns={columns}
       data={filesystems}
-      getRowId={(fs) => fs.id}
+      getRowId={(filesystem) => filesystem.id}
       isLoading={isLoading}
       error={error}
       onRowClick={() => {}}
       renderLoadingState={() => (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            alignItems: 'center',
+          }}
+        >
           <CircularProgress color="primary" size={32} />
           <Typography>در حال دریافت اطلاعات...</Typography>
         </Box>
       )}
-      renderErrorState={(e) => <Typography color="error">خطا: {e.message}</Typography>}
+      renderErrorState={(tableError) => (
+        <Typography color="error">خطا: {tableError.message}</Typography>
+      )}
       renderEmptyState={() => <Typography>هیچ فضای فایلی وجود ندارد.</Typography>}
     />
   );
