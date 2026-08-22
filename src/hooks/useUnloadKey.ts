@@ -12,13 +12,16 @@ interface UseUnloadKeyOptions {
   onError?: (error: Error, name: string) => void;
 }
 
-export const useUnloadKey = ({ onSuccess, onError }: UseUnloadKeyOptions = {}) => {
+export const useUnloadKey = ({
+  onSuccess,
+  onError,
+}: UseUnloadKeyOptions = {}) => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<unknown, Error, UnloadKeyPayload>({
     mutationFn: async ({ poolName, filesystemName }) => {
       await axiosInstance.post('/api/filesystem/unload-key/', null, {
-        params: { name: `${poolName}/${filesystemName}`, save_to_db: false },
+        params: { name: `${poolName}/${filesystemName}` },
       });
     },
     onSuccess: (_data, variables) => {
@@ -30,9 +33,12 @@ export const useUnloadKey = ({ onSuccess, onError }: UseUnloadKeyOptions = {}) =
     },
   });
 
-  const unloadKey = useCallback((poolName: string, filesystemName: string) => {
-    mutation.mutate({ poolName, filesystemName });
-  }, [mutation]);
+  const unloadKey = useCallback(
+    (poolName: string, filesystemName: string) => {
+      mutation.mutate({ poolName, filesystemName });
+    },
+    [mutation]
+  );
 
   return {
     unloadKey,
