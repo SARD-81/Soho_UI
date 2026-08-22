@@ -10,7 +10,10 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import type { PoolDiskSlot } from '../../hooks/usePoolDeviceSlots';
 import type { ReplaceDevicePayload } from '../../hooks/useReplacePoolDisk';
-import { normalizeByIdDiskBase, normalizeReplacementOldDevice } from '../../utils/diskIdentifier';
+import {
+  normalizeByIdDiskBase,
+  normalizeReplacementOldDevice,
+} from '../../utils/diskIdentifier';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 import type { DeviceOption } from './CreatePoolModal';
@@ -45,18 +48,16 @@ const selectBaseStyles = {
 const buildOldDeviceOptions = (slots: PoolDiskSlot[]) =>
   slots.map((slot, index) => {
     const normalizedWwn = slot.wwn?.trim();
-    const wwnPath = normalizedWwn ? normalizeByIdDiskBase(normalizedWwn) : null;
-
-    const basePath = wwnPath || slot.path?.trim() || `/dev/${slot.diskName}`;
-    const label = slot.wwn
-      ? `${slot.diskName} (${slot.wwn})`
-      : `${slot.diskName}`;
+    const wwnPath = normalizedWwn
+      ? normalizeByIdDiskBase(normalizedWwn)
+      : null;
+    const basePath =
+      wwnPath || slot.path?.trim() || `/dev/${slot.diskName}`;
 
     return {
       value: basePath,
-      label,
       key: `${slot.diskName}-${index}`,
-      show: `دیسک ${slot.diskName} ( اسلات ${slot.slotNumber})`,
+      label: `دیسک ${slot.diskName} ( اسلات ${slot.slotNumber})`,
     };
   });
 
@@ -84,14 +85,14 @@ const ReplaceDiskModal = ({
 
   useEffect(() => {
     if (open) {
-      const defaultOld = oldDeviceOptions[0]?.value ?? '';
-      setOldDevice(defaultOld);
+      setOldDevice(oldDeviceOptions[0]?.value ?? '');
       setNewDevice('');
       setValidationError(null);
-    } else {
-      setOldDevice('');
-      setNewDevice('');
+      return;
     }
+
+    setOldDevice('');
+    setNewDevice('');
   }, [oldDeviceOptions, open]);
 
   const handleOldChange = (event: SelectChangeEvent<string>) => {
@@ -115,13 +116,10 @@ const ReplaceDiskModal = ({
       return;
     }
 
-    const payload: ReplaceDevicePayload = {
+    onSubmit({
       old_device: normalizeReplacementOldDevice(oldDevice),
       new_device: newDevice,
-      save_to_db: true,
-    };
-
-    onSubmit(payload);
+    });
   };
 
   return (
@@ -182,30 +180,10 @@ const ReplaceDiskModal = ({
             p: 2,
           }}
         >
-          {/* <Box
-            sx={{
-              display: 'flex',
-            //   gridTemplateColumns: 'repeat(2, minmax(0, 1fr)) 48px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 5.5,
-              pb: 1,
-              borderBottom: '1px solid var(--color-divider)',
-            }}
-          >
-            <Typography sx={{ fontWeight: 700, color: 'var(--color-primary)' }}>
-              دیسک فعلی
-            </Typography>
-            <Typography sx={{ fontWeight: 700, color: 'var(--color-primary)' }}>
-              دیسک جدید
-            </Typography>
-          </Box> */}
-
           <Box sx={{ display: 'flex', pt: 1 }}>
             <Box
               sx={{
                 display: 'flex',
-                // gridTemplateColumns: 'repeat(2, minmax(0, 1fr)) 48px',
                 gap: 3.5,
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -222,10 +200,8 @@ const ReplaceDiskModal = ({
                 دیسک فعلی
               </Typography>
               <FormControl size="small" sx={{ minWidth: 200 }}>
-                {/* <InputLabel sx={{ color: 'var(--color-secondary)' }}>دیسک فعلی</InputLabel> */}
                 <Select
                   value={oldDevice}
-                  //   label="دیسک فعلی"
                   onChange={handleOldChange}
                   sx={selectBaseStyles}
                   MenuProps={{
@@ -244,16 +220,16 @@ const ReplaceDiskModal = ({
                   </MenuItem>
                   {oldDeviceOptions.map((option) => (
                     <MenuItem key={option.key} value={option.value}>
-                      {option.show}
+                      {option.label}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Box>
+
             <Box
               sx={{
                 display: 'flex',
-                // gridTemplateColumns: 'repeat(2, minmax(0, 1fr)) 48px',
                 gap: 3.5,
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -269,15 +245,9 @@ const ReplaceDiskModal = ({
               >
                 دیسک جدید
               </Typography>
-              <FormControl
-                size="small"
-                // sx={{ minWidth: 220 }}
-                disabled={isNewDiskLoading}
-              >
-                {/* <InputLabel sx={{ color: 'var(--color-secondary)' }}>دیسک جدید</InputLabel> */}
+              <FormControl size="small" disabled={isNewDiskLoading}>
                 <Select
                   value={newDevice}
-                  //   label="دیسک جدید"
                   onChange={handleNewChange}
                   sx={selectBaseStyles}
                   MenuProps={{
@@ -303,29 +273,6 @@ const ReplaceDiskModal = ({
                   ))}
                 </Select>
               </FormControl>
-
-              {/* <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                <Tooltip title="پاک کردن انتخاب">
-                  <span>
-                    <IconButton
-                      aria-label="پاک کردن انتخاب"
-                      onClick={() => {
-                        setOldDevice(oldDeviceOptions[0]?.value ?? '');
-                        setNewDevice('');
-                      }}
-                      sx={{
-                        color: 'var(--color-error)',
-                        border: '1px solid var(--color-divider)',
-                        borderRadius: '8px',
-                        backgroundColor: 'var(--color-card-bg)',
-                        '&:hover': { backgroundColor: 'rgba(239, 83, 80, 0.08)' },
-                      }}
-                    >
-                      <MdClose size={20} />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              </Box> */}
             </Box>
           </Box>
         </Box>
