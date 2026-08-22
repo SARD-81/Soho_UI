@@ -13,13 +13,16 @@ interface UseUnmountFileSystemOptions {
   onError?: (error: Error, name: string) => void;
 }
 
-export const useUnmountFileSystem = ({ onSuccess, onError }: UseUnmountFileSystemOptions = {}) => {
+export const useUnmountFileSystem = ({
+  onSuccess,
+  onError,
+}: UseUnmountFileSystemOptions = {}) => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<unknown, Error, UnmountPayload>({
     mutationFn: async ({ poolName, filesystemName, force = false }) => {
       await axiosInstance.post('/api/filesystem/unmount/', null, {
-        params: { name: `${poolName}/${filesystemName}`, force, save_to_db: false },
+        params: { name: `${poolName}/${filesystemName}`, force },
       });
     },
     onSuccess: (_data, variables) => {
@@ -31,9 +34,12 @@ export const useUnmountFileSystem = ({ onSuccess, onError }: UseUnmountFileSyste
     },
   });
 
-  const unmount = useCallback((poolName: string, filesystemName: string, force = false) => {
-    mutation.mutate({ poolName, filesystemName, force });
-  }, [mutation]);
+  const unmount = useCallback(
+    (poolName: string, filesystemName: string, force = false) => {
+      mutation.mutate({ poolName, filesystemName, force });
+    },
+    [mutation]
+  );
 
   return {
     unmount,
