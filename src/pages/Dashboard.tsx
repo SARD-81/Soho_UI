@@ -13,27 +13,24 @@ import {
   MdOutlineDashboardCustomize,
   MdOutlineSave,
 } from 'react-icons/md';
+import { TransitionGroup } from 'react-transition-group';
 import Cpu from '../components/Cpu';
-// import Disk from '../components/Disk';
 import Memory from '../components/Memory';
 import Network from '../components/Network';
-import ServerSlots3DWidget from '../components/dashboard/server-3d/ServerSlots3DWidget';
-// import SystemInfo from '../components/SystemInfo';
-import { TransitionGroup } from 'react-transition-group';
+import PageContainer from '../components/PageContainer';
+import Zpool from '../components/Zpool';
 import DashboardLayoutPanel, {
   type DashboardLayoutPanelWidget,
 } from '../components/dashboard/DashboardLayoutPanel';
 import SortableWidget from '../components/dashboard/SortableWidget';
 import SystemUptimeBadge from '../components/dashboard/SystemUptimeBadge';
-import PageContainer from '../components/PageContainer';
-import Zpool from '../components/Zpool';
+import ServerSlots3DWidget from '../components/dashboard/server-3d/ServerSlots3DWidget';
 import { useAuth } from '../contexts/AuthContext';
 
 // Versioned base key used to persist each user's dashboard layout separately.
 const LAYOUT_STORAGE_BASE_KEY = 'dashboard-layout.v2';
 
 type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-
 type ResponsiveSpanConfig = Partial<Record<BreakpointKey, number>>;
 
 interface WidgetLayoutConfig {
@@ -98,7 +95,6 @@ const createResponsiveSpan = (
       }
 
       acc[breakpoint] = `span ${clampSpan(currentSpan, maxSpan)}`;
-
       return acc;
     },
     {} as Record<BreakpointKey, string>
@@ -107,27 +103,6 @@ const createResponsiveSpan = (
 
 // Central registry for dashboard widgets, their default grid spans, and optional layout presets.
 const dashboardWidgets: DashboardWidgetDefinition[] = [
-  // {
-  //   id: 'system-info',
-  //   title: 'اطلاعات سیستم',
-  //   description: 'نمای کلی از نسخه، پلتفرم، نام میزبان و وضعیت به‌روزرسانی سیستم',
-  //   component: SystemInfo,
-  //   columns: { xs: 12, md: 6, xl: 4 },
-  //   layoutOptions: [
-  //     {
-  //       id: 'system-info-compact',
-  //       label: 'چیدمان فشرده',
-  //       description: 'ابعاد متعادل برای نمایش در کنار سایر ویجت‌ها',
-  //       columns: { xs: 12, md: 5, xl: 3 },
-  //     },
-  //     {
-  //       id: 'system-info-wide',
-  //       label: 'نمای گسترده',
-  //       description: 'فضای بیشتر برای نمایش جزئیات سیستم',
-  //       columns: { xs: 12, md: 12, xl: 6 },
-  //     },
-  //   ],
-  // },
   {
     id: 'cpu',
     title: 'وضعیت پردازنده',
@@ -210,44 +185,29 @@ const dashboardWidgets: DashboardWidgetDefinition[] = [
     ],
   },
   {
-  id: 'server-3d-slots',
-  title: 'نمای سه‌بعدی سرور',
-  description: 'مدل تعاملی اسلات‌های سرور و نمایش جزئیات دیسک هر اسلات',
-  component: ServerSlots3DWidget,
-  columns: { xs: 12, md: 12, xl: 12 },
-  minHeight: 560,
-  layoutOptions: [
-    {
-      id: 'server-3d-compact',
-      label: 'چیدمان فشرده',
-      description: 'نمای مناسب برای داشبوردهای شلوغ‌تر',
-      columns: { xs: 12, md: 8, xl: 8 },
-      minHeight: 520,
-    },
-    {
-      id: 'server-3d-wide',
-      label: 'نمای کامل',
-      description: 'مدل سه‌بعدی و پنل جزئیات کنار هم',
-      columns: { xs: 12, md: 12, xl: 12 },
-      minHeight: 560,
-    },
-  ],
-},
-  // {
-  //   id: 'disk',
-  //   title: 'سلامت دیسک‌ها',
-  //   description: 'بررسی وضعیت درایوها و ظرفیت استفاده‌شده',
-  //   component: Disk,
-  //   columns: { xs: 12 },
-  //   layoutOptions: [
-  //     {
-  //       id: 'disk-half',
-  //       label: 'نمای ستونی',
-  //       description: 'نمایش در کنار سایر ویجت‌ها',
-  //       columns: { xs: 12, md: 6, xl: 6 },
-  //     },
-  //   ],
-  // },
+    id: 'server-3d-slots',
+    title: 'نمای سه‌بعدی سرور',
+    description: 'مدل تعاملی اسلات‌های سرور و نمایش جزئیات دیسک هر اسلات',
+    component: ServerSlots3DWidget,
+    columns: { xs: 12, md: 12, xl: 12 },
+    minHeight: 560,
+    layoutOptions: [
+      {
+        id: 'server-3d-compact',
+        label: 'چیدمان فشرده',
+        description: 'نمای مناسب برای داشبوردهای شلوغ‌تر',
+        columns: { xs: 12, md: 8, xl: 8 },
+        minHeight: 520,
+      },
+      {
+        id: 'server-3d-wide',
+        label: 'نمای کامل',
+        description: 'مدل سه‌بعدی و پنل جزئیات کنار هم',
+        columns: { xs: 12, md: 12, xl: 12 },
+        minHeight: 560,
+      },
+    ],
+  },
   {
     id: 'network',
     title: 'ترافیک شبکه',
@@ -329,6 +289,7 @@ const cloneLayoutState = (state: LayoutState): LayoutState => ({
 
 const Dashboard = () => {
   const { username } = useAuth();
+
   // Scopes saved dashboard layouts per username, with a stable guest fallback.
   const layoutStorageKey = useMemo(() => {
     const normalizedUsername = username?.trim().toLowerCase();
@@ -336,6 +297,7 @@ const Dashboard = () => {
       ? `${LAYOUT_STORAGE_BASE_KEY}:${normalizedUsername}`
       : `${LAYOUT_STORAGE_BASE_KEY}:guest`;
   }, [username]);
+
   const widgetIds = useMemo(
     () => dashboardWidgets.map((widget) => widget.id),
     []
@@ -772,12 +734,6 @@ const Dashboard = () => {
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             داشبورد
           </Typography>
-          {/* <Stack direction="row" gap={1} alignItems="center" mt={0.5}>
-            <MdAutoAwesome size={18} color="var(--color-primary-500, currentColor)" />
-            <Typography variant="body2" color="text.secondary">
-              با استفاده از ابزارهای طرح‌بندی، ویجت‌ها را مرتب، اضافه یا پنهان کنید
-            </Typography>
-          </Stack> */}
         </Box>
 
         <SystemUptimeBadge />
