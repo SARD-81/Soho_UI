@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import axiosInstance from '../lib/axiosInstance';
+import { encodeUtf8ToBase64 } from '../utils/base64';
 
 interface LoadKeyPayload {
   poolName: string;
@@ -13,17 +14,6 @@ interface UseLoadKeyOptions {
   onError?: (error: Error, name: string) => void;
 }
 
-const encodePassphraseToBase64 = (passphrase: string) => {
-  const bytes = new TextEncoder().encode(passphrase);
-  let binaryValue = '';
-
-  bytes.forEach((byte) => {
-    binaryValue += String.fromCharCode(byte);
-  });
-
-  return window.btoa(binaryValue);
-};
-
 export const useLoadKey = ({ onSuccess, onError }: UseLoadKeyOptions = {}) => {
   const queryClient = useQueryClient();
 
@@ -31,10 +21,8 @@ export const useLoadKey = ({ onSuccess, onError }: UseLoadKeyOptions = {}) => {
     mutationFn: async ({ poolName, filesystemName, passphrase }) => {
       await axiosInstance.post(
         '/api/filesystem/load-key/',
-        { passphrase: encodePassphraseToBase64(passphrase) },
-        {
-          params: { name: `${poolName}/${filesystemName}`, save_to_db: false },
-        }
+        { passphrase: encodeUtf8ToBase64(passphrase) },
+        { params: { name: `${poolName}/${filesystemName}` } }
       );
     },
     onSuccess: (_data, variables) => {
