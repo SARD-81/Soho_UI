@@ -23,7 +23,6 @@ import ToggleBtn from '../ToggleBtn';
 interface FileSystemsTableProps {
   detailViewId: string;
   filesystems: FileSystemEntry[];
-  attributeKeys: string[];
   isLoading: boolean;
   error: Error | null;
   onDeleteFilesystem: (filesystem: FileSystemEntry) => void;
@@ -95,7 +94,6 @@ const hasEncryption = (filesystem: FileSystemEntry) => {
 const FileSystemsTable = ({
   detailViewId,
   filesystems,
-  attributeKeys,
   isLoading,
   error,
   onDeleteFilesystem,
