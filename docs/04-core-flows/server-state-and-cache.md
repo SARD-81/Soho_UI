@@ -103,8 +103,9 @@ Examples verified from current hooks include:
 - `['disk', 'partitioned']` — historical key currently used for available unpartitioned disks in storage workflows
 - `['disk', 'inventory']`
 - `['filesystems']`
+- `['volumes']`
 - `['services']`
-- `['service-status', serviceName]`
+- `['services', 'status', serviceUnit]`
 - `['cpu']`
 - `['memory']`
 - `['system', 'uptime']`
@@ -140,6 +141,8 @@ Status-change notifications use ordinary resource hooks:
 When a page uses the same key, React Query can share that entry.
 
 Dashboard widgets follow the same principle for domain data such as `['zpool']` instead of creating page-specific copies of the same resource.
+
+The Services page additionally creates one `['services','status', unit]` query per service. Those entries are intentionally distinct from the shared list query.
 
 ### Dedicated monitoring keys
 
@@ -202,7 +205,8 @@ Examples:
 - network bandwidth refreshes every two seconds once interface names are known;
 - zpool/storage views refresh more slowly;
 - the Dashboard 3D slot view overrides the default pool-slot cadence to 10 seconds;
-- filesystem list data currently relies on mount/refetch/invalidation rather than continuous polling;
+- filesystem and Volume list data currently rely on mount/refetch/invalidation rather than continuous polling;
+- Services runs both a 5-second list query and 5-second per-unit status queries;
 - some detail queries poll only while the relevant UI is enabled;
 - notification capacity monitors use dedicated 60-second queries;
 - disk-temperature monitoring uses a 30-second inventory query.
@@ -255,6 +259,14 @@ Legacy caller-level persistence flags are being removed from hooks because they 
 
 See [`state-sync-save-to-db.md`](./state-sync-save-to-db.md).
 
+## StateSync coverage is explicit
+
+Not every React Query resource automatically has a persisted StateSync domain.
+
+For example, the current frontend defines persisted domains for zpool, filesystem, disk, NFS, Samba resources, Web Share, and SNMP, but not for Volume or system-service control.
+
+That distinction must be treated as an explicit backend/frontend contract. A feature without a StateSync domain must not invent `save_to_db=true` locally. If persistence is required, extend centralized StateSync only after confirming the canonical snapshot endpoint and cross-domain effects.
+
 ## Adding a new server-state query
 
 When adding a new query:
@@ -268,7 +280,7 @@ When adding a new query:
 7. if polling is required, define the interval intentionally and disable background polling unless justified;
 8. define `staleTime` based on how quickly the resource changes;
 9. identify mutations that must invalidate the query;
-10. determine whether the resource is a persisted StateSync domain or UI-only server state;
+10. determine whether the resource is a persisted StateSync domain or UI-only/operational server state;
 11. document non-obvious lifecycle constraints.
 
 ## Adding a mutation
@@ -289,15 +301,17 @@ After success:
 
 If the mutation affects multiple persisted domains, extend `resolveStateDomainsForMutation` instead of adding ad-hoc snapshot calls inside the feature hook.
 
+If no StateSync domain exists, confirm whether that is intentional before adding one.
+
 ## Debugging stale UI data
 
 When the UI appears stale, inspect in this order:
 
 1. Is the expected query mounted and enabled?
 2. What exact query key owns the data?
-3. Is it an ordinary resource key or a dedicated monitor key?
+3. Is it an ordinary resource key, a per-entity key, or a dedicated monitor key?
 4. Is its query key the same key that a targeted mutation invalidates?
-5. Does the query intentionally poll, or is refresh expected only on invalidation/mount?
+5. Does the query intentionally poll, or is refresh expected only on invalidation/mount/manual refresh?
 6. Did the caller override the hook's interval, `enabled`, focus, or reconnect behavior?
 7. Is `staleTime` delaying a behavior you expected to be immediate?
 8. Did the mutation actually succeed?
@@ -312,11 +326,12 @@ If equivalent endpoint traffic appears multiple times:
 
 1. compare the query keys, not only the URLs;
 2. check notification-specific monitoring keys;
-3. compare polling intervals and enabled lifecycles;
-4. inspect caller-specific overrides such as the 3D slot 10-second cadence;
-5. check whether mutation invalidation occurred at the same time as a scheduled poll;
-6. inspect mount/unmount revalidation;
-7. only then investigate framework-level causes such as StrictMode.
+3. account for intentional per-entity queries such as `['services','status', unit]`;
+4. compare polling intervals and enabled lifecycles;
+5. inspect caller-specific overrides such as the 3D slot 10-second cadence;
+6. check whether mutation invalidation occurred at the same time as a scheduled poll;
+7. inspect mount/unmount revalidation;
+8. only then investigate framework-level causes such as StrictMode.
 
 Different query keys are independent entries and can legitimately create separate requests.
 
@@ -327,10 +342,11 @@ If the backend database snapshot is stale while the live UI is correct, inspect 
 1. Did the mutation pass through `axiosInstance`?
 2. Did it succeed?
 3. Does its URL map to a persisted domain?
-4. Was a canonical snapshot scheduled?
-5. Was the snapshot coalesced with another mutation?
-6. Did a sync fail while another was in flight?
-7. Does the canonical endpoint still return the complete state required for persistence?
+4. If no domain maps, is persistence actually part of the feature contract?
+5. Was a canonical snapshot scheduled?
+6. Was the snapshot coalesced with another mutation?
+7. Did a sync fail while another was in flight?
+8. Does the canonical endpoint still return the complete state required for persistence?
 
 ## Maintenance invariants
 
@@ -341,6 +357,7 @@ Preserve these rules when refactoring:
 - failed mutations must not schedule persistence snapshots;
 - polling should be scoped to mounted/enabled consumers and normally stop in the background;
 - identical query keys may share lifecycle, while different keys represent independent entries;
+- per-entity query fan-out must be treated as intentional backend load and documented where material;
 - caller-level query overrides are part of runtime behavior and must be considered during audits;
 - dedicated notification monitoring keys must be documented as independent traffic when applicable;
 - browser notification storage and dashboard-layout storage are client bookkeeping/preferences, not authoritative server state;
@@ -357,6 +374,7 @@ Preserve these rules when refactoring:
 - `src/hooks/useNetwork.ts`
 - `src/hooks/useZpool.ts`
 - `src/hooks/useFileSystems.ts`
+- `src/hooks/useVolumes.ts`
 - `src/hooks/useDisk.ts`
 - `src/hooks/useDiskInventory.ts`
 - `src/hooks/useServices.ts`
@@ -376,3 +394,6 @@ Preserve these rules when refactoring:
 - [`../05-features/dashboard.md`](../05-features/dashboard.md)
 - [`../05-features/disks.md`](../05-features/disks.md)
 - [`../05-features/integrated-storage.md`](../05-features/integrated-storage.md)
+- [`../05-features/block-storage.md`](../05-features/block-storage.md)
+- [`../05-features/file-system.md`](../05-features/file-system.md)
+- [`../05-features/services.md`](../05-features/services.md)
