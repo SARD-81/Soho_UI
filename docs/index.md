@@ -18,8 +18,8 @@ If you return to the project after a long break, read the documents in this orde
 8. [`04-core-flows/server-state-and-cache.md`](./04-core-flows/server-state-and-cache.md) — ownership of server state, cache, invalidation, and UI freshness.
 9. [`04-core-flows/state-sync-save-to-db.md`](./04-core-flows/state-sync-save-to-db.md) — canonical backend snapshot persistence and `save_to_db` invariants.
 10. [`04-core-flows/polling-and-data-refresh.md`](./04-core-flows/polling-and-data-refresh.md) — the maintained polling inventory and refresh policy.
-11. [`04-core-flows/notifications.md`](./04-core-flows/notifications.md) — notification baselines, shared-query observation, and duplicate suppression.
-12. The relevant feature document before modifying feature-specific behavior.
+11. [`04-core-flows/notifications.md`](./04-core-flows/notifications.md) — notification baselines, monitoring lifecycles, and duplicate suppression.
+12. The relevant document under [`05-features/`](./05-features/) before modifying feature-specific behavior.
 
 ## Documentation map
 
@@ -45,6 +45,16 @@ If you return to the project after a long break, read the documents in this orde
 - [`04-core-flows/state-sync-save-to-db.md`](./04-core-flows/state-sync-save-to-db.md)
 - [`04-core-flows/polling-and-data-refresh.md`](./04-core-flows/polling-and-data-refresh.md)
 - [`04-core-flows/notifications.md`](./04-core-flows/notifications.md)
+
+### Features
+
+Feature documents describe the actual page-level user flow, query/mutation ownership, backend dependencies, business rules, failure modes, and extension points.
+
+- [`05-features/dashboard.md`](./05-features/dashboard.md) — live monitoring widgets, per-user layout customization, polling, uptime, and 3D server slots.
+- [`05-features/disks.md`](./05-features/disks.md) — disk inventory/details, pool ownership, partition safety checks, and destructive cleanup flow.
+- [`05-features/integrated-storage.md`](./05-features/integrated-storage.md) — zpool lifecycle, create/add/replace/delete/import/export, slot mapping, properties, and conditional storage polling.
+
+More feature documents are added incrementally as their implementation is audited.
 
 ### Other maintained notes
 
@@ -115,6 +125,9 @@ docs/
 │   ├── polling-and-data-refresh.md
 │   └── notifications.md
 ├── 05-features/
+│   ├── dashboard.md
+│   ├── disks.md
+│   └── integrated-storage.md
 ├── 06-api/
 └── 07-operations/
 ```
