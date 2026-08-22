@@ -2,7 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import type { FormEvent } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { normalizeVdevType, validateVdevDeviceSelection } from '../constants/vdev';
+import {
+  normalizeVdevType,
+  validateVdevDeviceSelection,
+} from '../constants/vdev';
 import axiosInstance from '../lib/axiosInstance';
 import { fetchPoolVdevType } from '../lib/poolDevices';
 
@@ -17,7 +20,6 @@ interface AddPoolDevicesPayload {
   pool_name: string;
   devices: string[];
   vdev_type: string;
-  save_to_db: boolean;
 }
 
 interface UseAddPoolDevicesOptions {
@@ -57,7 +59,9 @@ const extractApiMessage = (error: AxiosError<ApiErrorResponse>) => {
   return error.message;
 };
 
-export const useAddPoolDevices = (options: UseAddPoolDevicesOptions = {}) => {
+export const useAddPoolDevices = (
+  options: UseAddPoolDevicesOptions = {}
+) => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [poolName, setPoolName] = useState<string | null>(null);
@@ -142,8 +146,14 @@ export const useAddPoolDevices = (options: UseAddPoolDevicesOptions = {}) => {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['zpool'] });
-      queryClient.invalidateQueries({ queryKey: ['zpool', 'devices'], exact: false });
-      queryClient.invalidateQueries({ queryKey: ['zpool', 'devices', 'slots'], exact: false });
+      queryClient.invalidateQueries({
+        queryKey: ['zpool', 'devices'],
+        exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['zpool', 'devices', 'slots'],
+        exact: false,
+      });
       queryClient.invalidateQueries({ queryKey: ['disk', 'partitioned'] });
       closeModal();
       options.onSuccess?.(variables.pool_name);
@@ -218,7 +228,6 @@ export const useAddPoolDevices = (options: UseAddPoolDevicesOptions = {}) => {
         pool_name: poolName,
         devices: selectedDevices,
         vdev_type: normalizedVdevType,
-        save_to_db: true,
       });
     },
     [addDevicesMutation, effectiveVdevType, poolName, selectedDevices]
