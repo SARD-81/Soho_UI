@@ -4,8 +4,10 @@ import { useCallback, useState } from 'react';
 import axiosInstance from '../lib/axiosInstance';
 import extractApiErrorMessage from '../utils/apiError';
 
-const DEFAULT_IMPORT_POOL_ERROR_MESSAGE = 'امکان درون‌ریزی فضای یکپارچه وجود ندارد.';
-const DEFAULT_IMPORTABLE_POOLS_ERROR_MESSAGE = 'امکان دریافت فهرست فضاهای قابل فراخوانی وجود ندارد.';
+const DEFAULT_IMPORT_POOL_ERROR_MESSAGE =
+  'امکان درون‌ریزی فضای یکپارچه وجود ندارد.';
+const DEFAULT_IMPORTABLE_POOLS_ERROR_MESSAGE =
+  'امکان دریافت فهرست فضاهای قابل فراخوانی وجود ندارد.';
 
 export const importablePoolsQueryKey = ['zpool', 'importable'] as const;
 
@@ -17,7 +19,6 @@ export interface ImportablePoolEntry {
 
 interface ImportPoolPayload {
   pool_name: string;
-  save_to_db: boolean;
 }
 
 interface UseImportPoolOptions {
@@ -59,13 +60,15 @@ const normalizeImportablePools = (payload: unknown): ImportablePoolEntry[] => {
   const rawItems = Array.isArray(responseBody)
     ? responseBody
     : responseBody && typeof responseBody === 'object'
-      ? Object.entries(responseBody as Record<string, unknown>).map(([key, value]) => {
-          if (value && typeof value === 'object') {
-            return { id: key, ...(value as Record<string, unknown>) };
-          }
+      ? Object.entries(responseBody as Record<string, unknown>).map(
+          ([key, value]) => {
+            if (value && typeof value === 'object') {
+              return { id: key, ...(value as Record<string, unknown>) };
+            }
 
-          return { id: key, name: value };
-        })
+            return { id: key, name: value };
+          }
+        )
       : [];
 
   return rawItems
@@ -90,7 +93,10 @@ const normalizeImportablePools = (payload: unknown): ImportablePoolEntry[] => {
     .sort((a, b) => a.name.localeCompare(b.name));
 };
 
-export const useImportPool = ({ onSuccess, onError }: UseImportPoolOptions = {}) => {
+export const useImportPool = ({
+  onSuccess,
+  onError,
+}: UseImportPoolOptions = {}) => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [poolName, setPoolName] = useState('');
@@ -105,7 +111,10 @@ export const useImportPool = ({ onSuccess, onError }: UseImportPoolOptions = {})
         return normalizeImportablePools(response.data);
       } catch (error) {
         throw new Error(
-          extractApiErrorMessage(error, DEFAULT_IMPORTABLE_POOLS_ERROR_MESSAGE)
+          extractApiErrorMessage(
+            error,
+            DEFAULT_IMPORTABLE_POOLS_ERROR_MESSAGE
+          )
         );
       }
     },
@@ -116,7 +125,9 @@ export const useImportPool = ({ onSuccess, onError }: UseImportPoolOptions = {})
       try {
         await axiosInstance.post('/api/zpool/import/', payload);
       } catch (error) {
-        throw new Error(extractApiErrorMessage(error, DEFAULT_IMPORT_POOL_ERROR_MESSAGE));
+        throw new Error(
+          extractApiErrorMessage(error, DEFAULT_IMPORT_POOL_ERROR_MESSAGE)
+        );
       }
     },
     onSuccess: (_data, variables) => {
@@ -157,8 +168,7 @@ export const useImportPool = ({ onSuccess, onError }: UseImportPoolOptions = {})
       }
 
       setErrorMessage(null);
-
-      importMutation.mutate({ pool_name: trimmedName, save_to_db: true });
+      importMutation.mutate({ pool_name: trimmedName });
     },
     [importMutation, poolName]
   );
