@@ -96,19 +96,20 @@ Feature hooks may also invalidate focused query keys in their own `onSuccess` ha
 
 Query keys identify cache entries and query lifecycles.
 
-Examples include:
+Examples verified from current hooks include:
 
 - `['zpool']`
 - `['disk']`
-- `['disk', 'partitioned']`
+- `['disk', 'partitioned']` — historical key currently used for available unpartitioned disks in storage workflows
 - `['disk', 'inventory']`
 - `['filesystems']`
 - `['services']`
 - `['service-status', serviceName]`
-- `['system', 'cpu']`
-- `['system', 'memory']`
+- `['cpu']`
+- `['memory']`
+- `['system', 'uptime']`
 - `['network']`
-- `['network-bandwidth', interfaces]`
+- `['network', 'bandwidth-snapshots', interfaceNames]`
 - `['notifications', 'capacity', 'zpool']`
 - `['notifications', 'capacity', 'filesystems']`
 
@@ -137,6 +138,8 @@ Status-change notifications use ordinary resource hooks:
 - service status observes `useServices()` / `['services']`.
 
 When a page uses the same key, React Query can share that entry.
+
+Dashboard widgets follow the same principle for domain data such as `['zpool']` instead of creating page-specific copies of the same resource.
 
 ### Dedicated monitoring keys
 
@@ -182,6 +185,8 @@ Use local React state for ephemeral UI concerns such as:
 - temporary confirmation state;
 - countdowns and animations.
 
+Browser-persisted UI preferences such as the Dashboard layout are also distinct from server state: they may survive a reload, but they are still client-side presentation state rather than authoritative managed-system data.
+
 Use React Query for data whose authoritative value comes from the backend.
 
 A useful test is: **if another operator or backend process could change the value without this component knowing, it is server state.**
@@ -192,9 +197,11 @@ There is deliberately no global polling interval. Each hook or monitoring query 
 
 Examples:
 
-- CPU and memory telemetry refresh quickly;
-- network bandwidth refreshes quickly while observed;
+- uptime refreshes every second on the Dashboard;
+- CPU and memory telemetry refresh every two seconds;
+- network bandwidth refreshes every two seconds once interface names are known;
 - zpool/storage views refresh more slowly;
+- the Dashboard 3D slot view overrides the default pool-slot cadence to 10 seconds;
 - filesystem list data currently relies on mount/refetch/invalidation rather than continuous polling;
 - some detail queries poll only while the relevant UI is enabled;
 - notification capacity monitors use dedicated 60-second queries;
@@ -209,6 +216,18 @@ Continuous queries normally use `refetchIntervalInBackground: false`.
 This matters because administrative dashboards can otherwise continue generating traffic when the browser tab is hidden.
 
 If a future feature truly requires background polling, document the operational reason before enabling it.
+
+## Feature-level overrides are part of the contract
+
+A hook default is not always the final runtime behavior. Pages/components can intentionally override cadence or lifecycle.
+
+Examples:
+
+- `usePoolDeviceSlots()` defaults to 30 seconds, while `ServerSlots3DWidget` supplies 10 seconds;
+- Integrated Storage enables its legacy `['disk','partitioned']` query only while Create/Add/Replace workflows need available unpartitioned disks and supplies a 5-second interval;
+- `useDiskInventory()` explicitly opts into window-focus refetch although the global QueryClient disables it.
+
+When debugging or documenting freshness, inspect both the hook and the caller.
 
 ## Notifications are React Query consumers with their own bookkeeping
 
@@ -279,10 +298,11 @@ When the UI appears stale, inspect in this order:
 3. Is it an ordinary resource key or a dedicated monitor key?
 4. Is its query key the same key that a targeted mutation invalidates?
 5. Does the query intentionally poll, or is refresh expected only on invalidation/mount?
-6. Is `staleTime` delaying a behavior you expected to be immediate?
-7. Did the mutation actually succeed?
-8. Is the endpoint response correct before normalization?
-9. Are multiple hooks representing equivalent backend data under intentionally different keys?
+6. Did the caller override the hook's interval, `enabled`, focus, or reconnect behavior?
+7. Is `staleTime` delaying a behavior you expected to be immediate?
+8. Did the mutation actually succeed?
+9. Is the endpoint response correct before normalization?
+10. Are multiple hooks representing equivalent backend data under intentionally different keys?
 
 Do not solve a UI freshness issue by enabling `save_to_db=true`.
 
@@ -293,9 +313,10 @@ If equivalent endpoint traffic appears multiple times:
 1. compare the query keys, not only the URLs;
 2. check notification-specific monitoring keys;
 3. compare polling intervals and enabled lifecycles;
-4. check whether mutation invalidation occurred at the same time as a scheduled poll;
-5. inspect mount/unmount revalidation;
-6. only then investigate framework-level causes such as StrictMode.
+4. inspect caller-specific overrides such as the 3D slot 10-second cadence;
+5. check whether mutation invalidation occurred at the same time as a scheduled poll;
+6. inspect mount/unmount revalidation;
+7. only then investigate framework-level causes such as StrictMode.
 
 Different query keys are independent entries and can legitimately create separate requests.
 
@@ -320,8 +341,9 @@ Preserve these rules when refactoring:
 - failed mutations must not schedule persistence snapshots;
 - polling should be scoped to mounted/enabled consumers and normally stop in the background;
 - identical query keys may share lifecycle, while different keys represent independent entries;
+- caller-level query overrides are part of runtime behavior and must be considered during audits;
 - dedicated notification monitoring keys must be documented as independent traffic when applicable;
-- browser notification storage is bookkeeping, not authoritative server state;
+- browser notification storage and dashboard-layout storage are client bookkeeping/preferences, not authoritative server state;
 - feature code must not call persistence snapshots ad hoc.
 
 ## Related files
@@ -329,16 +351,20 @@ Preserve these rules when refactoring:
 - `src/main.tsx`
 - `src/lib/axiosInstance.ts`
 - `src/lib/stateSyncManager.ts`
+- `src/hooks/useCpu.ts`
+- `src/hooks/useMemory.ts`
+- `src/hooks/useSystemUptime.ts`
+- `src/hooks/useNetwork.ts`
 - `src/hooks/useZpool.ts`
 - `src/hooks/useFileSystems.ts`
 - `src/hooks/useDisk.ts`
 - `src/hooks/useDiskInventory.ts`
 - `src/hooks/useServices.ts`
 - `src/hooks/useServiceStatuses.ts`
-- `src/hooks/useNetwork.ts`
 - `src/hooks/useStartupNotificationChecks.ts`
 - `src/hooks/useResourceStatusChangeNotifications.ts`
 - `src/hooks/useDiskTemperatureNotifications.ts`
+- `src/components/dashboard/server-3d/ServerSlots3DWidget.tsx`
 - `src/components/notifications/NotificationBootstrapper.tsx`
 
 ## Related documentation
@@ -347,3 +373,6 @@ Preserve these rules when refactoring:
 - [`state-sync-save-to-db.md`](./state-sync-save-to-db.md)
 - [`polling-and-data-refresh.md`](./polling-and-data-refresh.md)
 - [`notifications.md`](./notifications.md)
+- [`../05-features/dashboard.md`](../05-features/dashboard.md)
+- [`../05-features/disks.md`](../05-features/disks.md)
+- [`../05-features/integrated-storage.md`](../05-features/integrated-storage.md)
