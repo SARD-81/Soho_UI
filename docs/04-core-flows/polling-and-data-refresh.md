@@ -37,18 +37,20 @@ The following intervals were verified from the current source on the documentati
 
 | Resource / monitor | Query / endpoint | Interval | Scope / behavior |
 | --- | --- | ---: | --- |
-| CPU | `['system','cpu']` → `/api/system/cpu/` | 2 s | While mounted; background polling disabled. |
-| Memory | `['system','memory']` → `/api/system/memory/` | 2 s | While mounted; background polling disabled. |
-| Network bandwidth | `['network-bandwidth', interfaces]` → `/api/network/bandwidth/` | 2 s | While the bandwidth hook is active; background polling disabled. |
+| System uptime | `['system','uptime']` → `/api/system/uptime/` | 1 s | Dashboard uptime badge while mounted; background polling disabled. |
+| CPU | `['cpu']` → `/api/system/cpu/` | 2 s | While mounted; background polling disabled. |
+| Memory | `['memory']` → `/api/system/memory/` | 2 s | While mounted; background polling disabled. |
+| Network bandwidth | `['network','bandwidth-snapshots', interfaceNames]` → per-interface `/api/system/network/{name}/bandwidth/` | 2 s | Starts after interface details provide names; background polling disabled. |
 | Zpool list | `['zpool']` → `/api/zpool/` | 30 s default | Used by ordinary zpool consumers and status monitoring; background polling disabled. |
-| Partitioned disks used by storage dialogs | `['disk','partitioned']` | 5 s in Integrated Storage | Enabled only while create/add/replace storage workflows need it. |
+| Available unpartitioned disks for storage dialogs | legacy key `['disk','partitioned']` | 5 s in Integrated Storage | Enabled only while create/add/replace storage workflows need eligible disks. The historical hook/key name is misleading. |
 | Pool device slots | `['zpool','devices','slots', ...]` | 30 s default | Only while the consuming view is enabled/mounted; background polling disabled. |
+| Dashboard 3D pool device slots | same pool-slot query family | 10 s caller override | `ServerSlots3DWidget` intentionally refreshes physical slot mapping faster than the hook default. |
 | Selected zpool details | `['zpool', poolName, 'details']` | 30 s when enabled | Stops when the detail query is disabled. |
 | Services list | `['services']` → `/api/system/service/` | 5 s | While mounted; background polling disabled. |
 | Individual service status | `['service-status', name]` | 5 s | One query per displayed service; background polling disabled. |
 | Notification capacity: zpool | `['notifications','capacity','zpool']` using `fetchZpools` | 60 s | Dedicated notification query; separate cache entry from `['zpool']`. |
 | Notification capacity: filesystems | `['notifications','capacity','filesystems']` using `fetchFileSystems` | 60 s | Dedicated notification query; separate cache entry from ordinary filesystem queries. |
-| Notification temperature: disk inventory | `['disk','inventory']` → `/api/disk/?detail=true` | 30 s | Used by disk-temperature monitoring; background polling disabled. |
+| Notification temperature: disk inventory | `['disk','inventory']` → `/api/disk/` | 30 s | Used by disk-temperature monitoring; background polling disabled. |
 
 The exact caller can override some hook defaults. When documenting a page, describe the interval actually supplied by that page, not only the hook default.
 
@@ -62,8 +64,7 @@ Examples verified from current source:
 | --- | --- |
 | Filesystem list | Fetch on mount/revalidation/invalidation; `staleTime` 15 s; no continuous interval in `useFileSystems`. |
 | Volume type list | Fetch on mount and mutation invalidation; no continuous interval. |
-| Network interfaces | Cached query with `staleTime` 30 s; no continuous interval. |
-| Network interface detail | Enabled per selected interface, `staleTime` 10 s; no continuous interval. |
+| Network interface/detail discovery | `useNetwork()` loads the interface list and per-interface details without a continuous base-data interval; only bandwidth snapshots poll continuously. |
 | Disk status query used by status notifications | `useDisk()` has no interval when called without an override. |
 | Samba/NFS/Web-share configuration | Primarily mount/invalidation driven unless a specific hook explicitly adds an interval. |
 | System/configuration information | Treat as non-polling unless the current hook explicitly declares otherwise. |
@@ -76,7 +77,7 @@ A useful distinction is:
 
 ### Telemetry
 
-Values such as CPU, memory, bandwidth, temperatures, and actively observed service status can change without a user mutation. These are reasonable polling candidates.
+Values such as uptime, CPU, memory, bandwidth, temperatures, and actively observed service status can change without a user mutation. These are reasonable polling candidates.
 
 ### Configuration and inventory
 
@@ -102,7 +103,7 @@ Global focus/reconnect refetch is disabled.
 
 This prevents returning to a tab from triggering a large fan-out of requests across many mounted administrative widgets.
 
-A hook may override this only when the resource semantics justify it.
+A hook may override this only when the resource semantics justify it. For example, `useDiskInventory()` explicitly enables window-focus refetch for the Disks feature.
 
 ## Mutation refresh
 
@@ -141,6 +142,8 @@ Status-change monitoring uses ordinary resource hooks:
 
 Where page-level consumers use the same key, React Query can share the cache/query lifecycle.
 
+The Dashboard also reuses the ordinary `['zpool']` resource key in multiple widgets rather than inventing a dashboard-only zpool cache.
+
 ### Dedicated notification keys
 
 Capacity monitoring intentionally has independent query entries:
@@ -150,7 +153,7 @@ Capacity monitoring intentionally has independent query entries:
 
 These use the same fetch functions as ordinary resource queries but not the same query keys. They can therefore generate independent network requests.
 
-Disk-temperature monitoring also uses the dedicated inventory key `['disk','inventory']` every 30 seconds.
+Disk-temperature monitoring also uses the disk-inventory key `['disk','inventory']` every 30 seconds.
 
 Do not describe two different query keys as deduplicated merely because they hit the same endpoint or reuse the same fetch function.
 
@@ -160,10 +163,10 @@ Polling should stop when the user cannot benefit from it.
 
 Examples:
 
-- partitioned-disk polling is enabled only while storage mutation dialogs need that state;
+- the legacy `usePartitionedDisks` query is enabled only while storage mutation dialogs need available unpartitioned disks;
 - zpool detail polling runs only for selected/enabled details;
-- pool-slot mapping only runs while a storage visualization consuming it is mounted;
-- bandwidth polling depends on the interfaces being actively observed;
+- Integrated Storage pool-slot mapping starts only after slot-dependent UI is requested;
+- bandwidth polling depends on discovered interface names;
 - notification monitors exist while `NotificationBootstrapper` is mounted in the authenticated layout.
 
 Prefer `enabled` or `refetchInterval: false/undefined` over leaving a hidden feature timer alive.
@@ -188,9 +191,11 @@ Avoid arbitrary intervals. If a value only needs to update every 30 seconds, do 
 
 A practical mental model for the existing application is:
 
+- **1 second:** the dashboard uptime display;
 - **2 seconds:** high-frequency dashboard telemetry such as CPU, memory, and bandwidth;
-- **5 seconds:** operational status or short-lived workflow state such as services and modal-scoped partition availability;
-- **30 seconds:** slower storage-state monitoring, pool details, device-slot mapping, and disk-temperature inventory;
+- **5 seconds:** operational status or short-lived workflow state such as services and modal-scoped available-disk checks;
+- **10 seconds:** Dashboard 3D physical slot mapping override;
+- **30 seconds:** slower storage-state monitoring, pool details, default device-slot mapping, and disk-temperature inventory;
 - **60 seconds:** notification-specific capacity monitoring;
 - **no interval:** configuration/inventory data refreshed by lifecycle and invalidation.
 
@@ -231,7 +236,8 @@ If an endpoint appears more often than expected in DevTools:
 4. check whether mutation invalidation occurred near a scheduled interval;
 5. check whether a mount/unmount cycle is causing revalidation;
 6. verify the query is not accidentally enabled in a hidden modal/detail component;
-7. inspect React StrictMode only after query ownership and keys are understood.
+7. inspect caller-specific interval overrides such as the 3D server slot view;
+8. inspect React StrictMode only after query ownership and keys are understood.
 
 A request visible twice with different keys is two independent query entries, not a cache-deduplication bug.
 
@@ -261,16 +267,19 @@ Historical audit files are compatibility redirects and are not live configuratio
 - `src/hooks/useCpu.ts`
 - `src/hooks/useMemory.ts`
 - `src/hooks/useNetwork.ts`
+- `src/hooks/useSystemUptime.ts`
 - `src/hooks/useZpool.ts`
 - `src/hooks/useFileSystems.ts`
 - `src/hooks/usePoolDeviceSlots.ts`
 - `src/hooks/useZpoolDetails.ts`
+- `src/hooks/useDisk.ts`
+- `src/hooks/useDiskInventory.ts`
 - `src/hooks/useServices.ts`
 - `src/hooks/useServiceStatuses.ts`
-- `src/hooks/useDiskInventory.ts`
 - `src/hooks/useStartupNotificationChecks.ts`
 - `src/hooks/useResourceStatusChangeNotifications.ts`
 - `src/hooks/useDiskTemperatureNotifications.ts`
+- `src/components/dashboard/server-3d/ServerSlots3DWidget.tsx`
 - `src/pages/IntegratedStorage.tsx`
 
 ## Related documentation
@@ -279,3 +288,5 @@ Historical audit files are compatibility redirects and are not live configuratio
 - [`state-sync-save-to-db.md`](./state-sync-save-to-db.md)
 - [`notifications.md`](./notifications.md)
 - [`api-request-lifecycle.md`](./api-request-lifecycle.md)
+- [`../05-features/dashboard.md`](../05-features/dashboard.md)
+- [`../05-features/integrated-storage.md`](../05-features/integrated-storage.md)
