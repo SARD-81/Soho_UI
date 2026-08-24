@@ -29,6 +29,7 @@ jobs:
       - name: Publish pending validation status
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           curl --fail-with-body --silent --show-error \
             --request POST \
@@ -36,7 +37,7 @@ jobs:
             --header "Authorization: Bearer $GH_TOKEN" \
             --header "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
-            --data '{"state":"pending","context":"frontend-validation","description":"Frontend lint and build are running"}'
+            --data "{\"state\":\"pending\",\"context\":\"frontend-validation\",\"description\":\"Frontend lint and build are running\",\"target_url\":\"$RUN_URL\"}"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -58,6 +59,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           JOB_STATUS: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           state="$JOB_STATUS"
           if [ "$state" = "cancelled" ]; then
@@ -70,4 +72,4 @@ jobs:
             --header "Authorization: Bearer $GH_TOKEN" \
             --header "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
-            --data "{\"state\":\"$state\",\"context\":\"frontend-validation\",\"description\":\"Frontend lint and build: $JOB_STATUS\"}"
+            --data "{\"state\":\"$state\",\"context\":\"frontend-validation\",\"description\":\"Frontend lint and build: $JOB_STATUS\",\"target_url\":\"$RUN_URL\"}"
