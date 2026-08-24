@@ -1,10 +1,10 @@
 # Testing
 
-This document describes the **current** testing state of SOHO UI and the target direction for future coverage.
+This document describes the current quality-assurance state of SOHO UI and the target direction for automated behavioral coverage.
 
 ## Current status
 
-`package.json` currently has these scripts:
+`package.json` currently defines:
 
 ```text
 dev
@@ -13,11 +13,44 @@ lint
 preview
 ```
 
-There is no `test` script and no verified automated application test runner configured as part of the maintained repository workflow.
+There is still no `test` script and no adopted unit, integration, or end-to-end test runner. The project must therefore not claim automated behavioral test coverage that does not exist.
 
-Therefore the project must not claim automated unit/integration/end-to-end coverage that does not exist.
+The repository **does now have an executable CI quality gate**:
 
-## What current quality checks provide
+```text
+.github/workflows/frontend-validation.yml
+```
+
+The workflow runs on:
+
+- pushes to `agent/project-documentation-audit` while this audit branch is active;
+- pull requests targeting `main`.
+
+It uses Node.js 22 and executes:
+
+```text
+npm ci
+npm run lint
+npm run build
+```
+
+The workflow also publishes a `frontend-validation` commit status so the lint/build result is visible as release/PR evidence.
+
+CI proves that the repository installs, lints, type-checks, and bundles successfully in its CI environment. It does **not** prove that product workflows or backend integrations behave correctly.
+
+## What the current quality checks provide
+
+### Dependency installation
+
+CI uses:
+
+```bash
+npm ci
+```
+
+against the committed `package-lock.json`.
+
+This catches lockfile/package metadata inconsistencies and avoids opportunistic dependency resolution during validation.
 
 ### TypeScript / production build
 
@@ -38,7 +71,7 @@ This catches:
 - invalid imports/module-resolution problems;
 - production bundle failures.
 
-It does **not** prove that feature behavior is correct.
+It does not prove that feature behavior is correct.
 
 ### ESLint
 
@@ -46,15 +79,47 @@ It does **not** prove that feature behavior is correct.
 npm run lint
 ```
 
-checks configured TypeScript/React/Hook rules and general lint issues.
+checks configured TypeScript, React, Hook, and general lint rules.
 
-It does **not** validate backend interaction semantics or user workflows.
+Lint does not validate backend semantics or user workflows.
 
 ### Manual verification
 
-Until automated tests are introduced, behavior-changing work requires targeted manual verification of the affected flows.
+Until automated behavioral tests are introduced, behavior-changing work still requires targeted manual verification of the affected flows.
 
-Manual verification should be explicit in PR descriptions rather than expressed as a vague "tested" statement.
+Manual verification should be explicit in PR descriptions rather than described only as “tested”.
+
+## CI workflow contract
+
+Canonical file:
+
+```text
+.github/workflows/frontend-validation.yml
+```
+
+Current job sequence:
+
+```text
+checkout
+→ publish pending frontend-validation status
+→ setup Node.js 22
+→ npm ci
+→ npm run lint
+→ npm run build
+→ publish final frontend-validation status
+```
+
+The final status is one of:
+
+```text
+success
+failure
+error
+```
+
+A failed CI run is a merge blocker until its lint/build cause is understood and corrected.
+
+Do not weaken or bypass the normal project commands merely to make CI green.
 
 ## Minimum manual regression checklist
 
@@ -79,7 +144,7 @@ Choose the relevant items for the change.
 ### Storage
 
 - list/load state;
-- create/update/delete relevant resource;
+- create/update/delete relevant resource where safe;
 - confirmation flows for destructive actions;
 - affected cross-domain refreshes;
 - modal pending/error state;
@@ -98,7 +163,8 @@ Choose the relevant items for the change.
 - dirty form state is not overwritten;
 - confirmation dialogs fire before system-impacting changes;
 - correct network endpoint is used for DHCP/static;
-- Web-user/OS-user partial-failure behavior is understood.
+- Web-user/OS-user partial-failure behavior is understood;
+- Persian/RTL copy remains readable after source edits.
 
 ## Recommended automated testing layers
 
@@ -106,7 +172,7 @@ When test infrastructure is introduced, use more than one layer.
 
 ### 1. Unit tests
 
-Best candidates include pure/mostly pure helpers such as:
+Best candidates include pure or mostly pure helpers such as:
 
 - normalization utilities;
 - NFS option translation;
@@ -149,7 +215,7 @@ Prefer user-visible behavior over checking internal React state.
 High-value E2E scenarios include:
 
 - authentication/session lifecycle;
-- create/delete storage resource against a controlled environment;
+- representative storage-resource create/delete against a controlled environment;
 - Samba/NFS/Web Share workflows;
 - network/system settings in a safe test appliance;
 - StateSync persistence after a mutation.
@@ -158,7 +224,7 @@ System-administration E2E tests require an isolated backend/environment because 
 
 ## Suggested tooling direction
 
-No tool is mandated yet because the repository has not adopted a test stack.
+No behavioral test tool is mandated yet because the repository has not adopted a test stack.
 
 A reasonable future React/Vite setup could include:
 
@@ -169,7 +235,7 @@ A reasonable future React/Vite setup could include:
 
 Treat this as a recommendation, not current installed infrastructure.
 
-Before adding tools, create an ADR or development decision that records:
+Before adding a test stack, record the decision with:
 
 - selected tools;
 - why they fit this project;
@@ -179,8 +245,6 @@ Before adding tools, create an ADR or development decision that records:
 - destructive test isolation requirements.
 
 ## Highest-priority future tests
-
-Given the current architecture, prioritize behavior whose regression cost is high.
 
 ### StateSync URL mapping
 
@@ -229,19 +293,20 @@ Test partial failures for:
 - Web Share → permission update;
 - Samba group → initial member adds.
 
-## Tests and comments
+## Tests, comments, and documentation
 
 Do not use comments as a substitute for tests when an invariant is executable and stable.
 
-The ideal relationship is:
+The intended relationship is:
 
 - tests prove behavior;
-- comments explain why the behavior exists;
+- CI proves the executable validation commands passed;
+- comments explain why non-obvious behavior exists;
 - documentation explains ownership, workflow, and maintenance consequences.
 
 ## CI expectation after test adoption
 
-Once automated tests exist, the minimum merge gate should eventually include:
+Once automated tests exist, extend the merge gate to include the adopted test command, for example:
 
 ```text
 npm ci
@@ -250,22 +315,30 @@ npm run test
 npm run build
 ```
 
-Today only lint/build are repository-defined commands.
+Today CI intentionally runs only the repository-defined lint/build quality gates because no `test` script exists.
 
-## Definition of Done until automation exists
+## Definition of Done
 
 A behavior change is complete only when:
 
 1. relevant docs are updated;
-2. lint passes;
-3. build passes;
-4. the affected flow is manually verified;
-5. partial-failure/error paths are considered;
-6. the final diff is reviewed for accidental changes.
+2. `frontend-validation` passes;
+3. the affected flow is manually verified when behavioral validation is required;
+4. partial-failure/error paths are considered;
+5. the final diff is reviewed for accidental changes.
+
+## Related files
+
+- `.github/workflows/frontend-validation.yml`
+- `package.json`
+- `package-lock.json`
+- `tsconfig.app.json`
+- `eslint.config.js`
 
 ## Related documentation
 
 - [`getting-started.md`](./getting-started.md)
 - [`coding-conventions.md`](./coding-conventions.md)
+- [`../07-operations/build.md`](../07-operations/build.md)
 - [`../04-core-flows/api-request-lifecycle.md`](../04-core-flows/api-request-lifecycle.md)
 - [`../04-core-flows/state-sync-save-to-db.md`](../04-core-flows/state-sync-save-to-db.md)
