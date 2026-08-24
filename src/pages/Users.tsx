@@ -7,8 +7,8 @@ import {
 } from 'react';
 import { toast } from 'react-hot-toast';
 import type { CreateOsUserPayload, OsUserTableItem } from '../@types/users';
-import TabPanel from '../components/TabPanel';
 import PageContainer from '../components/PageContainer';
+import TabPanel from '../components/TabPanel';
 import TablePageHeader from '../components/common/TablePageHeader';
 import OsUserCreateModal from '../components/users/OsUserCreateModal';
 import OsUsersTable from '../components/users/OsUsersTable';
@@ -227,7 +227,12 @@ const Users = () => {
 
       void run();
     },
-    [createOsUser, createSambaUser, normalizedOsUsernames, normalizedSambaUsernames]
+    [
+      createOsUser,
+      createSambaUser,
+      normalizedOsUsernames,
+      normalizedSambaUsernames,
+    ]
   );
 
   return (
@@ -236,7 +241,6 @@ const Users = () => {
     >
       <TablePageHeader
         title="مدیریت کاربران"
-        // subtitle="مشاهده کاربران سامانه و ساخت کاربر جدید برای دسترسی‌های سرویس‌ها"
         refreshAction={{
           onClick: () => void osUsersQuery.refetch(),
           disabled: osUsersQuery.isFetching,
