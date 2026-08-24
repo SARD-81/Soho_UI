@@ -1,30 +1,30 @@
 # Coding Conventions
 
-This document records conventions observed and intentionally adopted for SOHO UI maintenance.
+این سند conventionهایی را ثبت می‌کند که در نگهداری SOHO UI مشاهده شده‌اند و به‌صورت آگاهانه پذیرفته شده‌اند.
 
-The goal is consistency and low rediscovery cost, not stylistic bureaucracy.
+هدف، consistency و کاهش هزینه‌ی rediscovery است؛ نه ایجاد bureaucracy روی style کدنویسی.
 
-## General principles
+## اصول کلی
 
-Prefer code that makes ownership and behavior obvious without relying on comments.
+کدی را ترجیح دهید که ownership و behavior آن بدون اتکا به comment واضح باشد.
 
-In particular:
+به‌طور مشخص:
 
-- keep server-state logic in hooks/data layers rather than page JSX;
-- centralize transport behavior in `axiosInstance`;
-- centralize persisted snapshot behavior in `StateSyncManager`;
-- use React Query for authoritative backend state;
-- use local React state for temporary UI interaction state;
-- document non-obvious reasons and invariants, not readable syntax;
-- do not preserve old implementations as commented code.
+- منطق server state را در hook/data layer نگه دارید، نه داخل JSX صفحه؛
+- transport behavior را در `axiosInstance` متمرکز کنید؛
+- behavior مربوط به persisted snapshot را در `StateSyncManager` متمرکز کنید؛
+- برای authoritative backend state از React Query استفاده کنید؛
+- برای temporary UI interaction state از local React state استفاده کنید؛
+- دلیل‌ها و invariantهای غیرآشکار را مستند کنید، نه syntax خوانا را؛
+- implementation قدیمی را به‌صورت commented code نگه ندارید.
 
-## Language and formatting
+## زبان و Formatting
 
-Source code and source comments should use English identifiers/comments for consistency with the existing codebase.
+Source code و commentهای داخل source باید برای consistency با codebase فعلی از identifier/comment انگلیسی استفاده کنند.
 
-User-facing strings may remain Persian where required by the product UI.
+User-facing stringها هرجا محصول نیاز دارد می‌توانند فارسی باشند.
 
-Prettier configuration currently expects:
+Prettier configuration فعلی انتظار موارد زیر را دارد:
 
 ```text
 single quotes
@@ -33,58 +33,58 @@ semicolons
 ES5-style trailing commas
 ```
 
-Import organization and Tailwind formatting plugins are configured.
+Pluginهای import organization و Tailwind formatting نیز configure شده‌اند.
 
-Avoid large unrelated formatting changes in feature commits.
+از formatting changeهای بزرگ و غیرمرتبط در feature commitها خودداری کنید.
 
 ## TypeScript
 
-The application runs with strict TypeScript settings.
+Application با TypeScript strict settingها اجرا می‌شود.
 
-Prefer:
+موارد ترجیحی:
 
-- explicit domain interfaces for API models;
-- `unknown` for untrusted API shapes until narrowed;
-- type guards/normalizers at API boundaries;
-- discriminated unions for mode/action state;
-- `as const` for stable query keys/constants;
-- `satisfies` where it validates object shape without losing inference.
+- domain interface صریح برای API modelها؛
+- استفاده از `unknown` برای API shapeهای untrusted تا زمانی که narrow شوند؛
+- type guard/normalizer در API boundary؛
+- discriminated union برای mode/action state؛
+- استفاده از `as const` برای query key/constantهای پایدار؛
+- استفاده از `satisfies` در جایی که object shape را validate می‌کند بدون این‌که inference از بین برود.
 
-Avoid:
+از موارد زیر خودداری کنید:
 
-- broad `any`;
-- `@ts-ignore` as a normal fix;
-- casts that merely silence an incorrect model;
-- making every property optional to avoid understanding the backend contract.
+- `any` گسترده؛
+- استفاده‌ی عادی از `@ts-ignore` به‌عنوان راه‌حل؛
+- castهایی که فقط یک model اشتباه را ساکت می‌کنند؛
+- optional کردن تمام propertyها صرفاً برای فرار از درک backend contract.
 
-When backend data is inconsistent, normalize it once in the hook/service layer.
+اگر backend data ناسازگار است، normalization را یک بار در hook/service layer انجام دهید.
 
-## React components
+## React Componentها
 
-Pages should primarily orchestrate:
+Pageها باید عمدتاً موارد زیر را orchestrate کنند:
 
-- feature hooks;
-- page-level modal/open state;
-- user feedback;
-- derived data needed to compose child components.
+- feature hookها؛
+- page-level modal/open state؛
+- user feedback؛
+- derived data لازم برای compose کردن child componentها.
 
-Move reusable or complex responsibilities out of a page when they become independently meaningful.
+وقتی یک مسئولیت reusable یا complex به‌صورت مستقل معنا پیدا می‌کند، آن را از page خارج کنید.
 
-Avoid putting transport policy, token handling, persistence logic, or global cache rules inside presentation components.
+Transport policy، token handling، persistence logic یا global cache ruleها را داخل presentation component قرار ندهید.
 
-## Hooks
+## Hookها
 
-Feature hooks should own:
+Feature hook باید مالک موارد زیر باشد:
 
-- stable React Query keys;
-- endpoint calls;
-- request/response normalization;
-- feature-specific mutation invalidation;
-- feature-specific query lifecycle options.
+- React Query keyهای پایدار؛
+- endpoint callها؛
+- request/response normalization؛
+- mutation invalidation اختصاصی feature؛
+- query lifecycle optionهای اختصاصی feature.
 
-A hook should not own global transport concerns already handled by Axios.
+Hook نباید global transport concernهایی را که Axios از قبل مدیریت می‌کند دوباره مالک شود.
 
-Examples of forbidden caller ownership:
+نمونه‌های caller ownership ممنوع:
 
 ```text
 save_to_db=true
@@ -93,200 +93,200 @@ ad-hoc token refresh
 feature-local copies of global 401 handling
 ```
 
-## React Query keys
+## React Query Keyها
 
-Treat a query key as an API between consumers and invalidators.
+Query key را مانند یک API بین consumerها و invalidatorها در نظر بگیرید.
 
-Prefer exported stable keys when multiple modules use them:
+وقتی چند module از یک key استفاده می‌کنند، exported stable key ترجیح دارد:
 
 ```ts
 export const sambaUsersQueryKey = ['samba-users'] as const;
 ```
 
-For parameterized resources, include parameters that materially change the response:
+برای resourceهای parameterized، parameterهایی را در key قرار دهید که واقعاً response را تغییر می‌دهند:
 
 ```ts
 ['os-users', { includeSystem }]
 ```
 
-Do not create a new key for the same resource merely because it is consumed by another page unless it genuinely requires an independent lifecycle/cadence.
+صرف این‌که همان resource در page دیگری مصرف می‌شود دلیل ساختن key جدید نیست، مگر این‌که واقعاً lifecycle/cadence مستقلی نیاز داشته باشد.
 
-When a dedicated monitoring key is intentional, document why.
+اگر monitoring key مستقل عمداً ساخته شده، دلیل آن را مستند کنید.
 
-## API normalization
+## API Normalization
 
-Normalize backend compatibility variants near the data boundary.
+Compatibility variantهای backend را نزدیک data boundary normalize کنید.
 
-Examples in the codebase include:
+نمونه‌های موجود در codebase:
 
-- boolean-like service/SNMP values;
-- multiple Web Share response shapes;
-- filesystem/volume attribute maps;
-- Samba field names;
-- NFS option inversion;
-- network configuration derivation.
+- boolean-like valueهای service/SNMP؛
+- چند Web Share response shape؛
+- attribute mapهای filesystem/volume؛
+- Samba field nameها؛
+- inversion مربوط به NFS option؛
+- derivation مربوط به network configuration.
 
-Components should consume predictable domain models rather than repeat defensive parsing.
+Componentها باید domain model قابل پیش‌بینی دریافت کنند، نه این‌که defensive parsing را در چند محل تکرار کنند.
 
-## Mutations
+## Mutationها
 
-A mutation should:
+یک mutation باید:
 
-1. send one clearly defined backend operation;
-2. expose useful pending/error state;
-3. invalidate affected query keys on success;
-4. let centralized Axios/StateSync handle persistence when applicable.
+1. یک backend operation با تعریف روشن ارسال کند؛
+2. pending/error state مفید در اختیار caller بگذارد؛
+3. پس از success، query keyهای تحت تأثیر را invalidate کند؛
+4. در موارد لازم، persistence را به Axios/StateSync مرکزی واگذار کند.
 
-If a UI workflow requires multiple mutations, explicitly document partial-failure behavior.
+اگر یک UI workflow به چند mutation نیاز دارد، partial-failure behavior آن را صریح مستند کنید.
 
-Do not present a multi-request workflow as atomic unless the backend provides a transaction or explicit rollback.
+یک workflow چند-requestی را atomic معرفی نکنید، مگر این‌که backend transaction یا rollback صریح فراهم کرده باشد.
 
-## Destructive operations
+## عملیات Destructive
 
-Deletion/destructive changes should normally use explicit confirmation when accidental activation could cause meaningful loss or service impact.
+Delete یا destructive changeها معمولاً باید زمانی که activation تصادفی می‌تواند loss یا service impact معنی‌دار ایجاد کند، explicit confirmation داشته باشند.
 
-Examples include:
+نمونه‌ها:
 
-- disk cleanup;
-- pool/filesystem/share deletion;
-- stopping services;
-- deleting administrative users/groups.
+- disk cleanup؛
+- حذف pool/filesystem/share؛
+- stop کردن serviceها؛
+- حذف administrative user/group.
 
-The backend remains responsible for authorization and integrity rules.
+Backend همچنان مسئول authorization و integrity ruleها است.
 
-## Error handling
+## Error Handling
 
-Use backend error messages where they add actionable detail, but normalize common response shapes in a shared utility/hook rather than repeating parsing in every component.
+وقتی backend error message اطلاعات actionable ارائه می‌دهد از آن استفاده کنید، اما response shapeهای رایج را در utility/hook مشترک normalize کنید و parsing یکسان را در هر component تکرار نکنید.
 
-For multi-stage operations, distinguish which stage failed.
+برای operationهای چندمرحله‌ای، مشخص کنید کدام stage fail شده است.
 
-Good:
+خوب:
 
 ```text
 Web Share created, permission update failed
 ```
 
-Less useful:
+کم‌فایده‌تر:
 
 ```text
 Operation failed
 ```
 
-Do not hide an error solely because a later React Query invalidation may repair the UI.
+یک error را صرفاً به این دلیل مخفی نکنید که React Query invalidation بعدی ممکن است UI را repair کند.
 
-## Security-sensitive code
+## کدهای حساس به Security
 
-Security invariants should be explicit and conservative.
+Security invariantها باید صریح و محافظه‌کارانه باشند.
 
-Current examples:
+نمونه‌های فعلی:
 
-- access tokens remain memory-only;
-- refresh tokens are session-scoped;
-- auth bypass requires Vite development mode;
-- protected routes wait for auth restoration before redirecting;
-- local logout occurs before backend logout completes.
+- access tokenها فقط در memory باقی می‌مانند؛
+- refresh tokenها session-scoped هستند؛
+- auth bypass نیازمند Vite development mode است؛
+- protected routeها پیش از redirect منتظر auth restoration می‌مانند؛
+- local logout پیش از کامل‌شدن backend logout انجام می‌شود.
 
-Avoid weakening these behaviors as part of unrelated refactors.
+این behaviorها را به‌عنوان بخشی از refactor نامرتبط تضعیف نکنید.
 
-## Browser storage
+## Browser Storage
 
-Do not use local/session storage as an unstructured substitute for application state.
+از local/session storage به‌عنوان جایگزین بدون ساختار برای application state استفاده نکنید.
 
-Current browser persistence has specific owners, such as:
+Browser persistence فعلی ownerهای مشخصی دارد، مانند:
 
-- refresh token/session username;
-- idle activity timestamp;
-- dashboard layout/preferences;
+- refresh token/session username؛
+- idle activity timestamp؛
+- dashboard layout/preferenceها؛
 - notification bookkeeping.
 
-If adding storage, define:
+اگر storage جدیدی اضافه می‌کنید، موارد زیر را تعریف کنید:
 
-- owner;
-- key;
-- lifetime;
-- cleanup behavior;
-- whether the value is authoritative or merely client bookkeeping.
+- owner؛
+- key؛
+- lifetime؛
+- cleanup behavior؛
+- این‌که value authoritative است یا صرفاً client bookkeeping.
 
-Never persist secrets that the architecture intentionally keeps in memory.
+Secretهایی را که معماری عمداً در memory نگه می‌دارد هرگز persist نکنید.
 
-## Comments
+## Commentها
 
-Follow [`code-commenting-guidelines.md`](./code-commenting-guidelines.md).
+از [`code-commenting-guidelines.md`](./code-commenting-guidelines.md) پیروی کنید.
 
-The short rule:
+قاعده‌ی کوتاه:
 
-> If the code already explains WHAT/HOW, a comment should only remain when it preserves WHY, a constraint, an invariant, lifecycle ordering, security reasoning, concurrency behavior, or compatibility context.
+> اگر خود کد WHAT/HOW را توضیح می‌دهد، comment فقط زمانی باید باقی بماند که WHY، یک constraint، invariant، lifecycle ordering، security reasoning، concurrency behavior یا compatibility context را حفظ کند.
 
-Delete dead commented implementations. Git history is the archive.
+Dead commented implementation را حذف کنید. Git history نقش archive را دارد.
 
 ## TODO / FIXME
 
-A TODO should include enough context to be actionable and removable.
+TODO باید context کافی داشته باشد تا actionable و بعداً removable باشد.
 
-Prefer:
+ترجیحاً:
 
 ```ts
 // TODO(#142): Remove this compatibility branch after the legacy response
 // format is no longer supported by the backend.
 ```
 
-Avoid:
+اجتناب کنید از:
 
 ```ts
 // TODO fix this
 ```
 
-## Imports
+## Importها
 
-Keep import paths consistent with existing relative-module conventions.
+Import pathها را مطابق relative-module conventionهای موجود یکپارچه نگه دارید.
 
-Fix path oddities rather than preserving them (for example, duplicate slashes).
+Path oddityها را اصلاح کنید و صرفاً به دلیل قدیمی بودن حفظ نکنید؛ برای مثال duplicate slash.
 
-Use type-only imports where appropriate:
+در محل مناسب از type-only import استفاده کنید:
 
 ```ts
 import type { SomeType } from './types';
 ```
 
-## CSS / UI styling
+## CSS / UI Styling
 
-Prefer existing design tokens/CSS variables and shared component styles over one-off hardcoded design systems.
+Design token/CSS variableهای موجود و shared component styleها را به design systemهای hardcoded و one-off ترجیح دهید.
 
-Technical LTR values can be embedded inside the Persian RTL product UI when needed for readability.
+Technical LTR valueها در صورت نیاز برای خوانایی می‌توانند داخل UI فارسی RTL قرار بگیرند.
 
-Keep semantic direction (`dir`) separate from CSS mirroring when the DOM needs an actual direction attribute.
+Semantic direction (`dir`) را از CSS mirroring جدا نگه دارید، به‌خصوص زمانی که DOM واقعاً به direction attribute نیاز دارد.
 
-## Adding a new feature
+## اضافه‌کردن Feature جدید
 
-A new feature should normally include:
+یک feature جدید معمولاً باید شامل موارد زیر باشد:
 
-- route/entry point when applicable;
-- feature document;
-- stable query keys;
-- normalized API model;
-- mutation/invalidation rules;
-- explicit StateSync ownership decision;
-- polling decision;
-- error handling;
-- tests when infrastructure exists;
-- extension/failure notes when non-obvious.
+- route/entry point در صورت نیاز؛
+- feature document؛
+- query keyهای پایدار؛
+- API model normalizeشده؛
+- ruleهای mutation/invalidation؛
+- تصمیم صریح درباره‌ی StateSync ownership؛
+- تصمیم درباره‌ی polling؛
+- error handling؛
+- test در صورت وجود infrastructure مربوطه؛
+- extension/failure note در behaviorهای غیرآشکار.
 
-## Review checklist
+## Review Checklist
 
-Before considering a change complete:
+پیش از complete در نظر گرفتن یک change:
 
-- Is the data owner obvious?
-- Are query keys reused correctly?
-- Did any caller reintroduce `save_to_db` ownership?
-- Are multi-step partial failures understood?
-- Are dead comments/code removed?
-- Are security/lifecycle invariants preserved?
-- Did a documented contract change?
-- Does lint pass?
-- Does build pass?
-- Was the affected flow manually verified if no automated test exists?
+- آیا data owner مشخص است؟
+- آیا query keyها درست reuse شده‌اند؟
+- آیا هیچ caller دوباره ownership مربوط به `save_to_db` را وارد کرده است؟
+- آیا partial failureهای workflow چندمرحله‌ای درک شده‌اند؟
+- آیا dead comment/code حذف شده‌اند؟
+- آیا security/lifecycle invariantها حفظ شده‌اند؟
+- آیا contract مستندشده‌ای تغییر کرده است؟
+- آیا lint پاس می‌شود؟
+- آیا build پاس می‌شود؟
+- اگر automated test وجود ندارد، آیا flow تحت تأثیر دستی verify شده است؟
 
-## Related documentation
+## مستندات مرتبط
 
 - [`project-structure.md`](./project-structure.md)
 - [`code-commenting-guidelines.md`](./code-commenting-guidelines.md)
