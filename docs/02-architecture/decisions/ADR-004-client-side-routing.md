@@ -1,21 +1,21 @@
-# ADR-004: Use React Router for Client-Side Application Routing
+# ADR-004: استفاده از React Router برای Client-Side Routing
 
-- Status: Accepted
-- Scope: Browser routes, protected application shell, feature entry points
+- وضعیت: Accepted
+- Scope: Browser routeها، protected application shell و feature entry pointها
 
 ## Context
 
-SOHO UI is a single-page administrative application with multiple independently navigable feature areas.
+SOHO UI یک single-page administrative application با چند feature area مستقل و قابل navigation است.
 
-Operators need stable browser routes for features such as Dashboard, Disks, storage, shares, users, settings, SNMP, and History.
+Operatorها به browser routeهای پایدار برای featureهایی مانند Dashboard، Disks، Storage، Shareها، Userها، Settings، SNMP و History نیاز دارند.
 
-Authentication restoration must complete before protected feature access is decided.
+Authentication restoration باید پیش از تصمیم‌گیری درباره‌ی دسترسی به protected feature کامل شود.
 
 ## Decision
 
-Use React Router with a browser router and a protected application layout.
+از React Router به‌همراه browser router و protected application layout استفاده می‌شود.
 
-Current structure is conceptually:
+ساختار فعلی از نظر مفهومی:
 
 ```text
 /login
@@ -35,83 +35,83 @@ Current structure is conceptually:
   snmp-service
 ```
 
-The protected root renders `MainLayout`, and feature pages render as its child routes.
+Protected root، `MainLayout` را render می‌کند و feature pageها به‌عنوان child routeهای آن render می‌شوند.
 
-Unknown paths render the Not Found page.
+Pathهای ناشناخته، Not Found page را render می‌کنند.
 
-## Authentication boundary
+## Authentication Boundary
 
-`ProtectedRoute` guards the authenticated layout.
+`ProtectedRoute` authenticated layout را guard می‌کند.
 
-It does not decide backend authorization for individual operations. Backend authorization remains authoritative.
+این component درباره‌ی backend authorization برای operationهای منفرد تصمیم نمی‌گیرد. Backend authorization همچنان authoritative است.
 
-The route guard waits while auth restoration is loading so a restorable session is not redirected prematurely.
+Route guard تا زمانی که auth restoration در حال load است منتظر می‌ماند تا session قابل restore به‌صورت زودهنگام redirect نشود.
 
-A development auth bypass exists only when both conditions hold:
+Development auth bypass فقط زمانی وجود دارد که هر دو condition زیر برقرار باشند:
 
 ```text
 Vite DEV mode
 VITE_AUTH_BYPASS truthy
 ```
 
-## Consequences
+## Consequenceها
 
 ### Positive
 
-- feature URLs are explicit and bookmarkable;
-- shared authenticated layout concerns remain centralized;
-- navigation and deep linking are straightforward;
-- route structure provides a natural feature-documentation map.
+- URL مربوط به featureها صریح و bookmarkable است؛
+- concernهای shared authenticated layout متمرکز باقی می‌مانند؛
+- navigation و deep linking ساده و مستقیم است؛
+- route structure یک map طبیعی برای feature documentation فراهم می‌کند.
 
-### Tradeoffs
+### Tradeoffها
 
-- production static hosting must support SPA route fallback;
-- route names become external navigation contracts and should not change casually;
-- frontend route protection is not a substitute for backend authorization.
+- static hosting در production باید SPA route fallback را پشتیبانی کند؛
+- route nameها به external navigation contract تبدیل می‌شوند و نباید بدون دلیل تغییر کنند؛
+- frontend route protection جایگزین backend authorization نیست.
 
-## Hosting requirement
+## نیازمندی Hosting
 
-Because `createBrowserRouter` uses browser history, direct navigation/refresh of a client route can reach the web server before React handles it.
+چون `createBrowserRouter` از browser history استفاده می‌کند، direct navigation/refresh روی client route می‌تواند قبل از این‌که React request را handle کند به web server برسد.
 
-Production web-server configuration must serve `index.html` for application routes that do not correspond to real static files.
+Production web-server configuration باید برای application routeهایی که static file واقعی ندارند `index.html` را serve کند.
 
-This requirement belongs in deployment operations documentation.
+این requirement باید در deployment operations documentation نگهداری شود.
 
-## Route naming
+## Route Naming
 
-Some current routes use historical casing/naming such as:
+برخی routeهای فعلی naming/casing تاریخی دارند، مانند:
 
 ```text
 /Integrated-space
 /block-space
 ```
 
-Do not rename routes as a cosmetic cleanup without considering:
+Routeها را صرفاً به‌عنوان cosmetic cleanup rename نکنید و پیش از تغییر موارد زیر را در نظر بگیرید:
 
-- existing bookmarks/links;
-- navigation code;
-- documentation;
-- deployment/server rewrites.
+- bookmark/linkهای موجود؛
+- navigation code؛
+- documentation؛
+- deployment/server rewriteها.
 
-A route naming migration should be explicit and may require redirects.
+Route naming migration باید صریح باشد و ممکن است به redirect نیاز داشته باشد.
 
-## Alternatives considered
+## Alternativeهای بررسی‌شده
 
-### Server-rendered multi-page navigation
+### Server-rendered Multi-page Navigation
 
-Rejected for the current application architecture because the product is already a client-side React admin UI with shared runtime state/providers.
+برای معماری فعلی رد شد، چون محصول از قبل یک client-side React admin UI با shared runtime state/providerها است.
 
-### Manual pathname switching
+### Manual Pathname Switching
 
-Rejected because it would recreate routing, nested layout, not-found, and navigation behavior without a routing library.
+رد شد، چون routing، nested layout، not-found و navigation behavior را بدون routing library دوباره پیاده‌سازی می‌کند.
 
-## When to revisit
+## چه زمانی این Decision دوباره بررسی شود؟
 
-Revisit if the product moves to a framework with server routing/SSR or if deployment constraints require a different history strategy.
+اگر محصول به framework دارای server routing/SSR مهاجرت کرد یا deployment constraintها history strategy متفاوتی نیاز داشتند، این decision باید revisit شود.
 
-Any migration must preserve authentication restoration and direct-navigation behavior.
+هر migration باید authentication restoration و direct-navigation behavior را حفظ کند.
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../../04-core-flows/routing-and-access-control.md`](../../04-core-flows/routing-and-access-control.md)
 - [`../runtime-flow.md`](../runtime-flow.md)
