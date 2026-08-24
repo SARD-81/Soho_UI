@@ -1,45 +1,44 @@
 # SOHO UI Documentation
 
-This directory is the source of truth for understanding, maintaining, and extending the SOHO frontend.
+This directory is the source of truth for understanding, maintaining, extending, building, and operating the SOHO frontend.
 
-The goal is not to document every line of code. The goal is to preserve the knowledge that is expensive to rediscover: system boundaries, architectural decisions, runtime flows, business rules, operational constraints, API contracts, and non-obvious implementation details.
+The goal is not to document every line of code. The goal is to preserve the knowledge that is expensive to rediscover: system boundaries, architectural decisions, runtime flows, business rules, operational constraints, API contracts, failure modes, and non-obvious implementation details.
 
 ## How to use these docs
 
 If you return to the project after a long break, read the documents in this order:
 
 1. [`01-overview/project-overview.md`](./01-overview/project-overview.md) — what the application is and what it is responsible for.
-2. [`02-architecture/frontend-architecture.md`](./02-architecture/frontend-architecture.md) — frontend module ownership and runtime structure.
-3. [`02-architecture/runtime-flow.md`](./02-architecture/runtime-flow.md) — application bootstrap, request, auth, and mutation flow.
-4. [`02-architecture/data-flow.md`](./02-architecture/data-flow.md) — backend state, React Query, UI state, and StateSync boundaries.
-5. [`02-architecture/decisions/`](./02-architecture/decisions/) — why the major architectural choices exist.
-6. [`03-development/getting-started.md`](./03-development/getting-started.md) — local setup and first verification steps.
-7. [`03-development/project-structure.md`](./03-development/project-structure.md) — where code belongs and where to start when changing a feature.
-8. [`03-development/configuration.md`](./03-development/configuration.md) — verified Vite/environment configuration.
-9. [`03-development/coding-conventions.md`](./03-development/coding-conventions.md) — project coding conventions and ownership rules.
-10. [`03-development/code-commenting-guidelines.md`](./03-development/code-commenting-guidelines.md) — rules for useful in-code comments.
-11. [`03-development/testing.md`](./03-development/testing.md) — current quality gates and the explicit automated-test gap.
-12. [`04-core-flows/authentication.md`](./04-core-flows/authentication.md) — login, token storage, session restore, refresh, idle timeout, and logout.
-13. [`04-core-flows/routing-and-access-control.md`](./04-core-flows/routing-and-access-control.md) — protected routing and frontend access-control boundaries.
-14. [`04-core-flows/api-request-lifecycle.md`](./04-core-flows/api-request-lifecycle.md) — Axios, React Query, 401 recovery, persistence policy, and mutation StateSync.
-15. [`04-core-flows/server-state-and-cache.md`](./04-core-flows/server-state-and-cache.md) — ownership of server state, cache, invalidation, and UI freshness.
-16. [`04-core-flows/state-sync-save-to-db.md`](./04-core-flows/state-sync-save-to-db.md) — canonical backend snapshot persistence and `save_to_db` invariants.
-17. [`04-core-flows/polling-and-data-refresh.md`](./04-core-flows/polling-and-data-refresh.md) — maintained polling inventory and refresh policy.
-18. [`04-core-flows/notifications.md`](./04-core-flows/notifications.md) — notification baselines, monitoring lifecycles, and duplicate suppression.
-19. The relevant document under [`05-features/`](./05-features/) before modifying feature-specific behavior.
-20. [`06-api/api-conventions.md`](./06-api/api-conventions.md) and [`06-api/endpoint-map.md`](./06-api/endpoint-map.md) before introducing or changing backend integration.
-21. The relevant operations document under [`07-operations/`](./07-operations/) before build/deployment/troubleshooting work.
+2. [`01-overview/scope.md`](./01-overview/scope.md) — frontend/backend ownership boundaries and current product limitations.
+3. [`01-overview/glossary.md`](./01-overview/glossary.md) — project-specific terminology.
+4. [`02-architecture/frontend-architecture.md`](./02-architecture/frontend-architecture.md) — frontend module ownership and runtime structure.
+5. [`02-architecture/runtime-flow.md`](./02-architecture/runtime-flow.md) — application bootstrap, request, auth, and mutation flow.
+6. [`02-architecture/data-flow.md`](./02-architecture/data-flow.md) — backend state, React Query, UI state, and StateSync boundaries.
+7. [`02-architecture/decisions/`](./02-architecture/decisions/) — why the major architectural choices exist.
+8. [`03-development/getting-started.md`](./03-development/getting-started.md) — local setup and first verification steps.
+9. [`03-development/project-structure.md`](./03-development/project-structure.md) — where code belongs and where to start when changing a feature.
+10. [`03-development/configuration.md`](./03-development/configuration.md) — verified Vite/environment configuration.
+11. [`03-development/coding-conventions.md`](./03-development/coding-conventions.md) — project coding conventions and ownership rules.
+12. [`03-development/code-commenting-guidelines.md`](./03-development/code-commenting-guidelines.md) — rules for useful in-code comments.
+13. [`03-development/testing.md`](./03-development/testing.md) — current quality gates and the explicit automated-test gap.
+14. [`04-core-flows/authentication.md`](./04-core-flows/authentication.md) — login, token storage, session restore, refresh, idle timeout, and logout.
+15. [`04-core-flows/routing-and-access-control.md`](./04-core-flows/routing-and-access-control.md) — protected routing and frontend access-control boundaries.
+16. [`04-core-flows/api-request-lifecycle.md`](./04-core-flows/api-request-lifecycle.md) — Axios, React Query, 401 recovery, persistence policy, and mutation StateSync.
+17. [`04-core-flows/server-state-and-cache.md`](./04-core-flows/server-state-and-cache.md) — ownership of server state, cache, invalidation, and UI freshness.
+18. [`04-core-flows/state-sync-save-to-db.md`](./04-core-flows/state-sync-save-to-db.md) — canonical backend snapshot persistence and `save_to_db` invariants.
+19. [`04-core-flows/polling-and-data-refresh.md`](./04-core-flows/polling-and-data-refresh.md) — maintained polling inventory and refresh policy.
+20. [`04-core-flows/notifications.md`](./04-core-flows/notifications.md) — notification baselines, monitoring lifecycles, and duplicate suppression.
+21. The relevant document under [`05-features/`](./05-features/) before modifying feature-specific behavior.
+22. [`06-api/api-conventions.md`](./06-api/api-conventions.md) and [`06-api/endpoint-map.md`](./06-api/endpoint-map.md) before introducing or changing backend integration.
+23. The relevant operations document under [`07-operations/`](./07-operations/) before build, deployment, rollback, or production troubleshooting work.
 
 ## Documentation map
 
 ### Overview
 
 - [`01-overview/project-overview.md`](./01-overview/project-overview.md)
-
-Planned completion items:
-
-- `01-overview/scope.md`
-- `01-overview/glossary.md`
+- [`01-overview/scope.md`](./01-overview/scope.md)
+- [`01-overview/glossary.md`](./01-overview/glossary.md)
 
 ### Architecture
 
@@ -103,11 +102,11 @@ Every currently routed product feature has either a full feature document or, fo
 
 ### Operations
 
-The operations section is the next active documentation phase:
+- [`07-operations/build.md`](./07-operations/build.md) — reproducible build inputs, commands, artifact contract, and release evidence.
+- [`07-operations/deployment.md`](./07-operations/deployment.md) — static Nginx deployment model, SPA fallback, API topology, caching, TLS, atomic releases, and rollback.
+- [`07-operations/troubleshooting.md`](./07-operations/troubleshooting.md) — build, Nginx, auth, API, StateSync, polling, and partial-failure runbook.
 
-- `07-operations/build.md`
-- `07-operations/deployment.md`
-- `07-operations/troubleshooting.md`
+The repository currently does not contain a Dockerfile, GitHub Actions workflow, or Nginx config. Operations documentation defines the verified application/deployment contract without pretending that repository-managed automation already exists.
 
 ### Other maintained notes
 
@@ -146,7 +145,7 @@ A change is not complete when it modifies a documented architectural contract, b
 
 Use Mermaid diagrams when ordering, ownership, or dependencies are easier to understand visually than as prose.
 
-## Target structure
+## Current structure
 
 ```text
 docs/
@@ -200,4 +199,4 @@ docs/
     └── troubleshooting.md
 ```
 
-The remaining overview/operations documents and final audit should complete this target structure.
+The remaining work is final source/document consistency audit and executable validation; future behavior changes should update this structure rather than creating competing documentation sources.
