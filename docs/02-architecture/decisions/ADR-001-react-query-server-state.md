@@ -1,86 +1,86 @@
-# ADR-001: Use TanStack React Query for Server State
+# ADR-001: استفاده از TanStack React Query برای Server State
 
-- Status: Accepted
-- Scope: Frontend server-state reads, mutation lifecycle, cache invalidation, polling
+- وضعیت: Accepted
+- Scope: خواندن server state در frontend، mutation lifecycle، cache invalidation و polling
 
 ## Context
 
-SOHO UI is an administrative frontend over a mutable storage/system backend. Many values can change outside the local component that renders them, including system telemetry, storage state, services, shares, users, and settings.
+SOHO UI یک frontend مدیریتی روی backend مربوط به Storage/System است که state آن می‌تواند تغییر کند. بسیاری از valueها ممکن است خارج از component محلی‌ای که آن‌ها را render می‌کند تغییر کنند؛ از جمله system telemetry، storage state، serviceها، shareها، userها و settingها.
 
-The frontend needs consistent handling for:
+Frontend برای موارد زیر به handling یکپارچه نیاز دارد:
 
-- loading/error state;
-- caching;
-- stale/fresh policy;
-- request deduplication by resource identity;
-- mutation invalidation;
-- controlled polling;
-- conditional queries;
+- loading/error state؛
+- caching؛
+- stale/fresh policy؛
+- request deduplication بر اساس resource identity؛
+- mutation invalidation؛
+- controlled polling؛
+- conditional queryها؛
 - cancellation/abort behavior.
 
-Keeping copies of authoritative backend data in arbitrary component state would duplicate lifecycle logic and make cross-page consistency difficult.
+نگه‌داشتن copyهای authoritative backend data در component stateهای پراکنده باعث duplicate شدن lifecycle logic و دشوارشدن consistency بین pageها می‌شود.
 
 ## Decision
 
-Use TanStack React Query as the primary owner of **client-side server state**.
+TanStack React Query به‌عنوان owner اصلی **client-side server state** استفاده می‌شود.
 
-Feature hooks define stable query keys, endpoint calls, normalization, and feature-specific lifecycle configuration.
+Feature hookها stable query key، endpoint call، normalization و feature-specific lifecycle configuration را تعریف می‌کنند.
 
-React Query cache is not durable application persistence and must not be treated as an authoritative database.
+React Query cache، durable application persistence نیست و نباید به‌عنوان authoritative database در نظر گرفته شود.
 
-## Consequences
+## Consequenceها
 
 ### Positive
 
-- consistent query lifecycle across features;
-- explicit query identity through keys;
-- focused invalidation after mutations;
-- polling can be scoped to mounted/enabled consumers;
-- server state is separated from transient UI state;
-- pages remain orchestration layers instead of request-state machines.
+- query lifecycle یکپارچه بین featureها؛
+- query identity صریح از طریق keyها؛
+- invalidation هدفمند پس از mutation؛
+- امکان محدودکردن polling به consumerهای mounted/enabled؛
+- جداسازی server state از transient UI state؛
+- pageها به‌جای تبدیل‌شدن به request-state machine، orchestration layer باقی می‌مانند.
 
-### Tradeoffs
+### Tradeoffها
 
-- query-key design becomes an architectural contract;
-- different keys hitting the same endpoint create independent cache/request lifecycles;
-- developers must understand invalidation ownership;
-- React Query does not solve backend persistence, authorization, or transactional consistency.
+- design مربوط به query key به architectural contract تبدیل می‌شود؛
+- keyهای متفاوت که یک endpoint را call می‌کنند cache/request lifecycle مستقل دارند؛
+- توسعه‌دهنده باید invalidation ownership را درک کند؛
+- React Query مسئله‌ی backend persistence، authorization یا transactional consistency را حل نمی‌کند.
 
-## Rules
+## Ruleها
 
-1. Backend-authoritative values belong in React Query unless a stronger reason exists.
-2. Query keys must be stable and meaningful.
-3. Parameter values that alter a response belong in the key.
-4. Do not create page-specific duplicate keys for the same resource/lifecycle without justification.
-5. Dedicated monitoring keys must be documented when they intentionally create independent traffic.
-6. Successful mutations invalidate affected queries; failed mutations do not pretend state changed.
-7. React Query cache must never be used as the mechanism for `save_to_db` persistence.
+1. Valueهای authoritative در backend باید در حالت عادی در React Query قرار بگیرند، مگر دلیل قوی‌تری وجود داشته باشد.
+2. Query keyها باید stable و meaningful باشند.
+3. Parameter valueهایی که response را تغییر می‌دهند باید بخشی از key باشند.
+4. بدون justification برای resource/lifecycle یکسان، page-specific duplicate key ایجاد نکنید.
+5. Dedicated monitoring keyهایی که عمداً traffic مستقل ایجاد می‌کنند باید مستند شوند.
+6. Mutation موفق queryهای تحت تأثیر را invalidate می‌کند؛ mutation ناموفق نباید وانمود کند state تغییر کرده است.
+7. React Query cache هرگز نباید mechanism مربوط به `save_to_db` persistence باشد.
 
-## Alternatives considered
+## Alternativeهای بررسی‌شده
 
-### Component-local `useEffect` + `useState` requests
+### Request با Component-local `useEffect` + `useState`
 
-Rejected as the default because it duplicates cancellation, stale state, loading/error, invalidation, and polling behavior across features.
+به‌عنوان default رد شد، چون cancellation، stale state، loading/error، invalidation و polling behavior را بین featureها duplicate می‌کند.
 
-### Zustand for server state
+### Zustand برای Server State
 
-Rejected as the primary server-state layer. Zustand remains useful for client-only shared UI state such as detail split-view state, but it would require rebuilding server-state lifecycle machinery already provided by React Query.
+به‌عنوان server-state layer اصلی رد شد. Zustand همچنان برای client-only shared UI state مانند detail split-view state مفید است، اما استفاده از آن برای server state نیازمند بازسازی lifecycle machineryای است که React Query از قبل فراهم می‌کند.
 
-### Global Redux-like normalized store
+### Global Redux-like Normalized Store
 
-Not needed for current frontend architecture and would add synchronization boilerplate between requests and stored entities.
+برای معماری فعلی frontend لازم نیست و synchronization boilerplate بین requestها و stored entityها را افزایش می‌دهد.
 
-## When to revisit
+## چه زمانی این Decision دوباره بررسی شود؟
 
-Revisit if:
+در شرایط زیر revisit شود:
 
-- the application moves to a fundamentally different data platform;
-- offline-first synchronized persistence becomes a core requirement;
-- React Query no longer fits server-state lifecycle needs.
+- application به data platform کاملاً متفاوتی مهاجرت کند؛
+- offline-first synchronized persistence به core requirement تبدیل شود؛
+- React Query دیگر با نیازهای server-state lifecycle سازگار نباشد.
 
-A replacement should explicitly address caching, invalidation, polling, concurrency, and migration of existing query contracts.
+جایگزین باید صریحاً caching، invalidation، polling، concurrency و migration مربوط به query contractهای موجود را پوشش دهد.
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../data-flow.md`](../data-flow.md)
 - [`../../04-core-flows/server-state-and-cache.md`](../../04-core-flows/server-state-and-cache.md)
