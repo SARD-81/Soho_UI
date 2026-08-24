@@ -173,7 +173,6 @@ const WebShare = () => {
       {
         pool_name: selectedFilesystem.poolName,
         fs_name: selectedFilesystem.filesystemName,
-        save_to_db: false,
       },
       {
         onSuccess: () => {
@@ -222,7 +221,6 @@ const WebShare = () => {
       {
         pool_name: deleteShare.poolName,
         fs_name: deleteShare.fsName,
-        save_to_db: false,
       },
       {
         onSuccess: () => {
@@ -317,23 +315,18 @@ const WebShare = () => {
             }
             sx={{
               color: 'var(--color-text)',
-
               '& .MuiSelect-select': {
                 color: 'var(--color-text)',
               },
-
               '& .MuiSelect-icon': {
                 color: 'var(--color-text)',
               },
-
               '& .MuiOutlinedInput-notchedOutline': {
                 borderColor: 'var(--color-text)',
               },
-
               '&:hover .MuiOutlinedInput-notchedOutline': {
                 borderColor: 'var(--color-text)',
               },
-
               '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
                 borderColor: 'var(--color-text)',
               },
@@ -345,7 +338,11 @@ const WebShare = () => {
                 filesystem.filesystemName
               );
               return (
-                <MenuItem key={key} value={key} sx={{ color: 'var(--color-text)' }}>
+                <MenuItem
+                  key={key}
+                  value={key}
+                  sx={{ color: 'var(--color-text)' }}
+                >
                   {renderFilesystemLabel(filesystem)}
                 </MenuItem>
               );
