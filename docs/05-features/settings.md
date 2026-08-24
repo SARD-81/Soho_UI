@@ -1,14 +1,22 @@
 # Settings
 
-## Purpose
+## هدف
 
-The Settings feature groups administrative configuration that does not belong to storage/share resource pages.
+Feature مربوط به Settings، configurationهای مدیریتی را گروه‌بندی می‌کند که متعلق به صفحه‌های storage/share نیستند.
 
-Route: `/settings`
+Route:
 
-Entry point: `src/pages/Settings.tsx`
+```text
+/settings
+```
 
-The page currently contains three distinct tabs:
+Entry point:
+
+```text
+src/pages/Settings.tsx
+```
+
+صفحه در حال حاضر سه tab مستقل دارد:
 
 ```text
 General
@@ -16,9 +24,9 @@ Network
 Users
 ```
 
-These tabs share navigation and presentation but have different backend resources and mutation semantics.
+این tabها navigation و presentation مشترک دارند، اما backend resource و mutation semantics متفاوتی دارند.
 
-## Runtime structure
+## ساختار runtime
 
 ```mermaid
 flowchart TD
@@ -35,50 +43,50 @@ flowchart TD
     U --> OS[useCreateOsUser]
 ```
 
-## Tab ownership
+## ownership هر tab
 
 ### General
 
-Owns host identity and time-related operating-system configuration:
+مالک configurationهای مربوط به host identity و time در سیستم‌عامل است:
 
-- hostname;
-- system/local/UTC time information;
-- timezone;
-- NTP enablement and server list;
-- manual system time;
-- hardware RTC operations;
+- hostname؛
+- اطلاعات system/local/UTC time؛
+- timezone؛
+- NTP enablement و server list؛
+- manual system time؛
+- hardware RTC operationها؛
 - system version display.
 
 ### Network
 
-Owns interface-level configuration and display:
+مالک configuration و display در سطح interface است:
 
-- interface name;
-- configuration mode;
-- IPv4 information;
-- netmask;
-- gateway;
-- DNS;
-- MTU;
-- link speed;
-- DHCP/static reconfiguration.
+- interface name؛
+- configuration mode؛
+- IPv4 information؛
+- netmask؛
+- gateway؛
+- DNS؛
+- MTU؛
+- link speed؛
+- reconfiguration به حالت DHCP/static.
 
 ### Users
 
-Owns **Web/UI users**, not the OS/Samba user-management feature from `/users`.
+مالک **Web/UI user**ها است، نه OS/Samba user-management feature موجود در `/users`.
 
-It supports:
+این tab از موارد زیر پشتیبانی می‌کند:
 
-- list Web users;
-- create Web user;
-- edit Web user profile fields;
-- change Web user password;
-- delete Web user except the protected `admin` account;
-- create a matching OS user after successful Web-user creation.
+- list کردن Web userها؛
+- create کردن Web user؛
+- edit کردن profile fieldهای Web user؛
+- تغییر password؛
+- delete کردن Web user به‌جز account محافظت‌شده‌ی `admin`؛
+- create کردن OS user همنام پس از Web-user creation موفق.
 
 ## General settings data
 
-Query keys:
+Query keyها:
 
 ```text
 ['general-settings','time']
@@ -87,7 +95,7 @@ Query keys:
 ['general-settings','version']
 ```
 
-Read endpoints:
+Read endpointها:
 
 ```text
 GET /api/system/time/
@@ -96,7 +104,7 @@ GET /api/system/hostname/
 GET /api/system/version/
 ```
 
-Current stale-time policy:
+Policy فعلی `staleTime`:
 
 ```text
 system time    15 seconds
@@ -105,13 +113,15 @@ hostname       15 seconds
 version        1 hour
 ```
 
-These queries disable window-focus refetch explicitly.
+این queryها window-focus refetch را صریحاً disable می‌کنند.
 
-Detailed response normalization and UI rules are maintained in [`../general-settings.md`](../general-settings.md).
+جزئیات response normalization و UI ruleها در سند زیر نگهداری می‌شود:
 
-## General settings mutations
+[`../general-settings.md`](../general-settings.md)
 
-Current endpoints:
+## General settings mutationها
+
+Endpointهای فعلی:
 
 ```text
 POST /api/system/hostname/set/
@@ -121,59 +131,63 @@ POST /api/system/time/set-time/
 POST /api/system/time/hwclock/
 ```
 
-Each mutation invalidates the smallest relevant query family after success.
+هر mutation پس از success کوچک‌ترین query family مرتبط را invalidate می‌کند.
 
-Examples:
+مثال:
 
-- hostname mutation -> hostname query;
-- timezone/NTP/manual time -> system time query;
-- hardware-clock mutation -> system time query when the action changes state.
+- hostname mutation → hostname query؛
+- timezone/NTP/manual time → system time query؛
+- hardware-clock mutation → system time query در صورتی که action state را تغییر دهد.
 
-`hwclock` action `show` is observational and therefore does not invalidate system time.
+Action مربوط به `hwclock` با مقدار `show` observational است و system time را invalidate نمی‌کند.
 
-## Confirmation and dirty-form behavior
+## confirmation و dirty-form behavior
 
-General settings deliberately distinguishes backend state from unsaved UI edits.
+General settings عمداً backend state را از unsaved UI edit جدا می‌کند.
 
-Examples include:
+مثال‌ها:
 
-- hostname dirty state;
-- timezone dirty state;
-- NTP dirty state;
-- confirmation dialogs for system-impacting mutations.
+- hostname dirty state؛
+- timezone dirty state؛
+- NTP dirty state؛
+- confirmation dialog برای system-impacting mutationها.
 
-This prevents query refreshes from overwriting fields the operator is actively editing.
+این کار مانع overwrite شدن fieldی می‌شود که operator در حال edit آن است، صرفاً به‌دلیل query refresh.
 
-System-impacting changes are staged into a `PendingAction` and require confirmation before mutation.
+System-impacting change ابتدا داخل `PendingAction` stage می‌شود و قبل از mutation نیاز به confirmation دارد.
 
-## Manual time and NTP dependency
+## وابستگی manual time و NTP
 
-Manual time and automatic NTP synchronization are not independent concepts.
+Manual time و automatic NTP synchronization دو مفهوم کاملاً مستقل نیستند.
 
-The current UI accounts for a case where the operator switches NTP off inside the time editor but has not separately persisted that toggle yet. The manual-time confirmation flow can first disable NTP and then set the requested manual time.
+UI فعلی حالتی را پوشش می‌دهد که operator در time editor، NTP را off می‌کند ولی آن toggle هنوز جداگانه persist نشده است. Manual-time confirmation flow می‌تواند ابتدا NTP را disable کند و بعد manual time درخواستی را set کند.
 
-That is a multi-step system operation and must be treated as such when refactoring or troubleshooting.
+این یک multi-step system operation است و در refactor یا troubleshooting باید همین‌طور در نظر گرفته شود.
 
 ## Network settings
 
-`NetworkSettingsTable` reads the shared network resource through `useNetwork()` and derives a table row for each interface.
+`NetworkSettingsTable` shared network resource را از `useNetwork()` می‌خواند و برای هر interface یک row می‌سازد.
 
-The table normalizes:
+Table این موارد را normalize می‌کند:
 
-- IPv4 entries;
-- configuration mode;
-- gateway list;
-- DNS list;
-- MTU;
+- IPv4 entryها؛
+- configuration mode؛
+- gateway list؛
+- DNS list؛
+- MTU؛
 - link speed.
 
-Network edit state is modal-local.
+Network edit state داخل modal نگهداری می‌شود.
 
 ## Network configuration mutation
 
-Hook: `useConfigureNetworkInterface()`
+Hook:
 
-The current backend uses different endpoints depending on mode:
+```text
+useConfigureNetworkInterface()
+```
+
+Backend فعلی بر اساس mode از endpoint متفاوت استفاده می‌کند:
 
 ```text
 DHCP:
@@ -183,7 +197,7 @@ Static:
 POST /api/system/network/{interface}/configure/
 ```
 
-This asymmetry is current backend contract and must not be collapsed into one guessed URL.
+این asymmetry بخشی از backend contract فعلی است و نباید با حدس به یک URL واحد collapse شود.
 
 DHCP body:
 
@@ -192,7 +206,7 @@ mode = dhcp
 mtu = supplied value or 1500
 ```
 
-Static body includes:
+Static body شامل موارد زیر است:
 
 ```text
 mode = static
@@ -203,7 +217,7 @@ optional dns[]
 mtu = supplied value or 1500
 ```
 
-After success the network query family is invalidated.
+پس از success، network query family invalidate می‌شود.
 
 ## Web users
 
@@ -219,7 +233,7 @@ List endpoint:
 GET /api/system/ui-user/
 ```
 
-Web-user mutations:
+Web-user mutationها:
 
 ```text
 POST   /api/system/ui-user/
@@ -228,23 +242,23 @@ PUT    /api/system/ui-user/{username}/update/?action=update
 PUT    /api/system/ui-user/{username}/update/?action=change_password
 ```
 
-Each successful Web-user mutation invalidates `['web-users']`.
+هر Web-user mutation موفق `['web-users']` را invalidate می‌کند.
 
-## Protected admin deletion rule
+## قانون محافظت از حذف admin
 
-The Settings UI prevents deletion when the normalized username is:
+Settings UI وقتی normalized username برابر مقدار زیر باشد delete را غیرفعال می‌کند:
 
 ```text
 admin
 ```
 
-This is a UX/safety rule, not a security boundary. The backend must independently prevent deletion of any account that is operationally protected.
+این UX/safety rule است، نه security boundary. Backend باید مستقل از frontend حذف هر account محافظت‌شده‌ی عملیاتی را جلوگیری کند.
 
-## Web-user creation also creates an OS user
+## Web-user creation و ساخت OS user
 
-After `useCreateWebUser()` succeeds, `UserSettingsTable` starts a second mutation through `useCreateOsUser()` with `DEFAULT_LOGIN_SHELL`.
+بعد از موفق شدن `useCreateWebUser()`، `UserSettingsTable` یک mutation دوم با `useCreateOsUser()` و `DEFAULT_LOGIN_SHELL` اجرا می‌کند.
 
-Current sequence:
+Sequence فعلی:
 
 ```mermaid
 sequenceDiagram
@@ -263,86 +277,86 @@ sequenceDiagram
     end
 ```
 
-### Important partial-failure behavior
+### partial-failure behavior مهم
 
-This flow is not atomic.
+این flow atomic نیست.
 
-If Web-user creation succeeds but OS-user creation fails:
+اگر Web-user creation موفق ولی OS-user creation ناموفق باشد:
 
-- the Web user remains;
-- no frontend rollback deletes the Web user;
-- the success toast for Web-user creation has already been shown;
-- the OS mutation currently has no page-level recovery transaction.
+- Web user باقی می‌ماند؛
+- frontend rollback برای حذف Web user ندارد؛
+- success toast مربوط به Web-user creation از قبل نمایش داده شده است؛
+- OS mutation فعلاً page-level recovery transaction ندارد.
 
-This distinction must be preserved in troubleshooting documentation.
+این distinction باید در troubleshooting حفظ شود.
 
-## Delete does not imply OS-user deletion
+## Delete به معنی حذف OS user نیست
 
-Deleting a Web user calls only:
+Delete کردن Web user فقط endpoint زیر را call می‌کند:
 
 ```text
 DELETE /api/system/ui-user/{username}/
 ```
 
-The frontend does not automatically delete a same-named OS user.
+Frontend به‌صورت خودکار OS user همنام را حذف نمی‌کند.
 
-Do not assume Web and OS user lifecycles are symmetric merely because creation currently links them.
+صرفاً چون creation فعلی این دو domain را به هم وصل می‌کند، lifecycle آن‌ها را symmetric فرض نکنید.
 
 ## StateSync boundary
 
-General system settings, network settings, Web users, and OS users are not currently represented as persisted `StateSyncDomain` values.
+General system settings، network settings، Web userها و OS userها در حال حاضر persisted `StateSyncDomain` نیستند.
 
-Therefore these features use normal backend mutations and React Query refresh without canonical `save_to_db=true` snapshots from the frontend.
+بنابراین این featureها از backend mutation عادی و React Query refresh استفاده می‌کنند و frontend برای آن‌ها canonical `save_to_db=true` snapshot ایجاد نمی‌کند.
 
-Do not add ad-hoc persistence flags to compensate. If one of these domains later requires snapshot persistence, extend StateSync architecture explicitly.
+برای جبران این موضوع ad-hoc persistence flag اضافه نکنید. اگر یکی از این domainها در آینده snapshot persistence بخواهد، StateSync architecture باید صریحاً extend شود.
 
 ## RTL invariant
 
-`Settings.tsx` explicitly applies:
+`Settings.tsx` صریحاً این attribute را روی settings content اعمال می‌کند:
 
 ```text
 dir="rtl"
 ```
 
-to the settings content because `dir` is an HTML semantic attribute and is not produced by Emotion/Stylis RTL mirroring.
+دلیل آن این است که `dir` یک semantic HTML attribute است و توسط Emotion/Stylis RTL mirroring تولید نمی‌شود.
 
-This comment is intentional architectural UI documentation and should remain unless direction ownership moves to a higher semantic DOM boundary.
+این comment عمداً architectural UI documentation است و تا زمانی که direction ownership به DOM boundary بالاتری منتقل نشده باید حفظ شود.
 
-Technical values such as IPs, hostnames, timezones, and server names may remain LTR inside the RTL page.
+Technical valueهایی مثل IP، hostname، timezone و server name می‌توانند در صفحه‌ی RTL به‌صورت LTR باقی بمانند.
 
-## Common failure scenarios
+## failure scenarioهای رایج
 
-### General setting reverts while editing
+### General setting هنگام edit revert می‌شود
 
-Check dirty-state guards before blaming React Query. Query data is intentionally not copied over a field that has local unsaved edits.
+پیش از مقصر دانستن React Query، dirty-state guardها را بررسی کنید. Query data عمداً روی field دارای local unsaved edit overwrite نمی‌شود.
 
-### Network configuration succeeds but table remains stale
+### Network configuration موفق است ولی table stale می‌ماند
 
-Check network-query invalidation and the correct DHCP/static endpoint before changing cache policy.
+Network-query invalidation و endpoint درست DHCP/static را بررسی کنید، نه اینکه cache policy را فوراً تغییر دهید.
 
-### Web user exists but matching OS user does not
+### Web user وجود دارد ولی OS user همنام ایجاد نشده
 
-This is a valid partial-failure state of the current two-stage creation flow. Inspect the Web-user and OS-user mutations separately.
+این یک partial-failure state معتبر در flow دو مرحله‌ای فعلی است. Web-user mutation و OS-user mutation را جداگانه بررسی کنید.
 
-### Admin delete button is disabled
+### Admin delete button disabled است
 
-This is intentional frontend protection for username `admin`.
+این frontend protection عمدی برای username برابر `admin` است.
 
-## Extension guide
+## راهنمای توسعه
 
-When extending Settings:
+هنگام توسعه‌ی Settings:
 
-1. identify which tab owns the setting;
-2. use React Query for authoritative backend configuration;
-3. preserve dirty-form guards for editable server state;
-4. require confirmation for operations with system-wide impact;
-5. keep network mode-to-endpoint mapping explicit;
-6. distinguish Web users from OS/Samba identities;
-7. document any multi-step cross-domain workflow and lack of rollback;
-8. do not introduce caller-level persistence flags for domains not owned by StateSync;
-9. keep semantic RTL direction at an appropriate DOM boundary.
+1. مشخص کنید setting متعلق به کدام tab است.
+2. برای authoritative backend configuration از React Query استفاده کنید.
+3. dirty-form guard را برای editable server state حفظ کنید.
+4. برای operation با system-wide impact confirmation الزامی کنید.
+5. network mode-to-endpoint mapping را صریح نگه دارید.
+6. Web user را از OS/Samba identity جدا در نظر بگیرید.
+7. multi-step cross-domain workflow و نبود rollback را مستند کنید.
+8. برای domain خارج از StateSync، caller-level persistence flag اضافه نکنید.
+9. semantic RTL direction را در DOM boundary مناسب حفظ کنید.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/pages/Settings.tsx`
 - `src/components/settings/GeneralSettingsPanel.tsx`
@@ -358,7 +372,7 @@ When extending Settings:
 - `src/hooks/useUpdateWebUserPassword.ts`
 - `src/hooks/useCreateOsUser.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../general-settings.md`](../general-settings.md)
 - [`users.md`](./users.md)
