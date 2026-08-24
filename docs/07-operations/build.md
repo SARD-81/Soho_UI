@@ -21,14 +21,54 @@ There is currently no `test` script.
 
 `package-lock.json` is committed and uses lockfile version 3.
 
-The repository currently does **not** contain:
+The repository now also contains the frontend validation workflow:
+
+```text
+.github/workflows/frontend-validation.yml
+```
+
+It currently runs with Node.js 22 and executes:
+
+```text
+npm ci
+npm run lint
+npm run build
+```
+
+The repository still does **not** contain:
 
 - a Dockerfile;
-- GitHub Actions workflow files;
 - an Nginx configuration file;
 - a pinned Node version through `.nvmrc` or `package.json#engines`.
 
-Those are operational gaps/choices, not hidden build requirements.
+The CI workflow provides a validated Node 22 environment, but this is not yet a general package-level Node version declaration.
+
+## CI quality gate
+
+The frontend validation workflow runs on:
+
+- pushes to the active documentation/audit branch while this project-wide cleanup is in progress;
+- pull requests targeting `main`.
+
+It publishes a commit status with context:
+
+```text
+frontend-validation
+```
+
+The job sequence is:
+
+```text
+checkout
+→ pending validation status
+→ setup Node.js 22
+→ npm ci
+→ npm run lint
+→ npm run build
+→ final validation status
+```
+
+A failed `frontend-validation` status should block merge until the underlying lint/build failure is understood and corrected.
 
 ## Recommended release build sequence
 
@@ -100,24 +140,21 @@ Current lint command:
 eslint .
 ```
 
-`dist` is globally ignored by ESLint.
-
-The build script does not automatically invoke ESLint, so release verification should run both lint and build.
+The build script does not automatically invoke ESLint, which is why CI runs lint and build as separate gates.
 
 ## Automated-test status
 
-There is currently no automated test runner/script in `package.json`.
+There is currently no automated behavioral test runner/script in `package.json`.
 
-A release checklist therefore cannot honestly contain `npm test` as a passing gate today.
-
-Until a test suite is added, minimum executable quality gates are:
+The current executable CI gate therefore verifies:
 
 ```text
 npm ci
 npm run lint
 npm run build
-manual smoke verification of critical flows
 ```
+
+and still requires targeted manual smoke verification for behavior-changing work.
 
 See [`../03-development/testing.md`](../03-development/testing.md) for the testing gap and recommended future direction.
 
@@ -206,8 +243,6 @@ Current `vite.config.ts` contains:
 base: './'
 ```
 
-This makes generated asset URLs relative.
-
 Any change to hosting path/base must be tested against:
 
 - root navigation;
@@ -220,7 +255,7 @@ Any change to hosting path/base must be tested against:
 
 ## Build artifact verification
 
-After build, verify at minimum:
+After a successful build, verify at minimum:
 
 ```bash
 ls -la dist
@@ -232,13 +267,13 @@ Then use:
 npm run preview
 ```
 
-for a local production-bundle smoke check.
+for a local production-bundle smoke check when a browser-capable validation environment is available.
 
 `vite preview` is a verification server, not the documented production web server.
 
 ## Manual smoke checklist
 
-Because automated tests are not yet present, verify representative high-risk paths before release:
+Automated lint/build does not replace runtime smoke verification. Before release, verify representative high-risk paths:
 
 - login;
 - refresh/reload an authenticated session;
@@ -264,7 +299,7 @@ For a deployment handoff, provide either:
 - source commit SHA used for the build;
 - build date/release identifier;
 - production API/auth base values used during build;
-- output of lint/build checks;
+- `frontend-validation` result or equivalent lint/build evidence;
 - deployment/rollback notes.
 
 ### Option B — source-based build
@@ -285,25 +320,30 @@ Provide:
 
 Option B is preferable when the deployment pipeline is designed to create reproducible artifacts itself.
 
-## Node version gap
+## Node version policy
 
-The project currently says to use a supported Node.js LTS release, but does not pin one in repository metadata.
+CI currently validates with:
 
-For reproducible production builds, a future maintenance change should add one explicit policy such as:
+```text
+Node.js 22
+```
+
+The project still lacks a package-level/general developer version pin such as:
 
 - `.nvmrc`;
 - `.node-version`;
-- `package.json#engines`;
-- CI/container image pinning.
+- `package.json#engines`.
 
-Until then, record the exact Node/npm versions used for every production release.
+Until one is adopted, use Node 22 when reproducing the current CI environment and record the exact Node/npm versions used for production releases.
 
-Useful command:
+Useful commands:
 
 ```bash
 node --version
 npm --version
 ```
+
+If a package-level Node policy is added later, update CI and this document together.
 
 ## Build failure triage
 
@@ -325,6 +365,18 @@ Run the normal build and fix the reported source/type issue. Do not skip `tsc -b
 
 Treat lint failures separately from type errors. Review the exact rule/file; do not globally disable rules solely to unblock a release.
 
+### CI fails but local build passes
+
+Compare:
+
+- Node/npm versions;
+- lockfile state;
+- uncommitted local files;
+- environment values;
+- case-sensitive import paths that may behave differently on Linux.
+
+The GitHub Actions environment is an important clean-room signal because it starts from a fresh checkout and `npm ci`.
+
 ### Build succeeds but API points to wrong backend
 
 The wrong `VITE_API_BASE_URL` or `VITE_AUTH_API_BASE_URL` was likely used at build time. Rebuild with correct values; changing Nginx environment variables alone will not modify the existing bundle.
@@ -339,19 +391,19 @@ For each release, preserve at least:
 
 ```text
 commit SHA
+frontend-validation result
 Node version
 npm version
 environment-name / non-secret VITE endpoints
-npm ci result
-npm run lint result
-npm run build result
 artifact checksum or release package identity
+manual smoke verification notes
 ```
 
 This turns “the frontend we deployed” into a reproducible artifact rather than an untraceable directory copy.
 
 ## Related files
 
+- `.github/workflows/frontend-validation.yml`
 - `package.json`
 - `package-lock.json`
 - `vite.config.ts`
