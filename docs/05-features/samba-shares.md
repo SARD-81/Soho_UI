@@ -1,40 +1,40 @@
-# Samba Shares, Users, and Groups
+# Samba Shareها، Userها و Groupها
 
-## Purpose
+## هدف
 
-The Samba feature is the operator-facing administration surface for file-sharing configuration, Samba users, Samba groups, and access membership.
+Feature مربوط به Samba، سطح مدیریتی قابل مشاهده برای Operator جهت file-sharing configuration، Samba user، Samba group و access membership است.
 
 Route: `/share`
 
 Entry point: `src/pages/Share.tsx`
 
-The page is intentionally broader than a single "share list". It coordinates three related but independently persisted backend domains:
+این page عمداً گسترده‌تر از یک «share list» ساده است و سه resource family مرتبط را هماهنگ می‌کند:
 
-- Samba shares;
-- Samba users;
-- Samba groups.
+- Samba shareها؛
+- Samba userها؛
+- Samba groupها.
 
-These domains share UI and access-management workflows, but they have separate React Query keys and separate StateSync ownership.
+این domainها UI و access-management workflow مشترک دارند، اما React Query keyهای مستقل دارند. در contract صحیح فعلی GitLab، فقط `samba-shares` یک StateSync persisted domain است؛ Samba user/group از React Query refresh استفاده می‌کنند ولی StateSync domain مستقل ندارند.
 
-## Main responsibilities
+## مسئولیت‌های اصلی
 
-The current feature supports:
+Feature فعلی موارد زیر را پشتیبانی می‌کند:
 
-- listing Samba shares;
-- creating and deleting shares;
-- inspecting selected/pinned share details;
-- managing share users and groups;
-- listing Samba users;
-- creating, deleting, enabling, disabling, and changing the password of Samba users;
-- reading per-user Samba account flags;
-- listing Samba groups;
-- creating and deleting Samba groups;
-- adding/removing Samba users from groups;
-- reloading `smbd.service` after successful share creation.
+- list کردن Samba shareها؛
+- ساخت و حذف share؛
+- مشاهده‌ی detail مربوط به selected/pinned share؛
+- مدیریت share user و group؛
+- list کردن Samba userها؛
+- ساخت، حذف، enable، disable و تغییر password مربوط به Samba user؛
+- خواندن per-user Samba Account Flags؛
+- list کردن Samba groupها؛
+- ساخت و حذف Samba group؛
+- اضافه/حذف کردن Samba user در group؛
+- reload کردن `smbd.service` بعد از share creation موفق.
 
-## Page tabs
+## Tabهای Page
 
-`Share.tsx` exposes three tabs:
+`Share.tsx` سه tab expose می‌کند:
 
 ```text
 samba-groups
@@ -42,9 +42,9 @@ samba-users
 shares
 ```
 
-The active tab controls which user/group queries are enabled. The share list is loaded independently because it is also used by share detail state.
+Active tab مشخص می‌کند کدام user/group queryها enabled باشند. Share list مستقل load می‌شود چون در share detail state نیز استفاده می‌شود.
 
-## Runtime ownership
+## Runtime Ownership
 
 ```mermaid
 flowchart TD
@@ -80,7 +80,7 @@ flowchart TD
     GM --> GROUPAPI
 ```
 
-## Samba shares
+## Samba Shareها
 
 Primary query key:
 
@@ -94,20 +94,20 @@ Endpoint:
 GET /api/samba/sharepoints/?property=all
 ```
 
-`useSambaShares()` normalizes known boolean-like fields such as:
+`useSambaShares()` boolean-like fieldهای شناخته‌شده را normalize می‌کند، از جمله:
 
-- `read only`;
-- `available`;
-- `guest ok`;
-- `browseable`;
-- `inherit permissions`;
+- `read only`؛
+- `available`؛
+- `guest ok`؛
+- `browseable`؛
+- `inherit permissions`؛
 - `is_custom`.
 
-String values such as `yes/no` and `true/false` are converted where possible so components do not need to repeat backend normalization.
+String valueهایی مثل `yes/no` و `true/false` در صورت امکان تبدیل می‌شوند تا componentها مجبور به duplicate کردن backend normalization نباشند.
 
-There is no continuous polling interval in `useSambaShares()`.
+`useSambaShares()` continuous polling interval ندارد.
 
-## Share creation
+## ساخت Share
 
 Hook: `useCreateShare()`
 
@@ -117,9 +117,9 @@ Endpoint:
 POST /api/samba/sharepoints/
 ```
 
-The current payload contains the share name, path, access members, and default Samba options.
+Payload فعلی شامل share name، path، access memberها و default Samba optionها است.
 
-Important current defaults include:
+Defaultهای مهم فعلی:
 
 ```text
 available = true
@@ -132,17 +132,17 @@ directory_mask = 0777
 inherit_permissions = false
 ```
 
-The page requires at least one access member across selected users/groups before the request is submitted.
+Page پیش از submit شدن request حداقل یک access member از میان selected user/groupها نیاز دارد.
 
-On success:
+پس از success:
 
-1. the Samba share query is invalidated;
-2. the create modal closes;
-3. `Share.tsx` asks `useServiceAction()` to reload `smbd.service`.
+1. Samba share query invalidate می‌شود؛
+2. create modal بسته می‌شود؛
+3. `Share.tsx` از `useServiceAction()` می‌خواهد `smbd.service` را reload کند.
 
-The service reload is operational behavior, not persistence behavior.
+Service reload operational behavior است، نه persistence behavior.
 
-## Share deletion
+## حذف Share
 
 Hook: `useDeleteShare()`
 
@@ -152,54 +152,54 @@ Endpoint:
 DELETE /api/samba/sharepoints/{shareName}/
 ```
 
-Deletion uses a confirmation flow and tracks the pending share name so the UI can disable/mark the row being removed.
+Deletion از confirmation flow استفاده می‌کند و pending share name را track می‌کند تا row در حال حذف disable/mark شود.
 
-After success the canonical share query is invalidated.
+پس از success، canonical share query invalidate می‌شود.
 
-## Share member management
+## Share Member Management
 
 Component: `ManageShareMembersModal`
 
-The modal supports two presentation modes:
+Modal دو presentation mode دارد:
 
 ```text
 users
 groups
 ```
 
-The backend access representation is read from the Samba `valid users` property. Utility functions split that representation into users and groups and merge the edited result back into a single access-member list.
+Backend access representation از property مربوط به Samba یعنی `valid users` خوانده می‌شود. Utility functionها این representation را به user/group تفکیک می‌کنند و نتیجه‌ی editشده را دوباره به یک access-member list واحد merge می‌کنند.
 
-This is important: **the UI distinction between users and groups does not imply two independent backend properties are always written.** The current member editor rebuilds the complete access set before updating the share.
+نکته‌ی مهم: **تفکیک user و group در UI به معنی نوشته‌شدن دو backend property مستقل نیست.** Member editor فعلی پیش از update share، complete access set را rebuild می‌کند.
 
-### Membership business rule
+### Membership Business Rule
 
-The modal does not allow the staged access list to become empty. The last access member cannot be removed through this UI.
+Modal اجازه نمی‌دهد staged access list خالی شود. آخرین access member از طریق این UI قابل حذف نیست.
 
-This prevents the normal editor flow from producing a share with no configured user/group access.
+در نتیجه normal editor flow نمی‌تواند share بدون user/group access configureشده ایجاد کند.
 
-### Update endpoint
+### Update Endpoint
 
-Share changes use:
+Share changeها از endpoint زیر استفاده می‌کنند:
 
 ```text
 PUT /api/samba/sharepoints/{shareName}/update/
 ```
 
-`useUpdateSharepoint()` maps display/backend aliases such as:
+`useUpdateSharepoint()` display/backend aliasها را map می‌کند:
 
 ```text
-read only          -> read_only
-guest ok           -> guest_ok
-max connections    -> max_connections
-valid users        -> valid_users
-create mask        -> create_mask
-directory mask     -> directory_mask
+read only           -> read_only
+guest ok            -> guest_ok
+max connections     -> max_connections
+valid users         -> valid_users
+create mask         -> create_mask
+directory mask      -> directory_mask
 inherit permissions -> inherit_permissions
 ```
 
-Keep this mapping centralized. Components should not independently invent API field aliases.
+این mapping را centralized نگه دارید. Componentها نباید API field alias را مستقل از هم بسازند.
 
-## Samba users
+## Samba Userها
 
 Primary query key:
 
@@ -213,13 +213,13 @@ Primary list endpoint:
 GET /api/samba/users/?property=all
 ```
 
-The query uses a 15-second stale time and no continuous polling interval.
+Query از stale time برابر 15 ثانیه استفاده می‌کند و continuous polling interval ندارد.
 
-### Account status fan-out
+### Account Status Fan-out
 
-The Samba list response is not the only source used by the UI for enabled/disabled state.
+Samba list response تنها source مورد استفاده‌ی UI برای enabled/disabled state نیست.
 
-For each displayed username, `useSambaUserAccountFlags()` creates a separate query:
+برای هر username نمایش‌داده‌شده، `useSambaUserAccountFlags()` query جداگانه‌ای می‌سازد:
 
 ```text
 ['samba-user', username, 'account-flags']
@@ -231,17 +231,17 @@ Endpoint:
 GET /api/samba/users/{username}/?property=Account Flags
 ```
 
-Account flags are normalized as:
+Account Flagها به‌شکل زیر normalize می‌شوند:
 
-- flag containing `D` -> disabled;
-- flag containing `U` -> enabled;
-- otherwise -> unknown.
+- flag شامل `D` → disabled؛
+- flag شامل `U` → enabled؛
+- در غیر این صورت → unknown.
 
-This is an intentional **N-per-user query fan-out**. When investigating request volume on the Samba Users tab, do not mistake these requests for accidental duplicate list fetches.
+این یک **N-per-user query fan-out** intentional است. هنگام بررسی request volume در Samba Users tab، این requestها را accidental duplicate list fetch در نظر نگیرید.
 
-If the backend later provides account state in the main user-list response, this fan-out is a candidate for simplification.
+اگر backend در آینده account state را داخل main user-list response ارائه کرد، این fan-out candidate ساده‌سازی است.
 
-## Samba user mutations
+## Samba User Mutationها
 
 Create:
 
@@ -261,7 +261,7 @@ Enable/disable/password update:
 PUT /api/samba/users/{username}/update/
 ```
 
-Supported update actions are:
+Supported update actionها:
 
 ```text
 enable
@@ -269,17 +269,17 @@ disable
 change_password
 ```
 
-After status changes, both the Samba user list and that user's Account Flags query are invalidated.
+پس از status change، هم Samba user list و هم Account Flags query همان user invalidate می‌شوند.
 
-After password changes, the Samba user list is invalidated.
+پس از password change، Samba user list invalidate می‌شود.
 
-### Delete dependency rule
+### Delete Dependency Rule
 
-The page treats HTTP 400 during Samba-user deletion as a likely active-share dependency and tells the operator to remove related share usage first.
+Page، HTTP 400 هنگام حذف Samba user را به‌عنوان احتمال active-share dependency در نظر می‌گیرد و به Operator می‌گوید ابتدا usage مربوط به share را حذف کند.
 
-The backend remains authoritative for this dependency check.
+Backend همچنان authoritative برای dependency check است.
 
-## Samba groups
+## Samba Groupها
 
 Primary query key:
 
@@ -293,7 +293,7 @@ Primary endpoint:
 GET /api/samba/groups/?property=all&contain_system_groups=false
 ```
 
-System groups are excluded from the ordinary Samba group administration view.
+System groupها از ordinary Samba group administration view exclude می‌شوند.
 
 Create:
 
@@ -307,40 +307,40 @@ Delete:
 DELETE /api/samba/groups/{groupName}/
 ```
 
-## Group membership updates
+## Group Membership Update
 
-Group member changes use:
+Group member changeها از endpoint زیر استفاده می‌کنند:
 
 ```text
 PUT /api/samba/groups/{groupName}/update/
 ```
 
-with action values derived as:
+Action valueها به‌شکل زیر derive می‌شوند:
 
 ```text
 add    -> add_user
 remove -> remove_user
 ```
 
-The current service sends **one PUT per username**.
+Service فعلی برای **هر username یک PUT جدا** ارسال می‌کند.
 
-After the mutation succeeds, the implementation invalidates:
+پس از mutation موفق، implementation موارد زیر را invalidate می‌کند:
 
-- the group list;
-- the selected group's member query;
-- the selected group's available-user query.
+- group list؛
+- selected group's member query؛
+- selected group's available-user query.
 
-### Important partial-failure behavior
+### Partial-failure Behavior مهم
 
-A multi-user membership operation is not a frontend transaction.
+Multi-user membership operation یک frontend transaction نیست.
 
-If several usernames are being updated and request number N fails, earlier successful requests are not rolled back automatically.
+اگر چند username در حال update باشند و request شماره N fail شود، requestهای موفق قبلی به‌صورت خودکار rollback نمی‌شوند.
 
-Troubleshooting must therefore compare the final backend membership state rather than assuming the whole batch either succeeded or failed.
+بنابراین troubleshooting باید final backend membership state را مقایسه کند، نه این‌که فرض کند کل batch یا کامل موفق شده یا کامل fail شده است.
 
-## Create-group workflow is also non-atomic
+## Create-group Workflow نیز Non-atomic است
 
-Creating a group with initial members happens in two logical stages:
+ساخت group همراه initial memberها دو stage منطقی دارد:
 
 ```mermaid
 sequenceDiagram
@@ -358,123 +358,132 @@ sequenceDiagram
     end
 ```
 
-If the group is created but adding one or more members fails, the new group remains. The frontend does not delete it as rollback.
+اگر group ساخته شود اما اضافه‌کردن یک یا چند member fail شود، group جدید باقی می‌ماند. Frontend برای rollback آن را delete نمی‌کند.
 
-This is a significant maintenance invariant and should not be hidden behind a generic "create group" abstraction.
+این maintenance invariant مهم است و نباید پشت abstraction عمومی «create group» مخفی شود.
 
-## Detail split-view state
+## Detail Split-view State
 
-Shares use `detailSplitViewStore` with view id:
+Shareها از `detailSplitViewStore` با view id زیر استفاده می‌کنند:
 
 ```text
 samba-shares
 ```
 
-The page removes pinned/active detail identifiers that no longer exist in the latest share list.
+Page، pinned/active detail identifierهایی را که دیگر در latest share list وجود ندارند حذف می‌کند.
 
-Samba users also have a detail-view id:
+Samba userها نیز detail-view id دارند:
 
 ```text
 samba-users
 ```
 
-The currently rendered Samba user detail panel is not active in the page, but the store cleanup logic still exists. Dead/disabled UI paths should be removed or explicitly restored rather than retained indefinitely as commented JSX.
+Samba user detail panel فعلی در page فعال نیست، ولی store cleanup logic هنوز وجود دارد. Dead/disabled UI path باید یا حذف شود یا صریحاً restore شود؛ نباید به‌صورت commented JSX برای مدت نامحدود باقی بماند.
 
-## StateSync ownership
+## StateSync Boundary
 
-Samba persistence is centralized.
-
-`StateSyncManager` maps successful mutations as follows:
+بر اساس contract صحیح فعلی GitLab، فقط Samba Share یک StateSync persisted domain دارد:
 
 ```text
-/api/samba/users...       -> samba-users + samba-groups
-/api/samba/groups...      -> samba-groups + samba-users
-/api/samba/sharepoints... -> samba-shares
-other /api/samba...       -> samba-users + samba-groups + samba-shares
+samba-shares
 ```
 
-The cross-domain user/group mapping is intentional because membership state can be visible from both sides.
-
-Normal list requests and mutations must not own `save_to_db=true` themselves.
-
-Only canonical StateSync snapshot requests persist frontend-requested Samba snapshots:
+Mapping فعلی:
 
 ```text
-samba-users  -> GET /api/samba/users/?property=all
-samba-groups -> GET /api/samba/groups/?property=all&contain_system_groups=false
+/api/samba/sharepoints... -> samba-shares
+other /api/samba...       -> samba-shares
+```
+
+Canonical snapshot:
+
+```text
 samba-shares -> GET /api/samba/sharepoints/?property=all
 ```
 
-## Service reload boundary
+در contract فعلی:
 
-The current page reloads:
+- `samba-users` StateSync domain نیست؛
+- `samba-groups` StateSync domain نیست.
+
+در نتیجه mutationهای Samba user/group برای UI freshness از React Query invalidation/refetch استفاده می‌کنند، اما نباید frontend canonical `save_to_db=true` snapshot برای user/group ایجاد کنند.
+
+Normal list request و mutation نباید خودشان مالک `save_to_db=true` باشند.
+
+اگر در آینده persistence مربوط به Samba user/group لازم شد، ابتدا باید canonical endpoint و backend contract مشخص شوند و سپس centralized `StateSyncManager` تغییر کند؛ نه individual hook.
+
+## Service Reload Boundary
+
+Page فعلی پس از share creation موفق service زیر را reload می‌کند:
 
 ```text
 smbd.service
 ```
 
-after successful share creation.
+فرض نکنید هر Samba mutation service reload انجام می‌دهد. User/group/member operationها در وضعیت فعلی به behavior endpoint خود و query invalidation متکی‌اند، مگر صریحاً wiring دیگری وجود داشته باشد.
 
-Do not assume every Samba mutation performs a service reload. User/group/member operations currently rely on their own backend endpoint behavior and query invalidation unless explicitly wired otherwise.
+اگر backend semantics در آینده تغییر کرد و config mutation نیازمند reload/restart شد، این operational rule را centralized کنید و reloadهای پراکنده به modalها اضافه نکنید.
 
-If backend semantics change so config mutations require reload/restart, centralize that operational rule instead of adding arbitrary reloads in individual modals.
+## Error Handling
 
-## Error handling
+Feature ترکیبی از موارد زیر استفاده می‌کند:
 
-The feature uses a mixture of:
+- modal-local error text؛
+- `react-hot-toast` feedback؛
+- Axios-derived backend message؛
+- explicit dependency message مانند active-share failure هنگام حذف Samba user.
 
-- modal-local error text;
-- `react-hot-toast` feedback;
-- Axios-derived backend messages;
-- explicit dependency messages such as active-share Samba-user deletion failures.
+Backend error authoritative باقی می‌ماند. Frontend duplicate/member check UX را بهتر می‌کند، اما در concurrent administration consistency را تضمین نمی‌کند.
 
-Backend errors remain authoritative. Frontend duplicate/member checks improve UX but cannot guarantee consistency under concurrent administration.
+## Failure Scenarioهای رایج
 
-## Common failure scenarios
+### Share List Stale است
 
-### Share list is stale
+بررسی کنید:
 
-Check:
+1. query state مربوط به `['samba','shares']`؛
+2. mutation success؛
+3. targeted invalidation؛
+4. response مربوط به `/api/samba/sharepoints/`؛
+5. آیا change از pathای انجام شده که `axiosInstance` را bypass می‌کند.
 
-1. `['samba','shares']` query state;
-2. mutation success;
-3. targeted invalidation;
-4. backend `/api/samba/sharepoints/` response;
-5. whether the change was made through a path that bypasses `axiosInstance`.
+### Samba User Status مقدار Unknown نشان می‌دهد
 
-### Samba user status shows unknown
+بررسی کنید:
 
-Check:
+1. Account Flags request همان username؛
+2. backend flag format؛
+3. normalization در `useSambaUserAccountFlags()`؛
+4. active/enabled بودن Users tab.
 
-1. Account Flags request for that username;
-2. the backend flag format;
-3. `useSambaUserAccountFlags()` normalization;
-4. whether the Users tab is active/enabled.
+### Group Memberها Partial Update شده‌اند
 
-### Group members are partially updated
+به یاد داشته باشید implementation برای هر username یک request می‌فرستد. پس از failed username، backend membership را inspect کنید و بدون بررسی کل operation را کورکورانه retry نکنید.
 
-Remember the implementation sends one request per username. Inspect the backend membership after the failed username instead of retrying the whole operation blindly.
+### Share Creation موفق بوده ولی Samba Behavior تغییر نکرده
 
-### Share creation succeeded but Samba behavior did not change
+Mutation مربوط به reload کردن `smbd.service` و error toast آن را جدا از share-create request بررسی کنید.
 
-Check the `smbd.service` reload mutation and its error toast separately from the share-create request.
+### Samba User/Group Persistence Snapshot دیده نمی‌شود
 
-## Extension guide
+این behavior با contract فعلی expected است؛ user/group StateSync domain ندارند. اگر persistence requirement وجود دارد، ابتدا backend contract را مشخص کنید و centralized StateSync را تغییر دهید.
 
-When adding a Samba capability:
+## راهنمای Extension
 
-1. decide whether it belongs to shares, users, groups, or multiple domains;
-2. reuse the canonical query key for that domain;
-3. normalize backend field aliases in a hook/service rather than the component;
-4. use `axiosInstance` for all API traffic;
-5. do not add caller-level `save_to_db` flags;
-6. extend StateSync URL-to-domain mapping only when a mutation affects a persisted domain not already covered;
-7. document any multi-request workflow and partial-failure behavior;
-8. invalidate the smallest meaningful query family on success;
-9. account for per-user/per-group fan-out when adding status/detail queries;
-10. document whether a service reload/restart is operationally required.
+هنگام اضافه‌کردن Samba capability:
 
-## Related files
+1. مشخص کنید مربوط به share، user، group یا چند domain است؛
+2. canonical query key همان resource را reuse کنید؛
+3. backend field alias را در hook/service normalize کنید، نه component؛
+4. برای تمام API traffic از `axiosInstance` استفاده کنید؛
+5. caller-level `save_to_db` flag اضافه نکنید؛
+6. فقط اگر mutation persisted domain فعلی را تحت تأثیر قرار می‌دهد StateSync mapping را بررسی/توسعه دهید؛
+7. multi-request workflow و partial-failure behavior را مستند کنید؛
+8. پس از success کوچک‌ترین meaningful query family را invalidate کنید؛
+9. هنگام افزودن status/detail query، per-user/per-group fan-out را در نظر بگیرید؛
+10. مشخص کنید service reload/restart از نظر operational لازم است یا خیر.
+
+## فایل‌های مرتبط
 
 - `src/pages/Share.tsx`
 - `src/hooks/useSambaShares.ts`
@@ -496,7 +505,7 @@ When adding a Samba capability:
 - `src/lib/stateSyncManager.ts`
 - `src/components/share/ManageShareMembersModal.tsx`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`users.md`](./users.md)
 - [`file-system.md`](./file-system.md)
