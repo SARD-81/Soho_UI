@@ -1,23 +1,23 @@
-# Routing and Access Control
+# Routing و Access Control
 
-This document describes how SOHO UI decides which page to render, how authenticated routes are protected, and which responsibilities belong to frontend routing versus backend authorization.
+این سند توضیح می‌دهد SOHO UI چگونه تصمیم می‌گیرد کدام page را render کند، authenticated routeها چگونه protect می‌شوند و کدام responsibility به frontend routing و کدام به backend authorization تعلق دارد.
 
-## Route ownership
+## Route Ownership
 
-The application router is defined in `src/routes/Routes.tsx` with React Router's `createBrowserRouter`.
+Application router در `src/routes/Routes.tsx` و با `createBrowserRouter` مربوط به React Router تعریف شده است.
 
-The route tree has two main branches:
+Route tree دو branch اصلی دارد:
 
 ```text
 /login
 /
 ```
 
-`/login` is public.
+`/login` عمومی است.
 
-The `/` branch is wrapped by `ProtectedRoute` and renders `MainLayout`. All normal application pages live below this protected branch.
+Branch مربوط به `/` با `ProtectedRoute` wrap شده و `MainLayout` را render می‌کند. تمام pageهای عادی application زیر همین protected branch قرار دارند.
 
-## Current route map
+## Route Map فعلی
 
 ```text
 /login                         -> LoginPage
@@ -43,16 +43,16 @@ The `/` branch is wrapped by `ProtectedRoute` and renders `MainLayout`. All norm
 *                                -> NotFoundPage
 ```
 
-Route names are part of the current public frontend URL contract. Renaming a path can affect bookmarks, links, deployment rewrites, and external references even when the component itself is unchanged.
+Route nameها بخشی از public frontend URL contract فعلی هستند. Rename کردن path حتی اگر component تغییری نکرده باشد می‌تواند روی bookmarkها، linkها، deployment rewriteها و external referenceها اثر بگذارد.
 
-## ProtectedRoute contract
+## Contract مربوط به ProtectedRoute
 
-`ProtectedRoute` reads two values from `AuthContext`:
+`ProtectedRoute` دو value را از `AuthContext` می‌خواند:
 
 - `isAuthenticated`
 - `isAuthLoading`
 
-Its decision order is important.
+ترتیب decisionهای آن مهم است.
 
 ```mermaid
 flowchart TD
@@ -65,84 +65,84 @@ flowchart TD
     F -- No --> G[Redirect to /login with replace]
 ```
 
-### Why `isAuthLoading` comes before redirect
+### چرا `isAuthLoading` باید پیش از Redirect بررسی شود؟
 
-Authentication may need an asynchronous refresh-token call when the application starts.
+هنگام start شدن application، authentication ممکن است به یک refresh-token call asynchronous نیاز داشته باشد.
 
-If `ProtectedRoute` redirected immediately whenever `isAuthenticated === false`, a valid persisted session could be sent to `/login` before `AuthProvider` had a chance to restore it.
+اگر `ProtectedRoute` هر زمان `isAuthenticated === false` بود بلافاصله redirect می‌کرد، یک persisted session معتبر ممکن بود پیش از آن‌که `AuthProvider` فرصت restore کردنش را داشته باشد به `/login` فرستاده شود.
 
-Therefore the route guard waits while authentication initialization is unresolved.
+به همین دلیل route guard تا زمانی که authentication initialization unresolved است منتظر می‌ماند.
 
-## Development authentication bypass
+## Development Authentication Bypass
 
-The application supports a development-only auth bypass controlled by `VITE_AUTH_BYPASS`.
+Application از auth bypass مخصوص development که با `VITE_AUTH_BYPASS` کنترل می‌شود پشتیبانی می‌کند.
 
-The bypass requires **both** conditions:
+Bypass نیازمند برقرار بودن **هر دو** condition زیر است:
 
-1. `import.meta.env.DEV` is true.
-2. `VITE_AUTH_BYPASS` contains a recognized truthy value such as `1`, `true`, `yes`, or `on`.
+1. `import.meta.env.DEV` برابر true باشد.
+2. `VITE_AUTH_BYPASS` یک truthy value شناخته‌شده مانند `1`، `true`، `yes` یا `on` داشته باشد.
 
-The production guard is intentional. A configuration flag alone must not be capable of bypassing authentication in a production build.
+Production guard intentional است. Configuration flag به‌تنهایی نباید بتواند در production build authentication را bypass کند.
 
-Do not weaken this invariant by removing the `import.meta.env.DEV` requirement.
+با حذف requirement مربوط به `import.meta.env.DEV` این invariant را تضعیف نکنید.
 
-## Login navigation
+## Login Navigation
 
-After a successful login, `LoginForm` calls `AuthContext.loginAction(...)` and then navigates to `/dashboard`.
+پس از login موفق، `LoginForm` ابتدا `AuthContext.loginAction(...)` را call می‌کند و سپس به `/dashboard` navigate می‌کند.
 
-The session is established before navigation. The dashboard should not be used as the mechanism that finalizes authentication.
+Session پیش از navigation ایجاد می‌شود. Dashboard نباید mechanismی باشد که authentication را finalize می‌کند.
 
-## Logout navigation
+## Logout Navigation
 
-User-triggered logout is exposed through `useLogout`.
+Logout که توسط user آغاز می‌شود از طریق `useLogout` expose شده است.
 
-`AuthContext.logout` clears the local session first. `useLogout` then navigates to `/login` on both backend success and backend failure.
+`AuthContext.logout` ابتدا local session را clear می‌کند. سپس `useLogout` چه backend logout موفق باشد و چه fail شود، به `/login` navigate می‌کند.
 
-This is expected because frontend access has already been revoked locally before the backend logout request finishes.
+این behavior expected است، چون frontend access پیش از پایان backend logout request از قبل local revoke شده است.
 
-## Idle-timeout navigation
+## Idle-timeout Navigation
 
-`MainLayout` enables `useSessionActivityTimeout` for the authenticated application shell.
+`MainLayout`، `useSessionActivityTimeout` را برای authenticated application shell فعال می‌کند.
 
-When the idle timeout fires:
+وقتی idle timeout اجرا می‌شود:
 
-1. logout is attempted;
-2. the user receives an expiration toast;
-3. navigation replaces the current page with `/login`.
+1. logout تلاش می‌شود؛
+2. expiration toast به user نمایش داده می‌شود؛
+3. navigation با replace کردن current page به `/login` می‌رود.
 
-The timeout belongs at the authenticated layout level because it applies to the whole protected application, not to an individual feature page.
+Timeout در سطح authenticated layout قرار دارد چون روی کل protected application اعمال می‌شود، نه روی یک feature page خاص.
 
-## MainLayout as the protected shell
+## MainLayout به‌عنوان Protected Shell
 
-`MainLayout` is more than visual chrome. It owns authenticated-shell responsibilities such as:
+`MainLayout` فقط visual chrome نیست. این component authenticated-shell responsibilityهایی مانند موارد زیر را مالک است:
 
-- navigation drawer;
-- top application bar;
-- notification bootstrap;
-- idle-session timeout integration;
-- system power-action coordination;
+- navigation drawer؛
+- top application bar؛
+- notification bootstrap؛
+- integration مربوط به idle-session timeout؛
+- system power-action coordination؛
 - nested route outlet.
 
-A feature page rendered below `MainLayout` should not duplicate these application-wide lifecycle responsibilities.
+Feature pageای که زیر `MainLayout` render می‌شود نباید این application-wide lifecycle responsibilityها را duplicate کند.
 
-## Not-found behavior
+## Behavior مربوط به Not Found
 
-There are two catch-all paths:
+دو catch-all path وجود دارد:
 
-- one inside the authenticated route tree;
-- one at the global router level.
+- یکی داخل authenticated route tree؛
+- یکی در global router level.
 
-This allows unknown protected URLs and unknown top-level URLs to both resolve to `NotFoundPage` while preserving the route hierarchy.
+در نتیجه هم unknown protected URL و هم unknown top-level URL به `NotFoundPage` resolve می‌شوند و route hierarchy حفظ می‌شود.
 
-## Frontend route guard versus authorization
+## Frontend Route Guard در برابر Authorization
 
-`ProtectedRoute` only controls frontend rendering/navigation.
+`ProtectedRoute` فقط frontend rendering/navigation را کنترل می‌کند.
 
-It must not be treated as a security boundary for backend resources.
+نباید به‌عنوان security boundary برای backend resourceها در نظر گرفته شود.
 
-Backend endpoints must independently validate authentication and authorization. A user can call an API without using the React router, and frontend source code is visible to the client.
+Backend endpointها باید authentication و authorization را مستقلاً validate کنند. User می‌تواند بدون استفاده از React router مستقیماً API را call کند و frontend source code نیز برای client قابل مشاهده است.
 
-The correct model is:
+مدل صحیح:
 
 ```text
 Frontend route guard
@@ -152,42 +152,42 @@ Backend authentication + authorization
     -> protects actual data and operations
 ```
 
-## Adding a protected page
+## اضافه‌کردن Protected Page
 
-When adding a new authenticated page:
+هنگام اضافه‌کردن authenticated page جدید:
 
-1. Create the page/component in the appropriate feature location.
-2. Add the route as a child of the protected `MainLayout` route.
-3. Add navigation metadata only if the page should be discoverable from the application navigation.
-4. Keep authentication checks centralized in `ProtectedRoute`; do not add ad-hoc login redirects to every page.
-5. Confirm the backend endpoints used by the page enforce their own permissions.
-6. Add or update feature documentation with the route entry point.
+1. Page/component را در feature location مناسب ایجاد کنید.
+2. Route را به‌عنوان child مربوط به protected `MainLayout` route اضافه کنید.
+3. فقط زمانی navigation metadata اضافه کنید که page باید از application navigation discoverable باشد.
+4. Authentication check را در `ProtectedRoute` متمرکز نگه دارید؛ ad-hoc login redirect به هر page اضافه نکنید.
+5. تأیید کنید backend endpointهای استفاده‌شده توسط page permissionهای خود را enforce می‌کنند.
+6. Feature documentation را با route entry point مربوطه اضافه یا به‌روزرسانی کنید.
 
-## Adding a public page
+## اضافه‌کردن Public Page
 
-A genuinely public page should be placed outside the protected `/` branch.
+Page واقعاً public باید خارج از protected `/` branch قرار بگیرد.
 
-Before doing this, explicitly decide whether the page may be viewed without an authenticated session. Public placement should not be used merely to work around a routing problem.
+پیش از انجام این کار صریحاً مشخص کنید page مجاز است بدون authenticated session دیده شود یا خیر. Public placement نباید صرفاً workaround برای routing problem باشد.
 
-## Common mistakes
+## اشتباه‌های رایج
 
-### Redirecting from every feature page
+### Redirect از هر Feature Page
 
-Do not duplicate `if (!authenticated) navigate('/login')` logic across pages. It creates inconsistent loading behavior and races with session restoration.
+منطق `if (!authenticated) navigate('/login')` را بین pageها duplicate نکنید. این کار loading behavior ناسازگار و race با session restoration ایجاد می‌کند.
 
-### Treating `isAuthenticated` as persisted truth
+### درنظرگرفتن `isAuthenticated` به‌عنوان Persisted Truth
 
-`isAuthenticated` is React runtime state. Session restoration is based on the token/session policy in `AuthContext` and `tokenStorage`.
+`isAuthenticated` یک React runtime state است. Session restoration بر اساس token/session policy در `AuthContext` و `tokenStorage` انجام می‌شود.
 
-### Enabling auth bypass in deployment configuration
+### فعال‌کردن Auth Bypass در Deployment Configuration
 
-The bypass exists only for local/development workflows. Production deployments should not depend on it.
+Bypass فقط برای local/development workflow وجود دارد. Production deployment نباید به آن وابسته باشد.
 
-### Renaming routes casually
+### Rename کردن بی‌دلیل Routeها
 
-Route paths are user-visible URLs. Treat route renames like interface changes and check navigation links, bookmarks, Nginx SPA fallback behavior, and documentation.
+Route pathها URLهای user-visible هستند. Route rename را مانند interface change در نظر بگیرید و navigation link، bookmark، Nginx SPA fallback behavior و documentation را بررسی کنید.
 
-## Related documents
+## مستندات مرتبط
 
 - [`authentication.md`](./authentication.md)
 - [`api-request-lifecycle.md`](./api-request-lifecycle.md)
