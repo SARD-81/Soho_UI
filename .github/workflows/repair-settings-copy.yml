@@ -1,0 +1,62 @@
+name: Repair Settings Copy
+
+on:
+  push:
+    branches:
+      - agent/project-documentation-audit
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: agent/project-documentation-audit
+
+      - name: Repair known Persian copy corruption
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/components/settings/GeneralSettingsPanel.tsx')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('تنطیم', 'تنظیم')
+
+          lines = text.splitlines(keepends=True)
+          repaired = []
+          for line in lines:
+              if 'با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود' in line:
+                  indent = line[: len(line) - len(line.lstrip())]
+                  newline = '\n' if line.endswith('\n') else ''
+                  repaired.append(
+                      indent
+                      + ": 'با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود و مسئولیت تنظیم صحیح ساعت سیستم بر عهده مدیر سامانه خواهد بود.',"
+                      + newline
+                  )
+              else:
+                  repaired.append(line)
+
+          updated = ''.join(repaired)
+          if updated == path.read_text(encoding='utf-8'):
+              raise SystemExit(0)
+
+          path.write_text(updated, encoding='utf-8')
+          PY
+
+      - name: Commit repaired copy when needed
+        run: |
+          if git diff --quiet -- src/components/settings/GeneralSettingsPanel.tsx; then
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/settings/GeneralSettingsPanel.tsx
+          git commit -m "fix: repair Persian settings copy"
+          git push origin HEAD:agent/project-documentation-audit
