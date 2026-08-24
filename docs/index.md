@@ -2,24 +2,33 @@
 
 This directory is the source of truth for understanding, maintaining, and extending the SOHO frontend.
 
-The goal is not to document every line of code. The goal is to preserve the knowledge that is expensive to rediscover: system boundaries, architectural decisions, runtime flows, business rules, operational constraints, and non-obvious implementation details.
+The goal is not to document every line of code. The goal is to preserve the knowledge that is expensive to rediscover: system boundaries, architectural decisions, runtime flows, business rules, operational constraints, API contracts, and non-obvious implementation details.
 
 ## How to use these docs
 
 If you return to the project after a long break, read the documents in this order:
 
 1. [`01-overview/project-overview.md`](./01-overview/project-overview.md) — what the application is and what it is responsible for.
-2. [`02-architecture/frontend-architecture.md`](./02-architecture/frontend-architecture.md) — how the frontend is structured at runtime.
-3. [`03-development/project-structure.md`](./03-development/project-structure.md) — where code belongs and where to start when changing a feature.
-4. [`03-development/code-commenting-guidelines.md`](./03-development/code-commenting-guidelines.md) — the project rules for useful in-code comments.
-5. [`04-core-flows/authentication.md`](./04-core-flows/authentication.md) — login, token storage, session restore, refresh, idle timeout, and logout.
-6. [`04-core-flows/routing-and-access-control.md`](./04-core-flows/routing-and-access-control.md) — protected routing and frontend access-control boundaries.
-7. [`04-core-flows/api-request-lifecycle.md`](./04-core-flows/api-request-lifecycle.md) — Axios, React Query, 401 recovery, persistence policy, and mutation state sync.
-8. [`04-core-flows/server-state-and-cache.md`](./04-core-flows/server-state-and-cache.md) — ownership of server state, cache, invalidation, and UI freshness.
-9. [`04-core-flows/state-sync-save-to-db.md`](./04-core-flows/state-sync-save-to-db.md) — canonical backend snapshot persistence and `save_to_db` invariants.
-10. [`04-core-flows/polling-and-data-refresh.md`](./04-core-flows/polling-and-data-refresh.md) — the maintained polling inventory and refresh policy.
-11. [`04-core-flows/notifications.md`](./04-core-flows/notifications.md) — notification baselines, monitoring lifecycles, and duplicate suppression.
-12. The relevant document under [`05-features/`](./05-features/) before modifying feature-specific behavior.
+2. [`02-architecture/frontend-architecture.md`](./02-architecture/frontend-architecture.md) — frontend module ownership and runtime structure.
+3. [`02-architecture/runtime-flow.md`](./02-architecture/runtime-flow.md) — application bootstrap, request, auth, and mutation flow.
+4. [`02-architecture/data-flow.md`](./02-architecture/data-flow.md) — backend state, React Query, UI state, and StateSync boundaries.
+5. [`02-architecture/decisions/`](./02-architecture/decisions/) — why the major architectural choices exist.
+6. [`03-development/getting-started.md`](./03-development/getting-started.md) — local setup and first verification steps.
+7. [`03-development/project-structure.md`](./03-development/project-structure.md) — where code belongs and where to start when changing a feature.
+8. [`03-development/configuration.md`](./03-development/configuration.md) — verified Vite/environment configuration.
+9. [`03-development/coding-conventions.md`](./03-development/coding-conventions.md) — project coding conventions and ownership rules.
+10. [`03-development/code-commenting-guidelines.md`](./03-development/code-commenting-guidelines.md) — rules for useful in-code comments.
+11. [`03-development/testing.md`](./03-development/testing.md) — current quality gates and the explicit automated-test gap.
+12. [`04-core-flows/authentication.md`](./04-core-flows/authentication.md) — login, token storage, session restore, refresh, idle timeout, and logout.
+13. [`04-core-flows/routing-and-access-control.md`](./04-core-flows/routing-and-access-control.md) — protected routing and frontend access-control boundaries.
+14. [`04-core-flows/api-request-lifecycle.md`](./04-core-flows/api-request-lifecycle.md) — Axios, React Query, 401 recovery, persistence policy, and mutation StateSync.
+15. [`04-core-flows/server-state-and-cache.md`](./04-core-flows/server-state-and-cache.md) — ownership of server state, cache, invalidation, and UI freshness.
+16. [`04-core-flows/state-sync-save-to-db.md`](./04-core-flows/state-sync-save-to-db.md) — canonical backend snapshot persistence and `save_to_db` invariants.
+17. [`04-core-flows/polling-and-data-refresh.md`](./04-core-flows/polling-and-data-refresh.md) — maintained polling inventory and refresh policy.
+18. [`04-core-flows/notifications.md`](./04-core-flows/notifications.md) — notification baselines, monitoring lifecycles, and duplicate suppression.
+19. The relevant document under [`05-features/`](./05-features/) before modifying feature-specific behavior.
+20. [`06-api/api-conventions.md`](./06-api/api-conventions.md) and [`06-api/endpoint-map.md`](./06-api/endpoint-map.md) before introducing or changing backend integration.
+21. The relevant operations document under [`07-operations/`](./07-operations/) before build/deployment/troubleshooting work.
 
 ## Documentation map
 
@@ -27,14 +36,33 @@ If you return to the project after a long break, read the documents in this orde
 
 - [`01-overview/project-overview.md`](./01-overview/project-overview.md)
 
+Planned completion items:
+
+- `01-overview/scope.md`
+- `01-overview/glossary.md`
+
 ### Architecture
 
 - [`02-architecture/frontend-architecture.md`](./02-architecture/frontend-architecture.md)
+- [`02-architecture/runtime-flow.md`](./02-architecture/runtime-flow.md)
+- [`02-architecture/data-flow.md`](./02-architecture/data-flow.md)
+
+Architecture decisions:
+
+- [`02-architecture/decisions/ADR-001-react-query-server-state.md`](./02-architecture/decisions/ADR-001-react-query-server-state.md)
+- [`02-architecture/decisions/ADR-002-centralized-axios.md`](./02-architecture/decisions/ADR-002-centralized-axios.md)
+- [`02-architecture/decisions/ADR-003-state-sync-persistence.md`](./02-architecture/decisions/ADR-003-state-sync-persistence.md)
+- [`02-architecture/decisions/ADR-004-client-side-routing.md`](./02-architecture/decisions/ADR-004-client-side-routing.md)
+- [`02-architecture/decisions/ADR-005-rtl-emotion-cache.md`](./02-architecture/decisions/ADR-005-rtl-emotion-cache.md)
 
 ### Development
 
+- [`03-development/getting-started.md`](./03-development/getting-started.md)
 - [`03-development/project-structure.md`](./03-development/project-structure.md)
+- [`03-development/configuration.md`](./03-development/configuration.md)
+- [`03-development/coding-conventions.md`](./03-development/coding-conventions.md)
 - [`03-development/code-commenting-guidelines.md`](./03-development/code-commenting-guidelines.md)
+- [`03-development/testing.md`](./03-development/testing.md)
 
 ### Core flows
 
@@ -48,7 +76,7 @@ If you return to the project after a long break, read the documents in this orde
 
 ### Features
 
-Feature documents describe the actual page-level user flow, query/mutation ownership, backend dependencies, business rules, failure modes, and extension points.
+Feature documents describe actual page-level user flow, query/mutation ownership, backend dependencies, business rules, failure modes, and extension points.
 
 - [`05-features/dashboard.md`](./05-features/dashboard.md) — live monitoring widgets, per-user layout customization, polling, uptime, and 3D server slots.
 - [`05-features/disks.md`](./05-features/disks.md) — disk inventory/details, pool ownership, partition safety checks, and destructive cleanup flow.
@@ -64,7 +92,22 @@ Feature documents describe the actual page-level user flow, query/mutation owner
 - [`05-features/settings.md`](./05-features/settings.md) — general system settings, network configuration, Web users, and cross-domain user creation.
 - [`05-features/history.md`](./05-features/history.md) — current History placeholder status and implementation checklist.
 
-Every currently routed product feature now has either a full feature document or, for History, an explicit placeholder-state document.
+Every currently routed product feature has either a full feature document or, for History, an explicit placeholder-state document.
+
+### API
+
+- [`06-api/api-conventions.md`](./06-api/api-conventions.md) — shared transport, query/mutation, persistence, normalization, and integration rules.
+- [`06-api/authentication-api.md`](./06-api/authentication-api.md) — auth base resolution, token endpoints, 401 recovery, and logout contract.
+- [`06-api/error-handling.md`](./06-api/error-handling.md) — error normalization, logical failure, partial failure, retry, and presentation rules.
+- [`06-api/endpoint-map.md`](./06-api/endpoint-map.md) — centralized Feature → Method → Endpoint → Query/owner → StateSync map.
+
+### Operations
+
+The operations section is the next active documentation phase:
+
+- `07-operations/build.md`
+- `07-operations/deployment.md`
+- `07-operations/troubleshooting.md`
 
 ### Other maintained notes
 
@@ -103,9 +146,7 @@ A change is not complete when it modifies a documented architectural contract, b
 
 Use Mermaid diagrams when ordering, ownership, or dependencies are easier to understand visually than as prose.
 
-## Planned structure
-
-The documentation will progressively evolve toward this layout:
+## Target structure
 
 ```text
 docs/
@@ -149,7 +190,14 @@ docs/
 │   ├── settings.md
 │   └── history.md
 ├── 06-api/
+│   ├── api-conventions.md
+│   ├── authentication-api.md
+│   ├── error-handling.md
+│   └── endpoint-map.md
 └── 07-operations/
+    ├── build.md
+    ├── deployment.md
+    └── troubleshooting.md
 ```
 
-This structure is intentionally introduced incrementally. Existing useful documentation should be preserved and migrated only when its new location and ownership are clear.
+The remaining overview/operations documents and final audit should complete this target structure.
