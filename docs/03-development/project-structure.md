@@ -1,60 +1,60 @@
-# Project Structure
+# ساختار پروژه
 
-## Purpose
+## هدف
 
-This document explains where responsibilities live in the repository and where to start when changing behavior. It is intended as a navigation guide, not a generated directory listing.
+این سند توضیح می‌دهد مسئولیت‌ها در repository کجا قرار گرفته‌اند و هنگام تغییر behavior باید از کجا شروع کرد. هدف آن ارائه‌ی یک navigation guide است، نه یک directory listing تولیدشده به‌صورت خودکار.
 
-## Top-level structure
+## ساختار سطح بالا
 
 ```text
 Soho_UI/
-├── docs/                  Engineering and runtime documentation
-├── public/                Static assets served directly by Vite
-├── src/                   Application source code
+├── docs/                  مستندات مهندسی و runtime
+├── public/                Static assetهایی که مستقیماً توسط Vite serve می‌شوند
+├── src/                   سورس‌کد application
 ├── index.html             Vite HTML entry
-├── package.json           Scripts and dependency declarations
+├── package.json           Scriptها و dependency declarationها
 ├── vite.config.ts         Vite configuration
 ├── tsconfig*.json         TypeScript configuration
 ├── eslint.config.js       ESLint configuration
 └── .prettierrc            Formatting configuration
 ```
 
-`repomix-output.xml` is a generated repository snapshot and should not be treated as a source-of-truth implementation file.
+`repomix-output.xml` یک snapshot تولیدشده از repository است و نباید به‌عنوان source-of-truth implementation file در نظر گرفته شود.
 
-## `src/` responsibility map
+## نقشه‌ی مسئولیت‌های `src/`
 
-The source tree currently contains these major areas:
+Source tree فعلی شامل بخش‌های اصلی زیر است:
 
 ```text
 src/
-├── @types/        Shared TypeScript declarations
-├── assets/        Source-managed visual/static assets
-├── components/    Reusable UI and application-shell components
-├── config/        Declarative UI/configuration structures
-├── constants/     Shared labels, options, limits, and static mappings
-├── contexts/      React context providers for cross-cutting state/actions
-├── hooks/         Feature/data/action hooks and reusable React behavior
-├── lib/           Integration and infrastructure modules
-├── mock/          Legacy/feature mock material where present
-├── mocks/         Mock API setup and fixtures
-├── pages/         Route-level page components
-├── routes/        Router definition and access-control wrappers
-├── schemas/       Validation/data schemas
-├── stores/        Shared client/UI stores
-├── utils/         General-purpose utilities
-├── App.tsx        Application composition below global providers
-├── main.tsx       Browser bootstrap and global provider setup
+├── @types/        Shared TypeScript declarationها
+├── assets/        Visual/static assetهایی که در source مدیریت می‌شوند
+├── components/    Reusable UI و application-shell componentها
+├── config/        ساختارهای declarative مربوط به UI/configuration
+├── constants/     Shared label، option، limit و static mappingها
+├── contexts/      React context providerها برای cross-cutting state/actionها
+├── hooks/         Feature/data/action hookها و reusable React behavior
+├── lib/           Integration و infrastructure moduleها
+├── mock/          Legacy/feature mock material در محل‌های موجود
+├── mocks/         Mock API setup و fixtureها
+├── pages/         Route-level page componentها
+├── routes/        Router definition و access-control wrapperها
+├── schemas/       Validation/data schemaها
+├── stores/        Shared client/UI storeها
+├── utils/         General-purpose utilityها
+├── App.tsx        Composition مربوط به application زیر global providerها
+├── main.tsx       Browser bootstrap و global provider setup
 ├── index.css      Global CSS
-└── rtl-cache.ts   Emotion cache used for RTL styling
+└── rtl-cache.ts   Emotion cache مورد استفاده برای RTL styling
 ```
 
-## Entry points
+## Entry Pointها
 
 ### `src/main.tsx`
 
-Start here when changing application-wide provider behavior, React Query defaults, or bootstrap ordering.
+هنگام تغییر behavior مربوط به application-wide providerها، React Query defaultها یا bootstrap ordering از این فایل شروع کنید.
 
-Current provider chain:
+Provider chain فعلی:
 
 ```text
 StrictMode
@@ -65,47 +65,47 @@ StrictMode
                 └── App
 ```
 
-Changes here can affect the entire application and should be reviewed as cross-cutting changes.
+تغییر در این فایل می‌تواند کل application را تحت تأثیر قرار دهد و باید به‌عنوان cross-cutting change review شود.
 
 ### `src/App.tsx`
 
-Start here when changing application-global rendering infrastructure such as the MUI theme integration, global toaster, global loader, or router mounting.
+برای تغییر infrastructure سراسری render در application، مانند MUI theme integration، global toaster، global loader یا router mounting از این فایل شروع کنید.
 
-This file should remain composition-oriented rather than accumulating feature logic.
+این فایل باید composition-oriented باقی بماند و feature logic در آن انباشته نشود.
 
 ## Routing
 
 ### `src/routes/Routes.tsx`
 
-This is the route map and the fastest source of truth for route-level feature entry points.
+این فایل route map و سریع‌ترین source of truth برای route-level feature entry pointها است.
 
-Use it when:
+در موارد زیر از آن استفاده کنید:
 
-- adding/removing a page route;
-- locating the page component responsible for a URL;
-- checking whether a route is protected;
-- reviewing naming/case of existing paths.
+- اضافه/حذف کردن page route؛
+- پیدا کردن page component مسئول یک URL؛
+- بررسی protected بودن route؛
+- review کردن naming/case مربوط به pathهای موجود.
 
 ### `src/routes/ProtectedRoute.tsx`
 
-Owns authenticated access gating for the protected application tree.
+مسئول authenticated access gating برای protected application tree است.
 
-Do not duplicate route-auth checks in every page. If access policy becomes more complex (roles/permissions), evolve the routing/access-control layer deliberately.
+Route-auth check را در هر page تکرار نکنید. اگر access policy پیچیده‌تر شد، مانند role/permission، routing/access-control layer را به‌صورت آگاهانه توسعه دهید.
 
-## Pages
+## Pageها
 
-`src/pages/` contains route-level composition components.
+`src/pages/` شامل route-level composition componentها است.
 
-A page should primarily:
+یک page باید عمدتاً:
 
-- compose feature components;
-- connect route-level state;
-- invoke feature hooks;
-- coordinate page-specific presentation behavior.
+- feature componentها را compose کند؛
+- route-level state را متصل کند؛
+- feature hookها را invoke کند؛
+- page-specific presentation behavior را هماهنگ کند.
 
-A page should not become the default location for reusable API logic, token handling, or cross-feature infrastructure.
+Page نباید محل پیش‌فرض برای reusable API logic، token handling یا cross-feature infrastructure شود.
 
-Current route-level pages include:
+Pageهای route-level فعلی شامل موارد زیر هستند:
 
 - Dashboard
 - Disks
@@ -123,85 +123,85 @@ Current route-level pages include:
 - LoginPage
 - NotFoundPage
 
-Some files in `pages/` may be historical or no longer routed. Confirm usage through `Routes.tsx` before assuming a page is active.
+برخی فایل‌ها در `pages/` ممکن است historical باشند یا دیگر route نشده باشند. پیش از active فرض کردن یک page، usage آن را از طریق `Routes.tsx` تأیید کنید.
 
-## Components
+## Componentها
 
-`src/components/` contains reusable UI components and several application-shell concerns.
+`src/components/` شامل reusable UI componentها و چند concern مربوط به application shell است.
 
-`MainLayout.tsx` is a special case: it is the protected application shell and currently coordinates navigation, notifications, idle-session handling, theme controls, and system power-action UI.
+`MainLayout.tsx` حالت خاصی دارد: این فایل protected application shell است و در حال حاضر navigation، notificationها، idle-session handling، theme controlها و UI مربوط به system power action را هماهنگ می‌کند.
 
-When changing a component, determine whether it is:
+هنگام تغییر یک component، مشخص کنید در کدام دسته قرار می‌گیرد:
 
-1. purely presentational;
-2. feature-specific but reusable within one domain;
+1. صرفاً presentational؛
+2. feature-specific ولی reusable در یک domain؛
 3. application-shell/global infrastructure.
 
-The wider the category, the more important it is to inspect downstream callers before changing behavior.
+هرچه category گسترده‌تر باشد، بررسی downstream callerها پیش از تغییر behavior مهم‌تر است.
 
-## Hooks
+## Hookها
 
-`src/hooks/` is a major behavior layer in the application.
+`src/hooks/` یکی از behavior layerهای اصلی application است.
 
-Hooks currently cover categories such as:
+Hookهای فعلی categoryهایی مانند موارد زیر را پوشش می‌دهند:
 
-- server-state queries;
-- create/update/delete mutations;
-- storage/pool/filesystem operations;
-- sharing and user-management operations;
-- system/network/SNMP configuration;
-- session/activity behavior;
+- server-state queryها؛
+- create/update/delete mutationها؛
+- storage/pool/filesystem operationها؛
+- sharing و user-management operationها؛
+- system/network/SNMP configuration؛
+- session/activity behavior؛
 - reusable feature UI state.
 
-### Hook design expectations
+### انتظارهای Design از Hook
 
-A feature hook may own:
+یک feature hook می‌تواند مالک موارد زیر باشد:
 
-- query/mutation configuration;
-- feature-level form/action state;
-- validation needed to prepare a request;
-- query-key invalidation specific to the feature;
-- transformation of API errors into feature-meaningful errors.
+- query/mutation configuration؛
+- feature-level form/action state؛
+- validation لازم برای آماده‌سازی request؛
+- query-key invalidation اختصاصی feature؛
+- تبدیل API errorها به errorهای معنادار برای feature.
 
-A hook should not bypass shared infrastructure such as `axiosInstance` or independently implement token refresh.
+Hook نباید shared infrastructure مانند `axiosInstance` را bypass کند یا token refresh را مستقلاً پیاده‌سازی کند.
 
-### Before changing a mutation hook
+### پیش از تغییر یک Mutation Hook
 
-Check all of the following:
+تمام موارد زیر را بررسی کنید:
 
-1. Which endpoint does it call?
-2. Does `axiosInstance` already apply a global policy to that request?
-3. Which React Query keys are invalidated locally?
-4. Which persisted state domains will `StateSyncManager` schedule after success?
-5. Does the payload contain a legacy field that the transport layer now overrides?
-6. Does the hook contain business validation that should be preserved or moved to a shared utility/schema?
+1. کدام endpoint را call می‌کند؟
+2. آیا `axiosInstance` از قبل global policy روی آن request اعمال می‌کند؟
+3. کدام React Query keyها به‌صورت local invalidate می‌شوند؟
+4. بعد از success، `StateSyncManager` کدام persisted state domainها را schedule می‌کند؟
+5. آیا payload شامل legacy fieldای است که transport layer حالا آن را override می‌کند؟
+6. آیا hook شامل business validationای است که باید حفظ یا به shared utility/schema منتقل شود؟
 
-This check is especially important because the repository has evolved over time and some hooks may still contain fields retained from older API/persistence behavior.
+این بررسی اهمیت ویژه دارد، چون repository در طول زمان تکامل پیدا کرده و بعضی hookها ممکن است fieldهایی را از behavior قدیمی API/persistence حفظ کرده باشند.
 
-## Contexts
+## Contextها
 
-`src/contexts/` currently includes cross-cutting React contexts such as:
+`src/contexts/` در حال حاضر cross-cutting React contextهایی مانند موارد زیر دارد:
 
-- `AuthContext` — authenticated session state/actions;
-- `ThemeContext` — theme state;
-- `SystemPowerActionsContext` — shared access to guarded reboot/shutdown actions.
+- `AuthContext` — authenticated session state/actionها؛
+- `ThemeContext` — theme state؛
+- `SystemPowerActionsContext` — shared access به reboot/shutdown actionهای guardشده.
 
-Use a context only when React-tree-wide access is part of the responsibility. Do not create a context solely to avoid passing a prop through one or two nearby components.
+فقط زمانی از context استفاده کنید که React-tree-wide access واقعاً بخشی از مسئولیت باشد. صرفاً برای جلوگیری از prop passing بین یک یا دو component نزدیک، context جدید نسازید.
 
-## Infrastructure and API integration (`src/lib/`)
+## Infrastructure و API Integration (`src/lib/`)
 
-This directory contains some of the highest-impact code in the frontend.
+این directory شامل بخشی از high-impact codeهای frontend است.
 
-### Authentication / transport
+### Authentication / Transport
 
 - `authApi.ts`
 - `authEvents.ts`
 - `axiosInstance.ts`
 - `tokenStorage.ts`
 
-### Storage/integration services
+### Storage/Integration Serviceها
 
-Examples include:
+نمونه‌ها:
 
 - `diskApi.ts`
 - `diskMaintenance.ts`
@@ -211,78 +211,78 @@ Examples include:
 - `sambaUserService.ts`
 - `sambaGroupService.ts`
 
-### State persistence coordination
+### هماهنگی State Persistence
 
 - `stateSyncManager.ts`
 
-Treat `axiosInstance.ts`, `tokenStorage.ts`, and `stateSyncManager.ts` as infrastructure contracts. A seemingly small change may affect all features.
+با `axiosInstance.ts`، `tokenStorage.ts` و `stateSyncManager.ts` به‌عنوان infrastructure contract برخورد کنید. یک تغییر ظاهراً کوچک ممکن است تمام featureها را تحت تأثیر قرار دهد.
 
-## Stores
+## Storeها
 
-`src/stores/` is currently used selectively for shared client/UI state. It is not the owner of remote backend state.
+`src/stores/` در حال حاضر به‌صورت selective برای shared client/UI state استفاده می‌شود. این directory مالک remote backend state نیست.
 
-Before creating a new Zustand store, ask:
+پیش از ساخت Zustand store جدید از خود بپرسید:
 
-- Is this actually server state? If yes, React Query is usually the correct owner.
-- Is this transient local state? If yes, component/hook state may be enough.
-- Must multiple distant components share this client-only state? If yes, a store may be justified.
+- آیا این در واقع server state است؟ اگر بله، معمولاً React Query owner صحیح است.
+- آیا این transient local state است؟ اگر بله، component/hook state احتمالاً کافی است.
+- آیا چند component دور از هم باید همین client-only state را share کنند؟ اگر بله، store ممکن است توجیه داشته باشد.
 
-## Constants, config, schemas, and utilities
+## Constants، Config، Schema و Utilityها
 
 ### `src/constants/`
 
-Use for stable shared mappings/options/labels that are not runtime state. Current examples include CPU/memory metadata, disk-related constants, navigation definitions, service labels, settings constants, and VDEV-related values.
+برای shared mapping/option/labelهای پایدار که runtime state نیستند استفاده شود. نمونه‌های فعلی شامل metadata مربوط به CPU/memory، constantهای disk، navigation definitionها، service labelها، settings constantها و valueهای مربوط به VDEV هستند.
 
-Do not hide mutable business behavior in a file merely because it is named `constants`.
+Behavior قابل تغییر business را صرفاً به این دلیل که فایل `constants` نام دارد داخل آن پنهان نکنید.
 
 ### `src/config/`
 
-Use for declarative configuration that drives behavior/layout. `detailLayouts.ts` is the current example.
+برای declarative configuration که behavior/layout را drive می‌کند استفاده شود. `detailLayouts.ts` نمونه‌ی فعلی است.
 
 ### `src/schemas/`
 
-Use for reusable structured validation and schema definitions.
+برای reusable structured validation و schema definition استفاده شود.
 
 ### `src/utils/`
 
-Use for context-free or low-context utility functions. If a utility needs extensive knowledge of one feature's lifecycle, it probably belongs closer to that feature instead.
+برای utility functionهای context-free یا low-context استفاده شود. اگر یک utility نیازمند دانش گسترده از lifecycle یک feature است، احتمالاً باید نزدیک‌تر به همان feature قرار گیرد.
 
-## Mocks
+## Mockها
 
-The application can enable an Axios mock adapter through environment configuration. Mock behavior should remain clearly separated from production transport behavior.
+Application می‌تواند از طریق environment configuration یک Axios mock adapter را فعال کند. Mock behavior باید به‌صورت روشن از production transport behavior جدا بماند.
 
-When debugging an unexpected API response, first verify whether mock mode is enabled before assuming the backend returned the data.
+هنگام debug کردن API response غیرمنتظره، پیش از فرض‌کردن این‌که داده از backend آمده بررسی کنید mock mode فعال نباشد.
 
 ## Documentation
 
-`docs/` is part of the maintained codebase.
+`docs/` بخشی از codebase نگهداری‌شده است.
 
-When changing a documented contract, update the relevant document in the same pull request.
+وقتی یک documented contract تغییر می‌کند، document مرتبط را در همان pull request به‌روزرسانی کنید.
 
-Important current documents:
+مستندات مهم فعلی شامل موارد زیر هستند:
 
-- project overview;
-- frontend architecture;
-- code commenting guidelines;
-- state synchronization contract;
-- polling audit;
-- notifications/data refresh notes;
-- general settings notes.
+- project overview؛
+- frontend architecture؛
+- code commenting guidelines؛
+- state synchronization contract؛
+- polling audit؛
+- notification/data refresh noteها؛
+- general settings noteها.
 
-## Where to start for common changes
+## نقطه‌ی شروع برای Changeهای رایج
 
-| Change | Start here | Then inspect |
+| Change | از اینجا شروع کنید | سپس بررسی کنید |
 | --- | --- | --- |
-| Add a route/page | `src/routes/Routes.tsx` | target page, `MainLayout` if shell behavior is involved |
-| Change login/session behavior | `src/contexts/AuthContext.tsx` | `authApi`, `axiosInstance`, `tokenStorage`, `ProtectedRoute`, idle-timeout hook |
-| Change API base/transport behavior | `src/lib/axiosInstance.ts` | all shared interceptors and state-sync contract |
-| Change persistence snapshots | `src/lib/stateSyncManager.ts` | `axiosInstance`, `docs/state-sync-save-to-db.md` |
-| Change polling | relevant query hook | `docs/api-polling-audit.md`, page/component observers |
-| Add a mutation | relevant feature hook | endpoint ownership, query invalidation, state-sync domain mapping |
-| Add global client state | existing owner first | context/store justification |
-| Change theme/RTL | `ThemeContext`, `theme`, `rtl-cache.ts` | global CSS and MUI directional assumptions |
-| Change system power actions | `MainLayout` / `usePowerAction` | `SystemPowerActionsContext`, confirmation/countdown components |
+| اضافه‌کردن route/page | `src/routes/Routes.tsx` | target page و در صورت دخالت shell behavior، `MainLayout` |
+| تغییر login/session behavior | `src/contexts/AuthContext.tsx` | `authApi`، `axiosInstance`، `tokenStorage`، `ProtectedRoute` و idle-timeout hook |
+| تغییر API base/transport behavior | `src/lib/axiosInstance.ts` | تمام shared interceptorها و state-sync contract |
+| تغییر persistence snapshotها | `src/lib/stateSyncManager.ts` | `axiosInstance` و `docs/state-sync-save-to-db.md` |
+| تغییر polling | query hook مرتبط | `docs/api-polling-audit.md` و page/component observerها |
+| اضافه‌کردن mutation | feature hook مرتبط | endpoint ownership، query invalidation و state-sync domain mapping |
+| اضافه‌کردن global client state | ابتدا owner موجود | توجیه context/store |
+| تغییر theme/RTL | `ThemeContext`، `theme` و `rtl-cache.ts` | global CSS و assumptionهای direction در MUI |
+| تغییر system power actionها | `MainLayout` / `usePowerAction` | `SystemPowerActionsContext` و confirmation/countdown componentها |
 
-## Keep the map current
+## این نقشه را به‌روز نگه دارید
 
-This document should evolve when responsibility moves between directories or when a new architectural layer is introduced. It should not be edited for every new component or filename.
+این سند باید زمانی evolve شود که responsibility بین directoryها جابه‌جا می‌شود یا architectural layer جدیدی معرفی می‌شود. برای هر component یا filename جدید نیازی به edit این سند نیست.
