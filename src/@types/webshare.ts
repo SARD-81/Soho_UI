@@ -32,13 +32,11 @@ export interface WebShareEntry {
 export interface WebShareCreatePayload {
   pool_name: string;
   fs_name: string;
-  save_to_db?: false;
 }
 
 export interface WebShareDeleteParams {
   pool_name: string;
   fs_name: string;
-  save_to_db?: false;
 }
 
 export interface WebSharePermissionPayload {
