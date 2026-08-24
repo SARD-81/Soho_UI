@@ -14,10 +14,7 @@ export const useSetZpoolProperty = (poolName: string) => {
 
   return useMutation<void, Error, SetZpoolPropertyPayload>({
     mutationFn: async (payload) => {
-      await axiosInstance.post(endpoint, {
-        ...payload,
-        save_to_db: false,
-      });
+      await axiosInstance.post(endpoint, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: zpoolDetailQueryKey(poolName) });
