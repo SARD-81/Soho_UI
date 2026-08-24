@@ -5,7 +5,6 @@ import { sambaSharesQueryKey } from './useSambaShares';
 interface UpdateSharepointPayload {
   shareName: string;
   updates: Record<string, unknown>;
-  saveToDb?: boolean;
 }
 
 const UPDATE_KEY_MAP: Record<string, string> = {
@@ -39,10 +38,9 @@ const normalizeUpdateValue = (key: string, value: unknown) => {
 };
 
 const normalizeUpdates = (
-  updates: Record<string, unknown>,
-  saveToDb: boolean
-): Record<string, unknown> => {
-  const normalizedUpdates = Object.entries(updates).reduce<Record<string, unknown>>(
+  updates: Record<string, unknown>
+): Record<string, unknown> =>
+  Object.entries(updates).reduce<Record<string, unknown>>(
     (acc, [key, value]) => {
       const normalizedKey = UPDATE_KEY_MAP[key] ?? key;
       acc[normalizedKey] = normalizeUpdateValue(normalizedKey, value);
@@ -51,21 +49,14 @@ const normalizeUpdates = (
     {}
   );
 
-  return {
-    ...normalizedUpdates,
-    save_to_db: saveToDb,
-  };
-};
-
 const updateSharepointRequest = async ({
   shareName,
   updates,
-  saveToDb = false,
 }: UpdateSharepointPayload) => {
   const encodedName = encodeURIComponent(shareName);
   await axiosInstance.put(
     `/api/samba/sharepoints/${encodedName}/update/`,
-    normalizeUpdates(updates, saveToDb)
+    normalizeUpdates(updates)
   );
 };
 
