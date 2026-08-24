@@ -4,8 +4,8 @@ import type { FormEvent } from 'react';
 import { useCallback, useState } from 'react';
 import type { CreateSambaSharepointPayload } from '../@types/samba';
 import axiosInstance from '../lib/axiosInstance';
-import { sambaSharesQueryKey } from './useSambaShares';
 import { mergeShareAccessMembers } from '../utils/samba';
+import { sambaSharesQueryKey } from './useSambaShares';
 
 type PathValidationStatus = 'idle' | 'valid' | 'invalid';
 
@@ -122,72 +122,63 @@ export const useCreateShare = ({
   }, [createShareMutation, handleClose]);
 
   const handleSubmit = useCallback(
-  (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
 
-    setShareNameError(null);
-    setFullPathError(null);
-    setValidUsersError(null);
-    setValidGroupsError(null);
-    setApiError(null);
+      setShareNameError(null);
+      setFullPathError(null);
+      setValidUsersError(null);
+      setValidGroupsError(null);
+      setApiError(null);
 
-    const trimmedShareName = shareName.trim();
-    const trimmedPath = fullPath.trim();
+      const trimmedShareName = shareName.trim();
+      const trimmedPath = fullPath.trim();
+      let hasError = false;
 
-    let hasError = false;
+      if (!trimmedShareName) {
+        setShareNameError('لطفاً نام اشتراک را وارد کنید.');
+        hasError = true;
+      }
 
-    // 1) Validate share name
-    if (!trimmedShareName) {
-      setShareNameError('لطفاً نام اشتراک را وارد کنید.');
-      hasError = true;
-    }
+      if (!trimmedPath) {
+        setFullPathError('لطفاً مسیر کامل اشتراک را انتخاب کنید.');
+        hasError = true;
+      }
 
-    // 2) Validate path
-    if (!trimmedPath) {
-      setFullPathError('لطفاً مسیر کامل اشتراک را انتخاب کنید.');
-      hasError = true;
-    }
+      const hasAnyAccess = validUsers.length > 0 || validGroups.length > 0;
+      if (!hasAnyAccess) {
+        setValidUsersError('لطفا حداقل یک کاربر را انتخاب کنید.');
+        setValidGroupsError('لطفا حداقل یک گروه را انتخاب کنید.');
+        hasError = true;
+      }
 
-    // 3) Validate access: at least one of users/groups
-    const accessUserErrorMessage = 'لطفا حداقل یک کاربر را انتخاب کنید.';
-    const accessGroupErrorMessage = 'لطفا حداقل یک گروه را انتخاب کنید.';
-    const hasAnyAccess =
-      (validUsers?.length ?? 0) > 0 || (validGroups?.length ?? 0) > 0;
+      if (hasError) {
+        return;
+      }
 
-    if (!hasAnyAccess) {
-      setValidUsersError(accessUserErrorMessage);
-      setValidGroupsError(accessGroupErrorMessage);
-      hasError = true;
-    }
+      const sharepointName =
+        trimmedShareName || deriveShareDisplayName(trimmedPath);
+      const accessMembers = mergeShareAccessMembers({
+        groups: validGroups,
+        users: validUsers,
+      });
 
-    if (hasError) return;
-
-    const sharepointName =
-      trimmedShareName || deriveShareDisplayName(trimmedPath);
-
-    const accessMembers = mergeShareAccessMembers({
-      groups: validGroups,
-  users: validUsers,
-});
-
-createShareMutation.mutate({
-  sharepoint_name: sharepointName,
-  path: trimmedPath,
-  valid_users: accessMembers,
-  available: true,
-  read_only: false,
-  guest_ok: false,
-  browseable: true,
-  max_connections: 10,
-  create_mask: '0777',
-  directory_mask: '0777',
-  inherit_permissions: false,
-  save_to_db: true,
-});
-  },
-  [createShareMutation, fullPath, shareName, validGroups, validUsers]
-);
-
+      createShareMutation.mutate({
+        sharepoint_name: sharepointName,
+        path: trimmedPath,
+        valid_users: accessMembers,
+        available: true,
+        read_only: false,
+        guest_ok: false,
+        browseable: true,
+        max_connections: 10,
+        create_mask: '0777',
+        directory_mask: '0777',
+        inherit_permissions: false,
+      });
+    },
+    [createShareMutation, fullPath, shareName, validGroups, validUsers]
+  );
 
   return {
     isOpen,
