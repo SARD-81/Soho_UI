@@ -1,143 +1,143 @@
-# ADR-003: Persist Canonical Snapshots Through `StateSyncManager`
+# ADR-003: Persist کردن Canonical Snapshotها از طریق `StateSyncManager`
 
-- Status: Accepted
+- وضعیت: Accepted
 - Scope: Frontend-triggered `save_to_db` snapshot persistence
 
 ## Context
 
-Several backend domains expose a `save_to_db` contract. Earlier feature code could attach persistence flags directly to ordinary GETs or mutation payloads.
+چند domain در backend دارای `save_to_db` contract هستند. در implementationهای قدیمی‌تر، feature code می‌توانست persistence flag را مستقیماً به GETهای عادی یا mutation payloadها اضافه کند.
 
-That approach is fragile because:
+این رویکرد fragile است، چون:
 
-- a mutation payload is often only a partial change, not complete resource state;
-- polling/manual refresh can accidentally persist snapshots;
-- feature hooks disagree about true/false values;
-- cross-domain effects are easy to miss;
-- rapid mutations can create redundant persistence traffic.
+- mutation payload اغلب فقط partial change است و complete resource state نیست؛
+- polling/manual refresh ممکن است به‌اشتباه snapshot را persist کند؛
+- feature hookها ممکن است درباره‌ی مقدار true/false رفتار متفاوتی داشته باشند؛
+- cross-domain effectها به‌راحتی از قلم می‌افتند؛
+- mutationهای سریع می‌توانند persistence traffic تکراری ایجاد کنند.
 
-The frontend needs one owner for deciding **when** a canonical snapshot should be persisted and **which complete endpoint** represents each domain.
+Frontend به یک owner واحد نیاز دارد که تصمیم بگیرد **چه زمانی** canonical snapshot باید persist شود و **کدام complete endpoint** نماینده‌ی هر domain است.
 
 ## Decision
 
-Use `StateSyncManager` as the only frontend owner of canonical `save_to_db=true` snapshot requests.
+`StateSyncManager` به‌عنوان تنها owner در frontend برای canonical snapshot requestهای `save_to_db=true` استفاده می‌شود.
 
-Normal API traffic is forced to `save_to_db=false` by Axios transport policy.
+API traffic عادی توسط Axios transport policy به `save_to_db=false` force می‌شود.
 
-After a successful mapped mutation, StateSync schedules one or more canonical snapshot GETs for affected persisted domains.
+پس از یک mutation موفق که mapping آن تعریف شده، StateSync یک یا چند canonical snapshot GET برای persisted domainهای تحت تأثیر schedule می‌کند.
 
-## Persisted domains
+## Persisted Domainها
 
-Current domains are:
+بر اساس نسخه‌ی فعلی و صحیح contract در GitLab، domainهای StateSync عبارت‌اند از:
 
 ```text
 zpool
 filesystem
 disk
 nfs
-samba-users
-samba-groups
 samba-shares
 webshare
-snmp
 ```
 
-Each domain has one canonical complete-read definition.
+هر domain یک canonical complete-read definition دارد.
 
-## Cross-domain mapping
+در contract فعلی، `samba-users`، `samba-groups` و `snmp` StateSync domain مستقل نیستند و نباید صرفاً از روی namespace endpoint به‌عنوان persisted domain فرض شوند.
 
-Some mutation families intentionally map to more than one domain.
+## Cross-domain Mapping
 
-Examples:
+برخی mutation familyها عمداً به بیش از یک domain map می‌شوند.
+
+Mappingهای اصلی فعلی:
 
 ```text
 zpool      -> zpool + disk
 filesystem -> filesystem + zpool
 disk       -> disk + zpool
-samba user -> samba-users + samba-groups
-samba group -> samba-groups + samba-users
+nfs        -> nfs
+samba sharepoint -> samba-shares
+webshare   -> webshare
 ```
 
-The mapping captures resource dependencies rather than forcing each feature hook to know persistence topology.
+Mapping، resource dependencyها را در یک محل ثبت می‌کند و از این جلوگیری می‌کند که هر feature hook persistence topology را جداگانه بداند.
 
 ## Coalescing
 
-StateSync coalesces rapid mutations with a short scheduling delay.
+StateSync mutationهای سریع را با یک scheduling delay کوتاه coalesce می‌کند.
 
-If another mutation occurs while a domain snapshot is already in flight, exactly one follow-up snapshot is requested after the current one completes.
+اگر زمانی که snapshot یک domain در حال اجراست mutation دیگری رخ دهد، پس از complete شدن snapshot فعلی دقیقاً یک follow-up snapshot درخواست می‌شود.
 
-The goal is eventual newest-state persistence without an unbounded snapshot queue.
+هدف، persistence مربوط به newest state نهایی است؛ بدون ایجاد snapshot queue نامحدود.
 
-## Session baseline
+## Session Baseline
 
-After login/session restoration, a canonical baseline snapshot is requested once per authenticated frontend session.
+پس از login/session restoration، یک canonical baseline snapshot یک بار در هر authenticated frontend session درخواست می‌شود.
 
-StrictMode renders, token refreshes, or repeated auth renders reuse the same baseline promise and must not trigger duplicate full-session snapshots.
+StrictMode render، token refresh یا auth renderهای تکراری باید همان baseline promise را reuse کنند و باعث duplicate full-session snapshot نشوند.
 
-## Diagnostic operations
+## Diagnostic Operationها
 
-HTTP method alone does not determine StateSync semantics.
+HTTP method به‌تنهایی semantics مربوط به StateSync را مشخص نمی‌کند.
 
-A successful POST may be diagnostic rather than mutating persisted configuration.
+یک POST موفق می‌تواند diagnostic باشد و persisted configuration را mutate نکند.
 
-Example:
+مثال:
 
 ```text
 POST /api/snmp/test-connection/
 ```
 
-This operation is explicitly excluded from SNMP persistence mapping.
+در contract فعلی GitLab، SNMP اساساً StateSync domain ندارد؛ بنابراین این diagnostic request و سایر SNMP requestها نباید از طریق frontend StateSync، SNMP persistence snapshot schedule کنند.
 
-## Consequences
+## Consequenceها
 
 ### Positive
 
-- persistence ownership is centralized;
-- database snapshots represent complete current resource state;
-- polling/manual reads cannot accidentally persist;
-- cross-domain dependencies are explicit;
-- rapid mutations are coalesced;
-- legacy caller flags can be removed from domain types/hooks.
+- persistence ownership متمرکز است؛
+- database snapshotها complete current resource state را نمایش می‌دهند؛
+- polling/manual read نمی‌تواند به‌صورت تصادفی persist کند؛
+- cross-domain dependencyها صریح هستند؛
+- mutationهای سریع coalesce می‌شوند؛
+- legacy caller flagها می‌توانند از domain type/hookها حذف شوند.
 
-### Tradeoffs
+### Tradeoffها
 
-- URL-to-domain mapping must stay synchronized with backend endpoints;
-- new persisted domains require central definitions;
-- diagnostic actions under a persisted URL namespace require explicit exclusions;
-- frontend correctness still depends on canonical endpoints returning complete data.
+- URL-to-domain mapping باید با backend endpointها همگام بماند؛
+- persisted domain جدید به central definition نیاز دارد؛
+- diagnostic actionها یا namespaceهایی که persistence ندارند نباید صرفاً از HTTP method یا URL prefix به‌عنوان persisted mutation تشخیص داده شوند؛
+- correctness در frontend همچنان به این وابسته است که canonical endpointها complete data برگردانند.
 
-## Rules
+## Ruleها
 
-1. Feature hooks must not send `save_to_db=true`.
-2. Ordinary requests/mutations are observational/operational traffic with false transport semantics.
-3. Add new persistence behavior to StateSync mapping, not individual components.
-4. Persist complete canonical snapshots, not mutation payload copies.
-5. Failed mutations must not schedule persistence.
-6. Diagnostic actions must be excluded even when implemented with POST/PUT.
-7. Update StateSync documentation and tests when URL mappings change.
+1. Feature hook نباید `save_to_db=true` ارسال کند.
+2. Ordinary request/mutationها traffic عملیاتی/observational با false transport semantics هستند.
+3. Persistence behavior جدید را به StateSync mapping اضافه کنید، نه individual componentها.
+4. Complete canonical snapshot را persist کنید، نه copy مربوط به mutation payload.
+5. Mutation failشده نباید persistence را schedule کند.
+6. Diagnostic action یا domain خارج از StateSync نباید صرفاً به دلیل POST/PUT بودن persistence snapshot ایجاد کند.
+7. هنگام تغییر URL mapping، StateSync documentation و testها را نیز به‌روزرسانی کنید.
 
-## Alternatives considered
+## Alternativeهای بررسی‌شده
 
-### Persist from every mutation hook
+### Persist از هر Mutation Hook
 
-Rejected because ownership becomes fragmented and partial payloads may not represent current complete state.
+رد شد، چون ownership پراکنده می‌شود و partial payload ممکن است current complete state را نمایش ندهد.
 
-### Persist on every GET/poll
+### Persist روی هر GET/Poll
 
-Rejected because observation should not create database side effects and high-frequency monitoring would generate excessive persistence traffic.
+رد شد، چون observation نباید database side effect ایجاد کند و high-frequency monitoring persistence traffic زیادی تولید می‌کند.
 
-### Let only the backend persist mutations internally
+### Backend به‌تنهایی Mutationها را Internally Persist کند
 
-Architecturally simpler, but not the current backend contract. If the backend eventually owns all persistence atomically, this ADR should be superseded and StateSync retired deliberately.
+از نظر معماری ساده‌تر است، اما contract فعلی backend این‌گونه نیست. اگر در آینده backend تمام persistence را به‌صورت atomic مالک شد، این ADR باید عمداً supersede شود و StateSync retire شود.
 
-## When to revisit
+## چه زمانی این Decision دوباره بررسی شود؟
 
-Revisit when:
+در شرایط زیر revisit شود:
 
-- backend mutation endpoints become fully responsible for persistence;
-- snapshot persistence semantics change;
-- websocket/event-driven backend synchronization replaces this contract.
+- backend mutation endpointها کاملاً مسئول persistence شوند؛
+- snapshot persistence semantics تغییر کند؛
+- websocket/event-driven backend synchronization جایگزین contract فعلی شود.
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../../04-core-flows/state-sync-save-to-db.md`](../../04-core-flows/state-sync-save-to-db.md)
 - [`../../04-core-flows/api-request-lifecycle.md`](../../04-core-flows/api-request-lifecycle.md)
