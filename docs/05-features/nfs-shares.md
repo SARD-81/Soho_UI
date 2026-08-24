@@ -1,29 +1,37 @@
 # NFS Shares
 
-## Purpose
+## هدف
 
-The NFS feature manages NFS exports backed by filesystem mountpoints.
+Feature مربوط به NFS، exportهای NFS مبتنی بر filesystem mountpointها را مدیریت می‌کند.
 
-Route: `/share-nfs`
+Route:
 
-Entry point: `src/pages/ShareNfs.tsx`
+```text
+/share-nfs
+```
 
-The feature owns NFS share CRUD, client access configuration, filesystem-mountpoint selection for new shares, and the UI representation of NFS options.
+Entry point:
 
-## Main responsibilities
+```text
+src/pages/ShareNfs.tsx
+```
 
-The current implementation supports:
+این feature مالک NFS share CRUD، client access configuration، انتخاب filesystem mountpoint برای share جدید و representation مربوط به NFS optionها در UI است.
 
-- listing NFS shares;
-- manually refreshing the share list;
-- creating a share from an available filesystem mountpoint;
-- editing an existing share;
-- deleting a share with confirmation;
-- filtering mountpoints already used by existing NFS shares;
-- translating frontend option names into backend semantics;
-- restarting `nfs-server.service` in the current create flow.
+## مسئولیت‌های اصلی
 
-## Runtime flow
+Implementation فعلی موارد زیر را پشتیبانی می‌کند:
+
+- لیست کردن NFS shareها؛
+- refresh دستی share list؛
+- ایجاد share از filesystem mountpoint قابل دسترس؛
+- edit کردن share موجود؛
+- delete کردن share با confirmation؛
+- filter کردن mountpointهایی که از قبل توسط NFS share دیگری استفاده شده‌اند؛
+- ترجمه‌ی نام optionهای frontend به semantics مورد انتظار backend؛
+- restart کردن `nfs-server.service` در create flow فعلی.
+
+## runtime flow
 
 ```mermaid
 flowchart TD
@@ -55,13 +63,17 @@ Endpoint:
 GET /api/nfs/shares/
 ```
 
-There is no continuous polling interval in `useNfsShares()`.
+در `useNfsShares()` continuous polling interval وجود ندارد.
 
-Refresh happens through normal React Query lifecycle, explicit manual `refetch()`, and successful mutation invalidation.
+Refresh از طریق lifecycle عادی React Query، `refetch()` دستی و invalidation بعد از mutation موفق انجام می‌شود.
 
 ## Create share
 
-Hook: `useCreateNfsShare()`
+Hook:
+
+```text
+useCreateNfsShare()
+```
 
 Endpoint:
 
@@ -69,17 +81,21 @@ Endpoint:
 POST /api/nfs/shares/
 ```
 
-The create modal requires:
+Create modal موارد زیر را الزامی می‌داند:
 
-- a valid filesystem mountpoint;
-- a client IPv4 value;
+- filesystem mountpoint معتبر؛
+- client IPv4 value؛
 - NFS option state.
 
-The page loads mountpoint choices only while the Create modal is open.
+صفحه mountpoint choiceها را فقط وقتی Create modal باز است load می‌کند.
 
-## Filesystem mountpoint dependency
+## وابستگی به filesystem mountpoint
 
-Hook: `useFilesystemMountpoints()`
+Hook:
+
+```text
+useFilesystemMountpoints()
+```
 
 Key:
 
@@ -93,13 +109,17 @@ Endpoint:
 GET /api/filesystem/?detail=true
 ```
 
-The NFS page removes mountpoints whose path already exists in the current NFS share list before showing create choices.
+NFS page پیش از نمایش create choiceها mountpointهایی را حذف می‌کند که path آن‌ها از قبل در NFS share list فعلی وجود دارد.
 
-This is UX filtering, not a backend integrity guarantee. The backend must still reject conflicting exports under concurrent administration.
+این filtering فقط UX assistance است و backend integrity guarantee نیست. Backend باید conflict مربوط به export را در concurrent administration همچنان reject کند.
 
 ## Edit share
 
-Hook: `useUpdateNfsShare()`
+Hook:
+
+```text
+useUpdateNfsShare()
+```
 
 Endpoint:
 
@@ -107,13 +127,17 @@ Endpoint:
 PUT /api/nfs/shares/update/
 ```
 
-The existing share path is fixed in edit mode; the operator edits clients/options rather than selecting a different mountpoint.
+در edit mode، path مربوط به share ثابت است و operator به‌جای انتخاب mountpoint دیگر، clientها و optionها را edit می‌کند.
 
-After success the canonical NFS share query is invalidated.
+بعد از success، canonical NFS share query invalidate می‌شود.
 
 ## Delete share
 
-Hook: `useDeleteNfsShare()`
+Hook:
+
+```text
+useDeleteNfsShare()
+```
 
 Endpoint:
 
@@ -121,13 +145,13 @@ Endpoint:
 DELETE /api/nfs/shares/delete/?path=<share-path>
 ```
 
-The hook tracks a pending path and uses a confirmation modal before mutation.
+Hook pending path را track می‌کند و پیش از mutation از confirmation modal استفاده می‌کند.
 
-After success `['nfs','shares']` is invalidated.
+پس از success، `['nfs','shares']` invalidate می‌شود.
 
-## Option semantic translation
+## ترجمه‌ی semantics مربوط به optionها
 
-The UI model includes:
+UI model شامل fieldهای زیر است:
 
 ```text
 read_write
@@ -136,62 +160,62 @@ root_squash
 no_subtree_check
 ```
 
-The backend create/update payload expects `subtree_check`, not `no_subtree_check`.
+Backend create/update payload به `subtree_check` نیاز دارد، نه `no_subtree_check`.
 
-Therefore the mutation layer intentionally translates:
+بنابراین mutation layer عمداً این translation را انجام می‌دهد:
 
 ```text
 subtree_check = !no_subtree_check
 ```
 
-This inversion is a semantic contract, not redundant boolean manipulation.
+این inversion یک semantic contract است، نه boolean manipulation اضافه.
 
-Do not simplify it away unless the backend API itself changes.
+تا زمانی که backend API تغییر نکرده، آن را ساده‌سازی یا حذف نکنید.
 
-## Displayed option subset
+## subset optionهای نمایش‌داده‌شده
 
-The current modal does not render every option as a direct toggle. The visible option list excludes:
+Modal فعلی همه‌ی optionها را به‌صورت toggle مستقیم render نمی‌کند. Visible option list شامل موارد زیر نیست:
 
 ```text
 root_squash
 no_subtree_check
 ```
 
-Those values are still part of the option model/default resolution.
+اما این valueها همچنان بخشی از option model/default resolution هستند.
 
-Before adding or removing a displayed toggle, verify how `NFS_OPTION_DEFAULTS`, `NFS_OPTION_KEYS`, and backend translation interact.
+پیش از اضافه یا حذف کردن toggle قابل نمایش، interaction میان `NFS_OPTION_DEFAULTS`، `NFS_OPTION_KEYS` و backend translation را بررسی کنید.
 
-## Service restart behavior
+## رفتار service restart
 
-The current Create modal calls `useServiceAction()` for:
+Create modal فعلی از `useServiceAction()` برای این operation استفاده می‌کند:
 
 ```text
 nfs-server.service -> restart
 ```
 
-Important current behavior:
+رفتار فعلی مهم است:
 
-- restart is requested in the create submission path **before** the NFS create mutation is submitted;
-- edit mode does not run this restart path.
+- restart در create submission path **پیش از** ارسال NFS create mutation request می‌شود؛
+- edit mode از این restart path استفاده نمی‌کند.
 
-This ordering is suspicious from an operational perspective if restart is required to apply newly written export configuration, but it is current runtime behavior.
+اگر restart برای apply شدن configuration تازه نوشته‌شده لازم باشد، این ordering از نظر operational مشکوک است؛ اما runtime behavior فعلی همین است.
 
-Do not reorder or broaden the restart automatically without confirming backend/system semantics.
+بدون confirm کردن backend/system semantics، ترتیب را خودسرانه تغییر ندهید یا restart را به mutationهای دیگر تعمیم ندهید.
 
-A future cleanup should answer:
+یک cleanup آینده باید این سؤال‌ها را پاسخ دهد:
 
-1. Does the backend endpoint already reload/restart NFS itself?
-2. If not, should restart happen only after successful create/update/delete?
-3. Are all NFS mutations subject to the same service-apply rule?
-4. Should service application be owned by the backend instead of page UI?
+1. آیا backend endpoint خودش NFS را reload/restart می‌کند؟
+2. اگر نه، restart باید فقط بعد از create/update/delete موفق انجام شود؟
+3. آیا همه‌ی NFS mutationها مشمول یک service-apply rule هستند؟
+4. آیا اعمال service باید مالکیت backend باشد نه page UI؟
 
-Until those questions are resolved, this document records the existing behavior rather than presenting it as an ideal architecture.
+تا زمانی که این contract روشن نشده، این سند behavior فعلی را ثبت می‌کند و آن را architecture ایده‌آل معرفی نمی‌کند.
 
-## StateSync ownership
+## مالکیت StateSync
 
-NFS is a persisted StateSync domain.
+NFS یک persisted StateSync domain است.
 
-Successful `/api/nfs...` mutations map to:
+Mutationهای موفق زیر namespace `/api/nfs...` به domain زیر map می‌شوند:
 
 ```text
 nfs
@@ -203,24 +227,24 @@ Canonical persistence snapshot:
 GET /api/nfs/shares/?save_to_db=true
 ```
 
-That request is created by `StateSyncManager`, not by the NFS feature hooks.
+این request توسط `StateSyncManager` ساخته می‌شود، نه feature hookهای NFS.
 
-Normal NFS queries and mutations must remain observational/operational traffic with centralized transport policy enforcing `save_to_db=false`.
+NFS query و mutationهای عادی باید observational/operational traffic باقی بمانند و centralized transport policy آن‌ها را با `save_to_db=false` ارسال کند.
 
-## Query refresh versus persistence
+## تفاوت query refresh و persistence
 
-After a successful NFS mutation two independent mechanisms can run:
+بعد از NFS mutation موفق دو mechanism مستقل ممکن است اجرا شوند:
 
-1. the feature invalidates `['nfs','shares']` so the UI refreshes;
-2. Axios/StateSync schedules the canonical NFS persistence snapshot.
+1. feature، `['nfs','shares']` را invalidate می‌کند تا UI refresh شود؛
+2. Axios/StateSync canonical NFS persistence snapshot را schedule می‌کند.
 
-These mechanisms must remain separate.
+این دو mechanism باید جدا باقی بمانند.
 
-Do not add `save_to_db=true` to `NfsSharePayload` as a way to force refresh or persistence.
+برای force کردن refresh یا persistence، `save_to_db=true` را به `NfsSharePayload` اضافه نکنید.
 
-## Error handling
+## مدیریت خطا
 
-Create and Update normalize common backend error shapes:
+Create و Update backend error shapeهای رایج زیر را normalize می‌کنند:
 
 ```text
 detail
@@ -228,55 +252,55 @@ message
 errors
 ```
 
-The page stores create/edit error text independently so the relevant modal can remain open and display the backend failure.
+صفحه create/edit error text را جداگانه نگه می‌دارد تا modal مرتبط باز بماند و backend failure را نمایش دهد.
 
-Delete uses the confirmation-controller pattern and exposes the target path/error state.
+Delete از confirmation-controller pattern استفاده می‌کند و target path/error state را expose می‌کند.
 
-## Common failure scenarios
+## failure scenarioهای رایج
 
-### No mountpoints are available
+### هیچ mountpointی در دسترس نیست
 
-Check:
+این موارد را بررسی کنید:
 
-1. `/api/filesystem/?detail=true` response;
-2. mountpoint normalization;
-3. whether every filesystem mountpoint is already represented by an NFS share;
-4. whether the Create modal is open, because the mountpoint query is conditionally enabled.
+1. response مربوط به `/api/filesystem/?detail=true`؛
+2. mountpoint normalization؛
+3. آیا تمام filesystem mountpointها از قبل در NFS share list هستند؛
+4. آیا Create modal باز است، چون mountpoint query conditionally enabled است.
 
-### Create succeeds but UI looks stale
+### Create موفق است ولی UI stale به نظر می‌رسد
 
-Check:
+بررسی کنید:
 
-1. `['nfs','shares']` invalidation;
-2. backend list response;
-3. React Query query state;
-4. whether a previous error kept the create modal state open.
+1. invalidation مربوط به `['nfs','shares']`؛
+2. backend list response؛
+3. React Query query state؛
+4. آیا error قبلی create modal state را باز نگه داشته است.
 
-Do not solve this with persistence flags.
+این مشکل را با persistence flag حل نکنید.
 
-### `no_subtree_check` behaves backwards
+### `no_subtree_check` برعکس رفتار می‌کند
 
-Inspect the translation in Create/Update hooks. Backend `subtree_check` is intentionally the inverse of the UI's `no_subtree_check` field.
+Translation در Create/Update hookها را بررسی کنید. Backend `subtree_check` عمداً inverse فیلد UI یعنی `no_subtree_check` است.
 
-### Service behavior does not match config state
+### رفتار service با config state هم‌خوان نیست
 
-Treat the NFS mutation and `nfs-server.service` restart as separate operations when debugging. The current create flow does not guarantee that the restart occurs after a successful configuration write.
+هنگام debugging، NFS mutation و restart مربوط به `nfs-server.service` را دو operation جدا در نظر بگیرید. Create flow فعلی guarantee نمی‌کند restart بعد از configuration write موفق انجام شود.
 
-## Extension guide
+## راهنمای توسعه
 
-When adding an NFS capability:
+هنگام افزودن NFS capability:
 
-1. reuse `['nfs','shares']` for the canonical collection unless the lifecycle is genuinely different;
-2. keep backend field translation in hooks/utils rather than page components;
-3. use `axiosInstance` for every request;
-4. never add caller-level `save_to_db` ownership;
-5. invalidate the NFS collection after successful configuration mutations;
-6. preserve StateSync ownership for persisted snapshots;
-7. document any service restart/reload requirement explicitly;
-8. treat mountpoint availability checks as UX assistance, not integrity enforcement;
-9. document any multi-client or multi-request workflow that can partially succeed.
+1. برای canonical collection از `['nfs','shares']` reuse کنید مگر lifecycle واقعاً مستقل باشد.
+2. backend field translation را در hook/utils نگه دارید، نه page component.
+3. تمام requestها را با `axiosInstance` ارسال کنید.
+4. caller-level ownership برای `save_to_db` اضافه نکنید.
+5. بعد از configuration mutation موفق، NFS collection را invalidate کنید.
+6. ownership مربوط به StateSync را برای persisted snapshot حفظ کنید.
+7. هر requirement مربوط به service restart/reload را صریحاً مستند کنید.
+8. mountpoint availability check را UX assistance بدانید، نه integrity enforcement.
+9. هر multi-client یا multi-request workflow با امکان partial failure را مستند کنید.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/pages/ShareNfs.tsx`
 - `src/hooks/useNfsShares.ts`
@@ -289,7 +313,7 @@ When adding an NFS capability:
 - `src/utils/nfsShareOptions.ts`
 - `src/lib/stateSyncManager.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`file-system.md`](./file-system.md)
 - [`services.md`](./services.md)
