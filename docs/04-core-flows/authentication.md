@@ -1,27 +1,27 @@
 # Authentication Flow
 
-This document describes the SOHO UI authentication lifecycle from login through session restoration, token refresh, idle timeout, and logout.
+این سند lifecycle مربوط به authentication در SOHO UI را از login تا session restoration، token refresh، idle timeout و logout توضیح می‌دهد.
 
-The goal is to preserve the contracts and ordering that are easy to break when authentication code is changed months later.
+هدف این است که contractها و orderingهایی حفظ شوند که اگر ماه‌ها بعد authentication code تغییر کند به‌راحتی ممکن است شکسته شوند.
 
 ## Scope
 
-Authentication responsibilities are split across these modules:
+مسئولیت‌های authentication بین moduleهای زیر تقسیم شده‌اند:
 
-- `src/pages/LoginPage.tsx` — visual login page shell.
-- `src/components/LoginForm.tsx` — form state, validation integration, login submission, and post-login navigation.
-- `src/hooks/useLogin.ts` — React Query mutation wrapper for login.
-- `src/hooks/useRememberUsername.ts` — remembers only the username for form convenience.
-- `src/lib/authApi.ts` — login, token refresh, token verification, and logout API functions.
-- `src/lib/tokenStorage.ts` — access/refresh token and username storage policy.
-- `src/contexts/AuthContext.tsx` — authoritative React authentication state and session restoration lifecycle.
-- `src/lib/authEvents.ts` — transport-to-React auth event bridge.
-- `src/lib/axiosInstance.ts` — Bearer token attachment, 401 recovery, refresh single-flight queue, and request replay.
+- `src/pages/LoginPage.tsx` — shell بصری صفحه‌ی login.
+- `src/components/LoginForm.tsx` — form state، validation integration، login submission و navigation پس از login.
+- `src/hooks/useLogin.ts` — React Query mutation wrapper برای login.
+- `src/hooks/useRememberUsername.ts` — فقط username را برای راحتی form به خاطر می‌سپارد.
+- `src/lib/authApi.ts` — functionهای API مربوط به login، token refresh، token verification و logout.
+- `src/lib/tokenStorage.ts` — policy مربوط به storage access/refresh token و username.
+- `src/contexts/AuthContext.tsx` — authoritative React authentication state و lifecycle مربوط به session restoration.
+- `src/lib/authEvents.ts` — bridge مربوط به auth event بین transport و React.
+- `src/lib/axiosInstance.ts` — Bearer token attachment، 401 recovery، refresh single-flight queue و request replay.
 - `src/hooks/useSessionActivityTimeout.ts` — idle-session tracking.
 - `src/routes/ProtectedRoute.tsx` — route access gate.
-- `src/hooks/useLogout.ts` — user-facing logout mutation and navigation feedback.
+- `src/hooks/useLogout.ts` — user-facing logout mutation و navigation feedback.
 
-## High-level lifecycle
+## Lifecycle سطح بالا
 
 ```mermaid
 flowchart TD
@@ -37,11 +37,11 @@ flowchart TD
     I --> K[Protected application routes]
 ```
 
-## Login flow
+## Login Flow
 
-`LoginForm` owns the interactive login form. Validation is performed through React Hook Form and the Zod schema before the network mutation is executed.
+`LoginForm` interactive login form را مالک است. پیش از اجرای network mutation، validation از طریق React Hook Form و Zod schema انجام می‌شود.
 
-The submission path is:
+Submission path:
 
 ```text
 LoginForm
@@ -53,92 +53,96 @@ LoginForm
   -> navigate('/dashboard')
 ```
 
-`useLogin` intentionally contains no session state. It is only the React Query mutation wrapper. The session becomes active only when `loginAction` applies the returned credentials to `AuthContext` and `tokenStorage`.
+`useLogin` عمداً session state ندارد و فقط React Query mutation wrapper است. Session فقط زمانی active می‌شود که `loginAction` credentialهای برگشتی را روی `AuthContext` و `tokenStorage` اعمال کند.
 
-## Authentication API client
+## Authentication API Client
 
-`authApi.ts` creates a dedicated `authClient` for:
+`authApi.ts` یک `authClient` اختصاصی برای موارد زیر ایجاد می‌کند:
 
 - login
 - access-token refresh
 - access-token verification
 
-This client is intentionally separate from the main `axiosInstance`.
+این client عمداً از `axiosInstance` اصلی جدا است.
 
-That separation is an architectural invariant: token acquisition and token refresh must not be processed by the same 401-refresh interceptor that depends on those endpoints. Otherwise a failed refresh request can recursively enter the refresh mechanism it is supposed to resolve.
+این جداسازی یک architectural invariant است: token acquisition و token refresh نباید توسط همان 401-refresh interceptorای process شوند که خودش برای کارکرد به همین endpointها وابسته است. در غیر این صورت refresh request failشده می‌تواند به‌صورت recursive وارد refresh mechanismی شود که قرار است همان failure را resolve کند.
 
-The authentication base URL is resolved in this order:
+Authentication base URL به ترتیب زیر resolve می‌شود:
 
-1. `VITE_AUTH_API_BASE_URL`, when explicitly configured.
-2. `VITE_API_BASE_URL` with `/api/auth` appended when needed.
-3. Empty base URL when neither is configured.
+1. `VITE_AUTH_API_BASE_URL`، زمانی که صریح configure شده باشد.
+2. `VITE_API_BASE_URL` با اضافه‌شدن `/api/auth` در صورت نیاز.
+3. Base URL خالی، وقتی هیچ‌کدام configure نشده باشند.
 
-Logout is different: it uses the normal `axiosInstance` and calls `/api/system/ui-user/logout/` because it is an authenticated application endpoint rather than a token-issuance endpoint.
+Logout متفاوت است: از `axiosInstance` عادی استفاده می‌کند و `/api/system/ui-user/logout/` را call می‌کند، چون authenticated application endpoint است نه token-issuance endpoint.
 
-## Token storage policy
+## Token Storage Policy
 
-SOHO deliberately gives access and refresh tokens different storage lifetimes.
+SOHO عمداً lifetime مربوط به access token و refresh token را متفاوت در نظر می‌گیرد.
 
-### Access token
+### Access Token
 
-The access token is memory-only.
+Access token فقط در memory نگهداری می‌شود.
 
-It is not persisted in `localStorage` or `sessionStorage`.
+در `localStorage` یا `sessionStorage` persist نمی‌شود.
 
-Consequences:
+Consequenceها:
 
-- a full browser reload loses the current access token;
-- session restoration therefore normally uses the persisted refresh token to obtain a new access token;
-- the access token has less exposure to persistent browser storage than if it were stored in `localStorage`.
+- full browser reload باعث از دست رفتن access token فعلی می‌شود؛
+- در نتیجه session restoration معمولاً از refresh token persistشده برای دریافت access token جدید استفاده می‌کند؛
+- نسبت به حالت ذخیره در `localStorage`، access token exposure کمتری در persistent browser storage دارد.
 
-### Refresh token
+### Refresh Token
 
-The refresh token is stored in `sessionStorage`.
+Refresh token در `sessionStorage` ذخیره می‌شود.
 
-It survives page reloads in the same browser tab/session, but is scoped to the browser session instead of long-term persistent storage.
+در reloadهای همان browser tab/session باقی می‌ماند، اما به browser session محدود است و long-term persistence ندارد.
 
 ### Username
 
-The authenticated username is also stored in `sessionStorage` so it can be restored with the session.
+Authenticated username نیز در `sessionStorage` نگهداری می‌شود تا همراه session قابل restore باشد.
 
-### Legacy cleanup
+### Legacy Cleanup
 
-`tokenStorage.ts` removes legacy persisted access-token values and old local-storage auth values during initialization. Do not reintroduce access-token persistence without a deliberate security/architecture decision.
+`tokenStorage.ts` در initialization، legacy persisted access-token valueها و auth valueهای قدیمی در local storage را حذف می‌کند. بدون security/architecture decision آگاهانه، access-token persistence را دوباره وارد نکنید.
 
-## "Remember me" semantics
+## Semantics مربوط به "Remember me"
 
-The login form's "remember me" checkbox does **not** extend the authentication session.
+Checkbox مربوط به "remember me" در login form **authentication session را طولانی‌تر نمی‌کند**.
 
-`useRememberUsername` stores only the username in `localStorage` under `savedUsername`.
+`useRememberUsername` فقط username را با key زیر در `localStorage` ذخیره می‌کند:
 
-It does not store:
+```text
+savedUsername
+```
 
-- the password;
-- the access token;
-- the refresh token;
-- an authenticated-session flag.
+این feature موارد زیر را ذخیره نمی‌کند:
 
-This feature is only a form convenience that pre-fills the username on a later visit.
+- password؛
+- access token؛
+- refresh token؛
+- authenticated-session flag.
 
-## `loginAction` ordering
+این فقط form convenience است تا در visit بعدی username از قبل پر شود.
 
-When login succeeds, `AuthContext.loginAction` performs these actions:
+## Ordering مربوط به `loginAction`
 
-1. Reset the state-sync session guard.
-2. Store the new access token.
-3. Store the refresh token.
-4. Mark the React session authenticated.
-5. Store the username.
-6. Create the initial activity timestamp.
-7. Start the authenticated-session baseline state sync.
+وقتی login موفق است، `AuthContext.loginAction` به ترتیب این actionها را انجام می‌دهد:
 
-The baseline sync is session-scoped and deduplicated by `StateSyncManager`.
+1. reset کردن state-sync session guard.
+2. ذخیره‌ی access token جدید.
+3. ذخیره‌ی refresh token.
+4. authenticated کردن React session.
+5. ذخیره‌ی username.
+6. ساخت initial activity timestamp.
+7. شروع authenticated-session baseline state sync.
 
-## Application startup and session restoration
+Baseline sync، session-scoped است و توسط `StateSyncManager` deduplicate می‌شود.
 
-`AuthProvider` is mounted near the top of the application tree and performs authentication initialization once the frontend starts.
+## Application Startup و Session Restoration
 
-The restoration flow is:
+`AuthProvider` نزدیک بالای application tree mount می‌شود و هنگام start شدن frontend، authentication initialization را انجام می‌دهد.
+
+Restoration flow:
 
 ```mermaid
 flowchart TD
@@ -157,23 +161,23 @@ flowchart TD
     G --> J[Start baseline state sync]
 ```
 
-Because the access token is memory-only, a normal full page reload usually follows the refresh-token branch rather than the access-token verification branch.
+چون access token فقط در memory است، full page reload معمولاً به‌جای access-token verification branch از refresh-token branch عبور می‌کند.
 
-The access-token verification branch is still useful when an access token exists within the current JavaScript lifetime and authentication initialization needs to validate it without performing an unnecessary refresh.
+Access-token verification branch همچنان زمانی مفید است که access token در lifetime فعلی JavaScript موجود باشد و authentication initialization بخواهد بدون refresh غیرضروری آن را validate کند.
 
-## Authentication loading state
+## Authentication Loading State
 
-`isAuthLoading` prevents routing from deciding too early that the user is unauthenticated.
+`isAuthLoading` مانع آن می‌شود که routing خیلی زود user را unauthenticated در نظر بگیرد.
 
-During session restoration, protected-route rendering must wait until `AuthProvider` has either restored or rejected the session.
+هنگام session restoration، protected-route rendering باید تا زمانی که `AuthProvider` session را restore یا reject نکرده منتظر بماند.
 
-Without this state, a reload could briefly redirect a valid session to `/login` before refresh-token restoration completes.
+بدون این state، reload ممکن است یک session معتبر را پیش از complete شدن refresh-token restoration برای لحظه‌ای به `/login` redirect کند.
 
-## 401 recovery
+## Recovery مربوط به 401
 
-Normal application requests use `axiosInstance`.
+Application requestهای عادی از `axiosInstance` استفاده می‌کنند.
 
-If an API request returns `401`, the response interceptor attempts to restore authorization with the refresh token.
+اگر API request مقدار `401` برگرداند، response interceptor تلاش می‌کند authorization را با refresh token restore کند.
 
 ```mermaid
 sequenceDiagram
@@ -200,49 +204,49 @@ sequenceDiagram
     AX->>R1: replay original request
 ```
 
-### Single-flight refresh rule
+### Single-flight Refresh Rule
 
-Only one refresh request is allowed to run at a time.
+در هر لحظه فقط یک refresh request مجاز به اجراست.
 
-Additional requests that receive `401` while refresh is already running are placed in `failedQueue`.
+Requestهای اضافی که هنگام refresh فعال، `401` دریافت می‌کنند داخل `failedQueue` قرار می‌گیرند.
 
-When refresh succeeds:
+وقتی refresh موفق می‌شود:
 
-- the new access token is stored;
-- the default Authorization header is updated;
-- `TOKEN_REFRESHED` is emitted;
-- queued requests are replayed with the new token;
-- the original failed request is replayed.
+- access token جدید ذخیره می‌شود؛
+- default Authorization header به‌روزرسانی می‌شود؛
+- `TOKEN_REFRESHED` emit می‌شود؛
+- requestهای queueشده با token جدید replay می‌شوند؛
+- request اصلی failشده replay می‌شود.
 
-When refresh fails:
+وقتی refresh fail می‌شود:
 
-- queued requests are rejected;
-- token storage is cleared;
-- `SESSION_CLEARED` is emitted;
-- `AuthContext` clears the authenticated state.
+- requestهای queueشده reject می‌شوند؛
+- token storage clear می‌شود؛
+- `SESSION_CLEARED` emit می‌شود؛
+- `AuthContext` authenticated state را clear می‌کند.
 
-The `_retry` request flag prevents an individual request from entering an infinite retry loop.
+Request flag مربوط به `_retry` از واردشدن یک request منفرد به retry loop بی‌نهایت جلوگیری می‌کند.
 
-## Transport-to-React authentication events
+## Authentication Event بین Transport و React
 
-The Axios layer does not directly mutate React context state.
+Axios layer مستقیماً React context state را mutate نمی‌کند.
 
-Instead, `authEvents.ts` exposes an `EventTarget` with two events:
+در عوض `authEvents.ts` یک `EventTarget` با دو event ارائه می‌دهد:
 
 - `auth:token-refreshed`
 - `auth:session-cleared`
 
-`axiosInstance` emits these events and `AuthContext` listens to them.
+`axiosInstance` این eventها را emit می‌کند و `AuthContext` به آن‌ها listen می‌کند.
 
-This keeps the transport layer independent from React while still allowing interceptor-driven session changes to update the UI.
+در نتیجه transport layer مستقل از React باقی می‌ماند، اما session change ناشی از interceptor همچنان می‌تواند UI را update کند.
 
-## Idle timeout
+## Idle Timeout
 
-The authenticated UI uses a 30-minute inactivity timeout.
+Authenticated UI از inactivity timeout برابر 30 دقیقه استفاده می‌کند.
 
-The activity timestamp is stored in `sessionStorage` under the session activity key.
+Activity timestamp در `sessionStorage` و زیر session activity key ذخیره می‌شود.
 
-Relevant user activity includes browser interactions such as:
+User activityهای مرتبط شامل browser interactionهایی مانند موارد زیر هستند:
 
 - click
 - keydown
@@ -251,19 +255,19 @@ Relevant user activity includes browser interactions such as:
 - pointerdown
 - window focus
 
-Writes are throttled to avoid updating `sessionStorage` on every high-frequency event.
+Writeها throttle می‌شوند تا `sessionStorage` روی هر high-frequency event update نشود.
 
-### Reload behavior
+### Behavior هنگام Reload
 
-A page reload must not reset the inactivity timeout.
+Page reload نباید inactivity timeout را reset کند.
 
-The previous activity timestamp is preserved. When the application becomes active again, the frontend checks whether the timeout was already exceeded before treating the return as new activity.
+Activity timestamp قبلی حفظ می‌شود. وقتی application دوباره active می‌شود، frontend پیش از درنظرگرفتن return به‌عنوان activity جدید بررسی می‌کند timeout قبلاً رد شده یا خیر.
 
-This is an important lifecycle invariant. Do not replace it with a timer that starts from zero on each reload.
+این یک lifecycle invariant مهم است. آن را با timerای که بعد از هر reload از صفر شروع می‌شود جایگزین نکنید.
 
-## Logout flow
+## Logout Flow
 
-Logout is local-first.
+Logout به‌صورت local-first انجام می‌شود.
 
 ```mermaid
 flowchart TD
@@ -278,74 +282,74 @@ flowchart TD
     H --> F
 ```
 
-`AuthContext.logout` clears the local session before waiting for the backend logout request.
+`AuthContext.logout` پیش از انتظار برای backend logout request، local session را clear می‌کند.
 
-This ordering is intentional: frontend access must end immediately even when the backend is slow, unavailable, or returns an error.
+این ordering intentional است: frontend access باید بلافاصله خاتمه پیدا کند، حتی اگر backend کند، unavailable یا errorدهنده باشد.
 
-`useLogout` still reports backend logout failure to the user, but navigation returns to `/login` because the local session has already ended.
+`useLogout` همچنان backend logout failure را به user گزارش می‌دهد، ولی navigation به `/login` برمی‌گردد چون local session از قبل تمام شده است.
 
-## State-sync coupling
+## وابستگی به StateSync
 
-Authentication establishes the lifecycle boundary for persisted backend snapshots.
+Authentication lifecycle boundary مربوط به persisted backend snapshotها را تعیین می‌کند.
 
-A successful login or restored authenticated session starts one baseline state sync through `syncAllStateDomainsOnce()`.
+Login موفق یا restored authenticated session، یک baseline state sync را از طریق `syncAllStateDomainsOnce()` آغاز می‌کند.
 
-Logout or session clearing resets `StateSyncManager` so timers and session-scoped baseline state do not leak into another authenticated session.
+Logout یا session clearing، `StateSyncManager` را reset می‌کند تا timerها و session-scoped baseline state وارد authenticated session بعدی نشوند.
 
-See `../state-sync-save-to-db.md` for the persistence contract.
+برای persistence contract به [`state-sync-save-to-db.md`](./state-sync-save-to-db.md) مراجعه کنید.
 
-## Security invariants
+## Security Invariantها
 
-When changing authentication code, preserve these rules unless an explicit architecture/security decision replaces them:
+هنگام تغییر authentication code، ruleهای زیر را حفظ کنید مگر این‌که architecture/security decision صریحی جایگزین آن‌ها شود:
 
-1. Access tokens remain memory-only.
-2. Refresh tokens remain session-scoped, not long-term local-storage credentials.
-3. "Remember me" stores only the username.
-4. Token refresh uses the isolated auth client, not the normal 401-refresh interceptor path.
-5. Failed refresh clears the frontend session.
-6. Logout revokes frontend access before the backend request completes.
-7. Idle timeout survives page reloads.
-8. Development auth bypass must never activate in production builds.
-9. Frontend route guards are UX/session controls, not a substitute for backend authorization.
+1. Access tokenها فقط در memory باقی بمانند.
+2. Refresh tokenها session-scoped باقی بمانند و به credential بلندمدت در local storage تبدیل نشوند.
+3. "Remember me" فقط username را ذخیره کند.
+4. Token refresh از auth client ایزوله استفاده کند، نه normal 401-refresh interceptor path.
+5. Refresh failشده frontend session را clear کند.
+6. Logout پیش از complete شدن backend request، frontend access را revoke کند.
+7. Idle timeout از page reload جان سالم به در ببرد.
+8. Development auth bypass هرگز در production build فعال نشود.
+9. Frontend route guard فقط UX/session control است و جای backend authorization را نمی‌گیرد.
 
-## Common failure scenarios
+## Failure Scenarioهای رایج
 
-### Reload unexpectedly sends the user to login
+### Reload به‌صورت غیرمنتظره User را به Login می‌فرستد
 
-Check:
+بررسی کنید:
 
-- whether the refresh token still exists in `sessionStorage`;
-- whether the idle timeout was exceeded;
-- whether the refresh endpoint succeeds;
-- whether `VITE_AUTH_API_BASE_URL` / `VITE_API_BASE_URL` resolves to the expected auth endpoint.
+- refresh token هنوز در `sessionStorage` وجود دارد یا خیر؛
+- idle timeout رد شده یا خیر؛
+- refresh endpoint موفق است یا خیر؛
+- `VITE_AUTH_API_BASE_URL` / `VITE_API_BASE_URL` به auth endpoint مورد انتظار resolve می‌شود یا خیر.
 
-### Multiple API calls fail with 401 at once
+### چند API Call هم‌زمان با 401 Fail می‌شوند
 
-Do not add independent refresh logic to each hook. The centralized Axios queue owns concurrent token recovery.
+Refresh logic مستقل به هر hook اضافه نکنید. Centralized Axios queue مالک concurrent token recovery است.
 
-Inspect:
+موارد زیر را بررسی کنید:
 
-- `isRefreshing`;
-- `failedQueue`;
-- refresh endpoint response;
-- emitted auth events.
+- `isRefreshing`؛
+- `failedQueue`؛
+- refresh endpoint response؛
+- emitted auth eventها.
 
-### Logout reports an error but the user is already on login
+### Logout Error گزارش می‌کند ولی User از قبل روی Login است
 
-That is expected. Local logout happens before backend logout notification.
+این behavior expected است. Local logout پیش از backend logout notification انجام می‌شود.
 
-### "Remember me" does not preserve login after closing the session
+### "Remember me" بعد از بسته‌شدن Session، Login را حفظ نمی‌کند
 
-That is expected. It remembers only the username and does not persist authentication credentials.
+این behavior expected است. این feature فقط username را به خاطر می‌سپارد و authentication credential را persist نمی‌کند.
 
-## Extension guidance
+## راهنمای Extension
 
-When adding authentication behavior:
+هنگام اضافه‌کردن authentication behavior:
 
-- keep credential transport functions in `authApi.ts`;
-- keep session authority in `AuthContext`;
-- keep persistent token policy in `tokenStorage.ts`;
-- keep cross-layer interceptor notifications in `authEvents.ts`;
-- do not implement per-feature token refresh;
-- document any new session lifetime or security contract here;
-- add an ADR if token-storage or authentication trust boundaries change substantially.
+- credential transport functionها را در `authApi.ts` نگه دارید؛
+- session authority را در `AuthContext` نگه دارید؛
+- persistent token policy را در `tokenStorage.ts` نگه دارید؛
+- cross-layer interceptor notificationها را در `authEvents.ts` نگه دارید؛
+- per-feature token refresh پیاده‌سازی نکنید؛
+- session lifetime یا security contract جدید را در همین سند مستند کنید؛
+- اگر token-storage یا authentication trust boundary به‌طور اساسی تغییر کرد ADR اضافه کنید.
