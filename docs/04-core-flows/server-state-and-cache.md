@@ -1,18 +1,18 @@
-# Server State and Cache
+# Server State و Cache
 
-This document defines how SOHO UI reads, caches, refreshes, invalidates, and observes backend state.
+این سند تعریف می‌کند SOHO UI چگونه backend state را read، cache، refresh، invalidate و observe می‌کند.
 
-The most important rule is that **UI freshness and database snapshot persistence are separate responsibilities**.
+مهم‌ترین rule این است که **UI freshness و database snapshot persistence دو مسئولیت جدا هستند**.
 
-- TanStack React Query owns client-side server-state caching and UI freshness.
-- Axios owns transport-wide request/response policy.
-- `StateSyncManager` owns canonical backend snapshot persistence for the domains that support `save_to_db`.
-- Feature hooks own query keys, endpoint-specific normalization, and feature-specific refresh cadence.
-- Notification monitoring also uses React Query, but currently mixes ordinary shared resource keys with dedicated monitoring keys.
+- TanStack React Query مالک client-side server-state caching و UI freshness است.
+- Axios مالک transport-wide request/response policy است.
+- `StateSyncManager` مالک canonical backend snapshot persistence برای domainهایی است که `save_to_db` contract دارند.
+- Feature hookها مالک query key، endpoint-specific normalization و feature-specific refresh cadence هستند.
+- Notification monitoring نیز از React Query استفاده می‌کند، اما در حال حاضر ترکیبی از shared resource keyهای عادی و dedicated monitoring keyها دارد.
 
-Do not merge these responsibilities into one mechanism.
+این responsibilityها را در یک mechanism ادغام نکنید.
 
-## Runtime ownership
+## Runtime Ownership
 
 ```mermaid
 flowchart TD
@@ -36,34 +36,34 @@ flowchart TD
     N[Notification Monitors] --> RQ
 ```
 
-The two arrows after a successful mutation serve different goals:
+دو path پس از mutation موفق هدف‌های متفاوتی دارند:
 
-1. React Query invalidation refreshes client-side server state used by the UI and observers.
-2. StateSyncManager schedules canonical persisted snapshots where the backend contract requires them.
+1. React Query invalidation، client-side server state مورد استفاده‌ی UI و observerها را refresh می‌کند.
+2. `StateSyncManager` در domainهایی که backend contract نیاز دارد canonical persisted snapshot را schedule می‌کند.
 
-A developer should never rely on query invalidation to persist backend state, and should never use `save_to_db=true` as a way to refresh the UI.
+هیچ‌گاه به query invalidation برای persist کردن backend state متکی نباشید و از `save_to_db=true` نیز به‌عنوان راهی برای refresh کردن UI استفاده نکنید.
 
-## Global QueryClient policy
+## Global QueryClient Policy
 
-The application creates one `QueryClient` in `src/main.tsx`.
+Application یک `QueryClient` واحد در `src/main.tsx` ایجاد می‌کند.
 
-Current defaults are:
+Defaultهای فعلی:
 
-| Setting | Value | Meaning |
+| Setting | Value | معنی |
 | --- | --- | --- |
-| `retry` | `false` | Queries do not retry globally. Hooks may override this intentionally. |
-| `refetchOnMount` | `always` | Mounted consumers normally revalidate from the backend. |
-| `refetchOnWindowFocus` | `false` | Focusing the tab does not create a global refetch storm. |
-| `refetchOnReconnect` | `false` | Reconnect does not globally refetch every query. |
-| `staleTime` | `10_000` ms | Default data freshness window. |
-| `gcTime` | `5` minutes | Unused query data remains cached for this period by default. |
-| mutation retry | `false` | Mutations are not repeated automatically. |
+| `retry` | `false` | Queryها به‌صورت global retry نمی‌شوند؛ hook می‌تواند آگاهانه override کند. |
+| `refetchOnMount` | `always` | Consumerهای mountشده معمولاً data را از backend دوباره validate می‌کنند. |
+| `refetchOnWindowFocus` | `false` | Focus شدن tab باعث global refetch storm نمی‌شود. |
+| `refetchOnReconnect` | `false` | Reconnect باعث refetch سراسری همه‌ی queryها نمی‌شود. |
+| `staleTime` | `10_000` ms | Default freshness window مربوط به data. |
+| `gcTime` | `5` دقیقه | Query data بدون استفاده به‌صورت default تا این مدت در cache می‌ماند. |
+| mutation retry | `false` | Mutationها به‌صورت خودکار تکرار نمی‌شوند. |
 
-Hooks can override these values when the endpoint has a different runtime requirement.
+Hookها زمانی که endpoint runtime requirement متفاوتی دارد می‌توانند این valueها را override کنند.
 
-## Successful mutation behavior
+## Behavior پس از Mutation موفق
 
-The global `MutationCache` invalidates active queries only when a mutation succeeds.
+Global `MutationCache` فقط وقتی mutation موفق است active queryها را invalidate می‌کند.
 
 ```mermaid
 sequenceDiagram
@@ -88,19 +88,19 @@ sequenceDiagram
     end
 ```
 
-This success-only behavior prevents a failed operation from making the UI look as if state changed and prevents persistence work from being scheduled for an unsuccessful mutation.
+این success-only behavior مانع آن می‌شود که operation failشده UI را طوری نشان دهد که انگار state تغییر کرده و همچنین جلوی schedule شدن persistence برای mutation ناموفق را می‌گیرد.
 
-Feature hooks may also invalidate focused query keys in their own `onSuccess` handlers. This is allowed when a feature knows exactly which views require immediate refresh. The global invalidation remains a safety net for active server-state consumers.
+Feature hook می‌تواند در `onSuccess` خود targeted query keyها را هم invalidate کند. این کار زمانی مجاز است که feature دقیقاً بداند کدام view باید فوراً refresh شود. Global invalidation همچنان safety net برای active server-state consumerها باقی می‌ماند.
 
-## Query keys are contracts
+## Query Keyها Contract هستند
 
-Query keys identify cache entries and query lifecycles.
+Query key، cache entry و query lifecycle را مشخص می‌کند.
 
-Examples verified from current hooks include:
+نمونه‌های تأییدشده از hookهای فعلی:
 
 - `['zpool']`
 - `['disk']`
-- `['disk', 'partitioned']` — historical key currently used for available unpartitioned disks in storage workflows
+- `['disk', 'partitioned']` — historical key که در storage workflowها برای available unpartitioned disk استفاده می‌شود
 - `['disk', 'inventory']`
 - `['filesystems']`
 - `['volumes']`
@@ -114,256 +114,266 @@ Examples verified from current hooks include:
 - `['notifications', 'capacity', 'zpool']`
 - `['notifications', 'capacity', 'filesystems']`
 
-Consumers using the same key can share cache state and request lifecycle. Consumers using different keys are independent React Query entries even when they call the same endpoint or fetch function.
+Consumerهایی با key یکسان می‌توانند cache state و request lifecycle را share کنند. Consumerهایی با key متفاوت حتی اگر endpoint یا fetch function یکسان داشته باشند entryهای مستقل React Query هستند.
 
-Therefore a query key is not just a label. It defines ownership and invalidation behavior.
+بنابراین query key صرفاً label نیست؛ ownership و invalidation behavior را تعریف می‌کند.
 
-Before changing a query key, search for:
+پیش از تغییر query key این موارد را search کنید:
 
-- all consumers;
-- targeted invalidation calls;
-- notification monitors;
-- polling configuration;
-- any code relying on the existing cache lifecycle.
+- تمام consumerها؛
+- targeted invalidation callها؛
+- notification monitorها؛
+- polling configuration؛
+- هر codeای که به cache lifecycle فعلی وابسته است.
 
-## Shared resource keys versus dedicated monitor keys
+## Shared Resource Key در برابر Dedicated Monitor Key
 
-The codebase currently uses both patterns.
+Codebase در حال حاضر هر دو pattern را دارد.
 
-### Shared/ordinary resource keys
+### Shared/Ordinary Resource Keyها
 
-Status-change notifications use ordinary resource hooks:
+Status-change notificationها از ordinary resource hookها استفاده می‌کنند:
 
-- zpool status observes `useZpool()` / `['zpool']`;
-- disk status observes `useDisk()` / `['disk']`;
-- service status observes `useServices()` / `['services']`.
+- zpool status از `useZpool()` / `['zpool']` observe می‌شود؛
+- disk status از `useDisk()` / `['disk']` observe می‌شود؛
+- service status از `useServices()` / `['services']` observe می‌شود.
 
-When a page uses the same key, React Query can share that entry.
+وقتی page همان key را استفاده کند، React Query می‌تواند entry را share کند.
 
-Dashboard widgets follow the same principle for domain data such as `['zpool']` instead of creating page-specific copies of the same resource.
+Dashboard widgetها نیز برای domain data مانند `['zpool']` همین اصل را رعایت می‌کنند و page-specific copy از همان resource نمی‌سازند.
 
-The Services page additionally creates one `['services','status', unit]` query per service. Those entries are intentionally distinct from the shared list query.
+Services page علاوه بر این برای هر service یک query با key زیر می‌سازد:
 
-### Dedicated monitoring keys
+```text
+['services','status', unit]
+```
 
-Capacity notifications intentionally create separate entries:
+این entryها عمداً از shared list query مستقل هستند.
 
-- `['notifications','capacity','zpool']`;
+### Dedicated Monitoring Keyها
+
+Capacity notificationها عمداً entryهای جدا ایجاد می‌کنند:
+
+- `['notifications','capacity','zpool']`؛
 - `['notifications','capacity','filesystems']`.
 
-These reuse the resource fetch functions but have their own 60-second monitoring lifecycle.
+این‌ها resource fetch function را reuse می‌کنند، اما lifecycle مانیتورینگ مستقل 60 ثانیه‌ای دارند.
 
-Disk-temperature monitoring uses `['disk','inventory']` at 30 seconds.
+Disk-temperature monitoring از `['disk','inventory']` با interval برابر 30 ثانیه استفاده می‌کند.
 
-Different keys can result in separate backend requests. Do not assume React Query deduplicates by URL or fetch function; query-key identity is what matters.
+Keyهای متفاوت می‌توانند backend requestهای مستقل ایجاد کنند. React Query بر اساس URL یا fetch function deduplicate نمی‌کند؛ query-key identity تعیین‌کننده است.
 
-When introducing a dedicated key, document why its cadence/lifecycle should be independent from the ordinary resource query.
+هنگام معرفی dedicated key، دلیل مستقل‌بودن cadence/lifecycle آن نسبت به ordinary resource query را مستند کنید.
 
-## Cache data is not application persistence
+## Cache Data، Application Persistence نیست
 
-React Query cache is temporary browser memory. It is not an authoritative persisted representation of the managed storage system.
+React Query cache حافظه‌ی موقت browser است و persisted representation authoritative از managed storage system نیست.
 
-The cache may disappear when:
+Cache ممکن است در شرایط زیر از بین برود:
 
-- the page reloads;
-- the application process is restarted;
-- a query is garbage-collected;
-- a user signs out;
-- query configuration changes.
+- page reload؛
+- restart شدن application process؛
+- garbage collection شدن query؛
+- sign out شدن user؛
+- تغییر query configuration.
 
-Therefore:
+بنابراین:
 
-- never treat React Query cache as durable storage;
-- never put backend snapshot semantics into a query key;
-- never use local React state to replace authoritative backend data;
-- use the backend API as the source of truth for managed-system state.
+- React Query cache را durable storage در نظر نگیرید؛
+- backend snapshot semantics را داخل query key قرار ندهید؛
+- local React state را جایگزین authoritative backend data نکنید؛
+- برای managed-system state از backend API به‌عنوان source of truth استفاده کنید.
 
-## Local component state versus server state
+یک معیار ساده: **اگر Operator دیگری یا backend process می‌تواند value را بدون اطلاع component تغییر دهد، آن value server state است.**
 
-Use local React state for ephemeral UI concerns such as:
+## Local Component State در برابر Server State
 
-- modal open/closed state;
-- selected rows;
-- unsaved form values;
-- temporary confirmation state;
-- countdowns and animations.
+برای ephemeral UI concernهایی مانند موارد زیر از local React state استفاده کنید:
 
-Browser-persisted UI preferences such as the Dashboard layout are also distinct from server state: they may survive a reload, but they are still client-side presentation state rather than authoritative managed-system data.
+- modal open/closed state؛
+- selected rowها؛
+- unsaved form valueها؛
+- temporary confirmation state؛
+- countdown و animation.
 
-Use React Query for data whose authoritative value comes from the backend.
+Browser-persisted UI preference مانند Dashboard layout نیز از server state جداست. ممکن است reload را survive کند، اما همچنان client-side presentation state است نه authoritative managed-system data.
 
-A useful test is: **if another operator or backend process could change the value without this component knowing, it is server state.**
+## Polling یک Endpoint-specific Policy است
 
-## Polling is an endpoint-specific policy
+عمداً global polling interval وجود ندارد. هر hook یا monitoring query تصمیم می‌گیرد data به continuous refresh نیاز دارد یا خیر.
 
-There is deliberately no global polling interval. Each hook or monitoring query decides whether its data needs continuous refresh.
+نمونه‌ها:
 
-Examples:
+- uptime در Dashboard هر 1 ثانیه refresh می‌شود؛
+- CPU و memory telemetry هر 2 ثانیه؛
+- network bandwidth پس از مشخص شدن interface nameها هر 2 ثانیه؛
+- zpool/storage viewها با cadence کندتر؛
+- Dashboard 3D slot view، default pool-slot cadence را به 10 ثانیه override می‌کند؛
+- filesystem و Volume list فعلاً به mount/refetch/invalidation متکی‌اند و continuous polling ندارند؛
+- Services هم list query پنج‌ثانیه‌ای و هم per-unit status query پنج‌ثانیه‌ای دارد؛
+- بعضی detail queryها فقط وقتی UI مربوطه enabled است poll می‌شوند؛
+- notification capacity monitorها dedicated query با cadence برابر 60 ثانیه دارند؛
+- disk-temperature monitoring از inventory query با cadence برابر 30 ثانیه استفاده می‌کند.
 
-- uptime refreshes every second on the Dashboard;
-- CPU and memory telemetry refresh every two seconds;
-- network bandwidth refreshes every two seconds once interface names are known;
-- zpool/storage views refresh more slowly;
-- the Dashboard 3D slot view overrides the default pool-slot cadence to 10 seconds;
-- filesystem and Volume list data currently rely on mount/refetch/invalidation rather than continuous polling;
-- Services runs both a 5-second list query and 5-second per-unit status queries;
-- some detail queries poll only while the relevant UI is enabled;
-- notification capacity monitors use dedicated 60-second queries;
-- disk-temperature monitoring uses a 30-second inventory query.
+Canonical polling inventory در [`polling-and-data-refresh.md`](./polling-and-data-refresh.md) نگهداری می‌شود.
 
-The canonical polling inventory is maintained in [`polling-and-data-refresh.md`](./polling-and-data-refresh.md).
+## Background Polling Policy
 
-## Background polling policy
+Continuous queryها معمولاً از این value استفاده می‌کنند:
 
-Continuous queries normally use `refetchIntervalInBackground: false`.
+```text
+refetchIntervalInBackground: false
+```
 
-This matters because administrative dashboards can otherwise continue generating traffic when the browser tab is hidden.
+این موضوع مهم است چون admin dashboard در غیر این صورت می‌تواند زمانی که browser tab hidden است همچنان traffic تولید کند.
 
-If a future feature truly requires background polling, document the operational reason before enabling it.
+اگر feature آینده واقعاً background polling نیاز دارد، دلیل operational آن را پیش از فعال‌سازی مستند کنید.
 
-## Feature-level overrides are part of the contract
+## Feature-level Override بخشی از Contract است
 
-A hook default is not always the final runtime behavior. Pages/components can intentionally override cadence or lifecycle.
+Hook default همیشه final runtime behavior نیست. Page/component می‌تواند cadence یا lifecycle را عمداً override کند.
 
-Examples:
+نمونه‌ها:
 
-- `usePoolDeviceSlots()` defaults to 30 seconds, while `ServerSlots3DWidget` supplies 10 seconds;
-- Integrated Storage enables its legacy `['disk','partitioned']` query only while Create/Add/Replace workflows need available unpartitioned disks and supplies a 5-second interval;
-- `useDiskInventory()` explicitly opts into window-focus refetch although the global QueryClient disables it.
+- `usePoolDeviceSlots()` به‌صورت default 30 ثانیه است، ولی `ServerSlots3DWidget` مقدار 10 ثانیه می‌دهد؛
+- Integrated Storage، legacy query با key `['disk','partitioned']` را فقط زمانی enable می‌کند که Create/Add/Replace workflow به available unpartitioned disk نیاز دارد و interval برابر 5 ثانیه می‌دهد؛
+- `useDiskInventory()` با وجود global policy، به‌صورت صریح window-focus refetch را فعال می‌کند.
 
-When debugging or documenting freshness, inspect both the hook and the caller.
+هنگام debug یا مستندسازی freshness، هم hook و هم caller را بررسی کنید.
 
-## Notifications are React Query consumers with their own bookkeeping
+## Notificationها React Query Consumer هستند، با Bookkeeping مستقل
 
-Notifications are not a second backend state platform, but they do not all use the same cache entries as pages.
+Notificationها backend state platform جدا نیستند، اما همه‌ی آن‌ها همان cache entry مربوط به pageها را استفاده نمی‌کنند.
 
-Current patterns are:
+Patternهای فعلی:
 
-1. status-change monitoring uses ordinary zpool/disk/services resource hooks;
-2. capacity monitoring uses dedicated notification query keys and a 60-second cadence;
-3. temperature monitoring uses the disk-inventory query key and a 30-second cadence.
+1. status-change monitoring از ordinary zpool/disk/services resource hookها استفاده می‌کند؛
+2. capacity monitoring از dedicated notification query key و cadence برابر 60 ثانیه استفاده می‌کند؛
+3. temperature monitoring از disk-inventory query key با cadence برابر 30 ثانیه استفاده می‌کند.
 
-Notification history, prior-status snapshots, check timestamps, and fingerprints stored in browser storage are local bookkeeping only. They are not authoritative backend state.
+Notification history، prior-status snapshot، check timestamp و fingerprintهایی که در browser storage نگه داشته می‌شوند صرفاً local bookkeeping هستند و authoritative backend state نیستند.
 
-See [`notifications.md`](./notifications.md).
+به [`notifications.md`](./notifications.md) مراجعه کنید.
 
-## Relationship to `save_to_db`
+## ارتباط با `save_to_db`
 
-Normal React Query requests are observational reads and must not persist snapshots.
+Normal React Query requestها observational read هستند و نباید snapshot persist کنند.
 
-The centralized Axios transport policy normalizes normal API traffic to `save_to_db=false`.
+Centralized Axios transport policy، normal API traffic را به `save_to_db=false` normalize می‌کند.
 
-Only canonical internal state-sync requests created by `StateSyncManager` are allowed to request `save_to_db=true`.
+فقط internal canonical state-sync requestهایی که توسط `StateSyncManager` ساخته می‌شوند مجازند `save_to_db=true` داشته باشند.
 
-Legacy caller-level persistence flags are being removed from hooks because they are misleading even when Axios neutralizes them.
+Legacy caller-level persistence flagها در حال حذف شدن از hookها هستند چون حتی اگر Axios آن‌ها را neutralize کند misleading هستند.
 
-See [`state-sync-save-to-db.md`](./state-sync-save-to-db.md).
+به [`state-sync-save-to-db.md`](./state-sync-save-to-db.md) مراجعه کنید.
 
-## StateSync coverage is explicit
+## StateSync Coverage صریح است
 
-Not every React Query resource automatically has a persisted StateSync domain.
+هر React Query resource الزاماً persisted StateSync domain ندارد.
 
-For example, the current frontend defines persisted domains for zpool, filesystem, disk, NFS, Samba resources, Web Share, and SNMP, but not for Volume or system-service control.
+بر اساس contract صحیح فعلی GitLab، frontend برای `zpool`، `filesystem`، `disk`، `nfs`، `samba-shares` و `webshare` persisted StateSync domain دارد.
 
-That distinction must be treated as an explicit backend/frontend contract. A feature without a StateSync domain must not invent `save_to_db=true` locally. If persistence is required, extend centralized StateSync only after confirming the canonical snapshot endpoint and cross-domain effects.
+در حال حاضر `volume`، system-service control، `samba-users`، `samba-groups` و `snmp` StateSync domain مستقل ندارند.
 
-## Adding a new server-state query
+این distinction باید به‌عنوان explicit backend/frontend contract در نظر گرفته شود. Feature بدون StateSync domain نباید local `save_to_db=true` اختراع کند. اگر persistence لازم است، فقط پس از تأیید canonical snapshot endpoint و cross-domain effectها centralized StateSync را extend کنید.
 
-When adding a new query:
+## اضافه‌کردن Server-state Query جدید
 
-1. identify the authoritative backend endpoint;
-2. choose a stable query key representing the intended cache/lifecycle owner;
-3. check whether an existing key already represents the same state and cadence;
-4. use a dedicated key only when an independent lifecycle is intentional;
-5. normalize API data in the hook or API layer rather than in many components;
-6. decide whether continuous polling is actually necessary;
-7. if polling is required, define the interval intentionally and disable background polling unless justified;
-8. define `staleTime` based on how quickly the resource changes;
-9. identify mutations that must invalidate the query;
-10. determine whether the resource is a persisted StateSync domain or UI-only/operational server state;
-11. document non-obvious lifecycle constraints.
+هنگام اضافه‌کردن query جدید:
 
-## Adding a mutation
+1. authoritative backend endpoint را مشخص کنید؛
+2. stable query keyای انتخاب کنید که cache/lifecycle owner موردنظر را نمایش دهد؛
+3. بررسی کنید existing key همان state و cadence را از قبل نمایش می‌دهد یا خیر؛
+4. فقط وقتی lifecycle مستقل intentional است dedicated key استفاده کنید؛
+5. API data را در hook یا API layer normalize کنید، نه در چند component؛
+6. تصمیم بگیرید continuous polling واقعاً لازم است یا خیر؛
+7. اگر polling لازم است interval را intentional تعیین کرده و background polling را بدون justification غیرفعال نگه دارید؛
+8. `staleTime` را بر اساس سرعت تغییر resource تعیین کنید؛
+9. mutationهایی را که باید query را invalidate کنند مشخص کنید؛
+10. تعیین کنید resource یک persisted StateSync domain است یا فقط UI/operational server state؛
+11. lifecycle constraint غیرآشکار را مستند کنید.
 
-For a normal mutation:
+## اضافه‌کردن Mutation
+
+برای mutation عادی:
 
 ```ts
 await axiosInstance.post('/api/example/', payload);
 ```
 
-Do not add caller-level `save_to_db=true`.
+Caller-level `save_to_db=true` اضافه نکنید.
 
-After success:
+پس از success:
 
-- use targeted invalidation if the feature needs immediate specific refreshes;
-- allow the global MutationCache to revalidate active server state;
-- let the Axios response interceptor and StateSyncManager handle persisted snapshot domains.
+- اگر feature به immediate specific refresh نیاز دارد targeted invalidation انجام دهید؛
+- اجازه دهید global MutationCache active server state را revalidate کند؛
+- اجازه دهید Axios response interceptor و StateSyncManager persisted snapshot domainها را handle کنند.
 
-If the mutation affects multiple persisted domains, extend `resolveStateDomainsForMutation` instead of adding ad-hoc snapshot calls inside the feature hook.
+اگر mutation چند persisted domain را تحت تأثیر قرار می‌دهد، `resolveStateDomainsForMutation` را extend کنید؛ ad-hoc snapshot call داخل feature hook اضافه نکنید.
 
-If no StateSync domain exists, confirm whether that is intentional before adding one.
+اگر StateSync domain وجود ندارد، پیش از اضافه‌کردن آن تأیید کنید نبودنش intentional است یا خیر.
 
-## Debugging stale UI data
+## Debug کردن Stale UI Data
 
-When the UI appears stale, inspect in this order:
+وقتی UI stale به نظر می‌رسد به این ترتیب بررسی کنید:
 
-1. Is the expected query mounted and enabled?
-2. What exact query key owns the data?
-3. Is it an ordinary resource key, a per-entity key, or a dedicated monitor key?
-4. Is its query key the same key that a targeted mutation invalidates?
-5. Does the query intentionally poll, or is refresh expected only on invalidation/mount/manual refresh?
-6. Did the caller override the hook's interval, `enabled`, focus, or reconnect behavior?
-7. Is `staleTime` delaying a behavior you expected to be immediate?
-8. Did the mutation actually succeed?
-9. Is the endpoint response correct before normalization?
-10. Are multiple hooks representing equivalent backend data under intentionally different keys?
+1. آیا query مورد انتظار mounted و enabled است؟
+2. دقیقاً کدام query key مالک data است؟
+3. ordinary resource key، per-entity key یا dedicated monitor key است؟
+4. آیا targeted mutation همان query key را invalidate می‌کند؟
+5. آیا query عمداً poll می‌شود یا refresh فقط با invalidation/mount/manual refresh انتظار می‌رود؟
+6. آیا caller، interval، `enabled`، focus یا reconnect behavior مربوط به hook را override کرده؟
+7. آیا `staleTime` behavior مورد انتظار را delay می‌کند؟
+8. آیا mutation واقعاً موفق شده؟
+9. endpoint response قبل از normalization صحیح است؟
+10. آیا چند hook، equivalent backend data را با keyهای عمداً متفاوت نمایش می‌دهند؟
 
-Do not solve a UI freshness issue by enabling `save_to_db=true`.
+UI freshness issue را با فعال‌کردن `save_to_db=true` حل نکنید.
 
-## Debugging duplicate network requests
+## Debug کردن Duplicate Network Request
 
-If equivalent endpoint traffic appears multiple times:
+اگر equivalent endpoint traffic چند بار دیده می‌شود:
 
-1. compare the query keys, not only the URLs;
-2. check notification-specific monitoring keys;
-3. account for intentional per-entity queries such as `['services','status', unit]`;
-4. compare polling intervals and enabled lifecycles;
-5. inspect caller-specific overrides such as the 3D slot 10-second cadence;
-6. check whether mutation invalidation occurred at the same time as a scheduled poll;
-7. inspect mount/unmount revalidation;
-8. only then investigate framework-level causes such as StrictMode.
+1. query keyها را مقایسه کنید، نه فقط URLها؛
+2. notification-specific monitoring keyها را بررسی کنید؛
+3. per-entity queryهای intentional مانند `['services','status', unit]` را در نظر بگیرید؛
+4. polling interval و enabled lifecycle را مقایسه کنید؛
+5. caller-specific override مانند cadence ده‌ثانیه‌ای 3D slot را بررسی کنید؛
+6. بررسی کنید mutation invalidation هم‌زمان با scheduled poll رخ نداده باشد؛
+7. mount/unmount revalidation را بررسی کنید؛
+8. بعد از این‌ها سراغ framework-level causeهایی مثل StrictMode بروید.
 
-Different query keys are independent entries and can legitimately create separate requests.
+Query keyهای متفاوت entry مستقل هستند و می‌توانند به‌صورت legitimate request مستقل ایجاد کنند.
 
-## Debugging persistence
+## Debug کردن Persistence
 
-If the backend database snapshot is stale while the live UI is correct, inspect StateSync rather than React Query:
+اگر backend database snapshot stale است ولی live UI صحیح است، StateSync را بررسی کنید نه React Query:
 
-1. Did the mutation pass through `axiosInstance`?
-2. Did it succeed?
-3. Does its URL map to a persisted domain?
-4. If no domain maps, is persistence actually part of the feature contract?
-5. Was a canonical snapshot scheduled?
-6. Was the snapshot coalesced with another mutation?
-7. Did a sync fail while another was in flight?
-8. Does the canonical endpoint still return the complete state required for persistence?
+1. آیا mutation از `axiosInstance` عبور کرده؟
+2. آیا موفق شده؟
+3. آیا URL آن به persisted domain map می‌شود؟
+4. اگر domain map نمی‌شود، آیا persistence واقعاً بخشی از feature contract است؟
+5. آیا canonical snapshot schedule شده؟
+6. آیا snapshot با mutation دیگری coalesce شده؟
+7. آیا هنگام in-flight بودن sync failure رخ داده؟
+8. آیا canonical endpoint هنوز complete state موردنیاز persistence را برمی‌گرداند؟
 
-## Maintenance invariants
+## Maintenance Invariantها
 
-Preserve these rules when refactoring:
+هنگام refactor این ruleها را حفظ کنید:
 
-- React Query owns client-side server-state freshness, not database persistence;
-- `StateSyncManager` is the only frontend owner of `save_to_db=true` snapshots;
-- failed mutations must not schedule persistence snapshots;
-- polling should be scoped to mounted/enabled consumers and normally stop in the background;
-- identical query keys may share lifecycle, while different keys represent independent entries;
-- per-entity query fan-out must be treated as intentional backend load and documented where material;
-- caller-level query overrides are part of runtime behavior and must be considered during audits;
-- dedicated notification monitoring keys must be documented as independent traffic when applicable;
-- browser notification storage and dashboard-layout storage are client bookkeeping/preferences, not authoritative server state;
-- feature code must not call persistence snapshots ad hoc.
+- React Query مالک client-side server-state freshness است، نه database persistence؛
+- `StateSyncManager` تنها frontend owner برای snapshotهای `save_to_db=true` است؛
+- mutation failشده نباید persistence snapshot schedule کند؛
+- polling باید به mounted/enabled consumer محدود باشد و معمولاً در background متوقف شود؛
+- query key یکسان می‌تواند lifecycle را share کند، در حالی که key متفاوت entry مستقل است؛
+- per-entity query fan-out باید intentional backend load در نظر گرفته شود و هرجا مهم است مستند شود؛
+- caller-level query override بخشی از runtime behavior است و باید در auditها لحاظ شود؛
+- dedicated notification monitoring key در صورت وجود باید به‌عنوان traffic مستقل مستند شود؛
+- browser notification storage و dashboard-layout storage فقط client bookkeeping/preference هستند، نه authoritative server state؛
+- feature code نباید persistence snapshot را ad-hoc call کند.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/main.tsx`
 - `src/lib/axiosInstance.ts`
@@ -385,7 +395,7 @@ Preserve these rules when refactoring:
 - `src/components/dashboard/server-3d/ServerSlots3DWidget.tsx`
 - `src/components/notifications/NotificationBootstrapper.tsx`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`api-request-lifecycle.md`](./api-request-lifecycle.md)
 - [`state-sync-save-to-db.md`](./state-sync-save-to-db.md)
