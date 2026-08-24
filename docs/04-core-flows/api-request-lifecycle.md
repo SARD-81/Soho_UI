@@ -1,23 +1,23 @@
 # API Request Lifecycle
 
-This document describes how normal backend requests travel through SOHO UI, how authentication is attached, how 401 responses are recovered, how successful mutations trigger state synchronization, and which responsibilities belong to Axios versus React Query.
+این سند توضیح می‌دهد requestهای عادی backend چگونه در SOHO UI حرکت می‌کنند، authentication چگونه به request متصل می‌شود، responseهای 401 چگونه recover می‌شوند، mutationهای موفق چگونه state synchronization را trigger می‌کنند و کدام responsibility به Axios و کدام به React Query تعلق دارد.
 
-## Main transport entry point
+## Entry Point اصلی Transport
 
-Normal application API traffic should use the shared `src/lib/axiosInstance.ts` instance.
+API traffic عادی application باید از shared instance موجود در `src/lib/axiosInstance.ts` استفاده کند.
 
-It is configured with:
+این instance با موارد زیر configure شده است:
 
 - `baseURL: import.meta.env.VITE_API_BASE_URL`
-- JSON request/response headers
-- optional mock adapter setup in development/test-oriented configurations
-- request interceptors
-- response interceptors
+- JSON request/response headerها
+- optional mock adapter setup در configurationهای development/test-oriented
+- request interceptorها
+- response interceptorها
 - state-sync executor registration
 
-Feature hooks should not create their own Axios clients unless there is a deliberate architectural reason such as the isolated authentication transport described in `authentication.md`.
+Feature hookها نباید Axios client مستقل بسازند، مگر این‌که architectural reason آگاهانه‌ای وجود داشته باشد؛ مانند authentication transport ایزوله‌شده که در `authentication.md` توضیح داده شده است.
 
-## High-level request path
+## Request Path سطح بالا
 
 ```mermaid
 flowchart TD
@@ -40,266 +40,270 @@ flowchart TD
     O -- No --> Q[Reject error]
 ```
 
-## React Query ownership
+## React Query Ownership
 
-React Query and Axios solve different problems.
+React Query و Axios دو مسئله‌ی متفاوت را حل می‌کنند.
 
-### React Query owns
+### React Query مالک موارد زیر است
 
-- query lifecycle;
-- loading/error/success state;
-- cache keys;
-- invalidation;
-- polling/refetch behavior;
-- mutation lifecycle callbacks.
+- query lifecycle؛
+- loading/error/success state؛
+- cache keyها؛
+- invalidation؛
+- polling/refetch behavior؛
+- mutation lifecycle callbackها.
 
-### Axios owns
+### Axios مالک موارد زیر است
 
-- HTTP transport defaults;
-- Bearer token attachment;
-- centralized 401 recovery;
-- transport-level `save_to_db` policy;
-- successful mutation notification to `StateSyncManager`.
+- HTTP transport defaultها؛
+- Bearer token attachment؛
+- centralized 401 recovery؛
+- transport-level `save_to_db` policy؛
+- notification مربوط به mutation موفق برای `StateSyncManager`.
 
-Do not move token refresh into individual React Query hooks. Do not make Axios responsible for feature-specific cache invalidation.
+Token refresh را به individual React Query hook منتقل نکنید. همچنین Axios را مسئول feature-specific cache invalidation نکنید.
 
-## Request interceptor order
+## ترتیب Request Interceptor
 
-For each normal request, the request interceptor performs two important actions.
+برای هر request عادی، request interceptor دو action مهم انجام می‌دهد.
 
-### 1. Apply persistence transport policy
+### 1. اعمال Persistence Transport Policy
 
-`applySaveToDbTransportPolicy` is executed before the token is attached.
+`applySaveToDbTransportPolicy` پیش از اضافه‌شدن token اجرا می‌شود.
 
-For non-auth `/api/` requests, it enforces the persistence contract:
+برای requestهای non-auth زیر `/api/`، persistence contract را enforce می‌کند:
 
-- normal requests explicitly carry `save_to_db=false`;
-- only canonical state-sync GET requests are allowed to carry `save_to_db=true`;
-- stale caller-level `save_to_db` values in supported body formats are forced to false;
-- inline query-string `save_to_db` values are removed and reconstructed through Axios params;
-- auth endpoints are excluded from this policy.
+- requestهای عادی به‌صورت صریح `save_to_db=false` دارند؛
+- فقط canonical state-sync GET requestها مجازند `save_to_db=true` داشته باشند؛
+- caller-level `save_to_db` valueهای stale در body formatهای پشتیبانی‌شده به false force می‌شوند؛
+- inline query-string valueهای `save_to_db` حذف شده و از طریق Axios params دوباره ساخته می‌شوند؛
+- auth endpointها از این policy exclude هستند.
 
-The application therefore has one transport-level authority for snapshot persistence rather than trusting every feature hook to set the correct flag.
+در نتیجه application یک transport-level authority واحد برای snapshot persistence دارد و به هر feature hook اعتماد نمی‌کند که flag صحیح را تنظیم کند.
 
-See `../state-sync-save-to-db.md` for the full persistence design.
+برای design کامل persistence به [`state-sync-save-to-db.md`](./state-sync-save-to-db.md) مراجعه کنید.
 
-### 2. Attach access token
+### 2. اضافه‌کردن Access Token
 
-The request interceptor reads the current in-memory access token from `tokenStorage`.
+Request interceptor، access token فعلی را از memory-only `tokenStorage` می‌خواند.
 
-When present, it sets:
+در صورت وجود، header زیر را تنظیم می‌کند:
 
 ```text
 Authorization: Bearer <access-token>
 ```
 
-Feature code should not manually attach the Bearer token to normal API requests.
+Feature code نباید Bearer token را برای API requestهای عادی به‌صورت دستی اضافه کند.
 
-## Internal state-sync marker
+## Internal StateSync Marker
 
-Canonical state-sync requests are created through the executor registered at the bottom of `axiosInstance.ts`.
+Canonical state-sync requestها از طریق executor ثبت‌شده در انتهای `axiosInstance.ts` ساخته می‌شوند.
 
-The executor adds the internal header:
+Executor، internal header زیر را اضافه می‌کند:
 
 ```text
 X-Soho-State-Sync: 1
 ```
 
-The request policy reads that marker to distinguish a canonical persistence snapshot from a normal request.
+Request policy این marker را می‌خواند تا canonical persistence snapshot را از request عادی تشخیص دهد.
 
-The marker is removed from the outgoing Axios configuration after it has served its internal purpose. The transport policy then sets `save_to_db=true` for that request.
+Marker پس از انجام نقش داخلی خود از outgoing Axios configuration حذف می‌شود. سپس transport policy برای همان request مقدار `save_to_db=true` را تنظیم می‌کند.
 
-This prevents ordinary callers from owning persistence behavior while still allowing `StateSyncManager` to route its canonical GET through the same authenticated HTTP stack.
+در نتیجه ordinary caller مالک persistence behavior نمی‌شود و در عین حال `StateSyncManager` می‌تواند canonical GET خود را از همان authenticated HTTP stack عبور دهد.
 
-## Successful response path
+## Successful Response Path
 
-On a successful response, the response interceptor checks:
+هنگام response موفق، response interceptor موارد زیر را بررسی می‌کند:
 
-- request method;
-- request URL;
-- whether the request is an auth endpoint.
+- request method؛
+- request URL؛
+- auth endpoint بودن یا نبودن request.
 
-Successful non-auth API mutations using `POST`, `PUT`, `PATCH`, or `DELETE` call:
+Mutationهای موفق non-auth API با `POST`، `PUT`، `PATCH` یا `DELETE` function زیر را call می‌کنند:
 
 ```text
 scheduleStateSyncForMutation(url)
 ```
 
-`StateSyncManager` maps the mutation URL to one or more persisted domains and schedules their canonical snapshots.
+`StateSyncManager`، mutation URL را به یک یا چند persisted domain map کرده و canonical snapshotهای مربوطه را schedule می‌کند.
 
-Examples include cross-domain dependencies such as:
+بر اساس contract فعلی GitLab، mappingهای اصلی شامل موارد زیر هستند:
 
 ```text
 zpool mutation       -> zpool + disk
 filesystem mutation  -> filesystem + zpool
 disk mutation        -> disk + zpool
-samba user mutation  -> samba-users + samba-groups
+nfs mutation         -> nfs
+samba sharepoint     -> samba-shares
+webshare mutation    -> webshare
 ```
 
-This scheduling is independent from React Query cache invalidation.
+در contract فعلی، Samba user/group و SNMP StateSync domain مستقل ندارند.
 
-## UI cache refresh versus persisted snapshot refresh
+این scheduling از React Query cache invalidation مستقل است.
 
-These are intentionally separate concepts.
+## UI Cache Refresh در برابر Persisted Snapshot Refresh
 
-### React Query invalidation
+این دو مفهوم عمداً جدا هستند.
 
-Used to make UI server-state data fresh for the user.
+### React Query Invalidation
 
-The global `MutationCache.onSuccess` configured in `main.tsx` invalidates active queries after successful mutations, and feature hooks may also perform targeted invalidation when necessary.
+برای fresh کردن server-state data در UI استفاده می‌شود.
 
-### StateSyncManager snapshot
+Global `MutationCache.onSuccess` که در `main.tsx` configure شده، پس از mutation موفق active queryها را invalidate می‌کند و feature hookها نیز در صورت نیاز targeted invalidation انجام می‌دهند.
 
-Used to create the canonical backend persistence snapshot by issuing a GET with `save_to_db=true`.
+### StateSyncManager Snapshot
 
-A React Query refetch remains a normal request and therefore carries `save_to_db=false`.
+برای ایجاد canonical backend persistence snapshot از طریق GET با `save_to_db=true` استفاده می‌شود.
 
-Do not rely on a UI refetch to persist state.
+React Query refetch همچنان request عادی است و در نتیجه `save_to_db=false` دارد.
 
-## Error logging
+برای persistence به UI refetch متکی نباشید.
 
-Response errors are passed through `logApiErrorDetails(error)` before specialized 401 handling.
+## Error Logging
 
-This centralizes transport-level diagnostics while preserving the original rejected error for caller-level handling when no recovery path succeeds.
+Response errorها پیش از specialized 401 handling از `logApiErrorDetails(error)` عبور می‌کنند.
 
-## 401 recovery lifecycle
+این behavior transport-level diagnosticها را متمرکز می‌کند و در صورتی که recovery موفق نشود original rejected error را برای caller-level handling حفظ می‌کند.
 
-A `401` response enters token recovery only when:
+## Lifecycle مربوط به 401 Recovery
 
-- an original request config exists; and
-- the request has not already been marked `_retry`.
+Response با status `401` فقط زمانی وارد token recovery می‌شود که:
 
-### Missing refresh token
+- original request config وجود داشته باشد؛ و
+- request قبلاً با `_retry` mark نشده باشد.
 
-If no refresh token exists:
+### Refresh Token وجود ندارد
 
-1. token storage is cleared;
-2. `SESSION_CLEARED` is emitted;
-3. the original request is rejected.
+اگر refresh token وجود نداشته باشد:
 
-The React auth layer receives the event and clears authenticated state.
+1. token storage clear می‌شود؛
+2. `SESSION_CLEARED` emit می‌شود؛
+3. original request reject می‌شود.
 
-### Refresh token exists
+React auth layer event را دریافت کرده و authenticated state را clear می‌کند.
 
-The request is marked `_retry = true` before refresh/replay.
+### Refresh Token وجود دارد
 
-This flag is a loop-protection invariant. If the replayed request still returns 401, it must not continually refresh and retry itself.
+پیش از refresh/replay، request با `_retry = true` mark می‌شود.
 
-## Single-flight refresh queue
+این flag یک loop-protection invariant است. اگر replayed request دوباره 401 برگرداند نباید پیوسته refresh و retry شود.
 
-Concurrent 401 responses must not cause concurrent token-refresh requests.
+## Single-flight Refresh Queue
 
-The Axios module uses:
+Concurrent responseهای 401 نباید concurrent token-refresh request ایجاد کنند.
+
+Axios module از موارد زیر استفاده می‌کند:
 
 ```text
 isRefreshing
 failedQueue
 ```
 
-The first failing request starts the refresh operation.
+اولین request failشده refresh operation را شروع می‌کند.
 
-Any additional 401 request arriving while `isRefreshing === true` is queued instead of starting another refresh.
+هر request اضافی که هنگام `isRefreshing === true` مقدار 401 دریافت کند به‌جای آغاز refresh جدید در queue قرار می‌گیرد.
 
-When the refresh succeeds:
+وقتی refresh موفق می‌شود:
 
-1. the new access token is stored;
-2. Axios defaults are updated;
-3. the original request Authorization header is replaced;
-4. `TOKEN_REFRESHED` is emitted;
-5. queued requests are replayed with the new token;
-6. the original request is replayed.
+1. access token جدید ذخیره می‌شود؛
+2. Axios defaultها update می‌شوند؛
+3. Authorization header مربوط به original request جایگزین می‌شود؛
+4. `TOKEN_REFRESHED` emit می‌شود؛
+5. queued requestها با token جدید replay می‌شوند؛
+6. original request replay می‌شود.
 
-When the refresh fails:
+وقتی refresh fail می‌شود:
 
-1. queued requests are rejected;
-2. tokens are cleared;
-3. `SESSION_CLEARED` is emitted;
-4. the original refresh path rejects.
+1. queued requestها reject می‌شوند؛
+2. tokenها clear می‌شوند؛
+3. `SESSION_CLEARED` emit می‌شود؛
+4. original refresh path reject می‌شود.
 
-This is a concurrency contract, not merely an optimization. Removing the queue can produce refresh storms and races where multiple refresh responses overwrite each other.
+این یک concurrency contract است، نه صرفاً optimization. حذف queue می‌تواند refresh storm و raceهایی ایجاد کند که چند refresh response یکدیگر را overwrite کنند.
 
-## Authentication transport exception
+## Exception مربوط به Authentication Transport
 
-Login, refresh, and verify use the isolated `authClient` from `authApi.ts`, not the main `axiosInstance`.
+Login، refresh و verify از `authClient` ایزوله در `authApi.ts` استفاده می‌کنند، نه `axiosInstance` اصلی.
 
-This avoids circular behavior where the refresh endpoint itself could be intercepted as a normal expired-token request.
+این design از circular behavior جلوگیری می‌کند؛ یعنی refresh endpoint خودش به‌عنوان normal expired-token request intercept نشود.
 
-Logout uses the main instance because `/api/system/ui-user/logout/` is an authenticated application endpoint.
+Logout از main instance استفاده می‌کند، چون `/api/system/ui-user/logout/` یک authenticated application endpoint است.
 
-See `authentication.md` for details.
+جزئیات در `authentication.md` آمده است.
 
-## Mock API behavior
+## Mock API Behavior
 
-`axiosInstance` can install the Axios mock adapter when `VITE_USE_MOCKS` resolves to a truthy value such as:
+`axiosInstance` می‌تواند زمانی که `VITE_USE_MOCKS` به truthy value resolve می‌شود Axios mock adapter را install کند، از جمله:
 
 - `1`
 - `true`
 - `yes`
 - `on`
 
-Because the mock adapter is attached to the shared Axios instance, feature code does not need a separate transport path for mocked normal API traffic.
+چون mock adapter روی shared Axios instance نصب می‌شود، feature code برای mocked normal API traffic به transport path جدا نیاز ندارد.
 
-When debugging unexpected mock responses, verify this environment variable first.
+هنگام debug کردن mock response غیرمنتظره، ابتدا این environment variable را بررسی کنید.
 
-## Mutation implementation checklist
+## Checklist پیاده‌سازی Mutation
 
-When adding a mutation hook:
+هنگام اضافه‌کردن mutation hook:
 
-1. Use the shared `axiosInstance`.
-2. Do not manually add Authorization headers.
-3. Do not add new per-hook token-refresh logic.
-4. Do not depend on caller-level `save_to_db=true` for persistence.
-5. Invalidate the React Query keys needed for immediate UI freshness.
-6. Confirm `StateSyncManager.resolveStateDomainsForMutation()` maps the endpoint when the mutation changes persisted state.
-7. Add a new state-sync domain only when no existing canonical domain represents the changed state.
-8. Preserve backend error information for useful user feedback.
-9. Document non-obvious ordering or cross-domain effects.
+1. از shared `axiosInstance` استفاده کنید.
+2. Authorization header را دستی اضافه نکنید.
+3. Per-hook token-refresh logic جدید اضافه نکنید.
+4. برای persistence به caller-level `save_to_db=true` وابسته نباشید.
+5. React Query keyهای لازم برای UI freshness فوری را invalidate کنید.
+6. اگر mutation persisted state را تغییر می‌دهد، تأیید کنید `StateSyncManager.resolveStateDomainsForMutation()` endpoint را طبق contract فعلی map می‌کند.
+7. فقط زمانی StateSync domain جدید اضافه کنید که هیچ canonical domain موجودی state تغییرکرده را نمایش نمی‌دهد.
+8. Backend error information را برای user feedback مفید حفظ کنید.
+9. Ordering یا cross-domain effect غیرآشکار را مستند کنید.
 
-## Query implementation checklist
+## Checklist پیاده‌سازی Query
 
-When adding a query hook:
+هنگام اضافه‌کردن query hook:
 
-1. Use the shared Axios instance.
-2. Define a stable, meaningful React Query key.
-3. Set polling only when the data genuinely requires continuous refresh.
-4. Avoid background polling unless the feature explicitly needs it.
-5. Treat ordinary refetches as UI freshness operations (`save_to_db=false`).
-6. Use the canonical state-sync system rather than forcing persistence from the query hook.
+1. از shared Axios instance استفاده کنید.
+2. Stable و meaningful React Query key تعریف کنید.
+3. فقط زمانی polling تنظیم کنید که data واقعاً continuous refresh نیاز داشته باشد.
+4. از background polling خودداری کنید، مگر feature صریحاً به آن نیاز داشته باشد.
+5. Ordinary refetch را UI freshness operation با `save_to_db=false` در نظر بگیرید.
+6. به‌جای force کردن persistence از query hook، از canonical state-sync system استفاده کنید.
 
-## Common failure scenarios
+## Failure Scenarioهای رایج
 
-### API request has no Bearer token
+### API Request فاقد Bearer Token است
 
-Check:
+بررسی کنید:
 
-- whether `tokenStorage.getAccessToken()` contains a value;
-- whether authentication restoration completed;
-- whether the request actually uses the shared Axios instance.
+- `tokenStorage.getAccessToken()` value دارد یا خیر؛
+- authentication restoration کامل شده یا خیر؛
+- request واقعاً shared Axios instance را استفاده می‌کند یا خیر.
 
-### Many requests refresh at the same time
+### تعداد زیادی Request هم‌زمان Refresh می‌شوند
 
-This indicates the single-flight queue was bypassed or duplicated. Feature hooks should not implement their own refresh calls.
+این نشانه‌ی bypass یا duplicate شدن single-flight queue است. Feature hookها نباید refresh call مستقل پیاده‌سازی کنند.
 
-### Mutation succeeds but persisted backend state is stale
+### Mutation موفق است ولی Persisted Backend State قدیمی مانده
 
-Check:
+بررسی کنید:
 
-- whether the endpoint maps to the expected state-sync domain;
-- whether the canonical snapshot endpoint succeeds;
-- whether the mutation URL is being classified as an API mutation;
-- state-sync logs in development.
+- endpoint طبق contract به StateSync domain مورد انتظار map می‌شود یا خیر؛
+- canonical snapshot endpoint موفق است یا خیر؛
+- mutation URL به‌عنوان API mutation classify می‌شود یا خیر؛
+- state-sync logها در development.
 
-Do not solve this by adding `save_to_db=true` back into arbitrary mutation payloads.
+این مسئله را با اضافه‌کردن `save_to_db=true` به mutation payloadهای پراکنده حل نکنید.
 
-### UI stays stale after mutation but persistence is correct
+### UI پس از Mutation Stale می‌ماند ولی Persistence صحیح است
 
-This is usually a React Query invalidation/refetch issue rather than a `StateSyncManager` issue.
+این معمولاً React Query invalidation/refetch issue است، نه `StateSyncManager` issue.
 
-### A normal GET unexpectedly persists state
+### یک GET عادی به‌طور غیرمنتظره State را Persist می‌کند
 
-Inspect the internal state-sync marker and transport policy. Ordinary callers should never be able to produce a canonical persistence request accidentally.
+Internal state-sync marker و transport policy را بررسی کنید. Ordinary caller نباید بتواند به‌صورت تصادفی canonical persistence request ایجاد کند.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/lib/axiosInstance.ts`
 - `src/lib/authApi.ts`
@@ -308,10 +312,10 @@ Inspect the internal state-sync marker and transport policy. Ordinary callers sh
 - `src/lib/stateSyncManager.ts`
 - `src/main.tsx`
 
-## Related documents
+## مستندات مرتبط
 
 - [`authentication.md`](./authentication.md)
 - [`routing-and-access-control.md`](./routing-and-access-control.md)
-- [`../state-sync-save-to-db.md`](../state-sync-save-to-db.md)
-- [`../api-polling-audit.md`](../api-polling-audit.md)
+- [`state-sync-save-to-db.md`](./state-sync-save-to-db.md)
+- [`polling-and-data-refresh.md`](./polling-and-data-refresh.md)
 - [`../02-architecture/frontend-architecture.md`](../02-architecture/frontend-architecture.md)
