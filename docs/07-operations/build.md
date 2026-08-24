@@ -1,12 +1,12 @@
 # Build
 
-This document defines the verified build contract for SOHO UI and the artifact/information that should be handed to an operations or DevOps owner.
+این سند build contract تأییدشده‌ی SOHO UI و artifact/informationهایی را مشخص می‌کند که باید به owner مربوط به Operations یا DevOps تحویل داده شوند.
 
-SOHO UI is a Vite-built React/TypeScript application. The production result is a static `dist/` directory; there is no Node application server required to render the frontend after build.
+SOHO UI یک React/TypeScript application است که با Vite build می‌شود. خروجی production یک directory استاتیک به نام `dist/` است؛ پس از build برای render کردن frontend به Node application server نیاز نیست.
 
-## Current repository build tooling
+## build tooling فعلی repository
 
-`package.json` defines:
+`package.json` scriptهای زیر را تعریف می‌کند:
 
 ```json
 {
@@ -17,17 +17,17 @@ SOHO UI is a Vite-built React/TypeScript application. The production result is a
 }
 ```
 
-There is currently no `test` script.
+در حال حاضر `test` script وجود ندارد.
 
-`package-lock.json` is committed and uses lockfile version 3.
+`package-lock.json` commit شده و از lockfile version 3 استفاده می‌کند.
 
-The repository now also contains the frontend validation workflow:
+Repository همچنین frontend validation workflow زیر را دارد:
 
 ```text
 .github/workflows/frontend-validation.yml
 ```
 
-It currently runs with Node.js 22 and executes:
+این workflow در حال حاضر با Node.js 22 اجرا می‌شود و commandهای زیر را اجرا می‌کند:
 
 ```text
 npm ci
@@ -35,28 +35,28 @@ npm run lint
 npm run build
 ```
 
-The repository still does **not** contain:
+Repository همچنان موارد زیر را ندارد:
 
-- a Dockerfile;
-- an Nginx configuration file;
-- a pinned Node version through `.nvmrc` or `package.json#engines`.
+- Dockerfile؛
+- Nginx configuration file؛
+- package-level Node version pin از طریق `.nvmrc` یا `package.json#engines`.
 
-The CI workflow provides a validated Node 22 environment, but this is not yet a general package-level Node version declaration.
+CI workflow یک environment تأییدشده با Node 22 فراهم می‌کند، اما هنوز general package-level Node version declaration محسوب نمی‌شود.
 
 ## CI quality gate
 
-The frontend validation workflow runs on:
+Frontend validation workflow روی موارد زیر اجرا می‌شود:
 
-- pushes to the active documentation/audit branch while this project-wide cleanup is in progress;
-- pull requests targeting `main`.
+- push به audit/documentation branch فعال در دوره‌ی cleanup پروژه؛
+- pull requestهایی که target آن‌ها `main` است.
 
-It publishes a commit status with context:
+Workflow commit status با context زیر publish می‌کند:
 
 ```text
 frontend-validation
 ```
 
-The job sequence is:
+Job sequence:
 
 ```text
 checkout
@@ -68,11 +68,11 @@ checkout
 → final validation status
 ```
 
-A failed `frontend-validation` status should block merge until the underlying lint/build failure is understood and corrected.
+Status ناموفق `frontend-validation` باید تا زمانی که علت lint/build failure فهمیده و اصلاح نشده merge blocker باشد.
 
-## Recommended release build sequence
+## sequence پیشنهادی برای release build
 
-From a clean checkout of the intended commit:
+از clean checkout مربوط به commit مورد نظر:
 
 ```bash
 npm ci
@@ -80,24 +80,24 @@ npm run lint
 npm run build
 ```
 
-Why `npm ci` for release/CI builds:
+دلیل استفاده از `npm ci` برای release/CI build:
 
-- installs from the committed lockfile;
-- fails when package metadata and lockfile are inconsistent;
-- avoids opportunistically rewriting dependency resolution;
-- starts from a clean dependency tree.
+- dependencyها را از lockfile commit‌شده install می‌کند؛
+- اگر package metadata و lockfile inconsistent باشند fail می‌شود؛
+- از rewrite شدن opportunistic dependency resolution جلوگیری می‌کند؛
+- از dependency tree تمیز شروع می‌کند.
 
-For ordinary local development, `npm install` remains acceptable when intentionally changing dependencies.
+برای local development معمولی، وقتی عمداً dependency را تغییر می‌دهید `npm install` همچنان قابل قبول است.
 
-## Build command behavior
+## رفتار build command
 
-The production command is:
+Production command:
 
 ```bash
 npm run build
 ```
 
-which expands to:
+که عملاً به این sequence تبدیل می‌شود:
 
 ```text
 tsc -b
@@ -105,16 +105,16 @@ tsc -b
 vite build
 ```
 
-Therefore a successful build verifies two important layers:
+بنابراین build موفق دو layer مهم را verify می‌کند:
 
-1. TypeScript project compilation/type checks;
+1. TypeScript project compilation/type checking؛
 2. Vite production bundling.
 
-Do not call `vite build` directly in a release process and claim the normal project build passed; doing so skips the explicit `tsc -b` step defined by the project.
+در release process مستقیماً `vite build` اجرا نکنید و بعد ادعا نکنید normal project build pass شده است؛ چون این کار step صریح `tsc -b` را skip می‌کند.
 
-## TypeScript quality gates
+## TypeScript quality gateها
 
-`tsconfig.app.json` currently enables strict checks including:
+`tsconfig.app.json` در حال حاضر strict checkهای زیر را فعال دارد:
 
 ```text
 strict
@@ -124,29 +124,29 @@ noFallthroughCasesInSwitch
 noUncheckedSideEffectImports
 ```
 
-A compile failure should be fixed in source/type definitions rather than bypassed with a weaker release command.
+Compile failure باید در source/type definition اصلاح شود، نه با release command ضعیف‌تر bypass شود.
 
 ## Lint
 
-Run:
+اجرا کنید:
 
 ```bash
 npm run lint
 ```
 
-Current lint command:
+Lint command فعلی:
 
 ```text
 eslint .
 ```
 
-The build script does not automatically invoke ESLint, which is why CI runs lint and build as separate gates.
+Build script به‌صورت خودکار ESLint را اجرا نمی‌کند؛ به همین دلیل CI lint و build را به‌صورت دو gate جدا اجرا می‌کند.
 
-## Automated-test status
+## وضعیت automated test
 
-There is currently no automated behavioral test runner/script in `package.json`.
+در `package.json` هنوز automated behavioral test runner/script وجود ندارد.
 
-The current executable CI gate therefore verifies:
+بنابراین executable CI gate فعلی این sequence را verify می‌کند:
 
 ```text
 npm ci
@@ -154,15 +154,17 @@ npm run lint
 npm run build
 ```
 
-and still requires targeted manual smoke verification for behavior-changing work.
+و برای changeهایی که behavior را تغییر می‌دهند همچنان targeted manual smoke verification لازم است.
 
-See [`../03-development/testing.md`](../03-development/testing.md) for the testing gap and recommended future direction.
+جزئیات gap مربوط به testing و جهت‌گیری پیشنهادی آینده:
 
-## Environment variables are build-time inputs
+[`../03-development/testing.md`](../03-development/testing.md)
 
-Vite `VITE_*` values are embedded into the browser bundle during build.
+## Environment variableها build-time input هستند
 
-Verified settings include:
+Vite مقدارهای `VITE_*` را هنگام build داخل browser bundle embed می‌کند.
+
+Settingهای verify‌شده:
 
 ```text
 VITE_API_BASE_URL
@@ -171,61 +173,63 @@ VITE_USE_MOCKS
 VITE_AUTH_BYPASS
 ```
 
-A production build must use production-appropriate values **before** `npm run build`.
+Production build باید **پیش از** `npm run build` مقدارهای مناسب production را دریافت کند.
 
-Changing server environment variables after `dist/` was generated does not rewrite values already embedded into the JavaScript bundle.
+تغییر environment variable روی server پس از تولید `dist/`، مقدارهایی را که از قبل داخل JavaScript bundle embed شده‌اند rewrite نمی‌کند.
 
-## Production environment safety
+## ایمنی production environment
 
-Production release expectations:
+Expectation برای production release:
 
 ```text
 VITE_USE_MOCKS=false
 VITE_AUTH_BYPASS=false
 ```
 
-`VITE_AUTH_BYPASS` is additionally guarded by `import.meta.env.DEV`, but production configuration should still keep it disabled to avoid ambiguous release configuration.
+`VITE_AUTH_BYPASS` علاوه بر این توسط `import.meta.env.DEV` نیز guard می‌شود، اما production configuration همچنان باید آن را disabled نگه دارد تا release configuration مبهم نباشد.
 
-Never place secrets in Vite environment variables. Browser users can inspect client bundle/configuration.
+هرگز secret را داخل Vite environment variable قرار ندهید. Browser user می‌تواند client bundle/configuration را inspect کند.
 
-See [`../03-development/configuration.md`](../03-development/configuration.md).
+جزئیات:
 
-## API base configuration choices
+[`../03-development/configuration.md`](../03-development/configuration.md)
 
-### Single backend origin/path
+## انتخاب API base configuration
 
-Ordinary setup can use only:
+### یک backend origin/path
+
+Setup معمول می‌تواند فقط این مقدار را داشته باشد:
 
 ```env
 VITE_API_BASE_URL=https://api.example.com
 ```
 
-The auth client then derives:
+Auth client سپس این URL را derive می‌کند:
 
 ```text
 https://api.example.com/api/auth/
 ```
 
-### Separate auth origin/path
+### auth origin/path جدا
 
-When authentication is deliberately hosted separately:
+وقتی authentication عمداً جدا host شده است:
 
 ```env
 VITE_API_BASE_URL=https://api.example.com
 VITE_AUTH_API_BASE_URL=https://auth.example.com/api/auth/
 ```
 
-Do not set a separate auth URL unless deployment topology actually requires it.
+Auth URL جدا فقط وقتی configure شود که deployment topology واقعاً به آن نیاز دارد.
 
-## Vite output
+## خروجی Vite
 
-Successful Vite production build writes static assets to:
+Vite production build موفق assetهای static را داخل directory زیر می‌نویسد:
 
 ```text
 dist/
 ```
 
-Typical artifact contents include:
+محتوای معمول artifact:
 
 ```text
 index.html
@@ -233,161 +237,163 @@ assets/*
 public/static assets copied by Vite
 ```
 
-The exact hashed asset filenames are build outputs and should not be hard-coded into server configuration.
+Hashed asset filenameها build output هستند و نباید در server configuration hard-code شوند.
 
 ## Vite base path
 
-Current `vite.config.ts` contains:
+`vite.config.ts` فعلی شامل این مقدار است:
 
 ```text
 base: './'
 ```
 
-Any change to hosting path/base must be tested against:
+هر تغییر در hosting path/base باید در برابر این موارد test شود:
 
-- root navigation;
-- nested client routes;
-- direct page refresh;
-- JS/CSS loading;
-- fonts;
-- 3D/static assets;
+- root navigation؛
+- nested client routeها؛
+- direct page refresh؛
+- JS/CSS loading؛
+- fontها؛
+- 3D/static assetها؛
 - browser history routing.
 
-## Build artifact verification
+## verify کردن build artifact
 
-After a successful build, verify at minimum:
+بعد از build موفق حداقل این command را اجرا کنید:
 
 ```bash
 ls -la dist
 ```
 
-Then use:
+سپس برای local production-bundle smoke check در environment دارای browser از command زیر استفاده کنید:
 
 ```bash
 npm run preview
 ```
 
-for a local production-bundle smoke check when a browser-capable validation environment is available.
+`vite preview` verification server است، نه production web server مستندشده.
 
-`vite preview` is a verification server, not the documented production web server.
+## manual smoke checklist
 
-## Manual smoke checklist
+Automated lint/build جای runtime smoke verification را نمی‌گیرد. پیش از release representative high-risk pathهای زیر را verify کنید:
 
-Automated lint/build does not replace runtime smoke verification. Before release, verify representative high-risk paths:
+- login؛
+- refresh/reload یک authenticated session؛
+- logout؛
+- direct navigation به protected nested route؛
+- load شدن CPU/memory/network/zpool data در Dashboard؛
+- load شدن Integrated Storage list؛
+- load شدن File System list؛
+- یک non-destructive Settings read flow؛
+- API 401 recovery در صورت امکان تست امن؛
+- load شدن static font/icon/3D assetها بدون 404؛
+- browser refresh روی nested route باید SPA را برگرداند، نه Nginx 404.
 
-- login;
-- refresh/reload an authenticated session;
-- logout;
-- direct navigation to a protected nested route;
-- Dashboard loads CPU/memory/network/zpool data;
-- Integrated Storage list loads;
-- File System list loads;
-- one non-destructive Settings read flow;
-- API 401 recovery when reasonably testable;
-- static fonts/icons/3D assets load without 404;
-- browser refresh on nested route returns the SPA rather than an Nginx 404.
+Destructive storage/system mutation فقط در environmentی smoke-test شود که انجام آن امن باشد.
 
-Destructive storage/system mutations should only be smoke-tested in an environment where they are safe.
+## چه چیزی به DevOps / Operations تحویل داده شود
 
-## What to hand to DevOps / operations
-
-For a deployment handoff, provide either:
+برای deployment handoff یکی از این دو مدل را ارائه کنید.
 
 ### Option A — prebuilt artifact
 
-- the verified `dist/` directory/archive;
-- source commit SHA used for the build;
-- build date/release identifier;
-- production API/auth base values used during build;
-- `frontend-validation` result or equivalent lint/build evidence;
-- deployment/rollback notes.
+- directory/archive تأییدشده‌ی `dist/`؛
+- source commit SHA مورد استفاده برای build؛
+- build date/release identifier؛
+- production API/auth base valueهای استفاده‌شده هنگام build؛
+- نتیجه‌ی `frontend-validation` یا evidence معادل lint/build؛
+- deployment/rollback note.
 
 ### Option B — source-based build
 
-Provide:
+موارد زیر را ارائه کنید:
 
-- repository and exact commit/tag;
-- `package.json` + `package-lock.json` from that revision;
-- required `VITE_*` values;
-- commands:
-  ```bash
-  npm ci
-  npm run lint
-  npm run build
-  ```
-- expected output directory: `dist/`;
-- Node/npm version that was validated for the release.
+- repository و commit/tag دقیق؛
+- `package.json` + `package-lock.json` همان revision؛
+- `VITE_*` valueهای مورد نیاز؛
+- commandها:
 
-Option B is preferable when the deployment pipeline is designed to create reproducible artifacts itself.
+```bash
+npm ci
+npm run lint
+npm run build
+```
+
+- expected output directory: `dist/`؛
+- Node/npm versionی که برای release validate شده است.
+
+Option B زمانی بهتر است که deployment pipeline خودش reproducible artifact تولید کند.
 
 ## Node version policy
 
-CI currently validates with:
+CI فعلاً با این version validate می‌کند:
 
 ```text
 Node.js 22
 ```
 
-The project still lacks a package-level/general developer version pin such as:
+Project هنوز package-level/general developer version pin زیر را ندارد:
 
-- `.nvmrc`;
-- `.node-version`;
+- `.nvmrc`؛
+- `.node-version`؛
 - `package.json#engines`.
 
-Until one is adopted, use Node 22 when reproducing the current CI environment and record the exact Node/npm versions used for production releases.
+تا زمان اضافه شدن policy رسمی، برای reproduce کردن environment فعلی CI از Node 22 استفاده کنید و Node/npm version دقیق production release را ثبت کنید.
 
-Useful commands:
+Commandهای مفید:
 
 ```bash
 node --version
 npm --version
 ```
 
-If a package-level Node policy is added later, update CI and this document together.
+اگر در آینده package-level Node policy اضافه شد، CI و این سند باید با هم update شوند.
 
-## Build failure triage
+## triage مربوط به build failure
 
-### `npm ci` fails
+### `npm ci` fail می‌شود
 
-Check:
+بررسی کنید:
 
-- Node/npm compatibility;
-- package-lock consistency;
-- registry/network access;
-- corrupted npm cache only after checking the actual error;
-- whether someone changed `package.json` without updating `package-lock.json`.
+- compatibility مربوط به Node/npm؛
+- package-lock consistency؛
+- registry/network access؛
+- corrupted npm cache فقط پس از بررسی error واقعی؛
+- آیا `package.json` تغییر کرده ولی `package-lock.json` update نشده است.
 
-### TypeScript fails
+### TypeScript fail می‌شود
 
-Run the normal build and fix the reported source/type issue. Do not skip `tsc -b` in release builds.
+Normal build را اجرا کنید و source/type issue گزارش‌شده را اصلاح کنید. در release build، `tsc -b` را skip نکنید.
 
-### ESLint fails
+### ESLint fail می‌شود
 
-Treat lint failures separately from type errors. Review the exact rule/file; do not globally disable rules solely to unblock a release.
+Lint failure را از type error جدا بررسی کنید. Rule/file دقیق را ببینید؛ فقط برای unblock کردن release ruleها را globally disable نکنید.
 
-### CI fails but local build passes
+### CI fail است ولی local build pass می‌شود
 
-Compare:
+مقایسه کنید:
 
-- Node/npm versions;
-- lockfile state;
-- uncommitted local files;
-- environment values;
-- case-sensitive import paths that may behave differently on Linux.
+- Node/npm version؛
+- lockfile state؛
+- uncommitted local fileها؛
+- environment valueها؛
+- case-sensitive import pathهایی که ممکن است روی Linux متفاوت رفتار کنند.
 
-The GitHub Actions environment is an important clean-room signal because it starts from a fresh checkout and `npm ci`.
+GitHub Actions یک clean-room signal مهم است، چون از fresh checkout و `npm ci` شروع می‌کند.
 
-### Build succeeds but API points to wrong backend
+### Build موفق است ولی API به backend اشتباه اشاره می‌کند
 
-The wrong `VITE_API_BASE_URL` or `VITE_AUTH_API_BASE_URL` was likely used at build time. Rebuild with correct values; changing Nginx environment variables alone will not modify the existing bundle.
+احتمالاً هنگام build مقدار اشتباه `VITE_API_BASE_URL` یا `VITE_AUTH_API_BASE_URL` استفاده شده است. با value صحیح rebuild کنید؛ تغییر Nginx environment variable به‌تنهایی bundle موجود را تغییر نمی‌دهد.
 
-### Build succeeds but nested route refresh fails
+### Build موفق است ولی nested route refresh fail می‌شود
 
-This is usually a web-server SPA fallback problem, not a Vite compile problem. See [`deployment.md`](./deployment.md).
+این معمولاً web-server SPA fallback problem است، نه Vite compile problem. سند زیر را ببینید:
+
+[`deployment.md`](./deployment.md)
 
 ## Release evidence
 
-For each release, preserve at least:
+برای هر release حداقل این موارد را نگه دارید:
 
 ```text
 commit SHA
@@ -399,9 +405,9 @@ artifact checksum or release package identity
 manual smoke verification notes
 ```
 
-This turns “the frontend we deployed” into a reproducible artifact rather than an untraceable directory copy.
+این کار «frontend deploy‌شده» را به reproducible artifact تبدیل می‌کند، نه directory copy بدون traceability.
 
-## Related files
+## فایل‌های مرتبط
 
 - `.github/workflows/frontend-validation.yml`
 - `package.json`
@@ -411,7 +417,7 @@ This turns “the frontend we deployed” into a reproducible artifact rather th
 - `eslint.config.js`
 - `.prettierrc`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`deployment.md`](./deployment.md)
 - [`troubleshooting.md`](./troubleshooting.md)
