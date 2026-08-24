@@ -10,7 +10,7 @@ The following variables are confirmed by current source code.
 
 ### `VITE_API_BASE_URL`
 
-Consumed by `src/lib/axiosInstance.ts` as the Axios `baseURL`.
+Consumed by `src/lib/axiosInstance.ts` as the shared application Axios `baseURL`.
 
 Example:
 
@@ -18,14 +18,40 @@ Example:
 VITE_API_BASE_URL=https://storage-api.example.com
 ```
 
-All relative API paths used through the shared Axios instance are resolved against this value.
+All relative application API paths used through the shared Axios instance are resolved against this value.
 
 Operational considerations:
 
 - use the backend origin/path appropriate for the deployment environment;
 - keep browser CORS/network topology in mind when frontend and backend origins differ;
 - do not add trailing/duplicated path segments that make existing `/api/...` requests resolve incorrectly;
-- validate authentication cookie/token/network behavior through the actual deployed origin.
+- validate authentication token/network behavior through the actual deployed origin.
+
+### `VITE_AUTH_API_BASE_URL`
+
+Optional base URL for the isolated authentication client in `src/lib/authApi.ts`.
+
+When explicitly configured, token issue/refresh/verify requests are resolved directly against this value.
+
+Example:
+
+```env
+VITE_AUTH_API_BASE_URL=https://storage-api.example.com/api/auth/
+```
+
+When this variable is absent or blank, the auth client falls back to `VITE_API_BASE_URL` and derives an authentication base ending in `/api/auth/`.
+
+For example:
+
+```text
+VITE_API_BASE_URL=https://storage-api.example.com
+                         ↓
+auth base=https://storage-api.example.com/api/auth/
+```
+
+The auth base is normalized to a trailing slash so relative requests such as `token/`, `token/refresh/`, and `token/verify/` resolve predictably.
+
+Use `VITE_AUTH_API_BASE_URL` only when authentication is deliberately hosted at a different origin/path from the normal application API. In the ordinary single-backend deployment, prefer the fallback derived from `VITE_API_BASE_URL` so there is only one endpoint setting to maintain.
 
 ### `VITE_USE_MOCKS`
 
@@ -143,7 +169,8 @@ Do not assume that editing the server environment after `dist/` has already been
 
 Use these ownership rules:
 
-- backend base URL → environment configuration;
+- normal backend base URL → `VITE_API_BASE_URL`;
+- optional separate authentication base URL → `VITE_AUTH_API_BASE_URL`;
 - dev mock/auth flags → environment configuration;
 - feature business rules → source/domain logic, not env variables unless deployment-specific by design;
 - query intervals → hook/feature code and polling documentation;
@@ -170,6 +197,8 @@ Avoid scattered ad-hoc `import.meta.env` reads when one configuration module wou
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
+# Optional only when auth is hosted separately:
+# VITE_AUTH_API_BASE_URL=http://localhost:8000/api/auth/
 VITE_USE_MOCKS=false
 VITE_AUTH_BYPASS=false
 ```
@@ -180,6 +209,7 @@ The exact backend URL is environment-specific; the example is not a production r
 
 - `vite.config.ts`
 - `src/lib/axiosInstance.ts`
+- `src/lib/authApi.ts`
 - `src/routes/ProtectedRoute.tsx`
 - `src/mocks/setupMocks.ts`
 
