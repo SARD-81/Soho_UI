@@ -1,16 +1,16 @@
 # Data Flow
 
-This document describes data ownership and movement through SOHO UI.
+این سند ownership و حرکت data در SOHO UI را توضیح می‌دهد.
 
-The core distinction is between:
+تمایز اصلی بین موارد زیر است:
 
-- authoritative backend state;
-- React Query server-state cache;
-- local UI state;
-- browser-persisted client bookkeeping/preferences;
-- canonical backend snapshot persistence requested by StateSync.
+- authoritative state در backend؛
+- server-state cache در React Query؛
+- local UI state؛
+- browser-persisted client bookkeeping/preferenceها؛
+- canonical backend snapshot persistence که توسط StateSync درخواست می‌شود.
 
-## Ownership model
+## مدل Ownership
 
 ```mermaid
 flowchart TD
@@ -35,42 +35,42 @@ flowchart TD
     Backend --> Persist
 ```
 
-## Authoritative backend state
+## Authoritative Backend State
 
-Managed-system resources are authoritative on the backend.
+Resourceهای managed system در backend authoritative هستند.
 
-Examples:
+نمونه‌ها:
 
-- pools;
-- disks;
-- filesystems;
-- volumes;
-- services;
-- Samba/NFS/Web Shares;
-- SNMP configuration;
-- OS/Web/Samba users;
-- network/system settings.
+- poolها؛
+- diskها؛
+- filesystemها؛
+- volumeها؛
+- serviceها؛
+- Samba/NFS/Web Shareها؛
+- SNMP configuration؛
+- OS/Web/Samba userها؛
+- network/system settingها.
 
-The browser must not become the source of truth for these values.
+Browser نباید source of truth این valueها شود.
 
-## React Query cache
+## React Query Cache
 
-React Query stores temporary copies of server state for rendering and request lifecycle management.
+React Query نسخه‌های موقتی server state را برای rendering و request lifecycle management نگه می‌دارد.
 
-It provides:
+قابلیت‌های آن شامل موارد زیر است:
 
-- query caching;
-- deduplication for identical active query keys;
-- stale/fresh policy;
-- loading/error state;
-- targeted invalidation;
-- interval refresh where configured.
+- query caching؛
+- deduplication برای active query keyهای یکسان؛
+- stale/fresh policy؛
+- loading/error state؛
+- targeted invalidation؛
+- interval refresh در محل‌هایی که configure شده است.
 
-React Query cache is not durable persistence.
+React Query cache، durable persistence نیست.
 
-A reload, garbage collection, logout, or application restart can remove it.
+Reload، garbage collection، logout یا restart شدن application می‌تواند آن را حذف کند.
 
-## Query key data flow
+## Data Flow مربوط به Query Key
 
 ```text
 backend endpoint
@@ -84,27 +84,27 @@ React Query key
 feature/page consumers
 ```
 
-The query key defines cache identity, not the URL alone.
+Query key، cache identity را تعریف می‌کند؛ نه URL به‌تنهایی.
 
-Two different query keys calling the same endpoint are independent React Query entries.
+دو query key متفاوت که یک endpoint را call می‌کنند، در React Query entryهای مستقل هستند.
 
-Examples include dedicated notification capacity keys versus ordinary zpool/filesystem keys.
+از نمونه‌های این موضوع می‌توان dedicated notification capacity keyها را در برابر zpool/filesystem keyهای معمول نام برد.
 
-## Normalization boundary
+## Normalization Boundary
 
-Backend compatibility/shape normalization should happen before data reaches presentation components.
+Normalization مربوط به backend compatibility/shape باید پیش از رسیدن data به presentation componentها انجام شود.
 
-Examples:
+نمونه‌ها:
 
-- service status/boolean normalization;
-- Web Share flexible response shapes;
-- volume/filesystem attribute maps;
-- Samba Account Flags;
-- NFS option semantics;
-- network detail extraction;
-- SNMP response defaults.
+- service status/boolean normalization؛
+- flexible response shapeهای Web Share؛
+- volume/filesystem attribute mapها؛
+- Samba Account Flags؛
+- semantics مربوط به NFS option؛
+- network detail extraction؛
+- defaultهای SNMP response.
 
-The target data flow is:
+Data flow هدف:
 
 ```text
 raw API shape
@@ -116,7 +116,7 @@ stable frontend domain model
 component
 ```
 
-Avoid this pattern:
+از pattern زیر خودداری کنید:
 
 ```text
 raw API shape
@@ -126,55 +126,55 @@ component B different parsing
 component C another fallback
 ```
 
-## Local UI state
+## Local UI State
 
-Use component/local state for transient interaction state such as:
+برای transient interaction stateهایی مانند موارد زیر از component/local state استفاده کنید:
 
-- modal visibility;
-- staged form values;
-- selected row;
-- confirmation target;
-- active tab;
-- temporary validation errors;
+- modal visibility؛
+- staged form valueها؛
+- selected row؛
+- confirmation target؛
+- active tab؛
+- temporary validation errorها؛
 - pending action metadata.
 
-Local state must not replace backend state that can change independently.
+Local state نباید جای backend stateای را بگیرد که می‌تواند مستقل از UI تغییر کند.
 
-## Zustand state
+## Zustand State
 
-Zustand is used when client-only state needs to be shared across components with clearer ownership than prop drilling.
+Zustand زمانی استفاده می‌شود که client-only state باید بین componentها share شود و ownership روشن‌تری نسبت به prop drilling نیاز دارد.
 
-An example is `detailSplitViewStore`, which tracks active/pinned detail items per view.
+یک نمونه `detailSplitViewStore` است که active/pinned detail itemها را برای هر view track می‌کند.
 
-This state is presentation/navigation state, not a backend resource.
+این state مربوط به presentation/navigation است، نه backend resource.
 
-When a backend list changes, feature pages prune active/pinned IDs that no longer exist.
+وقتی backend list تغییر می‌کند، feature pageها active/pinned IDهایی را که دیگر وجود ندارند prune می‌کنند.
 
-## Browser storage
+## Browser Storage
 
-Browser persistence has limited, explicit uses.
+Browser persistence استفاده‌های محدود و صریح دارد.
 
-### Session/auth bookkeeping
+### Session/Auth Bookkeeping
 
-Examples:
+نمونه‌ها:
 
-- refresh token;
-- remembered session username;
+- refresh token؛
+- session username به‌یادسپرده‌شده؛
 - last-activity timestamp.
 
-The access token intentionally remains memory-only.
+Access token عمداً فقط در memory نگهداری می‌شود.
 
-### UI preferences
+### UI Preferenceها
 
-Examples include dashboard layout/customization.
+از نمونه‌ها می‌توان Dashboard layout/customization را نام برد.
 
-### Notification bookkeeping
+### Notification Bookkeeping
 
-Notification state/baselines/fingerprints can persist client-side so notification behavior survives relevant UI lifecycle changes.
+Notification state/baseline/fingerprintها می‌توانند در سمت client persist شوند تا notification behavior در lifecycle changeهای مرتبط UI حفظ شود.
 
-These values are not authoritative representations of the storage appliance.
+این valueها representation authoritative از storage appliance نیستند.
 
-## Mutation data flow
+## Mutation Data Flow
 
 ```mermaid
 sequenceDiagram
@@ -203,13 +203,13 @@ sequenceDiagram
     end
 ```
 
-## Why UI refresh and persistence are separate
+## چرا UI Refresh و Persistence از هم جدا هستند؟
 
-A mutation can affect two different concerns:
+یک mutation می‌تواند روی دو concern متفاوت اثر بگذارد.
 
-### Client freshness
+### Client Freshness
 
-The operator should see the current backend state.
+Operator باید current backend state را ببیند.
 
 Owner:
 
@@ -217,9 +217,9 @@ Owner:
 React Query invalidation/refetch
 ```
 
-### Backend persisted snapshot
+### Backend Persisted Snapshot
 
-For domains with the `save_to_db` contract, the backend should persist one canonical complete snapshot.
+برای domainهایی که `save_to_db` contract دارند، backend باید یک canonical complete snapshot را persist کند.
 
 Owner:
 
@@ -227,19 +227,19 @@ Owner:
 StateSyncManager
 ```
 
-A query refetch does not imply persistence.
+Query refetch به معنی persistence نیست.
 
-A persistence snapshot does not replace normal UI cache refresh.
+Persistence snapshot نیز جای normal UI cache refresh را نمی‌گیرد.
 
-## StateSync data flow
+## StateSync Data Flow
 
-Persisted domains are mapped by successful mutation URL.
+Persisted domainها بر اساس URL مربوط به mutation موفق map می‌شوند.
 
-Canonical snapshot requests are complete resource reads, not copies of mutation payloads.
+Canonical snapshot requestها complete resource read هستند، نه کپی mutation payload.
 
-This is important because a mutation payload may represent only a partial operation, while the persisted representation should reflect current complete system state.
+این نکته اهمیت دارد، زیرا mutation payload ممکن است فقط یک partial operation را نمایش دهد، در حالی که persisted representation باید current complete system state را منعکس کند.
 
-Example:
+مثال:
 
 ```text
 add one disk to pool
@@ -250,47 +250,47 @@ canonical zpool snapshot
   + canonical disk snapshot
 ```
 
-The database receives current resource state rather than only "disk X was added".
+Database به‌جای صرفاً «disk X اضافه شد»، current resource state را دریافت می‌کند.
 
-## Cross-domain refresh/persistence
+## Cross-domain Refresh/Persistence
 
-Some operations affect more than one resource view.
+برخی operationها بیش از یک resource view را تحت تأثیر قرار می‌دهند.
 
-Examples:
+نمونه‌ها:
 
-- zpool mutation can change free-disk inventory;
-- filesystem mutation can change pool capacity;
-- disk mutation can change pool availability;
-- Samba user/group changes can alter membership views from both sides.
+- zpool mutation می‌تواند free-disk inventory را تغییر دهد؛
+- filesystem mutation می‌تواند pool capacity را تغییر دهد؛
+- disk mutation می‌تواند pool availability را تغییر دهد؛
+- تغییر Samba user/group می‌تواند membership view را از هر دو سمت تغییر دهد.
 
-These dependencies belong in shared mapping/invalidation architecture rather than hidden inside unrelated presentation components.
+این dependencyها باید در shared mapping/invalidation architecture قرار بگیرند، نه این‌که داخل presentation componentهای نامرتبط پنهان شوند.
 
-## Diagnostic actions
+## Diagnostic Actionها
 
-Not every POST/PUT-like action is a persisted state mutation.
+هر action شبیه POST/PUT لزوماً persisted state mutation نیست.
 
-Example:
+مثال:
 
 ```text
 POST /api/snmp/test-connection/
 ```
 
-This is diagnostic and should not trigger an SNMP configuration snapshot.
+این operation diagnostic است و نباید configuration snapshot مربوط به SNMP ایجاد کند.
 
-Classify operations by semantics, not HTTP verb alone.
+Operationها را بر اساس semantics طبقه‌بندی کنید، نه فقط HTTP verb.
 
-## Multi-stage workflow data flow
+## Data Flow در Multi-stage Workflow
 
-Several UI operations are composed of multiple backend mutations.
+چند UI operation از چند backend mutation تشکیل شده‌اند.
 
-Examples:
+نمونه‌ها:
 
-- Web user → OS user;
-- OS user → Samba user;
-- Samba group → add initial members;
+- Web user → OS user؛
+- OS user → Samba user؛
+- Samba group → add initial members؛
 - Web Share → set permissions.
 
-These are currently frontend-orchestrated and not transactional.
+این workflowها در حال حاضر توسط frontend orchestrate می‌شوند و transactional نیستند.
 
 ```text
 stage A succeeds
@@ -300,11 +300,11 @@ stage B fails
 partial backend state remains
 ```
 
-Feature docs record these partial-failure states explicitly.
+Feature documentها این partial-failure stateها را به‌صورت صریح ثبت می‌کنند.
 
-## Polling and data flow
+## Polling و Data Flow
 
-Polling repeatedly runs the ordinary query data path:
+Polling به‌صورت تکراری ordinary query data path را اجرا می‌کند:
 
 ```text
 interval
@@ -318,11 +318,11 @@ backend
 React Query cache
 ```
 
-Polling is observational and receives `save_to_db=false` from transport policy.
+Polling observational است و از transport policy مقدار `save_to_db=false` دریافت می‌کند.
 
-Polling does not directly invoke StateSync.
+Polling مستقیماً StateSync را invoke نمی‌کند.
 
-## Authentication data flow
+## Authentication Data Flow
 
 Access token:
 
@@ -344,26 +344,26 @@ sessionStorage-backed tokenStorage
 refresh endpoint when needed
 ```
 
-This separation reduces persistence of the bearer access token while still allowing session restoration.
+این separation باعث می‌شود persistence مربوط به bearer access token کاهش پیدا کند و در عین حال session restoration امکان‌پذیر بماند.
 
-## Data-flow review questions
+## پرسش‌های Review مربوط به Data Flow
 
-When adding or changing behavior, ask:
+هنگام اضافه‌کردن یا تغییر behavior بپرسید:
 
-1. What is the authoritative source?
-2. Is this server state, local UI state, or client bookkeeping?
-3. What query key owns the server state?
-4. Where is raw API data normalized?
-5. What invalidates/refetches this data?
-6. Does it poll?
-7. Does a mutation affect another domain?
-8. Is the domain StateSync-persisted?
-9. Is this operation actually mutating state or only diagnostic?
-10. Can a multi-stage flow partially succeed?
+1. Authoritative source چیست؟
+2. این data از نوع server state، local UI state یا client bookkeeping است؟
+3. کدام query key مالک server state است؟
+4. Raw API data کجا normalize می‌شود؟
+5. چه چیزی این data را invalidate/refetch می‌کند؟
+6. آیا poll می‌شود؟
+7. آیا mutation روی domain دیگری اثر می‌گذارد؟
+8. آیا domain توسط StateSync persist می‌شود؟
+9. آیا operation واقعاً state را mutate می‌کند یا فقط diagnostic است؟
+10. آیا multi-stage flow می‌تواند partial success داشته باشد؟
 
-If those answers are unclear, the ownership boundary is probably not ready for implementation.
+اگر پاسخ این پرسش‌ها روشن نیست، احتمالاً ownership boundary هنوز برای implementation آماده نیست.
 
-## Related documentation
+## مستندات مرتبط
 
 - [`runtime-flow.md`](./runtime-flow.md)
 - [`frontend-architecture.md`](./frontend-architecture.md)
