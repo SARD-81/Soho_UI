@@ -1,34 +1,34 @@
 # SNMP
 
-## Purpose
+## هدف
 
-The SNMP feature lets an operator inspect SNMP configuration, update the configuration, and test connectivity with explicit connection parameters.
+Feature مربوط به SNMP به Operator اجازه می‌دهد SNMP configuration را مشاهده و update کند و connectivity را با connection parameterهای صریح test کند.
 
 Route: `/snmp-service`
 
 Entry point: `src/pages/SnmpService.tsx`
 
-The feature has three distinct responsibilities:
+این feature سه مسئولیت جدا دارد:
 
-- configuration state;
-- configuration mutation;
+- configuration state؛
+- configuration mutation؛
 - diagnostic connection testing.
 
-The diagnostic test must not be treated as persisted configuration state.
+Diagnostic test نباید persisted configuration state در نظر گرفته شود.
 
-## Main responsibilities
+## مسئولیت‌های اصلی
 
-The current implementation supports:
+Implementation فعلی موارد زیر را پشتیبانی می‌کند:
 
-- reading normalized SNMP configuration;
-- manually refreshing the configuration view;
-- opening and submitting the configuration modal;
-- testing an SNMP connection;
-- interpreting several backend success-flag shapes;
-- showing a dedicated test-result modal;
-- re-running the test without modifying persisted SNMP configuration.
+- خواندن normalized SNMP configuration؛
+- manual refresh نمای configuration؛
+- بازکردن و submit کردن configuration modal؛
+- test کردن SNMP connection؛
+- تفسیر چند backend success-flag shape؛
+- نمایش test-result modal اختصاصی؛
+- اجرای دوباره‌ی test بدون تغییر persisted SNMP configuration.
 
-## Runtime flow
+## Runtime Flow
 
 ```mermaid
 flowchart TD
@@ -42,11 +42,11 @@ flowchart TD
     T --> TEST[POST /api/snmp/test-connection/]
 
     C --> INV[invalidate snmp info]
-    CONFIG --> SYNC[StateSync snmp snapshot]
-    TEST -. diagnostic only .-> NO[No StateSync persistence]
+    CONFIG -. current GitLab contract .-> NO1[No frontend StateSync domain]
+    TEST -. diagnostic only .-> NO2[No StateSync persistence]
 ```
 
-## SNMP info
+## SNMP Info
 
 Canonical query key:
 
@@ -60,21 +60,21 @@ Endpoint:
 GET /api/snmp/info/
 ```
 
-The query uses:
+Query از مقدار زیر استفاده می‌کند:
 
 ```text
 staleTime = 60 seconds
 ```
 
-and has no continuous polling interval.
+و continuous polling interval ندارد.
 
-The page header exposes manual `refetch()`.
+Page header، manual `refetch()` را expose می‌کند.
 
-## Normalized configuration model
+## Normalized Configuration Model
 
-`useSnmpInfo()` normalizes missing values so components receive stable defaults.
+`useSnmpInfo()` missing valueها را normalize می‌کند تا componentها defaultهای stable دریافت کنند.
 
-Current normalized fields include:
+Fieldهای normalized فعلی شامل موارد زیر هستند:
 
 ```text
 community
@@ -88,9 +88,9 @@ bind_ip
 version
 ```
 
-`allowed_ips` is normalized to a string array and optional scalar fields default to empty values where appropriate.
+`allowed_ips` به string array normalize می‌شود و optional scalar fieldها در محل مناسب default خالی می‌گیرند.
 
-Keep this normalization in the data layer rather than duplicating defensive checks across SNMP components.
+این normalization را در data layer نگه دارید و defensive check تکراری در componentهای SNMP ایجاد نکنید.
 
 ## Configure SNMP
 
@@ -102,7 +102,7 @@ Endpoint:
 POST /api/snmp/config/
 ```
 
-Configuration payload fields currently include:
+Configuration payload fieldهای فعلی:
 
 ```text
 community
@@ -114,17 +114,17 @@ port
 bind_ip
 ```
 
-Persistence is transport/StateSync-owned and must not be part of the domain payload.
+Domain payload نباید caller-level `save_to_db` داشته باشد. Normal mutation از transport policy عبور می‌کند و `save_to_db=false` دارد.
 
-After successful configuration, the feature invalidates:
+پس از configuration موفق، feature query زیر را invalidate می‌کند:
 
 ```text
 ['snmp', 'info']
 ```
 
-so the page rereads canonical backend configuration.
+تا page canonical backend configuration را دوباره بخواند.
 
-## Test connection
+## Test Connection
 
 Hook: `useTestSnmpConnection()`
 
@@ -142,19 +142,19 @@ host
 port
 ```
 
-This operation is diagnostic. It does not represent a configuration change and must not schedule an SNMP persistence snapshot.
+این operation diagnostic است. Configuration change محسوب نمی‌شود و نباید persistence snapshot ایجاد کند.
 
-## Test-result normalization
+## Test-result Normalization
 
-Backend versions can expose connection success in several forms.
+Backend versionهای مختلف ممکن است connection success را با shapeهای متفاوت expose کنند.
 
-The page checks, in order:
+Page به ترتیب زیر بررسی می‌کند:
 
-1. top-level `connection_success`;
-2. `data.connection_success`;
-3. top-level `ok === true` as fallback.
+1. top-level `connection_success`؛
+2. `data.connection_success`؛
+3. top-level `ok === true` به‌عنوان fallback.
 
-Boolean-like strings are accepted, including values such as:
+Boolean-like stringها نیز accepted هستند، از جمله:
 
 ```text
 true / false
@@ -165,102 +165,103 @@ success / failed
 failure
 ```
 
-This compatibility logic is intentionally centralized in the page-level result resolver.
+این compatibility logic عمداً در page-level result resolver متمرکز است.
 
-Do not remove it solely because one current backend response uses a boolean unless the response contract is formally narrowed.
+صرفاً چون backend فعلی boolean برمی‌گرداند این logic را حذف نکنید، مگر response contract رسماً محدود و stable شده باشد.
 
-## Result flow
+## Result Flow
 
-A test success or failure opens `SnmpTestResultModal` with:
+Test success یا failure، `SnmpTestResultModal` را با موارد زیر باز می‌کند:
 
-- normalized `ok` state;
-- message;
-- returned data when available;
+- normalized `ok` state؛
+- message؛
+- returned data در صورت وجود؛
 - original test payload.
 
-The operator can choose Retest, which closes the result modal and reopens the test input modal.
+Operator می‌تواند Retest را انتخاب کند؛ result modal بسته و test input modal دوباره باز می‌شود.
 
-Transport failure and a successful HTTP response reporting `connection_success=false` are presented differently internally but both result in an unsuccessful test state.
+Transport failure و HTTP success با `connection_success=false` از نظر internal متفاوت‌اند، اما هر دو unsuccessful test state ایجاد می‌کنند.
 
-## StateSync ownership
+## StateSync Boundary
 
-SNMP configuration is a persisted StateSync domain.
+بر اساس contract صحیح فعلی GitLab، **SNMP یک frontend StateSync domain نیست**.
 
-Canonical snapshot:
+یعنی mutationهای SNMP از جمله:
 
 ```text
-GET /api/snmp/info/?save_to_db=true
+POST /api/snmp/config/
+POST /api/snmp/test-connection/
 ```
 
-The snapshot is owned exclusively by `StateSyncManager`.
+نباید از طریق `StateSyncManager` یک canonical SNMP snapshot با `save_to_db=true` schedule کنند.
 
-### Diagnostic exclusion
+UI freshness پس از configuration از طریق React Query invalidation/refetch انجام می‌شود.
 
-`POST /api/snmp/test-connection/` must not schedule StateSync because it does not mutate SNMP configuration.
+اگر persistence مربوط به SNMP در backend لازم است، مسئولیت آن باید طبق backend contract فعلی انجام شود یا در صورت نیاز به frontend StateSync، ابتدا canonical snapshot contract به‌صورت صریح تعریف و سپس `StateSyncManager` مرکزی تغییر کند.
 
-The URL-to-domain resolver therefore needs an explicit diagnostic exclusion before the generic SNMP mapping.
+### Diagnostic Test
 
-This distinction is important whenever a persisted domain also exposes POST-based actions that are read-only diagnostics.
+`POST /api/snmp/test-connection/` علاوه بر این‌که SNMP StateSync domain ندارد، از نظر semantic نیز کاملاً diagnostic است و persisted configuration را تغییر نمی‌دهد.
 
-## Query refresh versus persistence
+هیچ‌گاه صرفاً به دلیل POST بودن یک request آن را persisted mutation در نظر نگیرید.
 
-After configuration success:
+## Query Refresh در برابر Persistence
 
-1. React Query invalidates `['snmp','info']` for UI freshness;
-2. StateSync schedules the persisted SNMP snapshot.
+پس از configuration success:
 
-After test success:
+1. React Query، `['snmp','info']` را برای UI freshness invalidate می‌کند؛
+2. در contract فعلی GitLab frontend StateSync snapshot برای SNMP وجود ندارد.
 
-- no configuration query invalidation is required;
-- no StateSync snapshot is required.
+پس از test success:
 
-Do not conflate POST method with persisted mutation semantics.
+- configuration query invalidation لازم نیست؛
+- StateSync snapshot لازم نیست.
 
-## Error handling
+## Error Handling
 
-Configuration errors are surfaced through the config modal and toast messages.
+Configuration errorها از طریق config modal و toast messageها surface می‌شوند.
 
-Test transport errors are converted into a result state with:
+Test transport error به result state زیر تبدیل می‌شود:
 
 ```text
 ok = false
 ```
 
-so the operator still sees a structured result modal rather than only a transient toast.
+تا Operator به‌جای فقط transient toast، structured result modal ببیند.
 
-## Common failure scenarios
+## Failure Scenarioهای رایج
 
-### SNMP configuration saves but overview looks stale
+### SNMP Configuration Save می‌شود ولی Overview Stale است
 
-Check:
+بررسی کنید:
 
-1. `/api/snmp/config/` success;
-2. invalidation of `['snmp','info']`;
-3. `/api/snmp/info/` response;
-4. normalization in `useSnmpInfo()`.
+1. success مربوط به `/api/snmp/config/`؛
+2. invalidation مربوط به `['snmp','info']`؛
+3. response مربوط به `/api/snmp/info/`؛
+4. normalization در `useSnmpInfo()`.
 
-### Test returns HTTP success but UI reports failure
+### Test HTTP Success دارد ولی UI Failure نشان می‌دهد
 
-Inspect `connection_success` at both top-level and `data`, then verify the boolean-like value normalization.
+`connection_success` را در top-level و `data` بررسی کنید و سپس boolean-like normalization را verify کنید.
 
-### Test triggers unexpected persistence traffic
+### SNMP Request باعث Persistence Traffic غیرمنتظره می‌شود
 
-Verify that `/api/snmp/test-connection/` is excluded in `resolveStateDomainsForMutation()` before the generic `/api/snmp` mapping.
+این behavior با contract فعلی GitLab ناسازگار است. بررسی کنید URL مربوط به SNMP به‌اشتباه داخل `resolveStateDomainsForMutation()` به StateSync domain map نشده باشد و caller-level `save_to_db` نیز وجود نداشته باشد.
 
-## Extension guide
+## راهنمای Extension
 
-When adding an SNMP action:
+هنگام اضافه‌کردن SNMP action:
 
-1. decide whether it actually changes persisted SNMP configuration;
-2. reuse `['snmp','info']` for canonical config reads;
-3. use `axiosInstance` for all API traffic;
-4. do not place `save_to_db` in domain payloads;
-5. invalidate SNMP info only when the config may have changed;
-6. map true configuration mutations to the SNMP StateSync domain;
-7. explicitly exclude diagnostic POST actions from StateSync;
-8. preserve response compatibility normalization until the backend contract is formally stable.
+1. مشخص کنید action واقعاً persisted SNMP configuration را تغییر می‌دهد یا diagnostic است؛
+2. برای canonical config read از `['snmp','info']` reuse کنید؛
+3. برای تمام API traffic از `axiosInstance` استفاده کنید؛
+4. `save_to_db` را داخل domain payload قرار ندهید؛
+5. فقط وقتی config ممکن است تغییر کرده باشد SNMP info را invalidate کنید؛
+6. تا زمانی که frontend/backend persistence contract تغییر نکرده SNMP StateSync domain ایجاد نکنید؛
+7. diagnostic POST actionها را observational نگه دارید؛
+8. response compatibility normalization را تا زمانی که backend contract رسماً stable نشده حفظ کنید.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/pages/SnmpService.tsx`
 - `src/hooks/useSnmpInfo.ts`
@@ -273,7 +274,7 @@ When adding an SNMP action:
 - `src/components/snmp/SnmpTestResultModal.tsx`
 - `src/lib/stateSyncManager.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../04-core-flows/state-sync-save-to-db.md`](../04-core-flows/state-sync-save-to-db.md)
 - [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
