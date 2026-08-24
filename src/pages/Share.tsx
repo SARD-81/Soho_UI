@@ -12,7 +12,7 @@ import type {
   UpdateSambaUserPasswordPayload,
 } from '../@types/samba';
 import ConfirmDeleteSambaGroupModal from '../components/groups/ConfirmDeleteSambaGroupModal';
-// import GroupsGuidanceAccordion from '../components/groups/GroupsGuidanceAccordion';
+import ManageSambaGroupMembersModal from '../components/groups/ManageSambaGroupMembersModal';
 import SambaGroupCreateModal from '../components/groups/SambaGroupCreateModal';
 import SambaGroupsTable from '../components/groups/SambaGroupsTable';
 import PageContainer from '../components/PageContainer';
@@ -31,7 +31,6 @@ import ConfirmDeleteSambaUserModal from '../components/users/ConfirmDeleteSambaU
 import SambaUserCreateModal from '../components/users/SambaUserCreateModal';
 import SambaUserPasswordModal from '../components/users/SambaUserPasswordModal';
 import SambaUsersTable from '../components/users/SambaUsersTable';
-// import SelectedSambaUsersDetailsPanel from '../components/users/SelectedSambaUsersDetailsPanel';
 import { useCreateSambaGroup } from '../hooks/useCreateSambaGroup';
 import { useCreateSambaUser } from '../hooks/useCreateSambaUser';
 import { useCreateShare } from '../hooks/useCreateShare';
@@ -51,7 +50,6 @@ import {
   useDetailSplitViewStore,
 } from '../stores/detailSplitViewStore';
 import { normalizeSambaUsers } from '../utils/sambaUsers';
-import ManageSambaGroupMembersModal from '../components/groups/ManageSambaGroupMembersModal';
 
 const SHARE_TABS = {
   shares: 'shares',
@@ -60,13 +58,24 @@ const SHARE_TABS = {
 } as const;
 
 type ShareTabValue = (typeof SHARE_TABS)[keyof typeof SHARE_TABS];
+
 const SHARE_DETAIL_VIEW_ID = 'samba-shares';
 const SAMBA_USER_DETAIL_VIEW_ID = 'samba-users';
 
+const primaryActionSx = {
+  px: 3,
+  py: 1.25,
+  borderRadius: '3px',
+  fontWeight: 700,
+  fontSize: '0.95rem',
+  background:
+    'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
+  color: 'var(--color-bg)',
+  boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
+} as const;
+
 const Share = () => {
-  const [activeTab, setActiveTab] = useState<ShareTabValue>(
-    SHARE_TABS.shares
-  );
+  const [activeTab, setActiveTab] = useState<ShareTabValue>(SHARE_TABS.shares);
   const [manageUsersShare, setManageUsersShare] = useState<string | null>(null);
   const [manageGroupsShare, setManageGroupsShare] = useState<string | null>(
     null
@@ -171,34 +180,13 @@ const Share = () => {
   );
 
   const serviceAction = useServiceAction({
-    onSuccess: () => {
-      // toast.success(`سرویس ${service} با موفقیت راه‌اندازی مجدد شد.`);
-    },
     onError: (message, { service }) => {
       toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
     },
   });
 
   const handleRestartSmbd = useCallback(() => {
-    // if (serviceAction.isPending) {
-    //   toast(
-    //     'راه‌اندازی مجدد سرویس smbd.service در حال انجام است. لطفاً صبر کنید.'
-    //   );
-    //   return;
-    // }
-    //
-    // const toastId = toast.loading(
-    //   'در حال راه‌اندازی مجدد سرویس smbd.service...'
-    // );
-
-    serviceAction.mutate(
-      { service: 'smbd.service', action: 'reload' },
-      {
-        onSettled: () => {
-          // toast.dismiss(toastId);
-        },
-      }
-    );
+    serviceAction.mutate({ service: 'smbd.service', action: 'reload' });
   }, [serviceAction]);
 
   useEffect(() => {
@@ -296,18 +284,8 @@ const Share = () => {
     [sambaGroupsQuery.data]
   );
 
-  // const createOsUser = useCreateOsUser({
-  //   onSuccess: (username) => {
-  //     toast.success(`کاربر ${username} با موفقیت ایجاد شد.`);
-  //   },
-  //   onError: (message) => {
-  //     toast.error(`ایجاد کاربر با خطا مواجه شد: ${message}`);
-  //   },
-  // });
-
   const createSambaUser = useCreateSambaUser({
     onSuccess: () => {
-      // toast.success(`کاربر Samba ${username} با موفقیت ایجاد شد.`);
       setIsSambaCreateModalOpen(false);
       setSambaCreateError(null);
     },
@@ -335,9 +313,9 @@ const Share = () => {
       toast.success(`کاربر اشتراک فایل ${username} با موفقیت حذف شد.`);
       setDeleteSambaError(null);
     },
-    onError: (message, error, username) => {
+    onError: (message, deleteError, username) => {
       setDeleteSambaError(message);
-      if (error.response?.status === 400) {
+      if (deleteError.response?.status === 400) {
         toast.error(
           `کاربر اشتراک فایل ${username} در اشتراک‌های فعال استفاده شده است. لطفاً ابتدا اشتراک‌های مرتبط را حذف کنید.`
         );
@@ -392,8 +370,6 @@ const Share = () => {
       setGroupCreateError(null);
     },
     onError: (message) => {
-      // const actionLabel = action === 'add' ? 'افزودن' : 'حذف';
-      // const joinedUsers = usernames.join(', ');
       setGroupCreateError(message);
     },
   });
@@ -438,23 +414,7 @@ const Share = () => {
         return;
       }
 
-      const run = async () => {
-        // if (createOsUserFirst) {
-        //   try {
-        //     await createOsUser.mutateAsync({
-        //       username: trimmedUsername,
-        //       login_shell: DEFAULT_LOGIN_SHELL,
-        //       shell: DEFAULT_LOGIN_SHELL,
-        //     });
-        //   } catch {
-        //     return;
-        //   }
-        // }
-
-        createSambaUser.mutate({ username: trimmedUsername, password });
-      };
-
-      void run();
+      createSambaUser.mutate({ username: trimmedUsername, password });
     },
     [createSambaUser, normalizedSambaUsernames]
   );
@@ -479,7 +439,6 @@ const Share = () => {
   }, [
     activeSambaUser,
     pinnedSambaUsers,
-    sambaUsers,
     sambaUsernames,
     setActiveItemId,
     unpinItem,
@@ -581,6 +540,7 @@ const Share = () => {
             return;
           }
         }
+
         setIsGroupCreateModalOpen(false);
       };
 
@@ -595,6 +555,7 @@ const Share = () => {
     },
     []
   );
+
   const handleCloseManageGroupMembersModal = useCallback(() => {
     setManageGroupMembersGroup(null);
   }, []);
@@ -624,8 +585,8 @@ const Share = () => {
     setDeleteGroupError(null);
 
     deleteSambaGroup.mutate(targetGroup, {
-      onError: (error) => {
-        setDeleteGroupError(error.message);
+      onError: (mutationError) => {
+        setDeleteGroupError(mutationError.message);
       },
       onSettled: () => {
         setPendingGroupDelete(null);
@@ -672,25 +633,6 @@ const Share = () => {
     });
   }, [deleteModalUsername, deleteSambaUser]);
 
-  // const selectedSambaUserItems = useMemo(() => {
-  //   const lookup = new Map(sambaUsers.map((user) => [user.username, user]));
-  //   const detailIds = new Set<string>();
-
-  //   pinnedSambaUsers.forEach((username) => {
-  //     if (lookup.has(username)) {
-  //       detailIds.add(username);
-  //     }
-  //   });
-
-  //   if (activeSambaUser && lookup.has(activeSambaUser)) {
-  //     detailIds.add(activeSambaUser);
-  //   }
-
-  //   return Array.from(detailIds)
-  //     .map((username) => lookup.get(username))
-  //     .filter((user): user is (typeof sambaUsers)[number] => Boolean(user));
-  // }, [activeSambaUser, pinnedSambaUsers, sambaUsers]);
-
   return (
     <PageContainer sx={{ backgroundColor: 'var(--color-background)' }}>
       <Typography
@@ -699,6 +641,7 @@ const Share = () => {
       >
         اشتراک‌گذاری
       </Typography>
+
       <Box sx={tabContainerSx}>
         <Tabs value={activeTab} onChange={handleTabChange} sx={tabListSx}>
           <Tab label="گروه‌های اشتراک فایل" value={SHARE_TABS.sambaGroups} />
@@ -733,35 +676,13 @@ const Share = () => {
                 <Button
                   onClick={handleOpenGroupCreateModal}
                   variant="contained"
-                  sx={{
-                    px: 3,
-                    py: 1.25,
-                    borderRadius: '3px',
-                    fontWeight: 700,
-                    fontSize: '0.95rem',
-                    background:
-                      'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-                    color: 'var(--color-bg)',
-                    boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-                  }}
+                  sx={primaryActionSx}
                 >
                   ایجاد گروه جدید
                 </Button>
               </Box>
 
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 1,
-                  color: 'var(--color-secondary)',
-                  fontWeight: 600,
-                  mt: 3,
-                  mb: -2,
-                }}
-              >
-                {/* <GroupsGuidanceAccordion /> */}
-              </Box>
+              <Box sx={{ mt: 3, mb: -2 }} />
 
               <SambaGroupsTable
                 groups={sambaGroups}
@@ -803,17 +724,7 @@ const Share = () => {
                 <Button
                   onClick={createShare.openCreateModal}
                   variant="contained"
-                  sx={{
-                    px: 3,
-                    py: 1.25,
-                    borderRadius: '3px',
-                    fontWeight: 700,
-                    fontSize: '0.95rem',
-                    background:
-                      'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-                    color: 'var(--color-bg)',
-                    boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-                  }}
+                  sx={primaryActionSx}
                 >
                   ایجاد اشتراک جدید
                 </Button>
@@ -834,7 +745,9 @@ const Share = () => {
               {comparisonItems.length > 0 && (
                 <SelectedSharesDetailsPanel
                   items={comparisonItems}
-                  onRemove={(shareName) => unpinItem(SHARE_DETAIL_VIEW_ID, shareName)}
+                  onRemove={(shareName) =>
+                    unpinItem(SHARE_DETAIL_VIEW_ID, shareName)
+                  }
                 />
               )}
             </Box>
@@ -866,17 +779,7 @@ const Share = () => {
                 <Button
                   onClick={() => handleOpenSambaCreateModal()}
                   variant="contained"
-                  sx={{
-                    px: 3,
-                    py: 1.25,
-                    borderRadius: '3px',
-                    fontWeight: 700,
-                    fontSize: '0.95rem',
-                    background:
-                      'linear-gradient(135deg, var(--color-primary) 0%, rgba(31, 182, 255, 0.95) 100%)',
-                    color: 'var(--color-bg)',
-                    boxShadow: '0 16px 32px -18px rgba(31, 182, 255, 0.85)',
-                  }}
+                  sx={primaryActionSx}
                 >
                   ایجاد کاربر جدید
                 </Button>
@@ -904,11 +807,6 @@ const Share = () => {
                 pendingDeleteUsername={pendingDeleteUsername}
                 isDeleting={deleteSambaUser.isPending}
               />
-
-              {/* <SelectedSambaUsersDetailsPanel
-                items={selectedSambaUserItems}
-                viewId={SAMBA_USER_DETAIL_VIEW_ID}
-              /> */}
             </Box>
           </TabPanel>
         </Box>
