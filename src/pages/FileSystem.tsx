@@ -61,8 +61,7 @@ const FileSystem = () => {
   });
 
   const mountFileSystem = useMountFileSystem({
-    onSuccess: (name) =>
-      toast.success(`فضای فایلی ${name} با موفقیت مانت شد.`),
+    onSuccess: (name) => toast.success(`فضای فایلی ${name} با موفقیت مانت شد.`),
     onError: (error, name) =>
       toast.error(`مانت ${name} با خطا مواجه شد: ${error.message}`),
   });
@@ -110,11 +109,7 @@ const FileSystem = () => {
       ),
   });
 
-  const {
-    data,
-    isLoading,
-    error: fetchError,
-  } = useFileSystems();
+  const { data, isLoading, error: fetchError } = useFileSystems();
   const { data: poolData } = useZpool();
 
   const poolOptions = useMemo(
@@ -126,14 +121,14 @@ const FileSystem = () => {
   );
 
   const filesystems = useMemo(
-  () =>
-    [...(data?.filesystems ?? [])].sort((a, b) =>
-      a.filesystemName.localeCompare(b.filesystemName, 'en', {
-        sensitivity: 'base',
-      })
-    ),
-  [data?.filesystems]
-);
+    () =>
+      [...(data?.filesystems ?? [])].sort((a, b) =>
+        a.filesystemName.localeCompare(b.filesystemName, 'en', {
+          sensitivity: 'base',
+        })
+      ),
+    [data?.filesystems]
+  );
 
   const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
     selectDetailViewState(FILESYSTEM_DETAIL_VIEW_ID)
@@ -161,13 +156,7 @@ const FileSystem = () => {
     if (activeItemId && !validIds.has(activeItemId)) {
       setActiveItemId(FILESYSTEM_DETAIL_VIEW_ID, null);
     }
-  }, [
-    activeItemId,
-    filesystems,
-    pinnedItemIds,
-    setActiveItemId,
-    unpinItem,
-  ]);
+  }, [activeItemId, filesystems, pinnedItemIds, setActiveItemId, unpinItem]);
 
   const handleOpenCreate = useCallback(
     () => createFileSystem.openCreateModal(),
@@ -184,10 +173,7 @@ const FileSystem = () => {
   );
   const handleUnmount = useCallback(
     (filesystem: FileSystemEntry) =>
-      unmountFileSystem.unmount(
-        filesystem.poolName,
-        filesystem.filesystemName
-      ),
+      unmountFileSystem.unmount(filesystem.poolName, filesystem.filesystemName),
     [unmountFileSystem]
   );
   const handleLoadKey = useCallback(

@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import type { CSSObject, Theme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
+import type { MouseEvent } from 'react';
 import React from 'react';
 import {
   MdClose,
@@ -22,7 +23,6 @@ import {
   MdKeyboardArrowUp,
 } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
-import type { MouseEvent } from 'react';
 import type {
   NavigationDrawerProps,
   NavigationItem,
@@ -113,43 +113,43 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   };
 
   const isItemActive = React.useCallback(
-  (item: NavigationItem): boolean => {
-    const checkItemActive = (currentItem: NavigationItem): boolean => {
-      const matchesCurrentPath =
-        location.pathname === currentItem.path ||
-        location.pathname.startsWith(`${currentItem.path}/`);
+    (item: NavigationItem): boolean => {
+      const checkItemActive = (currentItem: NavigationItem): boolean => {
+        const matchesCurrentPath =
+          location.pathname === currentItem.path ||
+          location.pathname.startsWith(`${currentItem.path}/`);
 
-      return (
-        matchesCurrentPath ||
-        (currentItem.children?.some(checkItemActive) ?? false)
-      );
-    };
+        return (
+          matchesCurrentPath ||
+          (currentItem.children?.some(checkItemActive) ?? false)
+        );
+      };
 
-    return checkItemActive(item);
-  },
-  [location.pathname]
-);
+      return checkItemActive(item);
+    },
+    [location.pathname]
+  );
 
   React.useEffect(() => {
-  setExpandedItems((prev) => {
-    const next = { ...prev };
+    setExpandedItems((prev) => {
+      const next = { ...prev };
 
-    const ensureActiveParentsExpanded = (items: NavigationItem[]) => {
-      items.forEach((item) => {
-        if (item.children?.length) {
-          const itemKey = getItemKey(item);
-          if (isItemActive(item) && next[itemKey] === undefined) {
-            next[itemKey] = true;
+      const ensureActiveParentsExpanded = (items: NavigationItem[]) => {
+        items.forEach((item) => {
+          if (item.children?.length) {
+            const itemKey = getItemKey(item);
+            if (isItemActive(item) && next[itemKey] === undefined) {
+              next[itemKey] = true;
+            }
+            ensureActiveParentsExpanded(item.children);
           }
-          ensureActiveParentsExpanded(item.children);
-        }
-      });
-    };
+        });
+      };
 
-    ensureActiveParentsExpanded(navItems);
+      ensureActiveParentsExpanded(navItems);
 
-    return next;
-  });
+      return next;
+    });
   }, [isItemActive]);
 
   const getItemKey = (item: NavigationItem): string => {
@@ -167,8 +167,8 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         const hasChildren = Boolean(item.children?.length);
         const hasPath = item.path && item.path.length > 0;
         const isExpanded = hasChildren
-        ? (expandedItems[itemKey] ?? false)
-        : false;
+          ? (expandedItems[itemKey] ?? false)
+          : false;
 
         return (
           <React.Fragment key={`${item.text}-${itemKey}`}>
@@ -176,19 +176,21 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
               <ListItemButton
                 component={hasChildren ? 'div' : Link}
                 to={!hasChildren && hasPath ? item.path : undefined}
-                onClick={(event: MouseEvent<HTMLAnchorElement | HTMLDivElement>) => {
-                if (hasChildren) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setExpandedItems((prev) => ({
-                    ...prev,
-                    [itemKey]: !(prev[itemKey] ?? false),
-                  }));
-                } else if (hasPath) {
-                  handleItemClick();
-                }
-              }}
-              selected={isActive}
+                onClick={(
+                  event: MouseEvent<HTMLAnchorElement | HTMLDivElement>
+                ) => {
+                  if (hasChildren) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setExpandedItems((prev) => ({
+                      ...prev,
+                      [itemKey]: !(prev[itemKey] ?? false),
+                    }));
+                  } else if (hasPath) {
+                    handleItemClick();
+                  }
+                }}
+                selected={isActive}
                 sx={(theme) => ({
                   position: 'relative',
                   overflow: 'hidden',
@@ -253,7 +255,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                     transform: 'translateX(2px)',
                   },
                   // اضافه کردن cursor pointer برای آیتم‌های دارای زیرمنو
-                  cursor:  'pointer',
+                  cursor: 'pointer',
                 })}
               >
                 <ListItemIcon

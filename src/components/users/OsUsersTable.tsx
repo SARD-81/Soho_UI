@@ -14,11 +14,7 @@ interface OsUsersTableProps {
   onCreateSambaUser: (user: OsUserTableItem) => void;
 }
 
-const OsUsersTable = ({
-  users,
-  isLoading,
-  error,
-}: OsUsersTableProps) => {
+const OsUsersTable = ({ users, isLoading, error }: OsUsersTableProps) => {
   const columns: DataTableColumn<OsUserTableItem>[] = useMemo(
     () => [
       {
