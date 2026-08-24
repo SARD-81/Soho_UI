@@ -1,58 +1,58 @@
 # Users
 
-## Purpose
+## هدف
 
-The Users feature is the operator-facing page for operating-system user administration, with partially wired Samba-user integration.
+Feature مربوط به Users، صفحه‌ی Operator برای مدیریت OS user است و بخشی از integration مربوط به Samba user نیز در page وجود دارد که در UI فعلی به‌صورت کامل expose نشده است.
 
 Route: `/users`
 
 Entry point: `src/pages/Users.tsx`
 
-The current page has two tabs:
+Page فعلی دو tab دارد:
 
-- `کاربران سامانه` — active OS-user listing and create flow.
-- `سایر کاربران` — placeholder only; not implemented.
+- `کاربران سامانه` — لیست فعال OS user و create flow.
+- `سایر کاربران` — فقط placeholder و هنوز پیاده‌سازی نشده است.
 
-The page contains Samba query/create scaffolding, but the current `OsUsersTable` does **not** render the historical Samba-status column and does not currently expose a row action that opens the Samba-create flow. Do not describe that dormant wiring as an operator-visible capability until the table UI is intentionally restored.
+Page شامل Samba query/create scaffolding است، اما `OsUsersTable` فعلی **ستون تاریخی Samba status را render نمی‌کند** و row actionای برای بازکردن Samba-create flow ندارد. تا زمانی که table UI عمداً restore نشده، این dormant wiring را operator-visible capability توصیف نکنید.
 
-This feature is not a general identity provider. The backend remains authoritative for OS and Samba identities.
+این feature یک general identity provider نیست. Backend همچنان authoritative برای OS identity و Samba identity است.
 
-## Current operator-visible responsibilities
+## مسئولیت‌های فعلی قابل مشاهده برای Operator
 
-The current rendered UI supports:
+UI renderشده‌ی فعلی موارد زیر را پشتیبانی می‌کند:
 
-- listing non-system OS users;
-- manually refreshing the OS-user list;
-- creating an OS user;
-- frontend duplicate-name validation based on the currently loaded OS-user collection;
-- showing an explicit placeholder for the unimplemented Other Users tab.
+- list کردن OS userهای non-system؛
+- manual refresh لیست OS user؛
+- ساخت OS user؛
+- frontend duplicate-name validation بر اساس OS-user collection loadشده؛
+- نمایش placeholder صریح برای tab پیاده‌سازی‌نشده‌ی Other Users.
 
-The OS-user table also renders an Edit control that currently triggers a placeholder browser alert and a disabled Delete control. Those controls must not be documented as completed update/delete workflows.
+OS-user table همچنین Edit control دارد که در حال حاضر فقط placeholder browser alert اجرا می‌کند و Delete control نیز disabled است. این controlها نباید به‌عنوان update/delete workflow تکمیل‌شده مستند شوند.
 
-## Dormant Samba integration in the page
+## Dormant Samba Integration در Page
 
-`Users.tsx` still contains supporting state and hooks for:
+`Users.tsx` هنوز state و hookهای پشتیبان زیر را دارد:
 
-- loading Samba users;
-- correlating OS usernames with Samba usernames;
-- opening `SambaUserCreateModal` with a prefilled OS username;
-- creating a Samba user;
-- optionally creating an OS user before the Samba user.
+- load کردن Samba userها؛
+- correlate کردن OS username با Samba username؛
+- بازکردن `SambaUserCreateModal` با OS username از قبل پرشده؛
+- ساخت Samba user؛
+- در صورت انتخاب، ساخت OS user پیش از Samba user.
 
-However, the current `OsUsersTable` does not invoke the supplied `onCreateSambaUser` callback and does not display the supplied Samba-status information. Therefore the page-level Samba flow is not currently reachable from the rendered OS-user table.
+با این حال `OsUsersTable` فعلی callback مربوط به `onCreateSambaUser` را invoke نمی‌کند و Samba-status information ارسال‌شده را نمایش نمی‌دهد. بنابراین Samba flow موجود در page در وضعیت فعلی از OS-user table قابل دسترسی نیست.
 
-Treat this as dormant integration scaffolding, not production UI behavior.
+این بخش را dormant integration scaffolding در نظر بگیرید، نه production UI behavior.
 
-A future change should make an explicit product decision:
+Change آینده باید product decision صریحی بگیرد:
 
-1. restore a supported Samba-status/action surface in the Users table; or
-2. remove the dormant Users-page Samba wiring and keep Samba administration exclusively under `/share`.
+1. Samba status/action surface پشتیبانی‌شده را در Users table restore کند؛ یا
+2. dormant Samba wiring را از Users page حذف کند و Samba administration فقط زیر `/share` باقی بماند.
 
-Do not leave the two layers drifting indefinitely.
+این دو layer نباید برای مدت نامحدود از یکدیگر drift کنند.
 
-## Runtime flow
+## Runtime Flow
 
-Current active operator path:
+مسیر فعال فعلی Operator:
 
 ```mermaid
 flowchart TD
@@ -65,7 +65,7 @@ flowchart TD
     OC --> OINV[invalidate os-users]
 ```
 
-Additional dormant page wiring currently exists:
+Dormant page wiring اضافی:
 
 ```mermaid
 flowchart TD
@@ -79,9 +79,9 @@ flowchart TD
     Table -. current UI does not invoke .-> SC
 ```
 
-OS-user and Samba-user state are separate backend resources with separate React Query keys.
+OS-user state و Samba-user state دو backend resource مستقل با React Query keyهای جدا هستند.
 
-## OS users
+## OS Users
 
 Hook: `useOsUsers()`
 
@@ -103,40 +103,40 @@ Endpoint:
 GET /api/os/user?include_system=<boolean>
 ```
 
-The current page keeps:
+Page فعلی مقدار زیر را ثابت نگه می‌دارد:
 
 ```text
 includeSystem = false
 ```
 
-so system accounts are intentionally excluded from the ordinary Users table.
+در نتیجه system accountها عمداً از Users table عادی حذف می‌شوند.
 
-The query uses a 15-second stale time and no continuous polling interval.
+Query از `staleTime` برابر 15 ثانیه استفاده می‌کند و continuous polling interval ندارد.
 
-The page exposes manual refresh through `osUsersQuery.refetch()`.
+Page، manual refresh را از طریق `osUsersQuery.refetch()` expose می‌کند.
 
-## Current OS-user table
+## OS-user Table فعلی
 
 Component: `src/components/users/OsUsersTable.tsx`
 
-The table currently renders:
+Table فعلی موارد زیر را render می‌کند:
 
-- row number;
-- username;
-- an Actions column.
+- row number؛
+- username؛
+- ستون Actions.
 
-Current Actions behavior:
+Behavior فعلی Actions:
 
-- Edit: placeholder behavior only (`alert('edit')`);
+- Edit: فقط placeholder (`alert('edit')`)؛
 - Delete: disabled.
 
-The table does **not** currently render Samba-account status.
+Table در حال حاضر Samba-account status را render نمی‌کند.
 
-The table's prop contract still contains `isSambaStatusLoading` and `onCreateSambaUser`, but the rendered component does not consume those values. This is a known internal API debt and should be resolved together with the product decision about Samba integration.
+Prop contract مربوط به table هنوز `isSambaStatusLoading` و `onCreateSambaUser` را دارد، اما rendered component این valueها را consume نمی‌کند. این مورد internal API debt شناخته‌شده است و باید همراه با product decision مربوط به Samba integration حل شود.
 
-## Samba correlation state
+## Samba Correlation State
 
-Although it is not currently rendered, `Users.tsx` still loads Samba users while the OS-user tab is active.
+با وجود render نشدن در UI، `Users.tsx` هنوز وقتی OS-user tab active است Samba userها را load می‌کند.
 
 Samba key:
 
@@ -144,21 +144,21 @@ Samba key:
 ['samba-users']
 ```
 
-Endpoint through `sambaUserService`:
+Endpoint از طریق `sambaUserService`:
 
 ```text
 GET /api/samba/users/?property=all
 ```
 
-The page normalizes both username sets and calculates `hasSambaUser` for OS-user rows.
+Page هر دو username set را normalize می‌کند و `hasSambaUser` را برای OS-user rowها محاسبه می‌کند.
 
-If the normalized OS-user model already includes an explicit `hasSambaUser`, that value wins; otherwise the page derives correlation from the current Samba username set.
+اگر normalized OS-user model از قبل `hasSambaUser` صریح داشته باشد همان value اولویت دارد؛ در غیر این صورت page correlation را از current Samba username set derive می‌کند.
 
-Because the table no longer renders that field, this calculation currently creates background work without a visible status column.
+چون table دیگر این field را render نمی‌کند، این calculation در وضعیت فعلی background work بدون visible status column ایجاد می‌کند.
 
-If the Samba status UI is not restored, this query/correlation path is a candidate for removal to avoid unnecessary API traffic.
+اگر Samba status UI قرار نیست restore شود، این query/correlation path candidate حذف است تا API traffic غیرضروری کاهش پیدا کند.
 
-## Create OS user
+## ساخت OS User
 
 Hook: `useCreateOsUser()`
 
@@ -168,7 +168,7 @@ Endpoint:
 POST /api/os/user/create/
 ```
 
-Payload fields:
+Payload fieldها:
 
 ```text
 username
@@ -176,25 +176,25 @@ login_shell
 shell
 ```
 
-The hook resolves `shell` from `shell ?? login_shell` and sends both backend fields.
+Hook مقدار `shell` را از `shell ?? login_shell` resolve کرده و هر دو backend field را ارسال می‌کند.
 
-On success it invalidates the OS-user base query family so all `includeSystem` variants can refresh.
+پس از success، OS-user base query family invalidate می‌شود تا تمام variantهای `includeSystem` بتوانند refresh شوند.
 
-## Frontend duplicate-name rule
+## Frontend Duplicate-name Rule
 
-Before creating an OS user, the page:
+پیش از ساخت OS user، page:
 
-1. trims the username;
-2. lowercases it for comparison;
-3. rejects it when the normalized username already exists in the loaded OS-user set.
+1. username را trim می‌کند؛
+2. برای comparison آن را lowercase می‌کند؛
+3. اگر normalized username از قبل در OS-user set loadشده وجود داشته باشد request را reject می‌کند.
 
-This is UX validation only. The backend must still enforce uniqueness because:
+این فقط UX validation است. Backend همچنان باید uniqueness را enforce کند، چون:
 
-- the list can be stale;
-- another operator can create the user concurrently;
-- frontend checks are not an authorization or integrity boundary.
+- list ممکن است stale باشد؛
+- Operator دیگری می‌تواند هم‌زمان user بسازد؛
+- frontend check یک authorization/integrity boundary نیست.
 
-## Dormant Samba-create workflow
+## Dormant Samba-create Workflow
 
 Hook: `useCreateSambaUser()`
 
@@ -211,25 +211,25 @@ username
 password
 ```
 
-`Users.tsx` still defines a modal flow that can:
+`Users.tsx` هنوز modal flowای تعریف می‌کند که می‌تواند:
 
-- prefill a username;
-- create a Samba user;
-- optionally create the OS user first.
+- username را prefill کند؛
+- Samba user بسازد؛
+- در صورت انتخاب، ابتدا OS user را بسازد.
 
-The current rendered table does not open that modal, so this flow is not currently operator-reachable from `/users`.
+Rendered table فعلی این modal را باز نمی‌کند، بنابراین flow از `/users` برای Operator قابل دسترسی نیست.
 
-Samba users remain actively manageable through the Samba feature documented in [`samba-shares.md`](./samba-shares.md).
+Samba userها همچنان از Samba feature که در [`samba-shares.md`](./samba-shares.md) مستند شده قابل مدیریت هستند.
 
-## Optional OS-first Samba sequence
+## Optional OS-first Samba Sequence
 
-If the dormant Users-page Samba modal is made reachable again, its existing submission contract includes:
+اگر dormant Samba modal در Users page دوباره reachable شود، submission contract فعلی شامل value زیر است:
 
 ```text
 createOsUserFirst
 ```
 
-When true, the page performs two mutations in sequence:
+وقتی true باشد page دو mutation را پشت‌سرهم اجرا می‌کند:
 
 ```mermaid
 sequenceDiagram
@@ -248,135 +248,141 @@ sequenceDiagram
     end
 ```
 
-The default shell for this bridge flow is `DEFAULT_LOGIN_SHELL`.
+Default shell برای این bridge flow برابر `DEFAULT_LOGIN_SHELL` است.
 
-This sequence is not atomic. If OS-user creation succeeds and Samba-user creation fails, the OS account remains; no frontend rollback deletes it.
+این sequence atomic نیست. اگر OS-user creation موفق و Samba-user creation fail شود، OS account باقی می‌ماند و frontend rollback برای حذف آن ندارد.
 
-That partial-failure contract must be preserved or redesigned explicitly if the flow is restored.
+اگر flow restore شد، این partial-failure contract باید حفظ یا به‌صورت صریح redesign شود.
 
-## StateSync boundary
+## StateSync Boundary
 
-### OS users
+### OS Userها
 
-`/api/os/user...` is not currently mapped to a StateSync persisted domain.
+`/api/os/user...` در حال حاضر به StateSync persisted domain map نشده است.
 
-OS-user operations therefore use ordinary backend mutation plus React Query refresh without a frontend canonical `save_to_db=true` snapshot workflow.
+OS-user operationها از ordinary backend mutation + React Query refresh استفاده می‌کنند و frontend canonical snapshot با `save_to_db=true` ندارند.
 
-Do not invent caller-level persistence flags for OS users.
+برای OS user caller-level persistence flag اختراع نکنید.
 
-### Samba users
+### Samba Userها
 
-`/api/samba/users...` mutations are centrally mapped by `StateSyncManager` to:
+بر اساس contract صحیح فعلی GitLab، `samba-users` و `samba-groups` StateSync domain مستقل نیستند.
+
+Mutationهای `/api/samba/users...` ممکن است از طریق mutation success و React Query invalidation باعث refresh UI شوند، اما نباید از سمت feature code یا frontend StateSync، canonical `save_to_db=true` snapshot برای Samba user/group schedule کنند.
+
+StateSync مربوط به Samba در contract فعلی فقط domain زیر را دارد:
 
 ```text
-samba-users + samba-groups
+samba-shares
 ```
 
-Feature code should send only domain mutation data. `StateSyncManager` owns canonical persisted snapshots.
+و mutation family مربوط به Samba sharepoint را پوشش می‌دهد.
 
-## Current product limitation: Other Users tab
+اگر در آینده persistence مربوط به Samba user/group لازم شد، باید ابتدا backend contract و canonical snapshot endpoint تأیید و سپس `StateSyncManager` به‌صورت مرکزی تغییر کند.
 
-The second tab currently renders only:
+## محدودیت فعلی محصول: Other Users Tab
+
+Tab دوم در حال حاضر فقط متن زیر را render می‌کند:
 
 ```text
 بخش سایر کاربران در دست توسعه است.
 ```
 
-Do not infer a backend identity model from this placeholder.
+از روی این placeholder هیچ backend identity modelای استنتاج نکنید.
 
-## Error handling
+## Error Handling
 
-The active OS-user create path uses normalized API errors and keeps the creation modal open on failure.
+Active OS-user create path از normalized API error استفاده می‌کند و هنگام failure creation modal را باز نگه می‌دارد.
 
-The dormant Samba-create path also contains modal/toast error handling, including stopping the sequence when an optional OS-first create fails.
+Dormant Samba-create path نیز modal/toast error handling دارد و اگر optional OS-first create fail شود sequence را متوقف می‌کند.
 
-Do not use unreachable error-handling code as evidence that the corresponding UI workflow is active.
+Unreachable error-handling code را evidence برای active بودن UI workflow مربوطه در نظر نگیرید.
 
-## Important invariants
+## Invariantهای مهم
 
-- OS users and Samba users are distinct backend resources and cache entries.
-- Current OS listing excludes system accounts.
-- Frontend duplicate checks are advisory; backend uniqueness remains authoritative.
-- Current `OsUsersTable` does not show Samba status or expose Samba creation.
-- Placeholder Edit/Delete controls must not be documented as implemented operations.
-- Dormant Samba integration should either be restored deliberately or removed deliberately.
-- OS-user mutations are not a current StateSync domain.
-- Samba-user mutations are centrally persisted through the Samba User/Group StateSync domains.
-- The Other Users tab is not production functionality.
+- OS user و Samba user دو backend resource و cache entry مستقل هستند.
+- OS listing فعلی system accountها را exclude می‌کند.
+- Frontend duplicate check فقط advisory است؛ backend uniqueness authoritative باقی می‌ماند.
+- `OsUsersTable` فعلی Samba status را نمایش نمی‌دهد و Samba creation را expose نمی‌کند.
+- Placeholder Edit/Delete control نباید implementation کامل توصیف شود.
+- Dormant Samba integration باید عمداً restore یا عمداً حذف شود.
+- OS-user mutation در حال حاضر StateSync domain ندارد.
+- Samba-user/group mutation نیز در contract صحیح فعلی GitLab StateSync domain مستقل ندارد.
+- Other Users tab production functionality نیست.
 
-## Common failure scenarios
+## Failure Scenarioهای رایج
 
-### OS-user list does not update after create
+### OS-user List پس از Create Update نمی‌شود
 
-Check:
+بررسی کنید:
 
-1. `POST /api/os/user/create/` response;
-2. OS-user query invalidation;
-3. `GET /api/os/user?include_system=false`;
-4. response normalization in `useOsUsers()`.
+1. response مربوط به `POST /api/os/user/create/`؛
+2. OS-user query invalidation؛
+3. `GET /api/os/user?include_system=false`؛
+4. response normalization در `useOsUsers()`.
 
-### Samba status is not visible in the Users table
+### Samba Status در Users Table دیده نمی‌شود
 
-This is current UI behavior. The historical status column is not rendered by `OsUsersTable`.
+این behavior فعلی UI است. Historical status column توسط `OsUsersTable` render نمی‌شود.
 
-Do not debug the Samba API solely because no status icon appears; first verify whether the product intends to restore that column.
+فقط به دلیل نبود status icon سراغ debug کردن Samba API نروید؛ ابتدا verify کنید product اصلاً قصد restore کردن آن column را دارد یا خیر.
 
-### Samba requests appear while the OS-user tab is open
+### هنگام باز بودن OS-user Tab، Samba Request دیده می‌شود
 
-`Users.tsx` still loads Samba users for dormant correlation logic. If the integration remains intentionally hidden, this is unnecessary background work and should be removed in a focused cleanup.
+`Users.tsx` هنوز Samba userها را برای dormant correlation logic load می‌کند. اگر integration عمداً hidden باقی می‌ماند، این background work غیرضروری است و باید در cleanup متمرکز حذف شود.
 
-### Edit button shows only a browser alert
+### Edit Button فقط Browser Alert نشان می‌دهد
 
-The current edit control is placeholder UI. There is no completed OS-user edit mutation documented for this feature.
+Edit control فعلی placeholder UI است و OS-user edit mutation تکمیل‌شده‌ای برای این feature وجود ندارد.
 
-### Delete is unavailable
+### Delete در دسترس نیست
 
-The current Delete control is disabled. Implementing deletion requires an explicit backend contract, dependency behavior, confirmation UX, and cache invalidation strategy.
+Delete control فعلی disabled است. Implementation حذف نیازمند backend contract صریح، dependency behavior، confirmation UX و cache invalidation strategy است.
 
-### Backend snapshot does not contain OS-user changes
+### Backend Snapshot شامل OS/Samba User Change نیست
 
-The current frontend does not define an OS-user StateSync domain. Confirm the backend persistence contract before changing centralized StateSync.
+Frontend فعلی برای OS user، Samba user و Samba group StateSync domain ندارد. پیش از تغییر centralized StateSync، backend persistence contract را تأیید کنید.
 
-## Extension guide
+## راهنمای Extension
 
-### Completing OS-user edit/delete
+### تکمیل OS-user Edit/Delete
 
-1. confirm backend endpoint and authorization semantics;
-2. implement dedicated hooks/API functions;
-3. remove placeholder `alert`/disabled controls;
-4. require confirmation for destructive deletion;
-5. invalidate `osUsersBaseQueryKey` after success;
-6. decide whether Samba dependencies block or cascade;
-7. confirm whether OS users need a centralized StateSync domain;
-8. update this document and the API endpoint map.
+1. backend endpoint و authorization semantics را تأیید کنید؛
+2. hook/API function اختصاصی پیاده‌سازی کنید؛
+3. placeholder `alert` و disabled control را حذف کنید؛
+4. برای destructive deletion confirmation اجباری کنید؛
+5. پس از success، `osUsersBaseQueryKey` را invalidate کنید؛
+6. مشخص کنید Samba dependency باعث block یا cascade می‌شود؛
+7. تأیید کنید OS user به centralized StateSync domain نیاز دارد یا خیر؛
+8. این سند و API endpoint map را update کنید.
 
-### Restoring Users-page Samba integration
+### Restore کردن Users-page Samba Integration
 
-If product requirements want Samba status/action directly on `/users`:
+اگر product requirement می‌خواهد Samba status/action مستقیماً در `/users` باشد:
 
-1. restore a supported table column/action, not commented historical code;
-2. consume the existing correlation data intentionally;
-3. make the Samba-create modal reachable through explicit UI;
-4. preserve duplicate checks and partial-failure semantics;
-5. test the cross-domain OS→Samba sequence;
-6. update the table prop contract to match real usage.
+1. supported table column/action را restore کنید، نه historical commented code؛
+2. existing correlation data را عمداً consume کنید؛
+3. Samba-create modal را با UI صریح reachable کنید؛
+4. duplicate check و partial-failure semantics را حفظ کنید؛
+5. cross-domain OS→Samba sequence را test کنید؛
+6. table prop contract را با usage واقعی هماهنگ کنید.
 
-### Removing dormant Samba integration
+### حذف Dormant Samba Integration
 
-If Samba administration should live only under `/share`:
+اگر Samba administration باید فقط زیر `/share` باشد:
 
-1. remove the Samba query from `Users.tsx`;
-2. remove unused correlation state;
-3. remove unreachable Samba modal/create handlers;
-4. remove unused `OsUsersTable` Samba props;
-5. confirm request volume drops without changing OS-user behavior;
-6. update this document accordingly.
+1. Samba query را از `Users.tsx` حذف کنید؛
+2. unused correlation state را حذف کنید؛
+3. unreachable Samba modal/create handlerها را حذف کنید؛
+4. unused Samba propهای `OsUsersTable` را حذف کنید؛
+5. verify کنید request volume کاهش یافته بدون این‌که OS-user behavior تغییر کند؛
+6. این سند را update کنید.
 
-### Expanding the Other Users tab
+### توسعه‌ی Other Users Tab
 
-Define its backend resource and ownership explicitly before reusing OS/Samba query keys. Do not mix unrelated identity domains into one cache entry merely because they appear on the same page.
+پیش از reuse کردن OS/Samba query key، backend resource و ownership آن را صریح تعریف کنید. صرفاً چون identity domainهای مختلف در یک page دیده می‌شوند آن‌ها را در یک cache entry ادغام نکنید.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/pages/Users.tsx`
 - `src/components/users/OsUsersTable.tsx`
@@ -391,7 +397,7 @@ Define its backend resource and ownership explicitly before reusing OS/Samba que
 - `src/utils/sambaUsers.ts`
 - `src/constants/users.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
 - [`../04-core-flows/api-request-lifecycle.md`](../04-core-flows/api-request-lifecycle.md)
