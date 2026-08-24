@@ -28,7 +28,7 @@ See `package.json` for the exact dependency versions.
 
 ## Prerequisites
 
-Use a supported Node.js LTS release with npm.
+Use a supported Node.js LTS release with npm. The repository CI currently validates with Node.js 22.
 
 On Debian/Ubuntu systems, one way to install Node.js through NodeSource is:
 
@@ -51,6 +51,12 @@ Install project dependencies from the repository root:
 
 ```bash
 npm install
+```
+
+For clean release/CI validation, use the committed lockfile with:
+
+```bash
+npm ci
 ```
 
 ## Environment configuration
@@ -81,7 +87,23 @@ Run ESLint:
 npm run lint
 ```
 
-A dedicated automated test script is not currently defined in `package.json`. Do not treat a successful build as a substitute for future test coverage.
+Run the production type-check/build gate:
+
+```bash
+npm run build
+```
+
+The repository also maintains `.github/workflows/frontend-validation.yml`, which validates pull requests to `main` with:
+
+```text
+npm ci
+npm run lint
+npm run build
+```
+
+A dedicated automated behavioral test script is not currently defined in `package.json`. Do not treat a successful lint/build pipeline as a substitute for future test coverage.
+
+See [`docs/03-development/testing.md`](./docs/03-development/testing.md) for the current quality model and testing roadmap.
 
 ## Production build
 
@@ -103,7 +125,7 @@ npm run preview
 
 This repository builds to static frontend assets. A production web server such as Nginx should serve the generated `dist/` directory.
 
-Deployment-specific server configuration belongs in operations documentation rather than application source code.
+Deployment-specific server configuration and release/rollback guidance are documented under [`docs/07-operations/`](./docs/07-operations/).
 
 ## Important maintenance contracts
 
