@@ -56,18 +56,12 @@ export const fetchSambaGroupNames = async ({
 };
 
 export const createSambaGroup = async (groupname: string): Promise<void> => {
-  await axiosInstance.post(SAMBA_GROUPS_BASE_URL, {
-    groupname,
-    save_to_db: true,
-  });
+  await axiosInstance.post(SAMBA_GROUPS_BASE_URL, { groupname });
 };
 
 export const deleteSambaGroup = async (groupname: string): Promise<void> => {
   const encodedGroupName = encodeURIComponent(groupname);
-
-  await axiosInstance.delete(`${SAMBA_GROUPS_BASE_URL}${encodedGroupName}/`, {
-    params: { save_to_db: true },
-  });
+  await axiosInstance.delete(`${SAMBA_GROUPS_BASE_URL}${encodedGroupName}/`);
 };
 
 export const updateSambaGroupMember = async ({
@@ -82,6 +76,9 @@ export const updateSambaGroupMember = async ({
   const encodedGroupName = encodeURIComponent(groupname);
   const actionParam = action === 'add' ? 'add_user' : 'remove_user';
 
+  // The backend endpoint updates one username at a time. Earlier successful
+  // requests are not rolled back if a later username fails, so callers must
+  // treat a multi-user update as a potentially partial operation.
   for (const username of usernames) {
     const trimmedUsername = username.trim();
 
@@ -92,19 +89,17 @@ export const updateSambaGroupMember = async ({
     await axiosInstance.put(
       `${SAMBA_GROUPS_BASE_URL}${encodedGroupName}/update/`,
       { username: trimmedUsername },
-      {
-        params: {
-          action: actionParam,
-          save_to_db: true,
-        },
-      }
+      { params: { action: actionParam } }
     );
   }
 };
 
 export const fetchSambaGroupMembers = async (
   groupname: string,
-  { signal, containSystemGroups = false }: { signal?: AbortSignal; containSystemGroups?: boolean } = {}
+  {
+    signal,
+    containSystemGroups = false,
+  }: { signal?: AbortSignal; containSystemGroups?: boolean } = {}
 ): Promise<SambaGroupEntry | null> => {
   const encodedGroupName = encodeURIComponent(groupname);
 
@@ -120,7 +115,8 @@ export const fetchSambaGroupMembers = async (
 
   if (!group) return null;
 
-  const resolvedName = (group as SambaGroupMembersListEntry).groupname || group.name;
+  const resolvedName =
+    (group as SambaGroupMembersListEntry).groupname || group.name;
 
   return {
     ...group,
@@ -131,7 +127,9 @@ export const fetchSambaGroupMembers = async (
 
 export const fetchSambaGroupsMembersList = async ({
   signal,
-}: { signal?: AbortSignal } = {}): Promise<Pick<SambaGroupEntry, 'name' | 'members'>[]> => {
+}: { signal?: AbortSignal } = {}): Promise<
+  Pick<SambaGroupEntry, 'name' | 'members'>[]
+> => {
   const { data } = await axiosInstance.get<SambaGroupMembersListResponse>(
     SAMBA_GROUPS_BASE_URL,
     {
