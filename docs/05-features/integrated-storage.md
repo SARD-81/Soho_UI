@@ -1,46 +1,54 @@
 # Integrated Storage
 
-## Purpose
+## هدف
 
-Integrated Storage is the SOHO UI feature for managing ZFS pool-like storage resources represented by the frontend as integrated spaces.
+Integrated Storage feature مربوط به مدیریت storage resourceهای شبیه ZFS pool است که در frontend به‌صورت integrated space نمایش داده می‌شوند.
 
-It is one of the most orchestration-heavy pages in the frontend because a single operator workflow can involve:
+این صفحه یکی از orchestration-heavyترین بخش‌های frontend است، چون یک workflow واحد ممکن است هم‌زمان با موارد زیر درگیر باشد:
 
-- zpool list state;
-- zpool detail state;
-- physical disk inventory;
-- disk slot mapping;
-- available replacement/addition disks;
-- pool property mutations;
-- create/delete/import/export/add/replace mutations;
-- several modal lifecycles;
+- zpool list state؛
+- zpool detail state؛
+- physical disk inventory؛
+- disk slot mapping؛
+- diskهای قابل استفاده برای replace/add؛
+- pool property mutationها؛
+- create/delete/import/export/add/replace mutationها؛
+- چند modal lifecycle؛
 - detail comparison state.
 
-Route: `/Integrated-space`
+Route:
 
-The route check inside the page is case-normalized and expects `/integrated-space`.
+```text
+/Integrated-space
+```
 
-Entry point: `src/pages/IntegratedStorage.tsx`
+Route check داخل صفحه case-normalized است و `/integrated-space` را انتظار دارد.
 
-## Main responsibilities
+Entry point:
 
-The page coordinates:
+```text
+src/pages/IntegratedStorage.tsx
+```
 
-- displaying the current integrated-storage pools;
-- creating a pool;
-- deleting/destroying a pool and cleaning its former disks;
-- exporting a pool;
-- importing an available pool;
-- adding devices to an existing pool;
-- replacing an existing pool disk;
-- showing physical slot information;
-- loading selected/pinned pool details;
-- editing selected boolean-like zpool properties;
-- refreshing the affected React Query resources after successful mutations.
+## مسئولیت‌های اصلی
 
-The page should remain an orchestration layer. Endpoint normalization and reusable domain logic should live in hooks/lib modules rather than accumulating directly inside JSX.
+صفحه موارد زیر را coordinate می‌کند:
 
-## High-level runtime flow
+- نمایش poolهای فعلی Integrated Storage؛
+- create کردن pool؛
+- destroy کردن pool و cleanup کردن diskهای قبلی آن؛
+- export کردن pool؛
+- import کردن pool قابل دسترس؛
+- اضافه کردن device به pool موجود؛
+- replace کردن disk موجود در pool؛
+- نمایش physical slot information؛
+- load کردن detail مربوط به poolهای selected/pinned؛
+- edit کردن برخی zpool propertyهای boolean-like؛
+- refresh کردن React Query resourceهای متاثر پس از mutation موفق.
+
+صفحه باید orchestration layer باقی بماند. Endpoint normalization و reusable domain logic باید در hook/lib moduleها قرار بگیرند و مستقیماً داخل JSX انباشته نشوند.
+
+## high-level runtime flow
 
 ```mermaid
 flowchart TD
@@ -71,9 +79,13 @@ flowchart TD
     PROP --> API
 ```
 
-## Primary zpool list
+## zpool list اصلی
 
-Hook: `useZpool()`
+Hook:
+
+```text
+useZpool()
+```
 
 Query key:
 
@@ -87,24 +99,24 @@ Endpoint:
 GET /api/zpool/
 ```
 
-On this page the hook is enabled only when the current route is the Integrated Storage route and polls every 30 seconds.
+در این صفحه hook فقط زمانی enabled است که route فعلی Integrated Storage باشد و هر 30 ثانیه polling انجام می‌دهد.
 
-The hook normalizes backend fields for:
+Hook backend fieldهای زیر را normalize می‌کند:
 
-- total/used/free capacity;
-- capacity percentage;
-- health;
-- deduplication ratio;
-- fragmentation;
-- vdev type and display label.
+- total/used/free capacity؛
+- capacity percentage؛
+- health؛
+- deduplication ratio؛
+- fragmentation؛
+- vdev type و display label.
 
-The page must consume normalized values instead of reimplementing zpool response parsing.
+صفحه باید normalized valueها را مصرف کند و parsing مربوط به zpool response را دوباره پیاده‌سازی نکند.
 
-## Pool detail state
+## pool detail state
 
-Selected and pinned pool ids are loaded with `useQueries()`.
+Pool idهای selected و pinned با `useQueries()` load می‌شوند.
 
-Each detail query uses:
+هر detail query از key زیر استفاده می‌کند:
 
 ```text
 ['zpool', poolName, 'details']
@@ -116,32 +128,36 @@ Endpoint:
 GET /api/zpool/{poolName}/
 ```
 
-Current detail behavior:
+رفتار فعلی detail:
 
-- at most four comparison items are loaded (`MAX_COMPARISON_ITEMS = 4`);
-- each active query polls every 30 seconds;
-- stale time is 25 seconds;
-- retries are disabled;
-- window-focus and reconnect refetch are disabled;
-- the global loader is skipped.
+- حداکثر چهار comparison item هم‌زمان load می‌شوند (`MAX_COMPARISON_ITEMS = 4`)؛
+- هر query فعال هر 30 ثانیه polling می‌کند؛
+- `staleTime` برابر 25 ثانیه است؛
+- retry غیرفعال است؛
+- refetch روی window focus و reconnect غیرفعال است؛
+- global loader skip می‌شود.
 
-If detail data is temporarily absent, the page may fall back to the normalized raw data already available on the list entry.
+اگر detail data موقتاً وجود نداشته باشد، صفحه می‌تواند از normalized raw data موجود در list entry به‌عنوان fallback استفاده کند.
 
-## Detail split-view state
+## detail split-view state
 
-The feature uses detail view id:
+این feature از view id زیر استفاده می‌کند:
 
 ```text
 pools
 ```
 
-Active and pinned pool ids are reconciled against the current pool list. Pools that disappear from the backend are removed from selection state.
+Active و pinned pool idها با pool list فعلی reconcile می‌شوند. Poolهایی که دیگر backend برنمی‌گرداند از selection state حذف می‌شوند.
 
-This prevents stale comparison panels from surviving after a destroy/export or external backend change.
+این رفتار مانع باقی ماندن stale comparison panel پس از destroy/export یا تغییر خارجی backend می‌شود.
 
-## Physical slot mapping
+## physical slot mapping
 
-Hook: `usePoolDeviceSlots(poolNames)`
+Hook:
+
+```text
+usePoolDeviceSlots(poolNames)
+```
 
 Conceptual query key:
 
@@ -149,58 +165,62 @@ Conceptual query key:
 ['zpool', 'devices', 'slots', poolNames.join(',')]
 ```
 
-The slot loader combines two backend data sources:
+Slot loader دو منبع backend را ترکیب می‌کند:
 
-1. global disk inventory;
-2. each pool's device list.
+1. global disk inventory؛
+2. device list هر pool.
 
-It builds lookup aliases from disk name, path, WWN/WWID, and partition identifiers so backend representations using different identifiers can still resolve to one physical inventory item.
+برای resolve کردن یک physical disk از representationهای مختلف backend، alias lookup از disk name، path، WWN/WWID و partition identifier ساخته می‌شود.
 
-Per-pool device failures are captured in `errorsByPool`; one failing pool does not reject slot results for every other pool.
+Failure مربوط به deviceهای یک pool در `errorsByPool` capture می‌شود؛ failure یک pool نباید slot result همه‌ی poolهای دیگر را reject کند.
 
-The page does not load slot mapping immediately. `shouldLoadPoolSlots` gates the work until slot-dependent UI is requested. Once enabled, it uses a 30-second interval.
+صفحه slot mapping را بلافاصله load نمی‌کند. `shouldLoadPoolSlots` کار را تا زمانی که UI وابسته به slot واقعاً نیاز داشته باشد gate می‌کند. پس از enable شدن، interval برابر 30 ثانیه است.
 
-The Dashboard 3D server widget intentionally uses a faster 10-second override for the same domain hook.
+Dashboard 3D widget برای همین domain hook عمداً override سریع‌تر 10 ثانیه‌ای دارد.
 
-## Disk options used by Create/Add/Replace
+## disk optionهای Create/Add/Replace
 
-The current hook is named:
+Hook فعلی نام زیر را دارد:
 
 ```text
 usePartitionedDisks
 ```
 
-This name is misleading.
+این نام misleading است.
 
-The implementation calls `/api/disk/{disk}/has-partitions/`, negates `has_partitions`, and returns disks considered eligible because they do **not** have partitions. The Integrated Storage modals also describe these as disks without partitions.
+Implementation endpoint `/api/disk/{disk}/has-partitions/` را call می‌کند، مقدار `has_partitions` را negate می‌کند و diskهایی را eligible می‌داند که **partition ندارند**. Modalهای Integrated Storage نیز همین diskها را بدون partition معرفی می‌کنند.
 
-Therefore, when reading the current code, treat this hook as an **available/unpartitioned disk source**, despite the historical exported name.
+بنابراین در code فعلی، این hook را با وجود نام historical آن، source مربوط به **available/unpartitioned disk** در نظر بگیرید.
 
-The query key is:
+Query key:
 
 ```text
 ['disk', 'partitioned']
 ```
 
-The page enables this query only while one of these workflows is open:
+صفحه فقط در زمان باز بودن workflowهای زیر query را enable می‌کند:
 
-- Create Pool;
-- Replace Disk;
+- Create Pool؛
+- Replace Disk؛
 - Add Pool Devices.
 
-While required, the page polls it every 5 seconds.
+در این حالت query هر 5 ثانیه polling می‌کند.
 
-The data-building flow uses:
+Data-building flow از موارد زیر استفاده می‌کند:
 
-- `GET /api/disk/names/` (with no-trailing-slash fallback on 404);
-- per disk `GET /api/disk/{disk}/has-partitions/`;
-- per eligible disk `GET /api/disk/{disk}/` to resolve WWN and slot metadata.
+- `GET /api/disk/names/` با fallback بدون trailing slash در 404؛
+- برای هر disk، `GET /api/disk/{disk}/has-partitions/`؛
+- برای هر disk eligible، `GET /api/disk/{disk}/` جهت resolve کردن WWN و slot metadata.
 
-Device values prefer stable by-id/WWN-derived identifiers when available, with normalized device path as fallback.
+Device value در صورت وجود stable by-id/WWN identifier را ترجیح می‌دهد و normalized device path fallback است.
 
 ## Create Pool
 
-Hook: `useCreatePool()`
+Hook:
+
+```text
+useCreatePool()
+```
 
 Endpoint:
 
@@ -208,7 +228,7 @@ Endpoint:
 POST /api/zpool/create/
 ```
 
-Payload domain fields:
+Domain payload fieldها:
 
 ```text
 pool_name
@@ -216,19 +236,23 @@ devices
 vdev_type
 ```
 
-The hook validates:
+Hook موارد زیر را validate می‌کند:
 
-- pool name;
-- vdev selection;
-- selected-device count against the vdev type.
+- pool name؛
+- vdev selection؛
+- تعداد selected device متناسب با vdev type.
 
-On success it invalidates the zpool and free-disk query families, closes the modal, and the page performs an additional targeted Integrated Storage refresh.
+پس از success، zpool و free-disk query familyها invalidate می‌شوند، modal بسته می‌شود و صفحه یک targeted Integrated Storage refresh اضافی انجام می‌دهد.
 
-Persistence flags must not be owned by this mutation; StateSync is responsible for canonical persisted snapshots after successful mutations.
+Persistence flag نباید مالکیت این mutation باشد؛ StateSync پس از mutation موفق canonical persisted snapshotها را مدیریت می‌کند.
 
 ## Add Devices
 
-Hook: `useAddPoolDevices()`
+Hook:
+
+```text
+useAddPoolDevices()
+```
 
 Endpoint:
 
@@ -236,11 +260,11 @@ Endpoint:
 POST /api/zpool/{poolName}/add/
 ```
 
-Before enabling submission, the hook loads the existing pool vdev type and validates the new selected-device count using the shared vdev rules.
+پیش از enable شدن submit، hook vdev type فعلی pool را load می‌کند و تعداد device جدید را با shared vdev ruleها validate می‌کند.
 
-The vdev-type query is deliberately modal-scoped and short-lived (`staleTime: 0`, `gcTime: 0`) so a later Add operation rechecks the current pool type.
+Vdev-type query عمداً modal-scoped و short-lived است (`staleTime: 0`, `gcTime: 0`) تا Add operation بعدی type فعلی pool را دوباره بررسی کند.
 
-On success the hook invalidates:
+پس از success، این queryها invalidate می‌شوند:
 
 ```text
 ['zpool']
@@ -249,58 +273,69 @@ On success the hook invalidates:
 ['disk', 'partitioned']
 ```
 
-The page also refreshes Integrated Storage state and slot mapping.
+صفحه نیز Integrated Storage state و slot mapping را refresh می‌کند.
 
 ## Replace Disk
 
-Hook: `useReplacePoolDisk()`
+Hook:
 
-Endpoint for each replacement:
+```text
+useReplacePoolDisk()
+```
+
+Endpoint برای هر replacement:
 
 ```text
 POST /api/zpool/{poolName}/replace/
 ```
 
-The current mutation accepts an array of replacement payloads and sends them sequentially.
+Mutation فعلی array از replacement payloadها می‌پذیرد و آن‌ها را sequential ارسال می‌کند.
 
-The UI currently submits one replacement at a time, containing:
+UI فعلی در هر بار یک replacement می‌فرستد:
 
 ```text
 old_device
 new_device
 ```
 
-The old device is normalized through `normalizeReplacementOldDevice()`. New-device options come from the available/unpartitioned disk source described above.
+Old device با `normalizeReplacementOldDevice()` normalize می‌شود. New-device optionها از available/unpartitioned disk source گفته‌شده می‌آیند.
 
-After success the same main storage/device query families are invalidated and slot mapping is refetched.
+پس از success، همان storage/device query familyهای اصلی invalidate و slot mapping refetch می‌شود.
 
 ## Delete / Destroy Pool
 
-Hook: `useDeleteZpool()`
+Hook:
 
-The delete workflow is multi-step and is not frontend-atomic.
+```text
+useDeleteZpool()
+```
 
-Current sequence:
+Delete workflow multi-step است و از سمت frontend atomic نیست.
 
-1. load the pool's device names;
-2. destroy the pool:
-   `POST /api/zpool/{poolName}/destroy/`;
-3. for each former pool disk, call `cleanupDisk()`;
-4. each cleanup attempts `clear-zfs` and then `wipe`.
+Sequence فعلی:
 
-If pool destruction succeeds but a later disk cleanup fails, the hook ultimately reports an error even though the pool may already be gone.
+1. device nameهای pool load می‌شوند؛
+2. pool destroy می‌شود: `POST /api/zpool/{poolName}/destroy/`؛
+3. برای هر disk قبلی pool، `cleanupDisk()` اجرا می‌شود؛
+4. هر cleanup ابتدا `clear-zfs` و سپس `wipe` را تلاش می‌کند.
 
-This operational fact is important during troubleshooting: a reported Delete error does not necessarily mean the destroy call was rolled back.
+اگر pool destruction موفق باشد ولی disk cleanup بعدی fail شود، hook در نهایت error گزارش می‌دهد، در حالی که pool ممکن است از قبل حذف شده باشد.
 
-On successful completion the hook removes the pool optimistically from the current `['zpool']` cache, then invalidates zpool and free-disk data.
+این نکته در troubleshooting مهم است: Delete error لزوماً به این معنا نیست که destroy rollback شده است.
 
-The page has special UI handling for errors containing `shareConfiguration`, telling the operator to remove dependent filesystems first.
+پس از completion موفق، hook pool را به‌صورت optimistic از cache فعلی `['zpool']` حذف می‌کند و سپس zpool و free-disk data را invalidate می‌کند.
 
-The backend remains the authoritative dependency/integrity boundary.
+صفحه برای errorهای حاوی `shareConfiguration` پیام خاصی دارد و از operator می‌خواهد ابتدا filesystem وابسته را حذف کند.
+
+Backend همچنان authoritative dependency/integrity boundary است.
 
 ## Export Pool
 
-Hook: `useExportPool()`
+Hook:
+
+```text
+useExportPool()
+```
 
 Endpoint:
 
@@ -314,28 +349,32 @@ Domain payload:
 pool_name
 ```
 
-The operation is confirmation-driven through modal state. On success the page refreshes the zpool/detail/device state affected by the operation.
+Operation از طریق modal state confirmation-driven است. پس از success، صفحه zpool/detail/device state متاثر را refresh می‌کند.
 
 ## Import Pool
 
-Hook: `useImportPool()`
+Hook:
 
-The same endpoint is used for discovery and mutation:
+```text
+useImportPool()
+```
+
+همان endpoint برای discovery و mutation استفاده می‌شود:
 
 ```text
 GET  /api/zpool/import/
 POST /api/zpool/import/
 ```
 
-The importable-pool query is enabled only while the Import modal is open.
+Importable-pool query فقط وقتی Import modal باز است enabled می‌شود.
 
-The response normalizer accepts several backend shapes and attempts common pool-name field names (`name`, `pool_name`, `poolName`, `pool`, `id`).
+Response normalizer چند backend shape را می‌پذیرد و field nameهای رایج `name`، `pool_name`، `poolName`، `pool` و `id` را برای یافتن pool name امتحان می‌کند.
 
-After a successful import the hook invalidates both the main zpool key and the importable-pool key.
+بعد از import موفق، هم main zpool key و هم importable-pool key invalidate می‌شوند.
 
-## Interactive pool properties
+## interactive pool propertyها
 
-Selected detail fields are rendered as `PoolPropertyToggle` for:
+برخی selected detail fieldها با `PoolPropertyToggle` render می‌شوند:
 
 ```text
 autoexpand
@@ -345,9 +384,13 @@ listsnapshots
 multihost
 ```
 
-`PoolPropertyToggle` normalizes common backend boolean-like values such as `on`, `enabled`, `true`, `yes`, and `1`.
+`PoolPropertyToggle` backend valueهای رایج مثل `on`، `enabled`، `true`، `yes` و `1` را به‌عنوان boolean-like value normalize می‌کند.
 
-Mutation hook: `useSetZpoolProperty(poolName)`
+Mutation hook:
+
+```text
+useSetZpoolProperty(poolName)
+```
 
 Endpoint:
 
@@ -355,20 +398,20 @@ Endpoint:
 POST /api/zpool/{poolName}/set-property/
 ```
 
-Payload domain fields:
+Payload:
 
 ```text
 prop
 value: 'on' | 'off'
 ```
 
-After success, both the selected pool detail query and main zpool query are invalidated.
+پس از success، هم detail query مربوط به pool و هم main zpool query invalidate می‌شوند.
 
-## Central page refresh helper
+## helper مرکزی refresh صفحه
 
-`refreshIntegratedStorageData(poolName?)` exists to coalesce common page-level invalidation after successful mutations.
+`refreshIntegratedStorageData(poolName?)` برای coalesce کردن invalidationهای رایج page-level بعد از mutation موفق وجود دارد.
 
-It invalidates:
+این موارد را invalidate می‌کند:
 
 ```text
 ['zpool']
@@ -377,30 +420,30 @@ selected pool detail key when poolName is known
 ['disk', 'partitioned']
 ```
 
-It does nothing when the page is no longer on the Integrated Storage route.
+اگر صفحه دیگر روی Integrated Storage route نباشد، helper کاری انجام نمی‌دهد.
 
-This route guard prevents an asynchronous mutation callback from causing unnecessary page-specific refresh work after navigation.
+این route guard مانع آن می‌شود که asynchronous mutation callback پس از navigation، page-specific refresh غیرضروری اجرا کند.
 
-## Polling and conditional loading
+## polling و conditional loading
 
-The feature deliberately avoids running every expensive query all the time.
+Feature عمداً تمام queryهای expensive را دائماً اجرا نمی‌کند.
 
-| Resource | Behavior |
+| Resource | رفتار |
 | --- | --- |
-| Zpool list | 30 s while on Integrated Storage route. |
-| Selected/pinned pool details | 30 s, max 4 active comparisons. |
-| Pool slots | Loaded on demand; 30 s once enabled. |
-| Available/unpartitioned disks | 5 s only while Create/Add/Replace UI needs them. |
-| Importable pools | Only while Import modal is open. |
-| Pool vdev type for Add Devices | Only while Add modal is open. |
+| Zpool list | هر 30 ثانیه تا زمانی که روی Integrated Storage route هستیم |
+| Selected/pinned pool details | هر 30 ثانیه، حداکثر 4 comparison فعال |
+| Pool slots | on-demand؛ پس از enable شدن هر 30 ثانیه |
+| Available/unpartitioned disks | فقط هنگام نیاز Create/Add/Replace، هر 5 ثانیه |
+| Importable pools | فقط هنگام باز بودن Import modal |
+| Pool vdev type for Add Devices | فقط هنگام باز بودن Add modal |
 
-This conditional behavior is part of the feature's backend-load control and should be preserved during refactoring.
+این conditional behavior بخشی از backend-load control feature است و هنگام refactor باید حفظ شود.
 
-## StateSync relationship
+## ارتباط با StateSync
 
-Normal Integrated Storage mutations must not decide when backend database snapshots are persisted.
+Integrated Storage mutationهای عادی نباید تصمیم بگیرند backend database snapshot چه زمانی persist شود.
 
-Correct ownership is:
+Ownership صحیح:
 
 ```text
 feature mutation
@@ -411,80 +454,80 @@ feature mutation
   → StateSyncManager schedules canonical zpool/disk snapshot(s)
 ```
 
-Caller-level `save_to_db=true` is legacy behavior and should not be introduced into new feature code.
+Caller-level `save_to_db=true` legacy behavior است و نباید وارد feature code جدید شود.
 
-## Important invariants
+## invariantهای مهم
 
-- Zpool list state is shared through the canonical `['zpool']` key.
-- Detail queries are bounded to four comparison items.
-- Slot queries must remain conditional because they fan out across inventory and per-pool endpoints.
-- Available disk polling must run only while a disk-selection workflow is open.
-- Prefer stable WWN/by-id identifiers when generating mutation device values.
-- One pool-device lookup failure must not erase successful slot results for other pools.
-- Pool deletion is a multi-step destructive workflow and must remain confirmation-driven.
-- UI invalidation and StateSync persistence are separate concerns.
-- The current `usePartitionedDisks` name does not accurately describe its returned eligible disks; verify semantics before reusing it elsewhere.
+- Zpool list state از canonical key یعنی `['zpool']` به اشتراک گذاشته می‌شود.
+- Detail queryها به حداکثر چهار comparison item محدودند.
+- Slot queryها باید conditional بمانند، چون روی inventory و per-pool endpointها fan-out دارند.
+- Available disk polling فقط هنگام باز بودن disk-selection workflow اجرا شود.
+- برای mutation device value در صورت امکان stable WWN/by-id identifier ترجیح داده شود.
+- Failure یک pool-device lookup نباید slot result موفق poolهای دیگر را حذف کند.
+- Pool deletion یک multi-step destructive workflow است و باید confirmation-driven بماند.
+- UI invalidation و StateSync persistence دو concern جدا هستند.
+- نام فعلی `usePartitionedDisks` semantics واقعی خروجی آن را درست توصیف نمی‌کند؛ پیش از reuse کردن، رفتار واقعی را بررسی کنید.
 
-## Common failure scenarios
+## failure scenarioهای رایج
 
-### Create/Add/Replace modal shows no disks
+### Create/Add/Replace modal هیچ diskی نشان نمی‌دهد
 
-Check:
+این موارد را بررسی کنید:
 
-1. whether the page considers the modal open;
-2. `shouldFetchPartitionedDisks`;
-3. `/api/disk/names/`;
-4. each `has-partitions` response;
-5. metadata requests used to build WWN/path values;
-6. whether the frontend/backend agree that eligible disks should have no partitions.
+1. آیا modal واقعاً open تشخیص داده می‌شود؛
+2. `shouldFetchPartitionedDisks`؛
+3. `/api/disk/names/`؛
+4. response هر `has-partitions`؛
+5. metadata requestهای لازم برای WWN/path value؛
+6. توافق frontend/backend درباره اینکه disk eligible باید بدون partition باشد.
 
-### Slot numbers are missing
+### Slot numberها missing هستند
 
-Check identifier matching across:
+Identifier matching میان این موارد را بررسی کنید:
 
-- pool device `disk_name`/path;
-- disk inventory name/path;
-- WWN/WWID;
-- partition aliases.
+- `disk_name`/path مربوط به pool device؛
+- disk inventory name/path؛
+- WWN/WWID؛
+- partition aliasها.
 
-The slot resolver intentionally tries several aliases because backend endpoints can represent the same physical disk differently.
+Slot resolver عمداً چند alias را امتحان می‌کند، چون endpointهای مختلف backend می‌توانند یک physical disk را با identifier متفاوت نشان دهند.
 
-### Delete reports failure but the pool disappeared
+### Delete failure گزارش می‌دهد ولی pool ناپدید شده
 
-Inspect the sequence. `destroy` happens before post-destroy disk cleanup. A later wipe failure can produce an error after the pool is already destroyed.
+Sequence را بررسی کنید. `destroy` قبل از post-destroy disk cleanup انجام می‌شود. Wipe failure بعدی می‌تواند در حالی error تولید کند که pool از قبل destroy شده است.
 
-### Details do not update after property change
+### Detail بعد از property change update نمی‌شود
 
-Verify that `useSetZpoolProperty` invalidates both `zpoolDetailQueryKey(poolName)` and `zpoolQueryKey`, and verify the mutation actually succeeded.
+بررسی کنید `useSetZpoolProperty` هم `zpoolDetailQueryKey(poolName)` و هم `zpoolQueryKey` را invalidate کند و mutation واقعاً موفق بوده باشد.
 
-### Too many storage requests appear
+### storage request بیش از حد دیده می‌شود
 
-Check whether slot loading or available-disk polling became enabled outside its modal/detail lifecycle. Do not solve the problem by removing necessary invalidation blindly.
+بررسی کنید slot loading یا available-disk polling بیرون از modal/detail lifecycle enable نشده باشد. مشکل را با حذف کورکورانه‌ی invalidation حل نکنید.
 
-## Extension guide
+## راهنمای توسعه
 
-### Adding a new pool mutation
+### افزودن pool mutation جدید
 
-1. put endpoint-specific mutation logic in a hook/lib module;
-2. keep modal/form state outside the transport layer;
-3. define validation before mutation;
-4. use canonical query keys for invalidation;
-5. map the mutation URL in StateSync if it affects a persisted domain;
-6. do not add `save_to_db=true` at the caller;
-7. document partial-failure semantics if the workflow has multiple backend calls.
+1. endpoint-specific mutation logic را در hook/lib module قرار دهید.
+2. modal/form state را خارج از transport layer نگه دارید.
+3. پیش از mutation validation را تعریف کنید.
+4. از canonical query keyها برای invalidation استفاده کنید.
+5. اگر mutation persisted domain را متاثر می‌کند، URL آن را در StateSync map کنید.
+6. در caller `save_to_db=true` اضافه نکنید.
+7. اگر workflow چند backend call دارد، partial-failure semantics را مستند کنید.
 
-### Adding a new pool detail property
+### افزودن pool detail property جدید
 
-If the field is display-only, add it through detail localization/rendering.
+اگر field فقط display است، آن را از طریق detail localization/rendering اضافه کنید.
 
-If it is editable:
+اگر editable است:
 
-1. define its backend value contract;
-2. reuse or extend a dedicated mutation hook;
-3. invalidate the exact pool detail and list resources;
-4. document whether it is safe to model as an immediate toggle.
+1. backend value contract را مشخص کنید.
+2. mutation hook اختصاصی را reuse یا extend کنید.
+3. detail و list resource مربوط را invalidate کنید.
+4. مشخص کنید آیا مدل کردن آن به‌صورت immediate toggle امن است یا خیر.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/pages/IntegratedStorage.tsx`
 - `src/components/integrated-storage/PoolsTable.tsx`
@@ -509,7 +552,7 @@ If it is editable:
 - `src/lib/poolDevices.ts`
 - `src/stores/detailSplitViewStore.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
 - [`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md)
