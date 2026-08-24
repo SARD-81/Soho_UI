@@ -14,7 +14,11 @@ interface OsUsersTableProps {
   onCreateSambaUser: (user: OsUserTableItem) => void;
 }
 
-const OsUsersTable = ({ users, isLoading, error }: OsUsersTableProps) => {
+const OsUsersTable = ({
+  users,
+  isLoading,
+  error,
+}: OsUsersTableProps) => {
   const columns: DataTableColumn<OsUserTableItem>[] = useMemo(
     () => [
       {
@@ -40,68 +44,6 @@ const OsUsersTable = ({ users, isLoading, error }: OsUsersTableProps) => {
           </Typography>
         ),
       },
-      // {
-      //   id: 'samba-status',
-      //   header: 'وضعیت Samba',
-      //   align: 'center',
-      //   width: 120,
-      //   renderCell: (row) => {
-      //     if (isSambaStatusLoading && row.hasSambaUser === undefined) {
-      //       return (
-      //         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      //           <CircularProgress
-      //             size={18}
-      //             sx={{ color: 'var(--color-secondary)' }}
-      //           />
-      //         </Box>
-      //       );
-      //     }
-      //
-      //     const iconProps = {
-      //       size: 20,
-      //     };
-      //
-      //     if (row.hasSambaUser) {
-      //       return (
-      //         <Tooltip title="کاربر Samba موجود است" arrow>
-      //           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      //             <MdCheckCircle
-      //               {...iconProps}
-      //               color="var(--color-success)"
-      //               aria-label="دارای کاربر Samba"
-      //             />
-      //           </Box>
-      //         </Tooltip>
-      //       );
-      //     }
-      //
-      //     if (row.hasSambaUser === false) {
-      //       return (
-      //         <Tooltip title="کاربر Samba موجود نیست" arrow>
-      //           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      //             <MdCancel
-      //               {...iconProps}
-      //               color="var(--color-error)"
-      //               aria-label="فاقد کاربر Samba"
-      //             />
-      //           </Box>
-      //         </Tooltip>
-      //       );
-      //     }
-      //
-      //     return (
-      //       <Tooltip title="نامشخص" arrow>
-      //         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      //           <MdHelpOutline
-      //             {...iconProps}
-      //             color="var(--color-secondary)"
-      //             aria-label="وضعیت نامشخص"
-      //           />
-      //         </Box>
-      //       </Tooltip>
-      //     );
-      //   },
-      // },
       {
         id: 'actions',
         header: 'عملیات',
@@ -109,12 +51,11 @@ const OsUsersTable = ({ users, isLoading, error }: OsUsersTableProps) => {
         width: 180,
         renderCell: () => (
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-            <Tooltip title="ویرایش کاربر " arrow>
+            <Tooltip title="ویرایش کاربر" arrow>
               <span>
                 <IconButton
                   size="small"
                   onClick={() => alert('edit')}
-                  // disabled={updateInterfaceIp.isPending}
                   sx={{
                     color: 'var(--color-primary)',
                     '&.Mui-disabled': {
