@@ -26,6 +26,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Publish pending validation status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            --data '{"state":"pending","context":"frontend-validation","description":"Frontend lint and build are running"}'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
