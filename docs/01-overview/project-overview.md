@@ -1,57 +1,57 @@
-# Project Overview
+# معرفی پروژه
 
-## Purpose
+## هدف
 
-SOHO UI is the browser-based administrative frontend for the StoreX storage management system. It gives operators a single interface for observing system health and managing storage, sharing, users, services, network/system settings, SNMP, and selected system operations.
+SOHO UI، frontend مدیریتی مبتنی بر مرورگر برای سامانه‌ی مدیریت Storage با نام StoreX است. این application یک interface یکپارچه در اختیار Operator قرار می‌دهد تا health سیستم را مشاهده کند و Storage، sharing، userها، serviceها، تنظیمات network/system، SNMP و برخی عملیات سیستمی را مدیریت کند.
 
-This repository contains the frontend only. It does not own the underlying storage, operating-system, authentication, or database implementation; it communicates with backend APIs that perform or report those operations.
+این repository فقط شامل frontend است. پیاده‌سازی زیرساخت Storage، سیستم‌عامل، authentication یا database بر عهده‌ی این repository نیست؛ frontend از طریق APIهای backend با بخش‌هایی که این عملیات را اجرا یا وضعیت آن‌ها را گزارش می‌کنند ارتباط دارد.
 
-Detailed responsibility boundaries are defined in [`scope.md`](./scope.md).
+مرز دقیق مسئولیت‌ها در [`scope.md`](./scope.md) تعریف شده است.
 
-## Primary responsibilities
+## مسئولیت‌های اصلی
 
-The frontend is responsible for:
+Frontend مسئول موارد زیر است:
 
-- authenticating the operator and maintaining the browser session;
-- protecting application routes from unauthenticated access;
-- presenting system and storage state returned by backend APIs;
-- initiating administrative mutations through the API layer;
-- managing client-side server-state caching and refresh behavior;
-- coordinating canonical state snapshots after successful mapped mutations;
-- presenting notifications and global loading/error feedback;
-- providing Persian/RTL administrative UI with light/dark theme support;
-- preserving safe/non-obvious frontend lifecycle behavior around destructive, concurrent, or multi-step operations.
+- احراز هویت Operator و نگهداری browser session؛
+- محافظت از application routeها در برابر دسترسی unauthenticated؛
+- نمایش state مربوط به سیستم و Storage که از APIهای backend دریافت می‌شود؛
+- آغاز mutationهای مدیریتی از طریق API layer؛
+- مدیریت server-state cache و رفتار refresh در سمت client؛
+- هماهنگ‌سازی canonical state snapshotها پس از mutationهای موفقی که domain آن‌ها map شده است؛
+- نمایش notificationها و feedback سراسری مربوط به loading/error؛
+- ارائه‌ی UI مدیریتی فارسی و RTL با پشتیبانی از light/dark theme؛
+- حفظ رفتارهای امن و غیرآشکار lifecycle در frontend، به‌خصوص در عملیات destructive، concurrent یا چندمرحله‌ای.
 
-The frontend is not the source of truth for persisted infrastructure state. Backend/system state remains authoritative.
+Frontend، source of truth برای persisted infrastructure state نیست. state سیستم/backend مرجع نهایی و authoritative باقی می‌ماند.
 
-## Main functional areas
+## بخش‌های اصلی Application
 
-The route configuration currently exposes these application areas:
+Route configuration فعلی، بخش‌های زیر را در application ارائه می‌کند:
 
-| Area | Route | Primary purpose | Status |
+| بخش | Route | کاربرد اصلی | وضعیت |
 | --- | --- | --- | --- |
-| Login | `/login` | Authenticate the operator | Implemented |
-| Dashboard | `/dashboard` | High-level system and storage monitoring | Implemented |
-| Disks | `/disks` | Inspect and manage disk-related state | Implemented |
-| Integrated Storage | `/Integrated-space` | Manage integrated/ZFS pool storage | Implemented |
-| Block Storage | `/block-space` | Manage block-storage Volumes | Implemented |
-| File System | `/file-system` | Manage filesystems and related properties | Implemented |
-| Services | `/services` | Inspect and control system services | Implemented |
-| Users | `/users` | Manage OS/Samba user bridge | Implemented with one placeholder tab |
-| Settings | `/settings` | General/network/Web-user configuration | Implemented |
-| SMB Share | `/share` | Manage Samba/SMB sharing | Implemented |
-| NFS Share | `/share-nfs` | Manage NFS shares | Implemented |
-| Web Share | `/web-share` | Manage Web Share functionality | Implemented |
-| History | `/history` | Historical/audit-oriented UI | Placeholder only |
-| SNMP | `/snmp-service` | Inspect/configure/test SNMP | Implemented |
+| Login | `/login` | احراز هویت Operator | پیاده‌سازی شده |
+| Dashboard | `/dashboard` | مانیتورینگ سطح بالای سیستم و Storage | پیاده‌سازی شده |
+| Disks | `/disks` | مشاهده و مدیریت state مربوط به diskها | پیاده‌سازی شده |
+| Integrated Storage | `/Integrated-space` | مدیریت Storage یکپارچه مبتنی بر ZFS/pool | پیاده‌سازی شده |
+| Block Storage | `/block-space` | مدیریت Volumeهای block storage | پیاده‌سازی شده |
+| File System | `/file-system` | مدیریت filesystemها و propertyهای مرتبط | پیاده‌سازی شده |
+| Services | `/services` | مشاهده و کنترل serviceهای سیستم | پیاده‌سازی شده |
+| Users | `/users` | مدیریت ارتباط OS/Samba user | پیاده‌سازی شده، با یک tab در حالت placeholder |
+| Settings | `/settings` | تنظیمات عمومی/network و Web User | پیاده‌سازی شده |
+| SMB Share | `/share` | مدیریت Samba/SMB sharing | پیاده‌سازی شده |
+| NFS Share | `/share-nfs` | مدیریت NFS shareها | پیاده‌سازی شده |
+| Web Share | `/web-share` | مدیریت قابلیت Web Share | پیاده‌سازی شده |
+| History | `/history` | UI مرتبط با history/audit | فقط placeholder |
+| SNMP | `/snmp-service` | مشاهده/configure/test کردن SNMP | پیاده‌سازی شده |
 
-All application routes except `/login` are mounted below a protected layout.
+تمام application routeها به‌جز `/login` زیر یک protected layout mount می‌شوند.
 
-Every routed area has a feature document under [`../05-features/`](../05-features/); History explicitly documents its placeholder state rather than inventing unimplemented behavior.
+برای هر routed area یک feature document در [`../05-features/`](../05-features/) وجود دارد؛ مستند History نیز به‌صورت صریح placeholder بودن آن را توضیح می‌دهد و behavior پیاده‌سازی‌نشده‌ای را فرض نمی‌کند.
 
-## Technology stack
+## Technology Stack
 
-The current frontend stack includes:
+Frontend فعلی از stack زیر استفاده می‌کند:
 
 - React 19
 - TypeScript 5.8
@@ -65,14 +65,14 @@ The current frontend stack includes:
 - Zod
 - Tailwind CSS 4
 - Emotion / Styled Components
-- Three.js with React Three Fiber and Drei
+- Three.js همراه با React Three Fiber و Drei
 - react-hot-toast
 
-See `package.json` for exact dependency versions.
+برای version دقیق dependencyها به `package.json` مراجعه کنید.
 
-The presence of a dependency does not imply that it is the preferred solution for every new feature. Follow the established ownership patterns unless an architectural change is intentional and documented.
+صرف وجود یک dependency به این معنی نیست که برای هر feature جدید نیز همان گزینه انتخاب ترجیحی است. تا زمانی که یک تغییر معماری آگاهانه و مستند انجام نشده، ownership patternهای موجود باید رعایت شوند.
 
-## Runtime ownership model
+## مدل Ownership در Runtime
 
 ```mermaid
 flowchart TD
@@ -89,15 +89,15 @@ flowchart TD
     Theme[Theme + RTL Providers] --> UI
 ```
 
-Detailed runtime/data ownership:
+جزئیات ownership مربوط به runtime/data در مستندات زیر آمده است:
 
 - [`../02-architecture/frontend-architecture.md`](../02-architecture/frontend-architecture.md)
 - [`../02-architecture/runtime-flow.md`](../02-architecture/runtime-flow.md)
 - [`../02-architecture/data-flow.md`](../02-architecture/data-flow.md)
 
-## Application bootstrap
+## Bootstrap کردن Application
 
-`src/main.tsx` initializes application-wide providers in this order:
+`src/main.tsx` providerهای سراسری application را با ترتیب زیر initialize می‌کند:
 
 ```text
 StrictMode
@@ -108,129 +108,129 @@ StrictMode
                 └── App
 ```
 
-`App` then connects the MUI theme, global toaster, global loader, and router.
+سپس `App`، MUI theme، toaster سراسری، global loader و router را متصل می‌کند.
 
-This provider structure matters because authentication, query caching, RTL styling, and theme state are cross-cutting concerns used by otherwise independent feature modules.
+این ساختار providerها مهم است، زیرا authentication، query caching، RTL styling و theme state همگی concernهای cross-cutting هستند که feature moduleهای مستقل از آن‌ها استفاده می‌کنند.
 
-## Authentication and session model
+## مدل Authentication و Session
 
-Authentication is coordinated through `AuthProvider`, `axiosInstance`, `authApi`, `authEvents`, `tokenStorage`, and session-activity logic.
+Authentication با همکاری `AuthProvider`، `axiosInstance`، `authApi`، `authEvents`، `tokenStorage` و منطق session activity مدیریت می‌شود.
 
-Important contracts:
+Contractهای مهم:
 
-- access token is kept in memory rather than persisted to browser storage;
-- refresh token and username are scoped to `sessionStorage` when available;
-- legacy persisted access-token values are proactively removed;
-- existing access state is verified/restored before unnecessary refresh where applicable;
-- if access state cannot be restored but refresh token exists, frontend attempts token refresh;
-- 401 recovery serializes refresh so simultaneous failed requests do not create refresh storms;
-- authenticated sessions use an idle-activity timeout;
-- protected routes wait for auth initialization before redirecting;
-- authentication bypass is allowed only in development with the dedicated flag.
+- access token به‌جای persist شدن در browser storage فقط در memory نگهداری می‌شود؛
+- refresh token و username در صورت در دسترس بودن `sessionStorage`، در همان scope ذخیره می‌شوند؛
+- access tokenهای قدیمی که قبلاً persist شده‌اند به‌صورت proactive حذف می‌شوند؛
+- در صورت امکان، access state موجود پیش از refresh غیرضروری verify/restore می‌شود؛
+- اگر access state قابل بازیابی نباشد ولی refresh token موجود باشد، frontend تلاش می‌کند token را refresh کند؛
+- recovery مربوط به 401، refresh را serialize می‌کند تا requestهای هم‌زمان failشده باعث refresh storm نشوند؛
+- authenticated sessionها از idle-activity timeout استفاده می‌کنند؛
+- protected routeها پیش از redirect منتظر پایان auth initialization می‌مانند؛
+- authentication bypass فقط در development و با flag اختصاصی مجاز است.
 
-Canonical references:
+مراجع canonical:
 
 - [`../04-core-flows/authentication.md`](../04-core-flows/authentication.md)
 - [`../06-api/authentication-api.md`](../06-api/authentication-api.md)
 
-## Server state and React Query
+## Server State و React Query
 
-TanStack React Query owns authoritative backend state cached for the UI.
+TanStack React Query مالک state معتبر backend است که برای UI در frontend cache می‌شود.
 
-Current global query defaults include:
+Global query defaultهای فعلی شامل موارد زیر هستند:
 
-- no automatic retry;
-- refetch on mount;
-- no global refetch on window focus;
-- no global refetch on reconnect;
-- a short stale window;
-- finite query garbage-collection time.
+- automatic retry غیرفعال است؛
+- هنگام mount شدن refetch انجام می‌شود؛
+- global refetch هنگام window focus غیرفعال است؛
+- global refetch هنگام reconnect غیرفعال است؛
+- stale window کوتاهی وجود دارد؛
+- query garbage-collection time محدود است.
 
-Feature hooks can define more specific polling, stale-time, focus, or invalidation behavior.
+Feature hookها می‌توانند behavior دقیق‌تری برای polling، stale-time، focus یا invalidation تعریف کنند.
 
-Canonical references:
+مراجع canonical:
 
 - [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
 - [`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md)
 
-## Persistence and canonical state synchronization
+## Persistence و Canonical State Synchronization
 
-One of the most important project-specific contracts is the separation between ordinary API traffic and persisted state snapshots.
+یکی از مهم‌ترین contractهای اختصاصی پروژه، جداسازی API traffic عادی از persisted state snapshotها است.
 
-Normal reads, polling requests, route-driven refetches, and ordinary mutations are not allowed to directly request database snapshot persistence. The transport layer normalizes normal `/api/` traffic to `save_to_db=false`.
+Readهای عادی، polling requestها، refetchهای ناشی از route و mutationهای معمول مجاز نیستند به‌صورت مستقیم persistence مربوط به database snapshot را درخواست کنند. Transport layer، requestهای عادی `/api/` را به `save_to_db=false` normalize می‌کند.
 
-`StateSyncManager` is the single frontend owner of canonical persisted snapshot requests. After a successful mapped mutation, affected domains are resolved and canonical GET snapshots are scheduled. Those internally marked snapshot requests are the only frontend requests converted to `save_to_db=true`.
+`StateSyncManager` تنها owner در frontend برای درخواست canonical persisted snapshot است. پس از یک mutation موفق که mapping مربوط به آن تعریف شده، domainهای تحت تأثیر resolve می‌شوند و canonical GET snapshotها schedule می‌شوند. فقط همین snapshot requestهایی که به‌صورت داخلی mark شده‌اند توسط frontend به `save_to_db=true` تبدیل می‌شوند.
 
-This ensures persistence is based on authoritative post-operation state instead of an optimistic/incomplete mutation payload.
+این design تضمین می‌کند persistence بر اساس authoritative post-operation state انجام شود، نه بر اساس mutation payload خوش‌بینانه یا ناقص.
 
-Canonical reference:
+مرجع canonical:
 
 [`../04-core-flows/state-sync-save-to-db.md`](../04-core-flows/state-sync-save-to-db.md)
 
-## API integration
+## API Integration
 
-Shared API behavior is documented centrally:
+Behavior مشترک API به‌صورت مرکزی در مستندات زیر تعریف شده است:
 
 - [`../06-api/api-conventions.md`](../06-api/api-conventions.md)
 - [`../06-api/endpoint-map.md`](../06-api/endpoint-map.md)
 - [`../06-api/error-handling.md`](../06-api/error-handling.md)
 
-Feature code should use these conventions rather than introducing parallel transport/persistence/error models.
+Feature code باید از همین conventionها استفاده کند و transport/persistence/error model موازی ایجاد نکند.
 
-## Polling and refresh behavior
+## رفتار Polling و Refresh
 
-Polling is selective. Live telemetry such as CPU, memory, network bandwidth, service state, and selected storage-health resources can poll while required. Administrative collections without live-update requirements generally rely on mount/refetch/mutation invalidation instead of continuous polling.
+Polling به‌صورت selective انجام می‌شود. Live telemetry مانند CPU، memory، network bandwidth، service state و برخی resourceهای مربوط به storage health می‌توانند در زمان نیاز poll شوند. Collectionهای مدیریتی که نیاز به live update ندارند، معمولاً به‌جای continuous polling از mount/refetch/mutation invalidation استفاده می‌کنند.
 
-Canonical inventory:
+فهرست canonical:
 
 [`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md)
 
-## UI language and direction
+## زبان و جهت UI
 
-The application is primarily a Persian administrative interface and uses RTL styling support.
+Application عمدتاً یک interface مدیریتی فارسی است و از RTL styling support استفاده می‌کند.
 
-Source-code identifiers and engineering comments remain English so code/library conventions stay consistent. User-facing copy can remain Persian where appropriate.
+Identifierهای سورس‌کد و commentهای مهندسی انگلیسی باقی می‌مانند تا conventionهای code/library یکپارچه بمانند. متن‌های user-facing در محل مناسب فارسی هستند.
 
-See ADR-005 for RTL design rationale:
+برای rationale مربوط به RTL design به ADR-005 مراجعه کنید:
 
 [`../02-architecture/decisions/ADR-005-rtl-emotion-cache.md`](../02-architecture/decisions/ADR-005-rtl-emotion-cache.md)
 
-## Build and deployment model
+## مدل Build و Deployment
 
-The repository builds to a static Vite artifact:
+Repository با Vite به یک static artifact تبدیل می‌شود:
 
 ```text
 dist/
 ```
 
-A production static web server such as Nginx can serve the artifact with SPA fallback for browser-history routes.
+در production می‌توان این artifact را با static web serverای مانند Nginx و همراه با SPA fallback برای browser-history routeها serve کرد.
 
-Current repository does not contain CI/CD workflows, Dockerfile, or Nginx config; operations documentation records the deployment contract without claiming automation that does not exist.
+Repository در حال حاضر workflow مربوط به frontend validation در GitHub Actions را دارد که `npm ci`، `npm run lint` و `npm run build` را اجرا می‌کند. با این حال Dockerfile یا Nginx config production در repository نگهداری نمی‌شود؛ بنابراین مستندات operations قرارداد deployment را توضیح می‌دهند و وجود automation مربوط به deployment را فرض نمی‌کنند.
 
-References:
+مراجع:
 
 - [`../07-operations/build.md`](../07-operations/build.md)
 - [`../07-operations/deployment.md`](../07-operations/deployment.md)
 - [`../07-operations/troubleshooting.md`](../07-operations/troubleshooting.md)
 
-## High-risk areas for future changes
+## بخش‌های پرریسک برای تغییرات آینده
 
-Take extra care when modifying:
+هنگام تغییر موارد زیر باید دقت بیشتری داشت:
 
-- `src/lib/axiosInstance.ts` — authentication refresh, transport policy, error handling, StateSync scheduling;
-- `src/lib/stateSyncManager.ts` — persistence ownership, cross-domain dependencies, coalescing, race protection;
-- `src/contexts/AuthContext.tsx` — session restoration, logout behavior, token lifecycle;
-- `src/lib/tokenStorage.ts` — security-sensitive token-storage policy;
-- `src/hooks/useSessionActivityTimeout.ts` — session expiry across reload/focus/visibility changes;
-- global React Query configuration in `src/main.tsx` — cache/refetch behavior across the UI;
-- multi-request workflows with partial-success semantics;
-- service/power/network/system mutations that affect availability.
+- `src/lib/axiosInstance.ts` — authentication refresh، transport policy، error handling و StateSync scheduling؛
+- `src/lib/stateSyncManager.ts` — persistence ownership، cross-domain dependencyها، coalescing و race protection؛
+- `src/contexts/AuthContext.tsx` — session restoration، logout behavior و token lifecycle؛
+- `src/lib/tokenStorage.ts` — policy حساس به امنیت مربوط به token storage؛
+- `src/hooks/useSessionActivityTimeout.ts` — session expiry در reload/focus/visibility changeها؛
+- global React Query configuration در `src/main.tsx` — behavior مربوط به cache/refetch در کل UI؛
+- workflowهای چند-requestی با semantics مربوط به partial success؛
+- mutationهای service/power/network/system که روی availability اثر می‌گذارند.
 
-Read the relevant architecture/core-flow/API/feature document and inspect callers before treating any high-risk file as isolated code.
+پیش از این‌که هر فایل پرریسک را به‌عنوان code مستقل در نظر بگیرید، مستند architecture/core-flow/API/feature مرتبط را بخوانید و callerهای آن را بررسی کنید.
 
-## Documentation status
+## وضعیت Documentation
 
-The main documentation structure is now populated across:
+ساختار اصلی مستندات اکنون در بخش‌های زیر تکمیل شده است:
 
 ```text
 01-overview
@@ -242,4 +242,4 @@ The main documentation structure is now populated across:
 07-operations
 ```
 
-Remaining work should focus on final consistency/source audit, executable validation, and keeping documentation synchronized with future behavior changes rather than creating a second competing documentation structure.
+کارهای بعدی باید بر consistency audit نهایی نسبت به source، executable validation و همگام نگه‌داشتن مستندات با تغییرات behavior در آینده متمرکز باشند؛ نه ایجاد یک ساختار مستندسازی موازی و رقیب.
