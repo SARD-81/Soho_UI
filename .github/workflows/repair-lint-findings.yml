@@ -19,157 +19,152 @@ jobs:
         with:
           ref: agent/project-documentation-audit
 
-      - name: Apply guarded lint repairs
+      - name: Apply lint repairs
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
-          def replace_once(path_str: str, old: str, new: str) -> None:
+          def load(path_str: str):
               path = Path(path_str)
-              text = path.read_text(encoding='utf-8')
-              if old not in text:
-                  raise RuntimeError(f'Expected snippet not found in {path_str}: {old[:80]!r}')
-              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+              return path, path.read_text(encoding='utf-8')
 
-          replace_once(
-              'src/hooks/useDisk.ts',
-              '    return !Boolean(data.data?.has_partitions);',
-              '    return !data.data?.has_partitions;',
-          )
+          def save(path: Path, before: str, after: str):
+              if after != before:
+                  path.write_text(after, encoding='utf-8')
+                  print(f'updated {path}')
+              else:
+                  print(f'no change {path}')
 
-          replace_once(
-              'src/main.tsx',
-              '  let client: QueryClient;\n\n  const mutationCache = new MutationCache({',
-              '  const mutationCache = new MutationCache({',
+          path, text = load('src/hooks/useDisk.ts')
+          updated = text.replace(
+              'return !Boolean(data.data?.has_partitions);',
+              'return !data.data?.has_partitions;',
+              1,
           )
-          replace_once(
-              'src/main.tsx',
+          save(path, text, updated)
+
+          path, text = load('src/main.tsx')
+          updated = text.replace('  let client: QueryClient;\n\n', '', 1)
+          updated = updated.replace(
               '  client = new QueryClient({',
               '  const client = new QueryClient({',
+              1,
           )
+          save(path, text, updated)
 
-          replace_once(
-              'src/components/integrated-storage/PoolsTable.tsx',
+          path, text = load('src/components/integrated-storage/PoolsTable.tsx')
+          updated = text.replace(
               '      onDelete,\n      onEdit,\n      onAddDevices,',
               '      onDelete,\n      onAddDevices,',
+              1,
           )
+          save(path, text, updated)
 
-          replace_once(
-              'src/components/integrated-storage/SelectedPoolsDetailsPanel.tsx',
-              """  const attributeSort = useMemo(
-              () =>
-                createPriorityAwareComparatorFromRecords(
-                  comparisonValues,
-                  'fa-IR',
-                  comparisonPriority
-                ),
-              [comparisonPriority, comparisonValues]
-            );""",
+          path, text = load(
+              'src/components/integrated-storage/SelectedPoolsDetailsPanel.tsx'
+          )
+          updated = re.sub(
+              r"  const attributeSort = useMemo\(\s*\(\) =>\s*createPriorityAwareComparatorFromRecords\(\s*comparisonValues,\s*'fa-IR',\s*comparisonPriority\s*\),\s*\[comparisonPriority, comparisonValues\]\s*\);",
               """  const attributeSort = createPriorityAwareComparatorFromRecords(
-              comparisonValues,
-              'fa-IR',
-              comparisonPriority
-            );""",
+            comparisonValues,
+            'fa-IR',
+            comparisonPriority
+          );""",
+              text,
+              count=1,
+              flags=re.S,
           )
+          save(path, text, updated)
 
-          replace_once(
-              'src/components/share/ManageShareMembersModal.tsx',
+          path, text = load('src/components/share/ManageShareMembersModal.tsx')
+          updated = text.replace(
               '  const currentAccessMembers = membersQuery.data ?? [];',
               """  const currentAccessMembers = useMemo(
-              () => membersQuery.data ?? [],
-              [membersQuery.data]
-            );""",
+            () => membersQuery.data ?? [],
+            [membersQuery.data]
+          );""",
+              1,
           )
+          save(path, text, updated)
 
-          replace_once(
-              'src/components/users/OsUsersTable.tsx',
+          path, text = load('src/components/users/OsUsersTable.tsx')
+          updated = re.sub(
+              r"const OsUsersTable = \(\{\s*users,\s*isLoading,\s*error,\s*isSambaStatusLoading,\s*onCreateSambaUser,\s*\}: OsUsersTableProps\) => \{",
               """const OsUsersTable = ({
-              users,
-              isLoading,
-              error,
-              isSambaStatusLoading,
-              onCreateSambaUser,
-            }: OsUsersTableProps) => {""",
-              """const OsUsersTable = ({
-              users,
-              isLoading,
-              error,
-            }: OsUsersTableProps) => {""",
+            users,
+            isLoading,
+            error,
+          }: OsUsersTableProps) => {""",
+              text,
+              count=1,
+              flags=re.S,
           )
-          replace_once(
-              'src/components/users/OsUsersTable.tsx',
+          updated = updated.replace(
               '    [isSambaStatusLoading, onCreateSambaUser]\n',
               '    []\n',
+              1,
           )
+          save(path, text, updated)
 
-          replace_once(
-              'src/pages/FileSystem.tsx',
-              """  const filesystemEntries = data?.filesystems ?? [];
-            const filesystems = useMemo(
-              () =>
-                [...filesystemEntries].sort((a, b) =>
-                  a.filesystemName.localeCompare(b.filesystemName, 'en', {
-                    sensitivity: 'base',
-                  })
-                ),
-              [filesystemEntries]
-            );""",
+          path, text = load('src/pages/FileSystem.tsx')
+          updated = re.sub(
+              r"  const filesystemEntries = data\?\.filesystems \?\? \[\];\s*const filesystems = useMemo\(\s*\(\) =>\s*\[\.\.\.filesystemEntries\]\.sort\(\(a, b\) =>\s*a\.filesystemName\.localeCompare\(b\.filesystemName, 'en', \{\s*sensitivity: 'base',\s*\}\)\s*\),\s*\[filesystemEntries\]\s*\);",
               """  const filesystems = useMemo(
-              () =>
-                [...(data?.filesystems ?? [])].sort((a, b) =>
-                  a.filesystemName.localeCompare(b.filesystemName, 'en', {
-                    sensitivity: 'base',
-                  })
-                ),
-              [data?.filesystems]
-            );""",
+            () =>
+              [...(data?.filesystems ?? [])].sort((a, b) =>
+                a.filesystemName.localeCompare(b.filesystemName, 'en', {
+                  sensitivity: 'base',
+                })
+              ),
+            [data?.filesystems]
+          );""",
+              text,
+              count=1,
+              flags=re.S,
           )
+          save(path, text, updated)
 
-          replace_once(
-              'src/components/NavigationDrawer.tsx',
-              """  const isItemActive = (item: NavigationItem): boolean => {
+          path, text = load('src/components/NavigationDrawer.tsx')
+          updated = re.sub(
+              r"  const isItemActive = \(item: NavigationItem\): boolean => \{\s*const matchesCurrentPath =\s*location\.pathname === item\.path \|\|\s*location\.pathname\.startsWith\(`\$\{item\.path\}/`\);\s*return \(\s*matchesCurrentPath \|\|\s*\(item\.children\?\.some\(\(child\) => isItemActive\(child\)\) \?\? false\)\s*\);\s*\};",
+              """  const isItemActive = React.useCallback(
+            (item: NavigationItem): boolean => {
+              const checkItemActive = (currentItem: NavigationItem): boolean => {
                 const matchesCurrentPath =
-                  location.pathname === item.path ||
-                  location.pathname.startsWith(`${item.path}/`);
+                  location.pathname === currentItem.path ||
+                  location.pathname.startsWith(`${currentItem.path}/`);
 
                 return (
                   matchesCurrentPath ||
-                  (item.children?.some((child) => isItemActive(child)) ?? false)
+                  (currentItem.children?.some(checkItemActive) ?? false)
                 );
-              };""",
-              """  const isItemActive = React.useCallback(
-                (item: NavigationItem): boolean => {
-                  const checkItemActive = (currentItem: NavigationItem): boolean => {
-                    const matchesCurrentPath =
-                      location.pathname === currentItem.path ||
-                      location.pathname.startsWith(`${currentItem.path}/`);
+              };
 
-                    return (
-                      matchesCurrentPath ||
-                      (currentItem.children?.some(checkItemActive) ?? false)
-                    );
-                  };
-
-                  return checkItemActive(item);
-                },
-                [location.pathname]
-              );""",
+              return checkItemActive(item);
+            },
+            [location.pathname]
+          );""",
+              text,
+              count=1,
+              flags=re.S,
           )
-          replace_once(
-              'src/components/NavigationDrawer.tsx',
+          updated = updated.replace(
               '}, [location.pathname]);',
               '  }, [isItemActive]);',
+              1,
           )
-          replace_once(
-              'src/components/NavigationDrawer.tsx',
+          updated = updated.replace(
               '          const itemKey = getItemKey(item); // استفاده از تابع getItemKey',
               '          const itemKey = getItemKey(item);',
+              1,
           )
-          replace_once(
-              'src/components/NavigationDrawer.tsx',
+          updated = updated.replace(
               '    return item.path || item.text; // اگر path وجود داشت از آن استفاده کن، در غیر این صورت از text',
               '    return item.path || item.text;',
+              1,
           )
+          save(path, text, updated)
           PY
 
       - name: Commit repairs when needed
