@@ -26,14 +26,16 @@ export const useUpdateSambaUserPassword = ({
         username,
         action: 'change_password',
         new_password,
-        save_to_db: false,
       }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sambaUsersQueryKey });
       onSuccess?.(variables.username);
     },
     onError: (error) => {
-      const message = extractApiErrorMessage(error, 'تغییر رمز عبور کاربر اشتراک فایل با خطا مواجه شد.');
+      const message = extractApiErrorMessage(
+        error,
+        'تغییر رمز عبور کاربر اشتراک فایل با خطا مواجه شد.'
+      );
       onError?.(message);
     },
   });
