@@ -17,7 +17,7 @@ export const fetchSambaUsers = async ({
   const { data } = await axiosInstance.get<SambaUsersResponse>(
     SAMBA_USERS_BASE_URL,
     {
-      params: { property: 'all', save_to_db: true },
+      params: { property: 'all' },
       signal,
     }
   );
@@ -109,34 +109,25 @@ export const fetchSambaUserAccountFlags = async (
 export const createSambaUser = async ({
   username,
   password,
-  save_to_db = true,
 }: CreateSambaUserPayload): Promise<void> => {
   await axiosInstance.post(SAMBA_USERS_BASE_URL, {
     username,
     password,
-    save_to_db,
   });
 };
 
 export const deleteSambaUser = async (username: string): Promise<void> => {
   const encodedUsername = encodeURIComponent(username);
-
-  await axiosInstance.delete(`${SAMBA_USERS_BASE_URL}${encodedUsername}/`, {
-    params: { save_to_db: true },
-  });
+  await axiosInstance.delete(`${SAMBA_USERS_BASE_URL}${encodedUsername}/`);
 };
 
 export const updateSambaUser = async ({
   username,
   action,
   new_password,
-  save_to_db = false,
 }: UpdateSambaUserPayload): Promise<void> => {
   const encodedUsername = encodeURIComponent(username);
-  const payload: Record<string, string | SambaUserUpdateAction | boolean> = {
-    action,
-    save_to_db,
-  };
+  const payload: Record<string, string | SambaUserUpdateAction> = { action };
 
   if (action === 'change_password' && new_password) {
     payload.new_password = new_password;
