@@ -1,272 +1,272 @@
-# Polling and Data Refresh
+# Polling و Data Refresh
 
-This document is the canonical inventory of continuous server-state refresh behavior in SOHO UI.
+این سند canonical inventory مربوط به continuous server-state refresh behavior در SOHO UI است.
 
-It replaces historical polling audits as the source of truth. When this document and an old audit disagree, verify the current hook implementation and update this document.
+این سند جای historical polling auditها را به‌عنوان source of truth گرفته است. هرجا این سند با audit قدیمی اختلاف داشت، implementation فعلی hook را verify کنید و همین سند را update کنید.
 
-## Design goals
+## Design Goalها
 
-Polling exists only where data changes often enough that passive invalidation or mount-time refresh is insufficient.
+Polling فقط جایی وجود دارد که data آن‌قدر سریع تغییر می‌کند که passive invalidation یا mount-time refresh کافی نیست.
 
-The application tries to avoid:
+Application تلاش می‌کند از موارد زیر جلوگیری کند:
 
-- accidental duplicate polling for equivalent resources;
-- hidden-tab background traffic;
-- global window-focus refetch storms;
-- fast polling for slowly changing configuration data;
-- persistence side effects from observational reads.
+- duplicate polling تصادفی برای resourceهای equivalent؛
+- hidden-tab background traffic؛
+- global window-focus refetch storm؛
+- fast polling برای configuration data با تغییر کند؛
+- persistence side effect ناشی از observational read.
 
-Dedicated query keys are allowed when a subsystem intentionally needs an independent monitoring lifecycle or cadence. When that is done, document it because React Query will treat the dedicated key as a separate cache entry.
+Dedicated query key زمانی مجاز است که subsystem عمداً monitoring lifecycle یا cadence مستقل نیاز داشته باشد. در این حالت باید مستند شود، چون React Query آن key را cache entry جدا در نظر می‌گیرد.
 
-## Global defaults
+## Global Defaultها
 
-The QueryClient defaults are:
+Defaultهای QueryClient:
 
 - `refetchOnMount: 'always'`
 - `refetchOnWindowFocus: false`
 - `refetchOnReconnect: false`
 - `staleTime: 10_000`
 - `gcTime: 5 minutes`
-- query retry disabled globally
+- query retry به‌صورت global غیرفعال
 
-Feature hooks may override these defaults.
+Feature hookها می‌توانند این defaultها را override کنند.
 
-## Current polling inventory
+## Polling Inventory فعلی
 
-The following intervals were verified from the current source on the documentation branch.
+Intervalهای زیر از سورس فعلی verify شده‌اند:
 
-| Resource / monitor | Query / endpoint | Interval | Scope / behavior |
+| Resource / Monitor | Query / Endpoint | Interval | Scope / Behavior |
 | --- | --- | ---: | --- |
-| System uptime | `['system','uptime']` → `/api/system/uptime/` | 1 s | Dashboard uptime badge while mounted; background polling disabled. |
-| CPU | `['cpu']` → `/api/system/cpu/` | 2 s | While mounted; background polling disabled. |
-| Memory | `['memory']` → `/api/system/memory/` | 2 s | While mounted; background polling disabled. |
-| Network bandwidth | `['network','bandwidth-snapshots', interfaceNames]` → per-interface `/api/system/network/{name}/bandwidth/` | 2 s | Starts after interface details provide names; background polling disabled. |
-| Zpool list | `['zpool']` → `/api/zpool/` | 30 s default | Used by ordinary zpool consumers and status monitoring; background polling disabled. |
-| Available unpartitioned disks for storage dialogs | legacy key `['disk','partitioned']` | 5 s in Integrated Storage | Enabled only while create/add/replace storage workflows need eligible disks. The historical hook/key name is misleading. |
-| Pool device slots | `['zpool','devices','slots', ...]` | 30 s default | Only while the consuming view is enabled/mounted; background polling disabled. |
-| Dashboard 3D pool device slots | same pool-slot query family | 10 s caller override | `ServerSlots3DWidget` intentionally refreshes physical slot mapping faster than the hook default. |
-| Selected zpool details | `['zpool', poolName, 'details']` | 30 s when enabled | Stops when the detail query is disabled. |
-| Services list | `['services']` → `/api/system/service/` | 5 s | While mounted; background polling disabled. |
-| Individual service status | `['services','status', service.unit]` → `/api/system/service/{unit}/` | 5 s | One query per displayed service; background polling disabled. |
-| Notification capacity: zpool | `['notifications','capacity','zpool']` using `fetchZpools` | 60 s | Dedicated notification query; separate cache entry from `['zpool']`. |
-| Notification capacity: filesystems | `['notifications','capacity','filesystems']` using `fetchFileSystems` | 60 s | Dedicated notification query; separate cache entry from ordinary filesystem queries. |
-| Notification temperature: disk inventory | `['disk','inventory']` → `/api/disk/` | 30 s | Used by disk-temperature monitoring; background polling disabled. |
+| System uptime | `['system','uptime']` → `/api/system/uptime/` | 1 s | Dashboard uptime badge تا زمانی که mounted است؛ background polling غیرفعال. |
+| CPU | `['cpu']` → `/api/system/cpu/` | 2 s | تا زمانی که mounted است؛ background polling غیرفعال. |
+| Memory | `['memory']` → `/api/system/memory/` | 2 s | تا زمانی که mounted است؛ background polling غیرفعال. |
+| Network bandwidth | `['network','bandwidth-snapshots', interfaceNames]` → per-interface `/api/system/network/{name}/bandwidth/` | 2 s | پس از دریافت interface nameها شروع می‌شود؛ background polling غیرفعال. |
+| Zpool list | `['zpool']` → `/api/zpool/` | 30 s default | برای ordinary zpool consumerها و status monitoring؛ background polling غیرفعال. |
+| Available unpartitioned disks برای storage dialogها | legacy key `['disk','partitioned']` | 5 s در Integrated Storage | فقط هنگام workflowهای create/add/replace که eligible disk لازم دارند enable می‌شود. نام historical hook/key misleading است. |
+| Pool device slots | `['zpool','devices','slots', ...]` | 30 s default | فقط تا زمانی که consuming view enabled/mounted است؛ background polling غیرفعال. |
+| Dashboard 3D pool device slots | همان pool-slot query family | 10 s caller override | `ServerSlots3DWidget` عمداً physical slot mapping را سریع‌تر از hook default refresh می‌کند. |
+| Selected zpool details | `['zpool', poolName, 'details']` | 30 s وقتی enabled | با disable شدن detail query متوقف می‌شود. |
+| Services list | `['services']` → `/api/system/service/` | 5 s | تا زمانی که mounted است؛ background polling غیرفعال. |
+| Individual service status | `['services','status', service.unit]` → `/api/system/service/{unit}/` | 5 s | یک query برای هر service نمایش‌داده‌شده؛ background polling غیرفعال. |
+| Notification capacity: zpool | `['notifications','capacity','zpool']` با `fetchZpools` | 60 s | Dedicated notification query؛ cache entry جدا از `['zpool']`. |
+| Notification capacity: filesystems | `['notifications','capacity','filesystems']` با `fetchFileSystems` | 60 s | Dedicated notification query؛ cache entry جدا از ordinary filesystem query. |
+| Notification temperature: disk inventory | `['disk','inventory']` → `/api/disk/` | 30 s | برای disk-temperature monitoring؛ background polling غیرفعال. |
 
-The exact caller can override some hook defaults. When documenting a page, describe the interval actually supplied by that page, not only the hook default.
+Caller دقیق می‌تواند بعضی hook defaultها را override کند. هنگام مستندسازی یک page، interval واقعی‌ای را که همان page ارسال می‌کند ثبت کنید، نه فقط hook default را.
 
-The Services page deserves special attention because it runs one list query plus one per-unit status query every five seconds. Its request count therefore grows with the number of displayed service units.
+Services page نیازمند توجه ویژه است، چون یک list query و یک per-unit status query برای هر service را هر 5 ثانیه اجرا می‌کند. در نتیجه request count با تعداد service unitهای نمایش‌داده‌شده رشد می‌کند.
 
-## Resources without continuous polling
+## Resourceهای بدون Continuous Polling
 
-Not every backend resource should have a timer.
+هر backend resource نباید timer داشته باشد.
 
-Examples verified from current source:
+نمونه‌های verifyشده از سورس فعلی:
 
-| Resource | Refresh model |
+| Resource | Refresh Model |
 | --- | --- |
-| Filesystem list | Fetch on mount/revalidation/invalidation; `staleTime` 15 s; no continuous interval in `useFileSystems`. |
-| Volume list | Fetch on mount and mutation invalidation/manual refetch; no continuous interval. |
-| Network interface/detail discovery | `useNetwork()` loads the interface list and per-interface details without a continuous base-data interval; only bandwidth snapshots poll continuously. |
-| Disk status query used by status notifications | `useDisk()` has no interval when called without an override. |
-| Samba/NFS/Web-share configuration | Primarily mount/invalidation driven unless a specific hook explicitly adds an interval. |
-| System/configuration information | Treat as non-polling unless the current hook explicitly declares otherwise. |
+| Filesystem list | fetch هنگام mount/revalidation/invalidation؛ `staleTime` برابر 15 s؛ بدون continuous interval در `useFileSystems`. |
+| Volume list | fetch هنگام mount و mutation invalidation/manual refetch؛ بدون continuous interval. |
+| Network interface/detail discovery | `useNetwork()` interface list و per-interface detail را بدون continuous base-data interval load می‌کند؛ فقط bandwidth snapshotها poll می‌شوند. |
+| Disk status query مورد استفاده‌ی status notification | `useDisk()` وقتی بدون override call شود interval ندارد. |
+| Samba/NFS/Web-share configuration | عمدتاً mount/invalidation-driven است، مگر hook مشخصی صریحاً interval اضافه کند. |
+| System/configuration information | تا زمانی که hook فعلی صریحاً خلاف آن را تعریف نکرده، non-polling در نظر گرفته شود. |
 
-Do not add a timer merely because a page needs fresh data after a mutation. Mutation invalidation is the preferred mechanism for configuration-style state.
+صرفاً چون page بعد از mutation به data تازه نیاز دارد timer اضافه نکنید. برای configuration-style state، mutation invalidation mechanism ترجیحی است.
 
-## Telemetry versus configuration
+## Telemetry در برابر Configuration
 
-A useful distinction is:
+یک distinction مفید:
 
 ### Telemetry
 
-Values such as uptime, CPU, memory, bandwidth, temperatures, and actively observed service status can change without a user mutation. These are reasonable polling candidates.
+Valueهایی مثل uptime، CPU، memory، bandwidth، temperature و actively observed service status می‌توانند بدون frontend mutation تغییر کنند. این موارد candidate منطقی برای polling هستند.
 
-### Configuration and inventory
+### Configuration و Inventory
 
-Values such as users, shares, settings, filesystems, volumes, or one-time detail data generally change through explicit operations. Prefer query invalidation, mount-time fetches, manual refresh, and targeted refetches.
+Valueهایی مانند user، share، setting، filesystem، volume یا one-time detail data معمولاً از طریق operation صریح تغییر می‌کنند. Query invalidation، mount-time fetch، manual refresh و targeted refetch را ترجیح دهید.
 
-Storage health can sit between these categories; slower polling is used where backend/system state may change independently.
+Storage health می‌تواند بین این دو category باشد؛ جایی که backend/system state مستقل از UI تغییر می‌کند، polling کندتر استفاده می‌شود.
 
-## Background behavior
+## Background Behavior
 
-Continuous polling hooks should normally set:
+Continuous polling hookها معمولاً باید مقدار زیر را تنظیم کنند:
 
 ```ts
 refetchIntervalInBackground: false
 ```
 
-This avoids continuing administrative monitoring traffic when the tab is hidden.
+این کار مانع ادامه‌ی administrative monitoring traffic زمانی می‌شود که tab hidden است.
 
-A future exception must document why hidden-tab updates are required and what backend load is acceptable.
+هر exception آینده باید روشن کند hidden-tab update چرا لازم است و چه backend loadای قابل قبول است.
 
-## Window focus and reconnect
+## Window Focus و Reconnect
 
-Global focus/reconnect refetch is disabled.
+Global focus/reconnect refetch غیرفعال است.
 
-This prevents returning to a tab from triggering a large fan-out of requests across many mounted administrative widgets.
+در نتیجه بازگشت به یک tab، fan-out بزرگی از requestها در administrative widgetهای mountشده ایجاد نمی‌کند.
 
-A hook may override this only when the resource semantics justify it. For example, `useDiskInventory()` explicitly enables window-focus refetch for the Disks feature.
+Hook فقط زمانی باید این behavior را override کند که resource semantics آن را توجیه کند. برای مثال `useDiskInventory()` برای Disks feature به‌صورت صریح window-focus refetch را فعال می‌کند.
 
-## Mutation refresh
+## Mutation Refresh
 
-Successful mutations refresh UI state in two layers:
+Mutation موفق UI state را در دو layer refresh می‌کند:
 
-1. feature-specific `onSuccess` handlers may invalidate the exact keys they know are affected;
-2. the global `MutationCache` invalidates active queries after success.
+1. feature-specific `onSuccess` handler ممکن است keyهای دقیق تحت تأثیر را invalidate کند؛
+2. global `MutationCache` پس از success active queryها را invalidate می‌کند.
 
-Failed mutations do not trigger the global success invalidation.
+Mutation failشده global success invalidation را trigger نمی‌کند.
 
-This mechanism is separate from polling. A 30-second polling interval does not mean the UI must wait 30 seconds after a successful user action if the affected query is invalidated immediately.
+این mechanism از polling جداست. Interval برابر 30 ثانیه به این معنی نیست که پس از action موفق user باید 30 ثانیه برای update UI صبر کند؛ اگر query تحت تأثیر فوراً invalidate شود، refresh زودتر انجام می‌شود.
 
-## Polling does not persist snapshots
+## Polling Snapshot را Persist نمی‌کند
 
-All polling requests are observational.
+تمام polling requestها observational هستند.
 
-They pass through `axiosInstance`, whose transport policy ensures normal requests use `save_to_db=false`.
+آن‌ها از `axiosInstance` عبور می‌کنند و transport policy تضمین می‌کند normal requestها `save_to_db=false` داشته باشند.
 
-Database snapshot persistence is scheduled separately by `StateSyncManager` after successful mutations and during the authenticated-session baseline.
+Database snapshot persistence به‌صورت جدا توسط `StateSyncManager` پس از mutation موفق و هنگام authenticated-session baseline schedule می‌شود.
 
-Never add `save_to_db=true` to a polling hook.
+هیچ‌گاه `save_to_db=true` به polling hook اضافه نکنید.
 
-## Shared versus dedicated query consumers
+## Shared در برابر Dedicated Query Consumer
 
-React Query shares requests and cache only when consumers use the same query key and compatible query lifecycle.
+React Query فقط زمانی request/cache را share می‌کند که consumerها query key یکسان و lifecycle سازگار داشته باشند.
 
-The current notification subsystem demonstrates both models.
+Notification subsystem فعلی هر دو مدل را نشان می‌دهد.
 
-### Shared/ordinary resource keys
+### Shared/Ordinary Resource Keyها
 
-Status-change monitoring uses ordinary resource hooks:
+Status-change monitoring از ordinary resource hookها استفاده می‌کند:
 
-- pools through `useZpool()` / `['zpool']` at the default 30-second cadence;
-- disks through `useDisk()` / `['disk']` with no interval supplied by that caller;
-- services through `useServices()` / `['services']` at 5 seconds.
+- poolها از طریق `useZpool()` / `['zpool']` با default cadence برابر 30 ثانیه؛
+- diskها از طریق `useDisk()` / `['disk']` و بدون interval ارسال‌شده توسط همان caller؛
+- serviceها از طریق `useServices()` / `['services']` با 5 ثانیه.
 
-Where page-level consumers use the same key, React Query can share the cache/query lifecycle.
+هرجا page consumer همان key را استفاده کند، React Query می‌تواند cache/query lifecycle را share کند.
 
-The Dashboard also reuses the ordinary `['zpool']` resource key in multiple widgets rather than inventing a dashboard-only zpool cache.
+Dashboard نیز ordinary `['zpool']` resource key را در چند widget reuse می‌کند و dashboard-only zpool cache نمی‌سازد.
 
-### Dedicated notification keys
+### Dedicated Notification Keyها
 
-Capacity monitoring intentionally has independent query entries:
+Capacity monitoring عمداً query entry مستقل دارد:
 
-- `['notifications','capacity','zpool']` every 60 seconds;
-- `['notifications','capacity','filesystems']` every 60 seconds.
+- `['notifications','capacity','zpool']` هر 60 ثانیه؛
+- `['notifications','capacity','filesystems']` هر 60 ثانیه.
 
-These use the same fetch functions as ordinary resource queries but not the same query keys. They can therefore generate independent network requests.
+این‌ها همان fetch function ordinary resource query را استفاده می‌کنند، ولی query key یکسان ندارند؛ بنابراین می‌توانند network request مستقل ایجاد کنند.
 
-Disk-temperature monitoring also uses the disk-inventory key `['disk','inventory']` every 30 seconds.
+Disk-temperature monitoring نیز از disk-inventory key یعنی `['disk','inventory']` هر 30 ثانیه استفاده می‌کند.
 
-Do not describe two different query keys as deduplicated merely because they hit the same endpoint or reuse the same fetch function.
+دو query key متفاوت را صرفاً چون به endpoint یکسان می‌خورند یا fetch function مشترک دارند deduplicated توصیف نکنید.
 
-## Conditional polling
+## Conditional Polling
 
-Polling should stop when the user cannot benefit from it.
+Polling باید زمانی که user دیگر از آن سودی نمی‌برد متوقف شود.
 
-Examples:
+نمونه‌ها:
 
-- the legacy `usePartitionedDisks` query is enabled only while storage mutation dialogs need available unpartitioned disks;
-- zpool detail polling runs only for selected/enabled details;
-- Integrated Storage pool-slot mapping starts only after slot-dependent UI is requested;
-- bandwidth polling depends on discovered interface names;
-- notification monitors exist while `NotificationBootstrapper` is mounted in the authenticated layout.
+- legacy `usePartitionedDisks` query فقط زمانی enabled است که storage mutation dialog به available unpartitioned disk نیاز دارد؛
+- zpool detail polling فقط برای detail انتخاب‌شده/enabled اجرا می‌شود؛
+- Integrated Storage pool-slot mapping فقط بعد از نیاز UI به slot شروع می‌شود؛
+- bandwidth polling به interface nameهای discoverشده وابسته است؛
+- notification monitorها تا زمانی وجود دارند که `NotificationBootstrapper` در authenticated layout mount باشد.
 
-Prefer `enabled` or `refetchInterval: false/undefined` over leaving a hidden feature timer alive.
+استفاده از `enabled` یا `refetchInterval: false/undefined` را به زنده نگه‌داشتن timer مربوط به hidden feature ترجیح دهید.
 
-## Choosing an interval
+## انتخاب Interval
 
-When adding or changing polling, consider:
+هنگام اضافه‌کردن یا تغییر polling این پرسش‌ها را بررسی کنید:
 
-1. How quickly can the backend value change without a frontend mutation?
-2. How quickly does the operator need to see the change?
-3. How expensive is the endpoint?
-4. How many instances of the query can be mounted simultaneously?
-5. Does the endpoint fan out to hardware/system commands?
-6. Can an existing query key satisfy the same semantics and cadence?
-7. Is a dedicated query key intentionally required?
-8. Should the timer stop when a modal/page/detail view closes?
-9. Is invalidation sufficient instead of polling?
+1. Backend value بدون frontend mutation با چه سرعتی می‌تواند تغییر کند؟
+2. Operator با چه سرعتی باید change را ببیند؟
+3. Endpoint چقدر expensive است؟
+4. چند instance از query ممکن است هم‌زمان mount باشد؟
+5. آیا endpoint به hardware/system command fan-out می‌کند؟
+6. آیا query key موجود می‌تواند همان semantics و cadence را پوشش دهد؟
+7. آیا dedicated query key عمداً لازم است؟
+8. آیا timer هنگام بسته‌شدن modal/page/detail view باید متوقف شود؟
+9. آیا invalidation به‌جای polling کافی است؟
 
-Avoid arbitrary intervals. If a value only needs to update every 30 seconds, do not poll it every 2 seconds.
+Interval تصادفی انتخاب نکنید. اگر value فقط هر 30 ثانیه update نیاز دارد، آن را هر 2 ثانیه poll نکنید.
 
-## Polling tiers used by the current UI
+## Polling Tierهای UI فعلی
 
-A practical mental model for the existing application is:
+یک mental model عملی برای application فعلی:
 
-- **1 second:** the dashboard uptime display;
-- **2 seconds:** high-frequency dashboard telemetry such as CPU, memory, and bandwidth;
-- **5 seconds:** operational status or short-lived workflow state such as services and modal-scoped available-disk checks;
-- **10 seconds:** Dashboard 3D physical slot mapping override;
-- **30 seconds:** slower storage-state monitoring, pool details, default device-slot mapping, and disk-temperature inventory;
-- **60 seconds:** notification-specific capacity monitoring;
-- **no interval:** configuration/inventory data refreshed by lifecycle and invalidation.
+- **1 ثانیه:** Dashboard uptime؛
+- **2 ثانیه:** high-frequency telemetry مانند CPU، memory و bandwidth؛
+- **5 ثانیه:** operational status یا short-lived workflow state مانند serviceها و modal-scoped available-disk check؛
+- **10 ثانیه:** Dashboard 3D physical slot mapping override؛
+- **30 ثانیه:** slower storage-state monitoring، pool detail، default device-slot mapping و disk-temperature inventory؛
+- **60 ثانیه:** notification-specific capacity monitoring؛
+- **بدون interval:** configuration/inventory data که از lifecycle و invalidation refresh می‌شود.
 
-These are conventions observed in the current code, not immutable constants. Any change should be justified by product and backend behavior.
+این‌ها conventionهای مشاهده‌شده در code فعلی‌اند، نه constantهای immutable. هر تغییر باید با product و backend behavior توجیه شود.
 
-## Manual refresh
+## Manual Refresh
 
-A manual refresh, where present, should call React Query refetch/invalidation and remain an observational read.
+Manual refresh در محل‌هایی که وجود دارد باید React Query refetch/invalidation را call کند و observational read باقی بماند.
 
-It must not:
+نباید:
 
-- trigger a database snapshot directly;
-- set `save_to_db=true`;
-- duplicate a mutation;
-- reset unrelated caches.
+- database snapshot را مستقیم trigger کند؛
+- `save_to_db=true` تنظیم کند؛
+- mutation را duplicate کند؛
+- cacheهای نامرتبط را reset کند.
 
-Block Storage currently exposes a manual Volume refresh through the page header while leaving `['volumes']` non-polling.
+Block Storage در حال حاضر manual Volume refresh را از page header ارائه می‌دهد، در حالی که `['volumes']` non-polling باقی می‌ماند.
 
-## Notifications and polling
+## Notificationها و Polling
 
-Notifications use a mix of ordinary shared resource keys and dedicated monitoring queries.
+Notificationها ترکیبی از ordinary shared resource key و dedicated monitoring query استفاده می‌کنند.
 
-Current examples:
+نمونه‌های فعلی:
 
-- capacity monitoring uses dedicated zpool/filesystem keys at 60 seconds;
-- pool status monitoring uses the ordinary zpool key at its 30-second default;
-- service status-change monitoring observes the ordinary 5-second services query;
-- disk status-change monitoring calls the ordinary disk hook without adding an interval;
-- temperature monitoring uses the disk-inventory key at 30 seconds.
+- capacity monitoring از dedicated zpool/filesystem key با 60 ثانیه استفاده می‌کند؛
+- pool status monitoring از ordinary zpool key با default برابر 30 ثانیه استفاده می‌کند؛
+- service status-change monitoring ordinary services query پنج‌ثانیه‌ای را observe می‌کند؛
+- disk status-change monitoring ordinary disk hook را بدون interval اضافی call می‌کند؛
+- temperature monitoring از disk-inventory key با 30 ثانیه استفاده می‌کند.
 
-See [`notifications.md`](./notifications.md) for thresholds, baselines, fingerprints, and duplicate suppression.
+برای threshold، baseline، fingerprint و duplicate suppression به [`notifications.md`](./notifications.md) مراجعه کنید.
 
-## Debugging duplicate requests
+## Debug کردن Duplicate Request
 
-If an endpoint appears more often than expected in DevTools:
+اگر endpoint در DevTools بیشتر از انتظار دیده می‌شود:
 
-1. identify the React Query key for each request;
-2. check whether two consumers intentionally use different keys for equivalent backend data;
-3. inspect notification-specific capacity keys before assuming React Query deduplication failed;
-4. for Services, account for the intentional one-list-plus-N-status query model;
-5. check whether mutation invalidation occurred near a scheduled interval;
-6. check whether a mount/unmount cycle is causing revalidation;
-7. verify the query is not accidentally enabled in a hidden modal/detail component;
-8. inspect caller-specific interval overrides such as the 3D server slot view;
-9. inspect React StrictMode only after query ownership and keys are understood.
+1. React Query key هر request را مشخص کنید؛
+2. بررسی کنید دو consumer عمداً از key متفاوت برای equivalent backend data استفاده نمی‌کنند؛
+3. پیش از فرض failure در React Query deduplication، notification-specific capacity keyها را بررسی کنید؛
+4. در Services، مدل intentional شامل one-list-plus-N-status query را حساب کنید؛
+5. بررسی کنید mutation invalidation نزدیک scheduled interval رخ نداده باشد؛
+6. بررسی کنید mount/unmount cycle باعث revalidation نشده باشد؛
+7. verify کنید query به‌اشتباه داخل hidden modal/detail component enabled نباشد؛
+8. caller-specific interval override مانند 3D server slot view را بررسی کنید؛
+9. فقط پس از روشن‌شدن query ownership و keyها سراغ React StrictMode بروید.
 
-A request visible twice with different keys is two independent query entries, not a cache-deduplication bug.
+Request مشابه با key متفاوت دو query entry مستقل است، نه cache-deduplication bug.
 
-## Debugging missing refreshes
+## Debug کردن Missing Refresh
 
-If a view does not update:
+اگر view update نمی‌شود:
 
-1. determine whether the resource is supposed to poll;
-2. if not, identify the expected invalidation or manual-refresh source;
-3. check `enabled` conditions;
-4. verify the mutation succeeded;
-5. verify query-key alignment between the consumer and invalidation;
-6. inspect hook-level `staleTime` and mount behavior;
-7. verify the backend response actually changed.
+1. مشخص کنید resource اصلاً باید poll شود یا خیر؛
+2. اگر نه، expected invalidation یا manual-refresh source را مشخص کنید؛
+3. `enabled` conditionها را بررسی کنید؛
+4. verify کنید mutation موفق بوده؛
+5. query-key alignment بین consumer و invalidation را بررسی کنید؛
+6. hook-level `staleTime` و mount behavior را بررسی کنید؛
+7. verify کنید backend response واقعاً تغییر کرده است.
 
-## Updating this document
+## Update کردن این سند
 
-Whenever a hook adds/removes/changes a `refetchInterval`, update this inventory in the same change.
+هر زمان hook یک `refetchInterval` اضافه، حذف یا تغییر می‌دهد، همین inventory را در همان change update کنید.
 
-When a page or notification monitor overrides a hook's default interval or creates a dedicated query key in a meaningful way, document that behavior here.
+وقتی page یا notification monitor hook default را به‌شکل معنی‌دار override می‌کند یا dedicated query key می‌سازد، behavior را اینجا مستند کنید.
 
-Historical audit files are compatibility redirects and are not live configuration.
+Historical audit fileها فقط compatibility redirect هستند و live configuration محسوب نمی‌شوند.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/main.tsx`
 - `src/hooks/useCpu.ts`
@@ -290,7 +290,7 @@ Historical audit files are compatibility redirects and are not live configuratio
 - `src/pages/BlockStorage.tsx`
 - `src/pages/Services.tsx`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`server-state-and-cache.md`](./server-state-and-cache.md)
 - [`state-sync-save-to-db.md`](./state-sync-save-to-db.md)
