@@ -1,81 +1,81 @@
-# ADR-005: Use an RTL Emotion Cache for Material UI Styling
+# ADR-005: استفاده از RTL Emotion Cache برای Material UI Styling
 
-- Status: Accepted
-- Scope: RTL style transformation and Material UI integration
+- وضعیت: Accepted
+- Scope: RTL style transformation و integration با Material UI
 
 ## Context
 
-SOHO UI is primarily a Persian right-to-left administrative interface while many technical values inside it (IPs, hostnames, filesystem paths, metrics, service names) remain naturally left-to-right.
+SOHO UI عمدتاً یک interface مدیریتی فارسی و right-to-left است، در حالی که بسیاری از technical valueهای داخل آن مانند IP، hostname، filesystem path، metric و service name ذاتاً left-to-right باقی می‌مانند.
 
-Material UI uses Emotion for styling. The application needs a consistent mechanism that mirrors directional CSS while still allowing semantic DOM direction and explicit LTR islands where appropriate.
+Material UI برای styling از Emotion استفاده می‌کند. Application به یک mechanism یکپارچه نیاز دارد که directional CSS را mirror کند و در عین حال semantic DOM direction و LTR islandهای صریح را در محل مناسب ممکن نگه دارد.
 
 ## Decision
 
-Use a dedicated Emotion cache configured with RTL Stylis processing and provide it near the application root.
+از یک Emotion cache اختصاصی که با RTL Stylis processing configure شده استفاده می‌شود و این cache نزدیک application root provide می‌شود.
 
-The runtime provider order includes the RTL cache before feature UI renders.
+Runtime provider order شامل RTL cache پیش از render شدن feature UI است.
 
-Semantic HTML direction remains an independent concern. Components/pages can still use actual `dir="rtl"` or `dir="ltr"` attributes where browser text/layout semantics require them.
+Semantic HTML direction همچنان concern مستقلی است. Component/pageها هرجا browser text/layout semantics نیاز داشته باشد می‌توانند از `dir="rtl"` یا `dir="ltr"` واقعی استفاده کنند.
 
-## Why both style mirroring and semantic direction matter
+## چرا هم Style Mirroring و هم Semantic Direction مهم‌اند؟
 
-Stylis can transform directional CSS properties, but it cannot replace the meaning of the HTML `dir` attribute.
+Stylis می‌تواند directional CSS propertyها را transform کند، اما نمی‌تواند معنی HTML `dir` attribute را جایگزین کند.
 
-For example, the Settings page explicitly establishes an RTL DOM boundary because tab/table content needs semantic RTL direction in addition to mirrored styles.
+برای مثال، Settings page یک RTL DOM boundary صریح ایجاد می‌کند، چون tab/table content علاوه بر mirrored style به semantic RTL direction نیز نیاز دارد.
 
-Likewise, technical values may intentionally render as LTR inside the RTL application.
+به همین شکل technical valueها می‌توانند عمداً در application RTL به‌صورت LTR render شوند.
 
-## Consequences
+## Consequenceها
 
 ### Positive
 
-- Material UI directional styles are transformed consistently;
-- feature components do not need to manually mirror every margin/padding rule;
-- Persian layout behavior is centralized;
-- technical LTR content can be handled explicitly instead of forcing the whole application into one direction strategy.
+- directional styleهای Material UI به‌صورت یکپارچه transform می‌شوند؛
+- feature componentها مجبور نیستند تک‌تک margin/padding ruleها را دستی mirror کنند؛
+- behavior مربوط به Persian layout متمرکز می‌شود؛
+- technical LTR content را می‌توان صریح handle کرد، بدون این‌که کل application به یک direction strategy واحد force شود.
 
-### Tradeoffs
+### Tradeoffها
 
-- developers must understand that CSS mirroring and DOM `dir` are different mechanisms;
-- hardcoded directional CSS can still produce incorrect results if it bypasses reusable tokens/layout conventions;
-- third-party components may require explicit direction handling.
+- توسعه‌دهنده باید تفاوت CSS mirroring و DOM `dir` را درک کند؛
+- hardcoded directional CSS همچنان می‌تواند در صورت bypass کردن reusable token/layout conventionها نتیجه‌ی غلط ایجاد کند؛
+- third-party componentها ممکن است به explicit direction handling نیاز داشته باشند.
 
-## Rules
+## Ruleها
 
-1. Keep the shared RTL Emotion cache as a root styling concern.
-2. Use semantic `dir` attributes when actual browser direction semantics are required.
-3. Keep technical values LTR when that improves readability.
-4. Prefer logical/shared layout styles over scattered manual left/right inversion.
-5. Test dialogs, tables, tabs, inputs, icons, and popovers in RTL after changing styling infrastructure.
-6. Do not remove RTL processing because one component appears correct without it.
+1. Shared RTL Emotion cache را به‌عنوان root styling concern حفظ کنید.
+2. هرجا actual browser direction semantics لازم است از semantic `dir` attribute استفاده کنید.
+3. Technical valueها را زمانی که readability بهتر می‌شود LTR نگه دارید.
+4. Logical/shared layout style را به manual left/right inversion پراکنده ترجیح دهید.
+5. پس از تغییر styling infrastructure، dialog، table، tab، input، icon و popover را در RTL test کنید.
+6. صرفاً به این دلیل که یک component بدون RTL processing ظاهراً درست است، processing سراسری RTL را حذف نکنید.
 
-## Alternatives considered
+## Alternativeهای بررسی‌شده
 
-### Manual RTL CSS everywhere
+### Manual RTL CSS در همه‌جا
 
-Rejected because it duplicates directional styling decisions and is difficult to maintain across Material UI components.
+رد شد، چون directional styling decisionها را duplicate می‌کند و نگهداری آن در Material UI componentها دشوار است.
 
-### Only setting `dir="rtl"` on a root element
+### فقط قراردادن `dir="rtl"` روی Root Element
 
-Insufficient by itself for CSS-in-JS rules that need directional transformation.
+به‌تنهایی برای CSS-in-JS ruleهایی که به directional transformation نیاز دارند کافی نیست.
 
-### Force every value to RTL
+### Force کردن تمام Valueها به RTL
 
-Rejected because technical strings such as IP addresses, hostnames, versions, and paths are easier to read with LTR direction.
+رد شد، چون technical stringهایی مثل IP address، hostname، version و path با LTR direction خواناتر هستند.
 
-## When to revisit
+## چه زمانی این Decision دوباره بررسی شود؟
 
-Revisit if the UI framework/styling engine changes or if the product becomes fully bidirectional with runtime language switching.
+اگر UI framework/styling engine تغییر کرد یا محصول به‌صورت runtime language switching کاملاً bidirectional شد، این decision باید revisit شود.
 
-A bidirectional redesign would need explicit cache/theme/direction switching rather than removing the existing RTL contract ad hoc.
+Bidirectional redesign نیازمند explicit cache/theme/direction switching است؛ نه حذف ad-hoc contract فعلی RTL.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/rtl-cache.ts`
 - `src/main.tsx`
 - `src/pages/Settings.tsx`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../frontend-architecture.md`](../frontend-architecture.md)
 - [`../../05-features/settings.md`](../../05-features/settings.md)
