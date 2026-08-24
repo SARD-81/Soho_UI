@@ -1,29 +1,29 @@
-# State Sync and `save_to_db`
+# StateSync و `save_to_db`
 
-This document is the canonical frontend contract for backend state-snapshot persistence.
+این سند، contract canonical در frontend برای persistence مربوط به backend state snapshot است.
 
-The central rule is simple:
+Rule مرکزی ساده است:
 
-> Normal application requests observe or mutate live state with `save_to_db=false`. Only canonical snapshot GET requests created by `StateSyncManager` may send `save_to_db=true`.
+> Requestهای عادی application، live state را با `save_to_db=false` مشاهده یا mutate می‌کنند. فقط canonical snapshot GETهایی که توسط `StateSyncManager` ساخته می‌شوند مجازند `save_to_db=true` ارسال کنند.
 
-This rule prevents feature hooks, polling, UI refetches, and legacy caller flags from deciding when the backend database should be overwritten.
+این rule مانع آن می‌شود که feature hookها، polling، UI refetch یا legacy caller flagها درباره‌ی زمان overwrite شدن database snapshot در backend تصمیم بگیرند.
 
-## Why this mechanism exists
+## چرا این Mechanism وجود دارد؟
 
-Some SOHO backend endpoints can both return the live state of the managed system and persist that state into the backend database when `save_to_db=true` is supplied.
+بعضی endpointهای SOHO backend می‌توانند هم live state مربوط به managed system را برگردانند و هم در صورت دریافت `save_to_db=true` همان state را داخل backend database persist کنند.
 
-Without central ownership, several problems are possible:
+بدون ownership متمرکز، مشکلات زیر ممکن است رخ دهند:
 
-- a polling query could repeatedly write snapshots;
-- a page refetch could unexpectedly persist state;
-- multiple mutations could trigger duplicate full snapshots;
-- legacy hooks could persist incomplete or badly timed state;
-- React Query refresh behavior could become coupled to persistence behavior;
-- concurrent mutations could leave the stored snapshot behind the actual system state.
+- polling query به‌صورت مداوم snapshot بنویسد؛
+- page refetch به‌صورت غیرمنتظره state را persist کند؛
+- چند mutation باعث duplicate full snapshot شوند؛
+- legacy hookها state ناقص یا با timing نامناسب را persist کنند؛
+- React Query refresh behavior به persistence behavior وابسته شود؛
+- concurrent mutationها باعث شوند snapshot ذخیره‌شده از actual system state عقب بماند.
 
-`StateSyncManager` exists to make persistence explicit, ordered, and independent from UI data freshness.
+`StateSyncManager` برای این وجود دارد که persistence صریح، ordered و مستقل از UI data freshness باشد.
 
-## End-to-end mutation flow
+## End-to-End Mutation Flow
 
 ```mermaid
 sequenceDiagram
@@ -53,39 +53,37 @@ sequenceDiagram
     end
 ```
 
-## Transport enforcement
+## Transport Enforcement
 
-`src/lib/axiosInstance.ts` is the enforcement boundary.
+`src/lib/axiosInstance.ts` همان enforcement boundary است.
 
-For non-auth `/api/` requests it:
+برای requestهای non-auth زیر `/api/` این موارد را انجام می‌دهد:
 
-1. removes any inline `save_to_db` query parameter;
-2. adds the authoritative query parameter itself;
-3. forces normal traffic to `save_to_db=false`;
-4. normalizes stale body flags in JSON, `FormData`, and `URLSearchParams` to false;
-5. recognizes internal StateSync requests through the private state-sync marker;
-6. removes the internal marker before transport;
-7. allows only those internal requests to become `save_to_db=true`.
+1. هر inline `save_to_db` query parameter را حذف می‌کند؛
+2. authoritative query parameter را خودش اضافه می‌کند؛
+3. normal traffic را به `save_to_db=false` force می‌کند؛
+4. stale body flagها را در JSON، `FormData` و `URLSearchParams` به false normalize می‌کند؛
+5. internal StateSync request را از طریق private state-sync marker تشخیص می‌دهد؛
+6. internal marker را پیش از transport حذف می‌کند؛
+7. فقط همان internal requestها را مجاز می‌کند به `save_to_db=true` تبدیل شوند.
 
-This is deliberately defensive. Older feature hooks may still contain legacy caller-level flags, but those flags must not be authoritative.
+این behavior عمداً defensive است. ممکن است بعضی legacy feature hookها هنوز caller-level flag قدیمی داشته باشند، اما آن flagها نباید authoritative باشند.
 
-## Internal marker
+## Internal Marker
 
-StateSync uses:
+StateSync از marker زیر استفاده می‌کند:
 
 ```text
 X-Soho-State-Sync: 1
 ```
 
-as an internal transport marker.
+این marker یک API feature برای ordinary hookها نیست و feature code نباید آن را تنظیم کند.
 
-This marker is not an API feature for ordinary hooks. Feature code must not set it.
+Request interceptor این marker را consume می‌کند و request را به canonical persistence form تبدیل می‌کند.
 
-The request interceptor consumes the marker and converts the request into the canonical persistence form.
+## Persisted Domainها
 
-## Persisted domains
-
-The current persisted state domains are:
+بر اساس contract صحیح فعلی در GitLab، StateSync domainهای frontend عبارت‌اند از:
 
 | Domain | Canonical snapshot request |
 | --- | --- |
@@ -93,21 +91,26 @@ The current persisted state domains are:
 | `filesystem` | `GET /api/filesystem/?detail=true` |
 | `disk` | `GET /api/disk` |
 | `nfs` | `GET /api/nfs/shares/` |
-| `samba-users` | `GET /api/samba/users/?property=all` |
-| `samba-groups` | `GET /api/samba/groups/?property=all&contain_system_groups=false` |
 | `samba-shares` | `GET /api/samba/sharepoints/?property=all` |
 | `webshare` | `GET /api/webshare/?detail=true` |
-| `snmp` | `GET /api/snmp/info/` |
 
-The definitions live in `STATE_SYNC_DEFINITIONS` in `src/lib/stateSyncManager.ts`.
+Definitionها داخل `STATE_SYNC_DEFINITIONS` در `src/lib/stateSyncManager.ts` قرار دارند.
 
-A canonical endpoint must represent the complete domain state needed by backend persistence. Do not choose a page-specific detail endpoint simply because a component already uses it.
+در contract فعلی:
 
-## Mutation-to-domain mapping
+- `samba-users` یک StateSync domain مستقل نیست؛
+- `samba-groups` یک StateSync domain مستقل نیست؛
+- `snmp` یک StateSync domain نیست.
 
-A mutation can affect more than the resource named in its URL.
+بنابراین وجود endpoint یا mutation در این namespaceها به‌تنهایی نباید باعث schedule شدن canonical persistence snapshot از سمت frontend شود.
 
-Current mapping:
+Canonical endpoint باید complete domain state مورد نیاز برای backend persistence را نمایش دهد. صرفاً چون یک component از page-specific detail endpoint استفاده می‌کند، آن endpoint را به‌عنوان canonical snapshot انتخاب نکنید.
+
+## Mutation-to-Domain Mapping
+
+یک mutation می‌تواند بیش از resource داخل URL خودش اثر داشته باشد.
+
+Mapping فعلی:
 
 | Mutation URL family | Snapshot domains |
 | --- | --- |
@@ -115,27 +118,41 @@ Current mapping:
 | `/api/filesystem...` | `filesystem`, `zpool` |
 | `/api/disk...` | `disk`, `zpool` |
 | `/api/nfs...` | `nfs` |
-| `/api/samba/users...` | `samba-users`, `samba-groups` |
-| `/api/samba/groups...` | `samba-groups`, `samba-users` |
 | `/api/samba/sharepoints...` | `samba-shares` |
-| other `/api/samba...` | all Samba domains |
+| سایر `/api/samba...` | `samba-shares` |
 | `/api/webshare...` | `webshare` |
-| `/api/snmp...` | `snmp` |
+| `/api/snmp...` | هیچ StateSync domain |
 
-These cross-domain dependencies are intentional.
+Cross-domain dependencyهای موجود intentional هستند.
 
-Examples:
+نمونه‌ها:
 
-- changing a pool can change which disks are free;
-- changing a filesystem can change pool capacity;
-- changing a disk can change pool state;
-- Samba user/group membership is visible from both user and group views.
+- تغییر pool می‌تواند مشخص کند کدام diskها free هستند؛
+- تغییر filesystem می‌تواند pool capacity را تغییر دهد؛
+- تغییر disk می‌تواند pool state را تغییر دهد؛
+- mutationهای مربوط به Samba user/group ممکن است UI membership data را از طریق React Query refresh تحت تأثیر قرار دهند، اما در contract فعلی frontend برای آن‌ها StateSync domain جداگانه‌ای وجود ندارد.
 
-If a new mutation changes multiple persisted views, update this mapping rather than calling snapshots directly from the mutation hook.
+اگر mutation جدید چند persisted view را تغییر می‌دهد، mapping مرکزی را update کنید؛ canonical snapshot را مستقیماً از mutation hook call نکنید.
 
-## Coalescing rapid mutations
+## SNMP و Diagnostic Operationها
 
-Mutation-triggered snapshots use a default delay of 500 ms per domain.
+SNMP در contract فعلی GitLab StateSync domain ندارد.
+
+به‌خصوص endpoint زیر diagnostic است:
+
+```text
+POST /api/snmp/test-connection/
+```
+
+این request فقط connectivity/configuration را test می‌کند و نباید persistence snapshot ایجاد کند.
+
+حتی برای سایر SNMP mutationها نیز تا زمانی که backend/frontend contract به‌صورت صریح تغییر نکرده، frontend StateSync نباید SNMP snapshot schedule کند.
+
+HTTP method یا URL namespace به‌تنهایی مجوز persistence نیست.
+
+## Coalescing برای Mutationهای سریع
+
+Mutation-triggered snapshotها برای هر domain از default delay برابر 500 ms استفاده می‌کنند.
 
 ```mermaid
 flowchart LR
@@ -145,15 +162,15 @@ flowchart LR
     T --> S[One canonical snapshot]
 ```
 
-Each new mutation for the same domain resets the pending timer. This prevents bursts of operations from causing a full snapshot after every individual request.
+هر mutation جدید برای همان domain، pending timer را reset می‌کند. این behavior مانع آن می‌شود که burst مربوط به operationها بعد از هر request یک full snapshot ایجاد کند.
 
-Different domains keep independent timers.
+Domainهای متفاوت timer مستقل دارند.
 
-## In-flight protection
+## In-flight Protection
 
-If a domain snapshot is already running and another relevant mutation occurs, StateSync does not start a concurrent snapshot for that domain.
+اگر snapshot مربوط به یک domain در حال اجرا باشد و mutation مرتبط دیگری رخ دهد، StateSync برای همان domain snapshot concurrent دیگری start نمی‌کند.
 
-Instead it records that one follow-up run is required.
+در عوض mark می‌کند که یک follow-up run لازم است.
 
 ```mermaid
 flowchart TD
@@ -165,153 +182,154 @@ flowchart TD
     E -- No --> G[Done]
 ```
 
-This property is important: the database should eventually end on the newest state without creating overlapping snapshots for every mutation.
+این property مهم است: database باید در نهایت روی newest state قرار بگیرد، بدون این‌که برای هر mutation overlapping snapshot ایجاد شود.
 
-## Login/session baseline
+## Login/Session Baseline
 
-After a successful login or session restoration, the frontend initiates one baseline snapshot for every registered persisted domain.
+پس از login موفق یا session restoration، frontend برای هر registered persisted domain یک baseline snapshot درخواست می‌کند.
 
-`syncAllStateDomainsOnce()` memoizes the session baseline promise so repeated React renders, React StrictMode behavior, and token-refresh events cannot start duplicate full snapshots during the same authenticated session.
+`syncAllStateDomainsOnce()` session baseline promise را memoize می‌کند تا React renderهای تکراری، React StrictMode behavior یا token-refresh eventها نتوانند در همان authenticated session duplicate full snapshot ایجاد کنند.
 
-The baseline is reset when the authenticated session ends or a new login begins.
+Baseline هنگام پایان authenticated session یا آغاز login جدید reset می‌شود.
 
-## Session reset
+## Session Reset
 
-`resetStateSyncManager()` clears:
+`resetStateSyncManager()` موارد زیر را clear می‌کند:
 
-- scheduled snapshot timers;
-- queued follow-up flags;
-- the session baseline promise.
+- scheduled snapshot timerها؛
+- queued follow-up flagها؛
+- session baseline promise.
 
-This prevents work scheduled under one authenticated session from being treated as work belonging to a later session.
+این behavior مانع آن می‌شود که work scheduleشده در authenticated session قبلی به session بعدی نشت کند.
 
-## Relationship to React Query
+## ارتباط با React Query
 
-StateSync and React Query solve separate problems.
+StateSync و React Query دو مسئله‌ی جدا را حل می‌کنند.
 
 ### React Query
 
-Answers:
+به این سؤال پاسخ می‌دهد:
 
-> What backend state should the UI currently display?
+> UI در حال حاضر باید چه backend stateای را نمایش دهد؟
 
-It handles cache, refetch, invalidation, stale data, query lifecycle, and shared client-side server state.
+React Query مسئول cache، refetch، invalidation، stale data، query lifecycle و shared client-side server state است.
 
 ### StateSyncManager
 
-Answers:
+به این سؤال پاسخ می‌دهد:
 
-> When should the backend persist a canonical snapshot of managed-system state?
+> Backend چه زمانی باید canonical snapshot مربوط به managed-system state را persist کند؟
 
-It handles domain mapping, persistence scheduling, coalescing, and session baseline snapshots.
+StateSyncManager مسئول domain mapping، persistence scheduling، coalescing و session baseline snapshot است.
 
-A successful mutation may trigger both systems, but one does not replace the other.
+یک mutation موفق می‌تواند هر دو system را trigger کند، اما هیچ‌کدام جای دیگری را نمی‌گیرد.
 
-## Why polling requests must not persist
+## چرا Polling Request نباید Persist کند؟
 
-A polling hook can execute every few seconds. If polling requests owned `save_to_db=true`, merely keeping a dashboard open could continuously overwrite database snapshots.
+Polling hook ممکن است هر چند ثانیه یک بار اجرا شود. اگر polling request مالک `save_to_db=true` باشد، صرف باز ماندن Dashboard می‌تواند به‌طور مداوم database snapshot را overwrite کند.
 
-That would make persistence frequency depend on UI visibility rather than state changes or session synchronization.
+در آن صورت persistence frequency به UI visibility وابسته می‌شود، نه state change یا session synchronization.
 
-For this reason, observational reads are always normal requests and therefore receive `save_to_db=false` through Axios.
+به همین دلیل observational readها همیشه normal request هستند و از طریق Axios مقدار `save_to_db=false` می‌گیرند.
 
-## Why manual refresh must not persist
+## چرا Manual Refresh نباید Persist کند؟
 
-Manual refresh is a UI action asking for fresher live data. It is not a persistence event.
+Manual refresh یک UI action برای دریافت live data تازه‌تر است و persistence event محسوب نمی‌شود.
 
-Do not attach persistence behavior to refresh buttons, `refetch()`, React Query invalidation, or route navigation.
+Persistence behavior را به refresh button، `refetch()`، React Query invalidation یا route navigation متصل نکنید.
 
-## Legacy caller flags
+## Legacy Caller Flagها
 
-Some older hooks may contain fields such as:
+بعضی hookهای قدیمی ممکن است fieldهایی مانند این داشته باشند:
 
 ```ts
 save_to_db: true
 ```
 
-or explicit false flags in request params/bodies.
+یا explicit false flag در request param/body.
 
-The Axios interceptor protects the architecture by making normal requests authoritative false regardless of these stale values. However, misleading legacy fields should be removed during maintenance because they falsely imply that the hook controls persistence.
+Axios interceptor از معماری محافظت می‌کند و normal request را مستقل از این stale valueها authoritative false می‌کند. با این حال misleading legacy field باید هنگام maintenance حذف شود، چون به‌اشتباه القا می‌کند hook مالک persistence است.
 
-When removing one, verify that:
+هنگام حذف چنین fieldای verify کنید:
 
-- the request still passes through `axiosInstance`;
-- the endpoint does not require the field for a different semantic purpose;
-- a successful mutation is mapped to the appropriate StateSync domain when persistence is needed.
+- request همچنان از `axiosInstance` عبور می‌کند؛
+- endpoint برای semantic purpose متفاوت به field نیاز ندارد؛
+- اگر persistence لازم است، mutation موفق به StateSync domain صحیح map می‌شود.
 
-## Adding a persisted domain
+## اضافه‌کردن Persisted Domain جدید
 
-To add a new persisted domain:
+برای اضافه‌کردن persisted domain جدید:
 
-1. extend `StateSyncDomain`;
-2. add exactly one canonical complete-state definition to `STATE_SYNC_DEFINITIONS`;
-3. map relevant successful mutation URL families in `resolveStateDomainsForMutation`;
-4. verify the canonical request can safely be called after login/session restoration;
-5. verify rapid mutations can be coalesced without losing required semantics;
-6. add/update tests when test infrastructure exists;
-7. document the new domain here.
+1. `StateSyncDomain` را extend کنید؛
+2. دقیقاً یک canonical complete-state definition به `STATE_SYNC_DEFINITIONS` اضافه کنید؛
+3. mutation URL familyهای مرتبط را در `resolveStateDomainsForMutation` map کنید؛
+4. verify کنید canonical request بعد از login/session restoration قابل call و ایمن است؛
+5. verify کنید rapid mutationها بدون از دست‌دادن semantics لازم قابل coalesce هستند؛
+6. پس از وجود test infrastructure، test مربوطه را اضافه/update کنید؛
+7. domain جدید را در همین سند مستند کنید.
 
-Do not add a feature-level `save_to_db=true` call.
+Feature-level `save_to_db=true` call اضافه نکنید.
 
-## Adding a mutation to an existing domain
+## اضافه‌کردن Mutation به Domain موجود
 
-Usually no hook-specific persistence code is needed.
+در حالت معمول hook-specific persistence code لازم نیست.
 
-If the new endpoint URL already matches an existing mapping, its successful mutation will automatically schedule the correct snapshot.
+اگر URL endpoint جدید از قبل با mapping موجود match شود، mutation موفق آن خودکار snapshot صحیح را schedule می‌کند.
 
-If not, extend `resolveStateDomainsForMutation`.
+در غیر این صورت `resolveStateDomainsForMutation` را extend کنید.
 
-## Authentication endpoints are excluded
+## Authentication Endpointها Exclude هستند
 
-Authentication endpoints are excluded from the persistence policy. Token issuance, verification, and refresh are not managed-system snapshot operations.
+Authentication endpointها از persistence policy exclude هستند. Token issuance، verification و refresh از managed-system snapshot operationها نیستند.
 
-The dedicated auth client also keeps token endpoints away from the main response-refresh interceptor where appropriate.
+Dedicated auth client نیز در محل لازم token endpointها را از main response-refresh interceptor جدا نگه می‌دارد.
 
-## Failure behavior
+## Failure Behavior
 
-A snapshot failure does not retroactively fail the original successful mutation. The mutation already changed live backend/system state.
+Snapshot failure، mutation موفق اصلی را retroactively fail نمی‌کند؛ mutation از قبل live backend/system state را تغییر داده است.
 
-In development, StateSync logs failed domain sync operations. Operational monitoring may need stronger reporting in the future if persisted snapshot freshness becomes a critical alerting requirement.
+در development، StateSync domain sync failureها را log می‌کند. اگر freshness مربوط به persisted snapshot در آینده alerting requirement حیاتی شد، ممکن است operational monitoring قوی‌تری لازم باشد.
 
-Do not hide a mutation success merely because a later snapshot failed unless the product/backend contract is explicitly changed to require transactional persistence.
+Mutation success را صرفاً به دلیل fail شدن snapshot بعدی مخفی نکنید، مگر این‌که product/backend contract صریحاً به transactional persistence تغییر کند.
 
-## Debugging checklist
+## Debugging Checklist
 
-When `save_to_db` behavior looks wrong:
+وقتی behavior مربوط به `save_to_db` اشتباه به نظر می‌رسد:
 
-1. identify whether the request is a normal request or internal StateSync request;
-2. inspect the final query parameters in browser DevTools;
-3. confirm the request uses `axiosInstance`;
-4. confirm auth endpoints are not being mistaken for application state endpoints;
-5. check the successful mutation URL against `resolveStateDomainsForMutation`;
-6. verify the canonical domain endpoint;
-7. look for a pending 500 ms coalescing timer;
-8. check whether the same domain is already in flight;
-9. check whether one follow-up run is queued;
-10. verify the session baseline has not already been deduplicated intentionally.
+1. مشخص کنید request عادی است یا internal StateSync request؛
+2. final query parameterها را در browser DevTools بررسی کنید؛
+3. تأیید کنید request از `axiosInstance` استفاده می‌کند؛
+4. تأیید کنید auth endpoint به‌اشتباه application state endpoint classify نشده؛
+5. successful mutation URL را با `resolveStateDomainsForMutation` مقایسه کنید؛
+6. canonical domain endpoint را verify کنید؛
+7. pending coalescing timer برابر 500 ms را بررسی کنید؛
+8. بررسی کنید همان domain از قبل in-flight نباشد؛
+9. بررسی کنید فقط یک follow-up run queue شده باشد؛
+10. verify کنید session baseline عمداً قبلاً deduplicate نشده باشد.
 
-## Maintenance invariants
+## Maintenance Invariantها
 
-Do not break these rules:
+این ruleها نباید شکسته شوند:
 
-- normal `/api/` traffic does not own persistence;
-- caller-level `save_to_db=true` is not authoritative;
-- only StateSync canonical snapshot GETs may persist;
-- persistence runs only after successful mutations or session baseline initialization;
-- rapid same-domain mutations are coalesced;
-- at most one snapshot per domain runs at a time;
-- a mutation during an in-flight snapshot produces at most one necessary follow-up run;
-- cross-domain dependencies remain explicit;
-- feature hooks do not directly call canonical persistence snapshots.
+- normal `/api/` traffic مالک persistence نیست؛
+- caller-level `save_to_db=true` authoritative نیست؛
+- فقط canonical snapshot GETهای StateSync می‌توانند persist کنند؛
+- persistence فقط پس از mutation موفق یا session baseline initialization اجرا می‌شود؛
+- rapid same-domain mutationها coalesce می‌شوند؛
+- در هر لحظه حداکثر یک snapshot برای هر domain اجرا می‌شود؛
+- mutation هنگام in-flight snapshot حداکثر یک follow-up ضروری ایجاد می‌کند؛
+- cross-domain dependencyها صریح باقی می‌مانند؛
+- feature hookها canonical persistence snapshot را مستقیم call نمی‌کنند؛
+- `samba-users`، `samba-groups` و `snmp` تا زمانی که contract تغییر نکرده نباید به‌عنوان StateSync domain فرض شوند.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/lib/stateSyncManager.ts`
 - `src/lib/axiosInstance.ts`
 - `src/contexts/AuthContext.tsx`
 - `src/main.tsx`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`server-state-and-cache.md`](./server-state-and-cache.md)
 - [`api-request-lifecycle.md`](./api-request-lifecycle.md)
