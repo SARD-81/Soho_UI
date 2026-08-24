@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Users feature is the operator-facing bridge between operating-system users and Samba users.
+The Users feature is the operator-facing page for operating-system user administration, with partially wired Samba-user integration.
 
 Route: `/users`
 
@@ -10,40 +10,73 @@ Entry point: `src/pages/Users.tsx`
 
 The current page has two tabs:
 
-- `کاربران سامانه` — implemented OS-user management and Samba-user linkage.
-- `سایر کاربران` — currently a placeholder and not yet implemented.
+- `کاربران سامانه` — active OS-user listing and create flow.
+- `سایر کاربران` — placeholder only; not implemented.
 
-The feature is not a general identity provider. It manages backend OS/Samba accounts used by the storage and file-sharing stack.
+The page contains Samba query/create scaffolding, but the current `OsUsersTable` does **not** render the historical Samba-status column and does not currently expose a row action that opens the Samba-create flow. Do not describe that dormant wiring as an operator-visible capability until the table UI is intentionally restored.
 
-## Main responsibilities
+This feature is not a general identity provider. The backend remains authoritative for OS and Samba identities.
 
-The current implementation coordinates:
+## Current operator-visible responsibilities
+
+The current rendered UI supports:
 
 - listing non-system OS users;
-- creating OS users;
-- reading Samba users so OS rows can show Samba-account status;
-- creating a Samba user from an existing OS user;
-- optionally creating an OS user first when the Samba-create flow requests it;
-- preventing obvious duplicate usernames using currently loaded frontend state;
-- manually refreshing the OS-user list.
+- manually refreshing the OS-user list;
+- creating an OS user;
+- frontend duplicate-name validation based on the currently loaded OS-user collection;
+- showing an explicit placeholder for the unimplemented Other Users tab.
+
+The OS-user table also renders an Edit control that currently triggers a placeholder browser alert and a disabled Delete control. Those controls must not be documented as completed update/delete workflows.
+
+## Dormant Samba integration in the page
+
+`Users.tsx` still contains supporting state and hooks for:
+
+- loading Samba users;
+- correlating OS usernames with Samba usernames;
+- opening `SambaUserCreateModal` with a prefilled OS username;
+- creating a Samba user;
+- optionally creating an OS user before the Samba user.
+
+However, the current `OsUsersTable` does not invoke the supplied `onCreateSambaUser` callback and does not display the supplied Samba-status information. Therefore the page-level Samba flow is not currently reachable from the rendered OS-user table.
+
+Treat this as dormant integration scaffolding, not production UI behavior.
+
+A future change should make an explicit product decision:
+
+1. restore a supported Samba-status/action surface in the Users table; or
+2. remove the dormant Users-page Samba wiring and keep Samba administration exclusively under `/share`.
+
+Do not leave the two layers drifting indefinitely.
 
 ## Runtime flow
+
+Current active operator path:
 
 ```mermaid
 flowchart TD
     Page[Users page]
     Page --> OQ[useOsUsers]
-    Page --> SQ[useSambaUsers]
     Page --> OC[useCreateOsUser]
-    Page --> SC[useCreateSambaUser]
 
     OQ --> OSAPI[OS user API]
-    SQ --> SMBAPI[Samba user API]
     OC --> OSAPI
+    OC --> OINV[invalidate os-users]
+```
+
+Additional dormant page wiring currently exists:
+
+```mermaid
+flowchart TD
+    Page[Users page]
+    Page --> SQ[useSambaUsers]
+    Page --> SC[useCreateSambaUser]
+    SQ --> SMBAPI[Samba user API]
     SC --> SMBAPI
 
-    OC --> OINV[invalidate os-users]
-    SC --> SINV[invalidate samba-users]
+    Table[OsUsersTable]
+    Table -. current UI does not invoke .-> SC
 ```
 
 OS-user and Samba-user state are separate backend resources with separate React Query keys.
@@ -82,9 +115,28 @@ The query uses a 15-second stale time and no continuous polling interval.
 
 The page exposes manual refresh through `osUsersQuery.refetch()`.
 
-## Samba user visibility on OS-user rows
+## Current OS-user table
 
-The page also loads Samba users while the implemented OS-user tab is active.
+Component: `src/components/users/OsUsersTable.tsx`
+
+The table currently renders:
+
+- row number;
+- username;
+- an Actions column.
+
+Current Actions behavior:
+
+- Edit: placeholder behavior only (`alert('edit')`);
+- Delete: disabled.
+
+The table does **not** currently render Samba-account status.
+
+The table's prop contract still contains `isSambaStatusLoading` and `onCreateSambaUser`, but the rendered component does not consume those values. This is a known internal API debt and should be resolved together with the product decision about Samba integration.
+
+## Samba correlation state
+
+Although it is not currently rendered, `Users.tsx` still loads Samba users while the OS-user tab is active.
 
 Samba key:
 
@@ -98,11 +150,13 @@ Endpoint through `sambaUserService`:
 GET /api/samba/users/?property=all
 ```
 
-The page normalizes both username sets and uses Samba usernames to determine whether an OS user already has a corresponding Samba account.
+The page normalizes both username sets and calculates `hasSambaUser` for OS-user rows.
 
-If the normalized OS-user model already includes `hasSambaUser`, that explicit value wins. Otherwise the page derives the status from the current Samba username set.
+If the normalized OS-user model already includes an explicit `hasSambaUser`, that value wins; otherwise the page derives correlation from the current Samba username set.
 
-This is presentation correlation, not a new authoritative identity relation stored in the frontend.
+Because the table no longer renders that field, this calculation currently creates background work without a visible status column.
+
+If the Samba status UI is not restored, this query/correlation path is a candidate for removal to avoid unnecessary API traffic.
 
 ## Create OS user
 
@@ -138,13 +192,13 @@ This is UX validation only. The backend must still enforce uniqueness because:
 
 - the list can be stale;
 - another operator can create the user concurrently;
-- frontend checks are not an authorization/integrity boundary.
+- frontend checks are not an authorization or integrity boundary.
 
-## Create Samba user from Users
+## Dormant Samba-create workflow
 
 Hook: `useCreateSambaUser()`
 
-Current Samba create endpoint:
+Endpoint:
 
 ```text
 POST /api/samba/users/
@@ -157,13 +211,19 @@ username
 password
 ```
 
-On success the canonical Samba-user list is invalidated.
+`Users.tsx` still defines a modal flow that can:
 
-The Users page can prefill the Samba-create modal with an OS username when the operator starts from an OS-user row.
+- prefill a username;
+- create a Samba user;
+- optionally create the OS user first.
 
-## Optional OS-first Samba creation
+The current rendered table does not open that modal, so this flow is not currently operator-reachable from `/users`.
 
-The Samba-create submission contract includes:
+Samba users remain actively manageable through the Samba feature documented in [`samba-shares.md`](./samba-shares.md).
+
+## Optional OS-first Samba sequence
+
+If the dormant Users-page Samba modal is made reachable again, its existing submission contract includes:
 
 ```text
 createOsUserFirst
@@ -190,21 +250,9 @@ sequenceDiagram
 
 The default shell for this bridge flow is `DEFAULT_LOGIN_SHELL`.
 
-### Important partial-failure behavior
+This sequence is not atomic. If OS-user creation succeeds and Samba-user creation fails, the OS account remains; no frontend rollback deletes it.
 
-This is **not an atomic frontend transaction**.
-
-If OS-user creation succeeds and Samba-user creation fails, the newly created OS user remains. There is no frontend rollback that deletes the OS user.
-
-Troubleshooting must therefore inspect both stages rather than assuming a single all-or-nothing operation.
-
-## Duplicate checks for Samba creation
-
-Before Samba creation, the page rejects a username when it already exists in the loaded Samba-user set.
-
-If `createOsUserFirst` is requested, it also rejects a username already present in the loaded OS-user set.
-
-Again, backend uniqueness and cross-resource validity remain authoritative.
+That partial-failure contract must be preserved or redesigned explicitly if the flow is restored.
 
 ## StateSync boundary
 
@@ -212,32 +260,19 @@ Again, backend uniqueness and cross-resource validity remain authoritative.
 
 `/api/os/user...` is not currently mapped to a StateSync persisted domain.
 
-OS user operations therefore use ordinary backend mutation + React Query refresh without a frontend canonical snapshot workflow.
+OS-user operations therefore use ordinary backend mutation plus React Query refresh without a frontend canonical `save_to_db=true` snapshot workflow.
 
-Do not invent a local `save_to_db` flag for OS users.
+Do not invent caller-level persistence flags for OS users.
 
 ### Samba users
 
-`/api/samba/users...` mutations are mapped centrally by `StateSyncManager` to:
+`/api/samba/users...` mutations are centrally mapped by `StateSyncManager` to:
 
 ```text
 samba-users + samba-groups
 ```
 
-The cross-domain mapping exists because Samba user mutations can affect group-related state.
-
 Feature code should send only domain mutation data. `StateSyncManager` owns canonical persisted snapshots.
-
-## Loading model
-
-OS-user and Samba-user queries are independent.
-
-The OS table receives:
-
-- OS-list loading/fetching state;
-- a separate Samba-status loading state.
-
-This allows the table to distinguish “OS rows are loading” from “rows are loaded but Samba correlation is still being resolved.”
 
 ## Current product limitation: Other Users tab
 
@@ -247,59 +282,95 @@ The second tab currently renders only:
 بخش سایر کاربران در دست توسعه است.
 ```
 
-Do not document it as a completed identity domain or infer backend behavior that does not exist in the current implementation.
+Do not infer a backend identity model from this placeholder.
 
 ## Error handling
 
-OS-user and Samba-user creation use normalized API error messages and display both modal-level error state and toast feedback.
+The active OS-user create path uses normalized API errors and keeps the creation modal open on failure.
 
-A failed OS-first step stops the Samba-create sequence.
+The dormant Samba-create path also contains modal/toast error handling, including stopping the sequence when an optional OS-first create fails.
 
-A failed Samba step after OS success does not roll back the OS account.
+Do not use unreachable error-handling code as evidence that the corresponding UI workflow is active.
 
 ## Important invariants
 
-- OS users and Samba users are distinct resources and cache entries.
+- OS users and Samba users are distinct backend resources and cache entries.
 - Current OS listing excludes system accounts.
-- Frontend duplicate checks are case-normalized but remain advisory.
-- OS→Samba bridge creation is sequential and non-atomic.
-- Samba creation must not begin if the requested OS-first mutation failed.
-- OS user mutations are not a current StateSync domain.
-- Samba user mutations are centrally persisted through Samba User/Group StateSync domains.
-- The unimplemented Other Users tab must not be treated as production functionality.
+- Frontend duplicate checks are advisory; backend uniqueness remains authoritative.
+- Current `OsUsersTable` does not show Samba status or expose Samba creation.
+- Placeholder Edit/Delete controls must not be documented as implemented operations.
+- Dormant Samba integration should either be restored deliberately or removed deliberately.
+- OS-user mutations are not a current StateSync domain.
+- Samba-user mutations are centrally persisted through the Samba User/Group StateSync domains.
+- The Other Users tab is not production functionality.
 
 ## Common failure scenarios
 
-### OS user exists but Samba status is still false
+### OS-user list does not update after create
 
-Check the Samba-user query independently. OS list success does not imply the Samba list has loaded or contains a corresponding account.
+Check:
 
-### Samba creation fails after choosing “create OS user first”
+1. `POST /api/os/user/create/` response;
+2. OS-user query invalidation;
+3. `GET /api/os/user?include_system=false`;
+4. response normalization in `useOsUsers()`.
 
-Check whether OS creation already succeeded. The frontend does not roll it back automatically.
+### Samba status is not visible in the Users table
 
-### Duplicate validation misses a user
+This is current UI behavior. The historical status column is not rendered by `OsUsersTable`.
 
-Frontend validation uses the currently loaded cache. Confirm the backend response and uniqueness rules rather than adding more client-only assumptions.
+Do not debug the Samba API solely because no status icon appears; first verify whether the product intends to restore that column.
 
-### Manual refresh updates OS users but Samba status looks stale
+### Samba requests appear while the OS-user tab is open
 
-The header refresh currently refetches the OS-user query. Samba data has its own query key/lifecycle.
+`Users.tsx` still loads Samba users for dormant correlation logic. If the integration remains intentionally hidden, this is unnecessary background work and should be removed in a focused cleanup.
+
+### Edit button shows only a browser alert
+
+The current edit control is placeholder UI. There is no completed OS-user edit mutation documented for this feature.
+
+### Delete is unavailable
+
+The current Delete control is disabled. Implementing deletion requires an explicit backend contract, dependency behavior, confirmation UX, and cache invalidation strategy.
 
 ### Backend snapshot does not contain OS-user changes
 
-The current frontend does not define an OS-user StateSync domain. Confirm whether snapshot persistence is part of the backend contract before extending centralized StateSync.
+The current frontend does not define an OS-user StateSync domain. Confirm the backend persistence contract before changing centralized StateSync.
 
 ## Extension guide
 
-### Adding OS-user delete/update
+### Completing OS-user edit/delete
 
 1. confirm backend endpoint and authorization semantics;
-2. implement a dedicated hook/API function;
-3. invalidate `osUsersBaseQueryKey` after success;
-4. decide whether Samba dependencies must block or cascade;
-5. confirm whether OS users need a new centralized StateSync domain;
-6. keep destructive operations confirmation-driven.
+2. implement dedicated hooks/API functions;
+3. remove placeholder `alert`/disabled controls;
+4. require confirmation for destructive deletion;
+5. invalidate `osUsersBaseQueryKey` after success;
+6. decide whether Samba dependencies block or cascade;
+7. confirm whether OS users need a centralized StateSync domain;
+8. update this document and the API endpoint map.
+
+### Restoring Users-page Samba integration
+
+If product requirements want Samba status/action directly on `/users`:
+
+1. restore a supported table column/action, not commented historical code;
+2. consume the existing correlation data intentionally;
+3. make the Samba-create modal reachable through explicit UI;
+4. preserve duplicate checks and partial-failure semantics;
+5. test the cross-domain OS→Samba sequence;
+6. update the table prop contract to match real usage.
+
+### Removing dormant Samba integration
+
+If Samba administration should live only under `/share`:
+
+1. remove the Samba query from `Users.tsx`;
+2. remove unused correlation state;
+3. remove unreachable Samba modal/create handlers;
+4. remove unused `OsUsersTable` Samba props;
+5. confirm request volume drops without changing OS-user behavior;
+6. update this document accordingly.
 
 ### Expanding the Other Users tab
 
