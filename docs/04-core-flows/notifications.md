@@ -1,16 +1,16 @@
-# Notifications
+# Notificationها
 
-This document describes the frontend notification subsystem as implemented today.
+این سند notification subsystem در frontend را مطابق implementation فعلی توضیح می‌دهد.
 
-Notifications observe backend state through React Query and store notification bookkeeping in browser storage. They **do not** own backend database snapshot persistence.
+Notificationها backend state را از طریق React Query observe می‌کنند و notification bookkeeping را در browser storage نگه می‌دارند. آن‌ها **مالک backend database snapshot persistence نیستند**.
 
-## Bootstrap ownership
+## Bootstrap Ownership
 
-`NotificationBootstrapper` is mounted from the authenticated application layout and starts three monitoring flows:
+`NotificationBootstrapper` از authenticated application layout mount می‌شود و سه monitoring flow را شروع می‌کند:
 
-- capacity notifications via `useStartupNotificationChecks`;
-- pool/disk/service status-transition notifications via `useResourceStatusChangeNotifications`;
-- disk-temperature notifications via `useDiskTemperatureNotifications`.
+- capacity notificationها از طریق `useStartupNotificationChecks`؛
+- pool/disk/service status-transition notificationها از طریق `useResourceStatusChangeNotifications`؛
+- disk-temperature notificationها از طریق `useDiskTemperatureNotifications`.
 
 ```mermaid
 flowchart TD
@@ -31,116 +31,116 @@ flowchart TD
     TEMP --> STORE
 ```
 
-## Notification storage is bookkeeping, not system state
+## Notification Storage فقط Bookkeeping است، نه System State
 
-The notification subsystem stores browser-local information such as:
+Notification subsystem اطلاعات browser-local مانند موارد زیر را ذخیره می‌کند:
 
-- notification history;
-- read/unread timestamps;
-- expiration timestamps;
-- prior resource-status snapshots;
-- last capacity-check timestamps.
+- notification history؛
+- read/unread timestamp؛
+- expiration timestamp؛
+- prior resource-status snapshot؛
+- last capacity-check timestamp.
 
-This information is not authoritative state for pools, disks, filesystems, services, users, shares, or system configuration.
+این اطلاعات authoritative state برای pool، disk، filesystem، service، user، share یا system configuration نیستند.
 
-The backend remains the source of truth for managed-system state.
+Backend همچنان source of truth برای managed-system state است.
 
-## Local notification lifecycle
+## Local Notification Lifecycle
 
-`src/utils/notificationStorage.ts` stores notifications under a per-user key:
+`src/utils/notificationStorage.ts`، notificationها را زیر per-user key زیر ذخیره می‌کند:
 
 ```text
 soho:notifications:<userKey>
 ```
 
-The default notification TTL is 10 days.
+Default notification TTL برابر 10 روز است.
 
-`upsertNotification` deduplicates by `fingerprint`:
+`upsertNotification` بر اساس `fingerprint` deduplicate می‌کند:
 
-- if no matching fingerprint exists, a new notification is created;
-- if one exists, the existing notification is updated instead of adding another row;
-- its `updatedAt` and expiration time are refreshed;
-- escalation from warning to critical clears `readAt` so the stronger state becomes unread again.
+- اگر fingerprint مشابه وجود نداشته باشد، notification جدید ساخته می‌شود؛
+- اگر وجود داشته باشد، notification موجود update می‌شود و row جدید ساخته نمی‌شود؛
+- `updatedAt` و expiration time refresh می‌شوند؛
+- escalation از warning به critical مقدار `readAt` را clear می‌کند تا severity قوی‌تر دوباره unread شود.
 
-This fingerprint behavior is a major part of duplicate suppression throughout the subsystem.
+این fingerprint behavior بخش اصلی duplicate suppression در subsystem است.
 
-## Capacity checks
+## Capacity Checkها
 
-`useStartupNotificationChecks` monitors capacity for:
+`useStartupNotificationChecks` capacity را برای موارد زیر monitor می‌کند:
 
-- zpools;
-- filesystems.
+- zpoolها؛
+- filesystemها.
 
-It does not currently check volumes.
+در حال حاضر volumeها را check نمی‌کند.
 
-### Thresholds
+### Thresholdها
 
-The canonical thresholds are defined in `notificationCapacityRules.ts`:
+Canonical thresholdها در `notificationCapacityRules.ts` تعریف شده‌اند:
 
 | Capacity | Severity |
 | ---: | --- |
-| below 75% | no capacity notification |
-| 75% to below 90% | warning |
-| 90% and above | critical |
+| کمتر از 75% | بدون capacity notification |
+| 75% تا کمتر از 90% | warning |
+| 90% و بالاتر | critical |
 
-Do not duplicate these numbers in feature code. Use the exported constants/rules.
+این numberها را در feature code duplicate نکنید؛ از exported constant/ruleها استفاده کنید.
 
-### Polling cadence
+### Polling Cadence
 
-Capacity monitoring creates two dedicated React Query entries:
+Capacity monitoring دو React Query entry اختصاصی ایجاد می‌کند:
 
 - `['notifications', 'capacity', 'zpool']`
 - `['notifications', 'capacity', 'filesystems']`
 
-Both execute every 60 seconds while the bootstrapper is mounted, with background polling disabled.
+هر دو تا زمانی که bootstrapper mount است هر 60 ثانیه اجرا می‌شوند و background polling غیرفعال است.
 
-These are **separate cache entries** from normal page-level zpool/filesystem queries even though they reuse `fetchZpools` and `fetchFileSystems`.
+این‌ها با وجود reuse کردن `fetchZpools` و `fetchFileSystems`، **cache entryهای جدا** از ordinary page-level zpool/filesystem query هستند.
 
-This is current behavior and means capacity monitoring can produce an independent request cadence. Do not describe these queries as shared page-query consumers unless the implementation is later changed to use shared keys.
+این behavior فعلی است و یعنی capacity monitoring می‌تواند cadence مستقل request داشته باشد. تا زمانی که implementation به shared key تغییر نکرده، این queryها را shared page-query consumer توصیف نکنید.
 
-### Check throttling
+### Check Throttling
 
-The hook stores the last completed capacity-check timestamp per user:
+Hook، timestamp مربوط به آخرین capacity check کامل‌شده را برای هر user زیر key زیر ذخیره می‌کند:
 
 ```text
 soho:notifications:last-capacity-check:<userKey>
 ```
 
-Even when fresh query data arrives, the notification rule itself will not be processed more often than the configured 60-second capacity-check interval.
+حتی اگر query data تازه برسد، notification rule با فرکانسی بیشتر از configured capacity-check interval یعنی 60 ثانیه process نمی‌شود.
 
-`processedCompleteFetchAtRef` also prevents processing the same completed pair of zpool/filesystem query results twice during one mounted lifecycle.
+`processedCompleteFetchAtRef` نیز مانع process شدن دوباره‌ی همان pair کامل‌شده از zpool/filesystem query result در یک mounted lifecycle می‌شود.
 
-### Capacity notification fingerprints
+### Capacity Notification Fingerprint
 
-Pool capacity notifications use a fingerprint based on the pool name.
+Pool capacity notification از fingerprint مبتنی بر pool name استفاده می‌کند.
 
-Filesystem capacity notifications use a fingerprint based on the pool/filesystem identity.
+Filesystem capacity notification از fingerprint مبتنی بر identity مربوط به pool/filesystem استفاده می‌کند.
 
-Because storage uses upsert semantics, an ongoing capacity condition updates an existing notification instead of creating an unbounded stream of duplicates.
+چون storage از upsert semantics استفاده می‌کند، condition مداوم capacity همان notification موجود را update می‌کند و stream نامحدود duplicate ایجاد نمی‌شود.
 
-## Resource status-change notifications
+## Resource Status-change Notificationها
 
-`useResourceStatusChangeNotifications` observes three resource families:
+`useResourceStatusChangeNotifications` سه resource family را observe می‌کند:
 
-- pools via `useZpool()`;
-- disks via `useDisk()`;
-- services via `useServices()`.
+- poolها از طریق `useZpool()`؛
+- diskها از طریق `useDisk()`؛
+- serviceها از طریق `useServices()`.
 
-### Current refresh behavior
+### Refresh Behavior فعلی
 
-This observer does not disable the underlying resource hooks' polling.
+این observer، polling مربوط به underlying resource hookها را disable نمی‌کند.
 
-Current behavior is therefore determined by those hooks:
+در نتیجه behavior فعلی از همان hookها تعیین می‌شود:
 
-- zpool uses its default 30-second interval;
-- services use their current 5-second interval;
-- `useDisk()` has no interval unless one is supplied by its caller.
+- zpool از default interval برابر 30 ثانیه استفاده می‌کند؛
+- serviceها interval فعلی 5 ثانیه دارند؛
+- `useDisk()` تا زمانی که caller interval ارسال نکرده باشد interval ندارد.
 
-Where multiple consumers use the same query key, React Query can share the query/cache. However, notification-specific capacity queries use different keys and are independent.
+هرجا چند consumer query key یکسان استفاده کنند React Query می‌تواند query/cache را share کند. با این حال notification-specific capacity queryها key متفاوت دارند و مستقل‌اند.
 
-### First observation establishes the baseline
+### First Observation، Baseline را می‌سازد
 
-Status-change notification logic compares current normalized state with a previously saved per-user snapshot.
+Status-change notification logic، current normalized state را با per-user snapshot قبلی مقایسه می‌کند.
 
 ```mermaid
 flowchart LR
@@ -153,179 +153,179 @@ flowchart LR
     NOTIFY --> SAVE
 ```
 
-The first observation is not a status transition. It initializes the comparison baseline.
+First observation یک status transition نیست و فقط comparison baseline اولیه را initialize می‌کند.
 
-### Resource identity
+### Resource Identity
 
-Pool identity uses the normalized pool name.
+Pool identity از normalized pool name استفاده می‌کند.
 
-Service identity uses the service unit name.
+Service identity از service unit name استفاده می‌کند.
 
-Disk identity currently prefers:
+Disk identity در حال حاضر به ترتیب زیر ترجیح می‌دهد:
 
-1. `details.wwn`;
-2. `details.wwid`;
-3. the resolved disk display/device name as fallback.
+1. `details.wwn`؛
+2. `details.wwid`؛
+3. resolved disk display/device name به‌عنوان fallback.
 
-This identity is used to match the current disk against the previous snapshot.
+این identity برای match کردن current disk با previous snapshot استفاده می‌شود.
 
-If disk identity semantics change in the backend, review this logic before modifying labels or snapshot formats.
+اگر disk identity semantics در backend تغییر کرد، پیش از تغییر labelها یا snapshot formatها این logic را review کنید.
 
-### Unavailable resource families
+### Resource Familyهای Unavailable
 
-When one resource family cannot be observed successfully during a check, previous baseline entries for that unavailable family are retained instead of being silently deleted.
+اگر یک resource family هنگام check قابل observe نباشد، previous baseline entryهای همان unavailable family به‌جای حذف‌شدن حفظ می‌شوند.
 
-This prevents a temporary query failure from looking like all resources of that type disappeared.
+این کار مانع آن می‌شود که temporary query failure شبیه ناپدیدشدن همه‌ی resourceهای آن type دیده شود.
 
-### Transition fingerprints
+### Transition Fingerprintها
 
-Status transition fingerprints include:
+Status transition fingerprint شامل موارد زیر است:
 
-- resource type;
-- resource ID;
-- previous status;
+- resource type؛
+- resource ID؛
+- previous status؛
 - current status.
 
-As a result, the same transition fingerprint is updated rather than duplicated, while a different transition can produce a distinct notification.
+در نتیجه transition یکسان به‌جای duplicate شدن update می‌شود و transition متفاوت می‌تواند notification مستقل ایجاد کند.
 
-## Disk-temperature notifications
+## Disk-temperature Notificationها
 
-`useDiskTemperatureNotifications` observes `useDiskInventory` every 30 seconds while mounted.
+`useDiskTemperatureNotifications` تا زمانی که mounted است هر 30 ثانیه `useDiskInventory` را observe می‌کند.
 
-Background polling is disabled by `useDiskInventory`.
+Background polling توسط `useDiskInventory` غیرفعال است.
 
-### Temperature thresholds
+### Temperature Thresholdها
 
-The rules are defined in `notificationTemperatureRules.ts`:
+Ruleها در `notificationTemperatureRules.ts` تعریف شده‌اند:
 
 | Temperature | Behavior |
 | ---: | --- |
-| below 60°C | no temperature notification |
-| 60°C to below 70°C | warning |
-| 70°C and above | critical |
+| کمتر از 60°C | بدون temperature notification |
+| 60°C تا کمتر از 70°C | warning |
+| 70°C و بالاتر | critical |
 
-### Stable fingerprint
+### Stable Fingerprint
 
-Temperature rule identity prefers:
+Temperature rule identity به ترتیب زیر ترجیح می‌دهد:
 
-1. `wwn`;
-2. `wwid`;
-3. `uuid`;
+1. `wwn`؛
+2. `wwid`؛
+3. `uuid`؛
 4. disk name.
 
-The generated fingerprint is:
+Fingerprint تولیدشده:
 
 ```text
 disk-temperature:<entityId>
 ```
 
-A disk that remains hot therefore updates the same stored notification rather than generating a new notification every 30 seconds.
+در نتیجه diskای که همچنان داغ است هر 30 ثانیه notification جدید نمی‌سازد و همان stored notification را update می‌کند.
 
-If severity escalates from warning to critical, `upsertNotification` marks that notification unread again.
+اگر severity از warning به critical escalate کند، `upsertNotification` همان notification را دوباره unread می‌کند.
 
-### Signature guard
+### Signature Guard
 
-The hook also calculates a signature from disk name, WWN, WWID, and temperature. The same successful inventory result is not processed twice during the same mounted lifecycle.
+Hook همچنین signatureای از disk name، WWN، WWID و temperature می‌سازد. یک successful inventory result یکسان در همان mounted lifecycle دوبار process نمی‌شود.
 
-This guard prevents duplicate rule execution caused by React re-renders; fingerprint upsert remains the durable duplicate-control mechanism in storage.
+این guard از duplicate rule execution ناشی از React re-render جلوگیری می‌کند؛ fingerprint upsert همچنان durable duplicate-control mechanism در storage است.
 
-## Polling summary for notifications
+## خلاصه‌ی Polling مربوط به Notificationها
 
-| Monitor | Data source | Interval |
+| Monitor | Data Source | Interval |
 | --- | --- | ---: |
-| Capacity: zpool | dedicated notification query using `fetchZpools` | 60 s |
-| Capacity: filesystems | dedicated notification query using `fetchFileSystems` | 60 s |
+| Capacity: zpool | dedicated notification query با `fetchZpools` | 60 s |
+| Capacity: filesystems | dedicated notification query با `fetchFileSystems` | 60 s |
 | Status: pools | `useZpool()` / `['zpool']` | 30 s default |
-| Status: disks | `useDisk()` / `['disk']` | no interval by this caller |
+| Status: disks | `useDisk()` / `['disk']` | بدون interval از طرف این caller |
 | Status: services | `useServices()` / `['services']` | 5 s |
 | Temperature | `useDiskInventory()` / `['disk','inventory']` | 30 s |
 
-See [`polling-and-data-refresh.md`](./polling-and-data-refresh.md) for the application-wide inventory.
+برای inventory سراسری application به [`polling-and-data-refresh.md`](./polling-and-data-refresh.md) مراجعه کنید.
 
-## Notification reads never persist backend snapshots
+## Notification Readها هیچ‌گاه Backend Snapshot را Persist نمی‌کنند
 
-All notification data reads are observational.
+تمام notification data readها observational هستند.
 
-They must not set `save_to_db=true`.
+نباید `save_to_db=true` تنظیم کنند.
 
-The Axios transport policy forces normal API traffic to `save_to_db=false`; only `StateSyncManager` owns canonical persistence snapshots.
+Axios transport policy normal API traffic را به `save_to_db=false` force می‌کند؛ فقط `StateSyncManager` canonical persistence snapshot را مالک است.
 
-## Relationship to successful mutations
+## ارتباط با Mutation موفق
 
-A successful mutation can invalidate active React Query state. Notification observers sharing those query keys may then receive fresh data before their next scheduled interval.
+Mutation موفق می‌تواند active React Query state را invalidate کند. Notification observerهایی که همان query key را share می‌کنند ممکن است پیش از interval بعدی data تازه دریافت کنند.
 
-Notification-specific capacity queries use dedicated keys, so they are not automatically the same cache entry as page-level queries.
+Notification-specific capacity queryها dedicated key دارند، بنابراین الزاماً همان cache entry مربوط به page-level query نیستند.
 
-Do not assume that all notification monitors receive every feature invalidation unless their exact query key is covered by that invalidation/global active refetch behavior.
+فرض نکنید همه‌ی notification monitorها هر feature invalidation را دریافت می‌کنند، مگر exact query key آن‌ها توسط invalidation/global active refetch behavior پوشش داده شود.
 
-## User isolation
+## User Isolation
 
-Notification history, capacity-check timestamps, and resource-status snapshots are user-scoped where the current storage helpers accept `userKey`.
+Notification history، capacity-check timestamp و resource-status snapshot در محل‌هایی که helper فعلی `userKey` می‌پذیرد user-scoped هستند.
 
-When changing storage keys or formats:
+هنگام تغییر storage key یا format:
 
-- preserve user separation;
-- migrate or safely discard obsolete formats;
-- never expose one user's administrative notification history in another user's session.
+- user separation را حفظ کنید؛
+- obsolete format را migrate یا به‌شکل ایمن discard کنید؛
+- notification history مدیریتی یک user را در session user دیگر expose نکنید.
 
-## Adding a new notification rule
+## اضافه‌کردن Notification Rule جدید
 
-Before implementing a new rule, answer:
+پیش از implementation پاسخ دهید:
 
-1. What authoritative backend state drives it?
-2. Is an existing query key sufficient, or is a dedicated query intentionally required?
-3. What refresh cadence is operationally justified?
-4. Is the rule about current state or a state transition?
-5. What stable entity identity should be used?
-6. What fingerprint prevents duplicate notifications?
-7. Does severity escalation need to reset read state?
-8. Does the rule require a persisted baseline?
-9. Must browser bookkeeping be scoped per user?
-10. How does the rule behave when a resource query fails temporarily?
+1. کدام authoritative backend state آن را drive می‌کند؟
+2. Existing query key کافی است یا dedicated query عمداً لازم است؟
+3. چه refresh cadence از نظر operational توجیه دارد؟
+4. Rule درباره‌ی current state است یا state transition؟
+5. چه stable entity identity باید استفاده شود؟
+6. چه fingerprintی جلوی duplicate notification را می‌گیرد؟
+7. آیا severity escalation باید read state را reset کند؟
+8. آیا rule به persisted baseline نیاز دارد؟
+9. Browser bookkeeping باید per-user scope داشته باشد؟
+10. هنگام temporary resource query failure چه behaviorی دارد؟
 
-Do not add polling and then separately add a second timer in the notification rule itself unless both layers are explicitly necessary.
+Polling اضافه نکنید و بعد بدون نیاز صریح timer دوم مستقلی داخل notification rule نسازید.
 
-## Debugging missing notifications
+## Debug کردن Missing Notification
 
-1. Confirm `NotificationBootstrapper` is mounted under the authenticated layout.
-2. Confirm the expected data query is successful.
-3. Check the exact query key and polling cadence for that monitor.
-4. For capacity alerts, inspect the per-user last-check timestamp.
-5. For status changes, inspect the saved prior snapshot and current normalized status.
-6. Confirm this is not intentionally the first baseline observation.
-7. Verify entity identity is stable.
-8. For temperature, verify 60°C/70°C thresholds and normalized inventory temperature.
-9. Inspect the generated fingerprint and any existing notification with that fingerprint.
+1. تأیید کنید `NotificationBootstrapper` زیر authenticated layout mount است.
+2. تأیید کنید expected data query موفق است.
+3. Exact query key و polling cadence مربوط به monitor را بررسی کنید.
+4. برای capacity alert، per-user last-check timestamp را بررسی کنید.
+5. برای status change، saved prior snapshot و current normalized status را بررسی کنید.
+6. مطمئن شوید این مورد intentionally first baseline observation نیست.
+7. Stable بودن entity identity را verify کنید.
+8. برای temperature، thresholdهای 60°C/70°C و normalized inventory temperature را بررسی کنید.
+9. Generated fingerprint و notification موجود با همان fingerprint را بررسی کنید.
 
-## Debugging duplicate notifications or requests
+## Debug کردن Duplicate Notification یا Request
 
-Separate two questions:
+دو سؤال را جدا کنید:
 
-### Duplicate notifications
+### Duplicate Notification
 
-Inspect fingerprints, status baselines, and signature guards.
+Fingerprint، status baseline و signature guard را بررسی کنید.
 
-### Duplicate network requests
+### Duplicate Network Request
 
-Inspect React Query keys. Capacity monitoring intentionally uses notification-specific keys, while status monitors may share ordinary resource keys.
+React Query keyها را بررسی کنید. Capacity monitoring عمداً notification-specific key دارد، در حالی که status monitorها ممکن است ordinary resource key را share کنند.
 
-A request visible twice with different query keys is not React Query deduplication failure; it represents two independent query entries.
+Request مشابه با query key متفاوت، failure در React Query deduplication نیست؛ دو query entry مستقل است.
 
-## Maintenance invariants
+## Maintenance Invariantها
 
-Preserve these rules:
+این ruleها را حفظ کنید:
 
-- notifications never own backend snapshot persistence;
-- browser notification storage is bookkeeping, not managed-system source of truth;
-- thresholds come from centralized rule modules;
-- first status observations establish a baseline rather than fabricating a transition;
-- resource identity and fingerprints must remain stable enough for deduplication;
-- temporary unavailable resource families must not erase valid prior baselines accidentally;
-- capacity checks currently use dedicated 60-second notification queries;
-- temperature checks currently use a 30-second disk-inventory query;
-- notification documentation must describe actual query keys/cadences, not an assumed ideal sharing model.
+- notificationها هرگز backend snapshot persistence را مالک نیستند؛
+- browser notification storage فقط bookkeeping است، نه managed-system source of truth؛
+- thresholdها از centralized rule module می‌آیند؛
+- first status observation baseline می‌سازد و transition جعلی ایجاد نمی‌کند؛
+- resource identity و fingerprint باید برای deduplication به‌اندازه‌ی کافی stable بمانند؛
+- temporary unavailable resource family نباید valid prior baseline را تصادفی پاک کند؛
+- capacity checkها در حال حاضر dedicated notification query با 60 ثانیه هستند؛
+- temperature checkها در حال حاضر از disk-inventory query با 30 ثانیه استفاده می‌کنند؛
+- notification documentation باید actual query key/cadence را توصیف کند، نه ideal sharing model فرضی.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/components/notifications/NotificationBootstrapper.tsx`
 - `src/hooks/useStartupNotificationChecks.ts`
@@ -337,7 +337,7 @@ Preserve these rules:
 - `src/utils/notificationStatusRules.ts`
 - `src/utils/notificationTemperatureRules.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`server-state-and-cache.md`](./server-state-and-cache.md)
 - [`polling-and-data-refresh.md`](./polling-and-data-refresh.md)
