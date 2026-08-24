@@ -1,12 +1,12 @@
 # Troubleshooting
 
-This runbook is for diagnosing SOHO UI build, deployment, authentication, API, caching, polling, and feature-level operational failures.
+این runbook برای diagnose کردن failureهای مربوط به build، deployment، authentication، API، cache، polling و operationهای feature-level در SOHO UI است.
 
-Start by identifying which layer is actually failing before changing code.
+قبل از تغییر code، ابتدا مشخص کنید واقعاً کدام layer fail شده است.
 
-## First classification
+## classification اولیه
 
-Use this order:
+از این ترتیب استفاده کنید:
 
 ```text
 1. Build artifact exists?
@@ -21,94 +21,94 @@ Use this order:
 10. StateSync persistence correct?
 ```
 
-A frontend symptom can originate several layers away. Avoid fixing the visible symptom before locating the owning layer.
+یک frontend symptom ممکن است منشأیی چند layer دورتر داشته باشد. قبل از پیدا کردن owning layer، فقط symptom ظاهری را patch نکنید.
 
-## Build failures
+## Build failureها
 
-### `npm ci` fails
+### `npm ci` fail می‌شود
 
-Check:
+بررسی کنید:
 
 ```bash
 node --version
 npm --version
 ```
 
-Then inspect the actual npm error for:
+سپس npm error واقعی را برای موارد زیر بررسی کنید:
 
-- unsupported Node/npm combination;
-- registry/network failure;
-- `package.json` / `package-lock.json` mismatch;
-- filesystem permission problems;
-- corrupted dependency cache only when evidence points there.
+- unsupported Node/npm combination؛
+- registry/network failure؛
+- mismatch بین `package.json` و `package-lock.json`؛
+- filesystem permission problem؛
+- corrupted dependency cache فقط وقتی evidence به آن اشاره دارد.
 
-Do not replace `npm ci` with an untracked `npm install` on a release pipeline merely to force installation through a lockfile mismatch.
+در release pipeline صرفاً برای عبور از lockfile mismatch، `npm ci` را با untracked `npm install` جایگزین نکنید.
 
-### TypeScript build fails
+### TypeScript build fail می‌شود
 
-Normal build is:
+Normal build:
 
 ```bash
 npm run build
 ```
 
-which includes:
+شامل:
 
 ```text
 tsc -b
 vite build
 ```
 
-Fix the TypeScript/source problem. Do not release with a custom command that bypasses `tsc -b`.
+TypeScript/source problem را اصلاح کنید. Release را با custom commandی که `tsc -b` را bypass می‌کند نسازید.
 
-### Lint fails but build passes
+### Lint fail است ولی build pass می‌شود
 
-Run:
+اجرا کنید:
 
 ```bash
 npm run lint
 ```
 
-Build and lint are separate gates. Review the specific ESLint error instead of treating a successful bundle as equivalent to lint success.
+Build و lint دو gate جدا هستند. Successful bundle را معادل lint success در نظر نگیرید؛ ESLint error دقیق را بررسی کنید.
 
-## `dist/` is missing
+## `dist/` وجود ندارد
 
-A successful `npm run build` should produce:
+`npm run build` موفق باید directory زیر را تولید کند:
 
 ```text
 dist/
 ```
 
-Check:
+بررسی:
 
 ```bash
 ls -la dist
 ```
 
-If the directory does not exist, inspect the build output before touching Nginx.
+اگر directory وجود ندارد، قبل از دست زدن به Nginx build output را بررسی کنید.
 
-## Blank page after deployment
+## Blank page بعد از deployment
 
-Open browser Developer Tools.
+Browser Developer Tools را باز کنید.
 
-Check:
+بررسی کنید:
 
-1. `index.html` status;
-2. main JS/CSS bundle status;
-3. console errors;
-4. asset paths;
-5. API requests.
+1. status مربوط به `index.html`؛
+2. status مربوط به main JS/CSS bundle؛
+3. console errorها؛
+4. asset pathها؛
+5. API requestها.
 
-Common causes:
+علت‌های رایج:
 
-- wrong Nginx root;
-- incomplete artifact upload;
-- JS asset 404;
-- stale cached `index.html` referencing removed assets;
-- incorrect hosting-path assumptions with Vite `base: './'`;
-- runtime exception visible in browser console.
+- Nginx root اشتباه؛
+- artifact upload ناقص؛
+- JS asset با 404؛
+- cached `index.html` قدیمی که به asset حذف‌شده reference می‌دهد؛
+- hosting-path assumption اشتباه با Vite `base: './'`؛
+- runtime exception در browser console.
 
-## Root works but nested-route refresh returns 404
+## Root کار می‌کند ولی refresh روی nested route برابر 404 است
 
 Symptom:
 
@@ -116,7 +116,7 @@ Symptom:
 /dashboard works after clicking from /
 ```
 
-but direct browser navigation to:
+اما direct navigation به موارد زیر:
 
 ```text
 /settings
@@ -124,9 +124,9 @@ but direct browser navigation to:
 /share
 ```
 
-returns an Nginx 404.
+Nginx 404 می‌دهد.
 
-Cause is usually missing SPA fallback.
+علت معمول، نبود SPA fallback است.
 
 Reference rule:
 
@@ -136,98 +136,98 @@ location / {
 }
 ```
 
-Validate Nginx config before reload:
+قبل از reload، Nginx config را validate کنید:
 
 ```bash
 sudo nginx -t
 ```
 
-Then use the organization's normal reload procedure, commonly:
+سپس از reload procedure معمول سازمان استفاده کنید، معمولاً:
 
 ```bash
 sudo systemctl reload nginx
 ```
 
-## Assets load at `/` but fail on some route forms
+## Assetها روی `/` load می‌شوند ولی روی بعضی route formها fail هستند
 
-Current Vite config uses:
+Vite config فعلی:
 
 ```text
 base: './'
 ```
 
-Inspect actual asset URLs in browser Network/HTML when:
+در شرایط زیر actual asset URL را در browser Network/HTML بررسی کنید:
 
-- routes gain trailing slashes;
-- frontend moves under a subpath;
-- Nginx redirects URLs;
-- a reverse proxy rewrites paths.
+- routeها trailing slash می‌گیرند؛
+- frontend زیر subpath می‌رود؛
+- Nginx URL را redirect می‌کند؛
+- reverse proxy path را rewrite می‌کند.
 
-Do not assume the issue is React Router if JS/CSS requests themselves point to the wrong location.
+اگر خود JS/CSS request به location اشتباه می‌رود، فوراً React Router را مقصر ندانید.
 
-## Fonts or 3D assets 404
+## Font یا 3D asset با 404
 
-Check:
+بررسی کنید:
 
-- browser request path;
-- `public/` artifact contents;
-- Vite `/fonts` alias expectations;
-- Nginx root;
-- filename case sensitivity on Linux;
-- whether public assets were actually included in the deployed build.
+- browser request path؛
+- محتوای `public/` داخل artifact؛
+- expectation مربوط به Vite `/fonts` alias؛
+- Nginx root؛
+- filename case sensitivity روی Linux؛
+- اینکه public asset واقعاً وارد deployed build شده است.
 
-Linux production hosting is case-sensitive even when a developer previously tested on a case-insensitive filesystem.
+Production Linux hosting case-sensitive است، حتی اگر developer قبلاً روی filesystem case-insensitive تست کرده باشد.
 
-## Old UI remains after deployment
+## بعد از deployment هنوز UI قدیمی دیده می‌شود
 
-Check:
+بررسی کنید:
 
-1. whether Nginx `current`/root points to the intended release;
-2. `index.html` cache headers;
-3. browser cache;
-4. CDN/proxy cache if present;
-5. whether the new artifact actually has different hashed assets;
-6. source commit recorded for the release.
+1. Nginx `current`/root به release درست اشاره می‌کند؛
+2. cache header مربوط به `index.html`؛
+3. browser cache؛
+4. CDN/proxy cache در صورت وجود؛
+5. artifact جدید واقعاً hashed asset متفاوت دارد؛
+6. source commit ثبت‌شده برای release.
 
-Aggressively caching `index.html` can keep clients on an old release even when new files exist on disk.
+Aggressive cache برای `index.html` می‌تواند user را روی release قدیمی نگه دارد حتی اگر fileهای جدید روی disk موجود باشند.
 
-## UI loads but talks to the wrong backend
+## UI load می‌شود ولی به backend اشتباه request می‌زند
 
-Inspect browser Network request URLs.
+Request URLهای browser Network را بررسی کنید.
 
-`VITE_API_BASE_URL` and `VITE_AUTH_API_BASE_URL` are build-time values.
+`VITE_API_BASE_URL` و `VITE_AUTH_API_BASE_URL` build-time value هستند.
 
-If the bundle contains a wrong API origin:
+اگر bundle API origin اشتباه دارد:
 
 ```text
 rebuild the frontend with correct VITE_* values
 ```
 
-Changing a shell environment variable on the Nginx host after build does not rewrite existing static JavaScript.
+تغییر shell environment variable روی Nginx host بعد از build، JavaScript static موجود را rewrite نمی‌کند.
 
-## CORS failures
+## CORS failure
 
-Symptoms often include browser console messages while curl/server-to-server access works.
+معمولاً browser console error می‌دهد در حالی که curl یا server-to-server access کار می‌کند.
 
-Check:
+بررسی کنید:
 
-- frontend origin;
-- API origin;
-- backend allowed origins;
-- Authorization header allowance;
-- HTTP methods (`PUT`, `DELETE`, etc.);
-- preflight OPTIONS behavior;
+- frontend origin؛
+- API origin؛
+- backend allowed originها؛
+- اجازه‌ی Authorization header؛
+- HTTP methodها مانند `PUT` و `DELETE`؛
+- preflight OPTIONS؛
 - reverse-proxy handling.
 
-If frontend and API share one public origin through Nginx proxy, CORS complexity can often be reduced.
+اگر frontend و API از یک public origin پشت Nginx proxy استفاده کنند، CORS complexity اغلب کمتر می‌شود.
 
-Do not “fix” CORS by disabling browser security or using wildcard credential policy without understanding backend security implications.
+CORS را با disable کردن browser security یا wildcard credential policy بدون فهم security implication حل نکنید.
 
-## Login endpoint 404 / wrong URL
+## Login endpoint برابر 404 یا URL اشتباه است
 
-Verify configured/derived auth base.
+Configured/derived auth base را verify کنید.
 
-Expected token paths are relative to auth base:
+Expected token pathها relative به auth base هستند:
 
 ```text
 token/
@@ -235,82 +235,78 @@ token/refresh/
 token/verify/
 ```
 
-If using ordinary base:
+اگر ordinary base این باشد:
 
 ```env
 VITE_API_BASE_URL=https://api.example.com
 ```
 
-frontend derives:
+Frontend این path را derive می‌کند:
 
 ```text
 https://api.example.com/api/auth/
 ```
 
-If auth lives elsewhere, configure:
+اگر auth جای دیگری host شده، `VITE_AUTH_API_BASE_URL` را configure کنید.
 
-```text
-VITE_AUTH_API_BASE_URL
-```
+قبل از تغییر auth code، browser request URL واقعی را inspect کنید.
 
-Inspect actual browser request URL before changing auth code.
+## Login موفق است ولی requestهای بعدی 401 می‌گیرند
 
-## Login succeeds but subsequent API calls return 401
+بررسی کنید:
 
-Check:
+1. access token از login برگشته باشد؛
+2. `AuthContext` authenticated state را set کرده باشد؛
+3. shared Axios request دارای `Authorization: Bearer ...` باشد؛
+4. token برای backend environment معتبر باشد؛
+5. backend clock/token expiry؛
+6. frontend و auth endpointها به یک intended environment اشاره کنند.
 
-1. access token was returned by login;
-2. `AuthContext` stored authenticated state;
-3. shared Axios request has `Authorization: Bearer ...`;
-4. token is valid for the backend environment;
-5. backend clock/token expiry;
-6. frontend and auth endpoints are pointing to the same intended environment.
+برای debugging shortcut، access token را در localStorage persist نکنید.
 
-Do not persist the access token to localStorage as a debugging shortcut.
+## 401 تکراری / refresh loop
 
-## Repeated 401 / refresh loop
+Architecture مورد انتظار:
 
-Expected architecture uses:
+- یک isolated refresh request؛
+- `_retry` guard به ازای failed request؛
+- یک `isRefreshing` single-flight state؛
+- queue برای failureهای concurrent.
 
-- one isolated refresh request;
-- `_retry` guard per failed request;
-- one `isRefreshing` single-flight state;
-- queued concurrent failures.
+بررسی کنید:
 
-Check whether:
+- refresh endpoint اشتباهاً روی shared `axiosInstance` منتقل نشده باشد؛
+- `_retry` حذف نشده باشد؛
+- refresh token missing/expired نباشد؛
+- backend replayed request را حتی با access token جدید 401 نکند؛
+- token scope/authorization operation را به دلیلی غیر از expiry reject نکرده باشد.
 
-- refresh endpoint itself was accidentally moved onto shared `axiosInstance`;
-- `_retry` was removed;
-- refresh token is missing/expired;
-- backend returns 401 for replayed request even with new access token;
-- token scopes/authorization reject the operation for reasons beyond expiry.
+Refresh failure باید session را clear کند، نه اینکه بی‌نهایت recurse شود.
 
-A refresh failure should clear the session rather than recurse indefinitely.
+## Session بعد از browser reload ناپدید می‌شود
 
-## Session disappears after browser reload
+Design فعلی access token را memory-only نگه می‌دارد.
 
-Current design keeps access token memory-only.
+Session restoration به موارد زیر وابسته است:
 
-Session restoration depends on:
+- refresh token در `sessionStorage`؛
+- username/session metadata؛
+- idle timestamp؛
+- refresh/verification موفق.
 
-- refresh token in `sessionStorage`;
-- username/session metadata;
-- idle timestamp;
-- successful refresh/verification.
+SessionStorage و auth network callها را بررسی کنید. صرفاً از بین رفتن memory-only access token روی reload bug نیست.
 
-Check sessionStorage and auth network calls. Do not treat memory-only access-token loss on reload as a bug by itself.
+## User بعد از inactivity logout می‌شود
 
-## User is logged out after inactivity
+Frontend idle timeout فعلی 30 دقیقه است.
 
-Frontend idle timeout is currently 30 minutes.
+Activity timestamp در session storage از reload جان سالم به در می‌برد.
 
-The activity timestamp survives reload in session storage.
+قبل از تغییر token behavior، بررسی کنید elapsed time واقعاً از timeout عبور کرده است یا خیر.
 
-Check whether the elapsed time genuinely exceeded the timeout before changing token behavior.
+## `save_to_db=true` روی normal request دیده می‌شود
 
-## `save_to_db=true` appears on normal requests
-
-This violates the current persistence contract unless the request is an internal StateSync canonical snapshot.
+این behavior contract فعلی persistence را نقض می‌کند، مگر اینکه request یک internal StateSync canonical snapshot باشد.
 
 Expected:
 
@@ -319,47 +315,58 @@ normal /api traffic -> save_to_db=false
 StateSync canonical GET -> save_to_db=true
 ```
 
-Inspect:
+بررسی کنید:
 
-- request URL/params;
-- whether `X-Soho-State-Sync` internal marking was involved before interceptor removal;
-- caller code for legacy `save_to_db` fields;
+- request URL/params؛
+- آیا internal marker مربوط به `X-Soho-State-Sync` قبل از interceptor removal درگیر بوده؛
+- caller code برای legacy `save_to_db` field؛
 - `applySaveToDbTransportPolicy()`.
 
-Do not add more caller flags to compensate.
+برای جبران، caller flag بیشتری اضافه نکنید.
 
-## Mutation succeeds but persisted snapshot does not run
+## Mutation موفق است ولی persisted snapshot اجرا نمی‌شود
 
-Check:
+بررسی کنید:
 
-1. request went through shared `axiosInstance`;
-2. method is POST/PUT/PATCH/DELETE;
-3. endpoint is not classified as auth;
-4. `resolveStateDomainsForMutation(url)` maps the URL;
-5. the domain has a canonical `STATE_SYNC_DEFINITIONS` entry;
-6. StateSync executor request succeeds.
+1. request از shared `axiosInstance` عبور کرده؛
+2. method یکی از POST/PUT/PATCH/DELETE است؛
+3. endpoint به‌عنوان auth classify نشده؛
+4. `resolveStateDomainsForMutation(url)` URL را map می‌کند؛
+5. domain دارای `STATE_SYNC_DEFINITIONS` canonical entry است؛
+6. StateSync executor request موفق است.
 
-Remember some domains intentionally have no current StateSync mapping, including Volumes, OS users, Web users, services, general settings, and network configuration.
+به یاد داشته باشید بعضی domainها عمداً mapping ندارند، از جمله:
 
-## Unexpected persistence after a diagnostic POST
+- Volumes؛
+- OS users؛
+- Web users؛
+- services؛
+- general settings؛
+- network configuration؛
+- SNMP به‌عنوان domain مستقل؛
+- Samba user/group به‌عنوان domain مستقل.
 
-HTTP POST does not automatically mean “persist this domain.”
+در `stateSyncManager.ts` صحیح GitLab persisted domainهای فعلی عبارت‌اند از `zpool`، `filesystem`، `disk`، `nfs`، `samba-shares` و `webshare`.
 
-Known explicit example:
+## Diagnostic POST و persistence غیرمنتظره
+
+HTTP POST به‌تنهایی به معنی persisted mutation نیست.
+
+نمونه‌ی مهم:
 
 ```text
 POST /api/snmp/test-connection/
 ```
 
-must be excluded from SNMP StateSync because it is diagnostic.
+این operation diagnostic است. در نسخه‌ی صحیح GitLab، SNMP اصلاً StateSync domain مستقل ندارد؛ بنابراین test connection هم نباید هیچ persisted StateSync snapshot مربوط به SNMP تولید کند.
 
-When adding similar actions, put diagnostic exclusions before broad domain URL matches.
+برای actionهای مشابه، semantics domain را بررسی کنید و صرفاً بر اساس HTTP method mapping نسازید.
 
-## UI does not refresh after a successful mutation
+## UI بعد از mutation موفق refresh نمی‌شود
 
-Persistence and UI freshness are separate.
+Persistence و UI freshness جدا هستند.
 
-Check React Query invalidation first:
+ابتدا React Query invalidation را بررسی کنید:
 
 ```text
 mutation success
@@ -369,54 +376,56 @@ correct query key invalidated?
 refetch returns changed backend state?
 ```
 
-Do not use `save_to_db` as a cache-refresh mechanism.
+از `save_to_db` به‌عنوان cache-refresh mechanism استفاده نکنید.
 
-## Duplicate/frequent requests
+## Duplicate/frequent request
 
-Before removing polling, identify whether requests have different semantic purposes.
+قبل از حذف polling مشخص کنید requestها semantic purpose متفاوت ندارند.
 
-Examples:
+مثال:
 
-- Services intentionally perform one list request plus one status request per unit every 5 seconds.
-- Samba account flags intentionally fan out one query per displayed username.
-- Dashboard Network has base interface data plus separate bandwidth snapshots every 2 seconds.
-- Notification capacity checks currently have dedicated queries separate from some page caches.
+- Services عمداً یک list request + یک status request به ازای هر unit هر 5 ثانیه دارد؛
+- Samba Account Flags عمداً یک query به ازای هر username نمایش‌داده‌شده fan-out می‌کند؛
+- Dashboard Network base interface data جدا از bandwidth snapshot هر 2 ثانیه دارد؛
+- Notification capacity checkها dedicated query مستقل از بعضی page cacheها دارند.
 
-Use [`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md) as the polling inventory.
+Polling inventory canonical:
 
-## CPU / Memory / Network keeps polling in hidden tab
+[`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md)
 
-Expected high-frequency telemetry uses:
+## CPU / Memory / Network در hidden tab همچنان polling دارند
+
+High-frequency telemetry مورد انتظار از این setting استفاده می‌کند:
 
 ```text
 refetchIntervalInBackground=false
 ```
 
-If hidden-tab traffic appears excessive, inspect the actual query/hook and browser visibility state before changing cadence.
+اگر hidden-tab traffic زیاد است، قبل از تغییر cadence actual query/hook و browser visibility state را inspect کنید.
 
-## Integrated Storage request volume is high
+## Integrated Storage request volume زیاد است
 
-Check whether lifecycle-gated resources became permanently enabled:
+بررسی کنید lifecycle-gated resourceها permanently enabled نشده باشند:
 
-- available/unpartitioned disk query should be active only for Create/Add/Replace flows;
-- importable pool query should be modal-scoped;
-- pool slot mapping should be on-demand;
-- detail queries should be bounded to selected/pinned pools.
+- available/unpartitioned disk query فقط برای Create/Add/Replace فعال باشد؛
+- importable pool query modal-scoped باشد؛
+- pool slot mapping on-demand باشد؛
+- detail queryها به selected/pinned pool محدود باشند.
 
-## Wipe button is disabled unexpectedly
+## Wipe button غیرمنتظره disabled است
 
-Disk wipe eligibility combines:
+Disk wipe eligibility ترکیبی از موارد زیر است:
 
-- pool membership;
-- partition-count readiness;
-- partition count;
-- current wipe state.
+- pool membership؛
+- partition-count readiness؛
+- partition count؛
+- wipe state فعلی.
 
-Inspect the dedicated partition-count endpoint and pool-device membership before changing button logic.
+پیش از تغییر button logic، dedicated partition-count endpoint و pool-device membership را بررسی کنید.
 
-## Disk cleanup reports failure but disk changed
+## Disk cleanup failure گزارش می‌دهد ولی disk تغییر کرده
 
-`cleanupDisk()` is multi-step:
+`cleanupDisk()` multi-step است:
 
 ```text
 clear-zfs (best effort)
@@ -424,65 +433,69 @@ clear-zfs (best effort)
 wipe (required)
 ```
 
-Inspect both requests. A clear-ZFS failure can still be followed by a wipe attempt.
+هر دو request را inspect کنید. Failure در clear-ZFS می‌تواند همچنان با wipe attempt ادامه پیدا کند.
 
-## Pool delete reports error but pool disappeared
+## Pool delete error می‌دهد ولی pool ناپدید شده
 
-Pool delete sequence destroys the pool **before** cleaning former disks.
+Pool delete sequence، pool را **پیش از** cleanup diskهای قبلی destroy می‌کند.
 
-A later disk cleanup failure can make the overall UI report an error after the pool is already gone.
+Disk cleanup failure بعدی می‌تواند UI error تولید کند در حالی که pool از قبل gone است.
 
-Check backend zpool state before retrying destroy blindly.
+قبل از retry کورکورانه‌ی destroy، backend zpool state را بررسی کنید.
 
-## File System delete is blocked
+## File System delete block شده
 
-Known backend dependency errors can indicate active share configuration.
+Backend dependency error شناخته‌شده می‌تواند active share configuration را نشان دهد.
 
-Inspect related Samba/NFS/Web Share resources before attempting repeated deletion.
+Samba/NFS/Web Share resourceهای مرتبط را قبل از repeated deletion بررسی کنید.
 
-Backend dependency enforcement is authoritative.
+Backend dependency enforcement authoritative است.
 
-## Encryption passphrase problem
+## مشکل encryption passphrase
 
-Frontend sends filesystem passphrases encoded as UTF-8 → Base64.
+Frontend filesystem passphrase را با sequence زیر ارسال می‌کند:
 
-Check:
+```text
+UTF-8 → Base64
+```
 
-- correct field name (`passphrase` or `new_passphrase` depending on endpoint);
-- Base64 generation;
-- TLS transport;
-- backend decode expectations;
-- current key/encryption status.
+بررسی کنید:
 
-Do not interpret Base64 as encryption.
+- field name صحیح (`passphrase` یا `new_passphrase` بسته به endpoint)؛
+- Base64 generation؛
+- TLS transport؛
+- backend decode expectation؛
+- key/encryption status فعلی.
 
-## Volume changes are not in StateSync snapshot
+Base64 را encryption در نظر نگیرید.
 
-This is current architecture, not necessarily a failure.
+## Volume change داخل StateSync snapshot نیست
 
-`/api/volume/*` is not currently mapped to a StateSync domain.
+این behavior architecture فعلی است و لزوماً failure نیست.
 
-If backend product requirements say Volumes must have snapshot persistence, confirm the backend contract and extend StateSync centrally instead of adding `save_to_db=true` to Volume hooks.
+`/api/volume/*` در حال حاضر StateSync domain mapping ندارد.
 
-## Samba user delete returns HTTP 400
+اگر product requirement می‌گوید Volume باید snapshot persistence داشته باشد، backend contract را confirm کنید و StateSync را centrally extend کنید؛ `save_to_db=true` را به Volume hook اضافه نکنید.
 
-Current UI interprets this as a likely active-share dependency.
+## Samba user delete برابر HTTP 400
 
-Check where the Samba user is referenced before deleting.
+UI فعلی این response را active-share dependency محتمل در نظر می‌گیرد.
 
-Do not bypass the backend dependency check from the frontend.
+قبل از delete بررسی کنید Samba user کجا reference شده است.
 
-## Samba group membership partially changes
+Backend dependency check را از frontend bypass نکنید.
 
-One username is updated per PUT.
+## Samba group membership فقط بخشی تغییر می‌کند
 
-If request N fails, requests 1..N-1 may already be applied.
+به ازای هر username یک PUT جدا ارسال می‌شود.
 
-Reread the group membership from backend and repair the final desired state; do not assume rollback occurred.
+اگر request شماره N fail شود، requestهای 1 تا N-1 ممکن است قبلاً apply شده باشند.
 
-## Web Share exists but permission is not 777
+Group membership را دوباره از backend بخوانید و desired final state را repair کنید؛ rollback را فرض نکنید.
 
-Create is two-stage:
+## Web Share وجود دارد ولی permission برابر 777 نیست
+
+Create دو مرحله‌ای است:
 
 ```text
 POST /api/webshare/
@@ -490,140 +503,138 @@ POST /api/webshare/
 POST /api/webshare/set-permission/
 ```
 
-The first can succeed while the second fails.
+اولی می‌تواند success شود و دومی fail شود.
 
-Check both requests independently. The frontend does not automatically delete the share on permission failure.
+هر دو request را مستقل بررسی کنید. Frontend در permission failure به‌صورت خودکار share را حذف نمی‌کند.
 
-## NFS config and service state disagree
+## NFS config و service state هم‌خوان نیستند
 
-Current create flow requests restart of:
+Create flow فعلی restart مربوط به این service را request می‌کند:
 
 ```text
 nfs-server.service
 ```
 
-before submitting the create mutation, while edit does not use the same restart path.
+آن هم پیش از submit کردن create mutation؛ در حالی که edit همان restart path را ندارد.
 
-This is a documented current limitation. Treat NFS API state and service restart as separate operations during diagnosis.
+این یک current limitation مستندشده است. هنگام diagnosis، NFS API state و service restart را دو operation جدا در نظر بگیرید.
 
-Do not reorder production behavior casually without confirming backend/service semantics.
+بدون confirm کردن backend/service semantics، production behavior را خودسرانه reorder نکنید.
 
-## Services page generates many requests
+## Services page request زیادی تولید می‌کند
 
-Current model is approximately:
+مدل فعلی تقریباً این است:
 
 ```text
 1 list request + N per-unit status requests every 5 seconds
 ```
 
-If scale becomes problematic, preferred architectural fix is a backend batch/list contract containing required status—not random frontend suppression that leaves data stale.
+اگر scale مشکل‌ساز شود، راه‌حل preferred یک backend batch/list contract است که status مورد نیاز را برگرداند؛ نه suppress کردن random frontend requestها و stale کردن data.
 
-## Service Start is disabled
+## Service Start disabled است
 
-A masked service cannot be started by current table UI.
+Masked service از table فعلی قابل Start نیست.
 
-The hook supports `unmask`, but the table does not expose an Unmask action.
+Hook `unmask` را پشتیبانی می‌کند ولی table Unmask action expose نمی‌کند.
 
-Resolve mask state through an approved management path before treating the disabled Start button as a UI bug.
+Mask state را از management path تأییدشده resolve کنید و disabled Start button را فوراً UI bug فرض نکنید.
 
 ## Network configuration endpoint mismatch
 
-Current backend contract is asymmetric:
+Backend contract فعلی asymmetric است:
 
 ```text
 DHCP   -> POST /api/network/{interface}/configure/
 Static -> POST /api/system/network/{interface}/configure/
 ```
 
-Verify mode before changing URL code.
+قبل از تغییر URL code، mode را verify کنید.
 
-## Web user exists but OS user does not
+## Web user وجود دارد ولی OS user وجود ندارد
 
-Settings creates Web user first, then starts a separate OS-user mutation.
+Settings ابتدا Web user را create می‌کند و سپس OS-user mutation جدا اجرا می‌کند.
 
-This flow is non-atomic. A Web user can legitimately remain after OS-user creation fails.
+این flow non-atomic است. در صورت OS-user creation failure، Web user می‌تواند به‌درستی باقی بماند.
 
-Do not automatically delete the Web user during incident response unless that recovery action is explicitly intended.
+در incident response بدون قصد صریح برای recovery، Web user را خودکار حذف نکنید.
 
-## OS user exists but Samba user does not
+## OS user وجود دارد ولی Samba user وجود ندارد
 
-The Users OS-first Samba workflow is also sequential/non-atomic.
+Users OS-first Samba workflow نیز sequential/non-atomic است.
 
-Check each mutation independently.
+هر mutation را جدا بررسی کنید.
 
-## Power action surprises
+## Power action behavior غیرمنتظره
 
-Current backend contract executes reboot/poweroff using:
+Backend contract فعلی reboot/poweroff را با endpoint زیر اجرا می‌کند:
 
 ```text
 GET /api/system/power/execute/?action=reboot|poweroff
 ```
 
-Although GET is normally expected to be safe/observational, these calls are operationally mutating.
+اگرچه GET معمولاً safe/observational فرض می‌شود، این callها operationally mutating هستند.
 
-Do not prefetch, health-check, crawl, or automatically replay these URLs.
+این URLها را prefetch، health-check، crawl یا automatic replay نکنید.
 
 ## Nginx diagnostics
 
-Common Debian/Nginx checks:
+Checkهای رایج روی Debian/Nginx:
 
 ```bash
 sudo nginx -t
 sudo systemctl status nginx
 ```
 
-Logs are commonly available through:
+Logها معمولاً از طریق این command قابل مشاهده‌اند:
 
 ```bash
 sudo journalctl -u nginx
 ```
 
-and/or configured Nginx access/error log files.
+و/یا Nginx access/error log fileهای configure‌شده.
 
-Exact log paths and logging policy are server-specific.
+Log path و logging policy دقیق server-specific است.
 
-When debugging proxy failures, compare:
+هنگام debugging proxy failure، این دو مسیر را جداگانه مقایسه کنید:
 
 ```text
 browser -> Nginx public URL
 Nginx -> backend internal URL
 ```
 
-separately.
-
 ## Browser diagnostics checklist
 
-Capture:
+این اطلاعات را capture کنید:
 
-- failing request URL;
-- method;
-- status code;
-- response body;
-- request headers excluding secrets from shared reports;
-- browser console error;
-- route URL;
-- deployed release SHA;
-- API origin;
-- whether failure occurs after hard refresh or only SPA navigation.
+- failing request URL؛
+- method؛
+- status code؛
+- response body؛
+- request headerها با حذف secret از report مشترک؛
+- browser console error؛
+- route URL؛
+- deployed release SHA؛
+- API origin؛
+- اینکه failure بعد از hard refresh رخ می‌دهد یا فقط SPA navigation.
 
-Do not paste access/refresh tokens into issue trackers or logs.
+Access/refresh token را داخل issue tracker یا log paste نکنید.
 
 ## Release-level incident checklist
 
-When a new release causes failure:
+وقتی release جدید failure ایجاد می‌کند:
 
-1. identify deployed SHA/artifact;
-2. compare with previous known-good release;
-3. check static asset errors;
-4. verify built API endpoints/environment;
-5. inspect authentication;
-6. inspect backend compatibility;
-7. rollback static artifact if appropriate;
-8. remember backend changes may make frontend-only rollback incompatible.
+1. deployed SHA/artifact را مشخص کنید.
+2. با previous known-good release مقایسه کنید.
+3. static asset error را بررسی کنید.
+4. built API endpoint/environment را verify کنید.
+5. authentication را inspect کنید.
+6. backend compatibility را بررسی کنید.
+7. در صورت مناسب بودن static artifact را rollback کنید.
+8. به یاد داشته باشید backend change ممکن است frontend-only rollback را incompatible کند.
 
-## Escalation information
+## اطلاعات مورد نیاز برای escalation
 
-A useful frontend/backend incident report should include:
+یک incident report مفید برای frontend/backend بهتر است شامل موارد زیر باشد:
 
 ```text
 feature/route
@@ -639,7 +650,7 @@ whether operation may have partially succeeded
 relevant React Query key / StateSync domain
 ```
 
-## Related documentation
+## مستندات مرتبط
 
 - [`build.md`](./build.md)
 - [`deployment.md`](./deployment.md)
