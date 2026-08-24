@@ -1,50 +1,58 @@
 # Dashboard
 
-## Purpose
+## هدف
 
-The Dashboard is the operator-facing monitoring and overview surface of SOHO UI. It combines live system telemetry, storage health, server-slot visualization, system uptime, and a per-user customizable widget layout.
+Dashboard سطح اصلی مانیتورینگ و نمای کلی SOHO UI برای operator است. این صفحه telemetry زنده‌ی سیستم، سلامت storage، visualization مربوط به slotهای سرور، system uptime و layout قابل شخصی‌سازی widgetها برای هر کاربر را در یکجا ترکیب می‌کند.
 
-Route: `/dashboard`
+Route:
 
-Entry point: `src/pages/Dashboard.tsx`
+```text
+/dashboard
+```
 
-The page is intentionally an aggregation layer. It does not own backend persistence for monitored resources and it does not duplicate domain logic implemented by the feature hooks used by each widget.
+Entry point:
 
-## Main responsibilities
+```text
+src/pages/Dashboard.tsx
+```
 
-The Dashboard is responsible for:
+این صفحه عمداً نقش aggregation layer را دارد. Dashboard مالک persistence مربوط به backend state منابع مانیتور‌شده نیست و domain logic موجود در feature hookهای هر widget را نیز دوباره پیاده‌سازی نمی‌کند.
 
-- composing monitoring widgets into one responsive grid;
-- allowing the operator to reorder, hide, restore, and resize widgets;
-- persisting only the dashboard layout preference in browser `localStorage`;
-- scoping saved layouts by authenticated username;
-- presenting high-frequency telemetry without hidden-tab background polling;
-- exposing the 3D server-slot view and existing system power-action controls.
+## مسئولیت‌های اصلی
 
-It is not responsible for:
+Dashboard مسئول موارد زیر است:
 
-- persisted backend state snapshots;
-- authentication/session implementation;
-- duplicating CPU, memory, network, zpool, disk-slot, or uptime API clients;
-- treating layout preferences as authoritative server-side state.
+- compose کردن widgetهای مانیتورینگ در یک grid واکنش‌گرا؛
+- امکان جابه‌جایی، hide، restore و resize کردن widgetها توسط operator؛
+- persist کردن صرفاً preference مربوط به Dashboard layout در `localStorage` مرورگر؛
+- scope کردن layoutهای ذخیره‌شده بر اساس username کاربر authenticated؛
+- نمایش telemetry با refresh سریع، بدون ادامه‌ی polling در tab مخفی؛
+- ارائه‌ی نمای سه‌بعدی slotهای سرور و کنترل‌های موجود برای system power action.
 
-## Current widget registry
+Dashboard مسئول موارد زیر نیست:
 
-The active registry in `Dashboard.tsx` currently contains exactly these widgets:
+- persisted backend state snapshotها؛
+- پیاده‌سازی authentication/session؛
+- ایجاد API clientهای تکراری برای CPU، memory، network، zpool، disk-slot یا uptime؛
+- در نظر گرفتن layout preference به‌عنوان authoritative server-side state.
 
-| Widget id | Component | Primary purpose |
+## registry فعلی widgetها
+
+registry فعال در `Dashboard.tsx` در حال حاضر دقیقاً شامل widgetهای زیر است:
+
+| Widget id | Component | کاربرد اصلی |
 | --- | --- | --- |
-| `cpu` | `Cpu` | Live CPU usage and processor information. |
-| `memory` | `Memory` | Live memory utilization. |
-| `zpool-overview` | `Zpool` | Pool health/capacity overview. |
-| `server-3d-slots` | `ServerSlots3DWidget` | Interactive server chassis and disk-slot visualization. |
-| `network` | `Network` | Network traffic and interface information. |
+| `cpu` | `Cpu` | نمایش زنده‌ی مصرف CPU و اطلاعات processor |
+| `memory` | `Memory` | نمایش زنده‌ی memory utilization |
+| `zpool-overview` | `Zpool` | نمای کلی health/capacity مربوط به poolها |
+| `server-3d-slots` | `ServerSlots3DWidget` | visualization تعاملی chassis سرور و disk slotها |
+| `network` | `Network` | اطلاعات network traffic و interfaceها |
 
-Treat widget ids as persisted UI-schema identifiers because saved dashboard layouts reference them.
+Widget idها را مانند persisted UI-schema identifier در نظر بگیرید، زیرا Dashboard layoutهای ذخیره‌شده به آن‌ها reference می‌دهند.
 
-Do not keep removed widget definitions as commented code. Git history is the source for removed registry entries; active source should describe the current product surface only.
+تعریف widgetهای حذف‌شده را به شکل commented code نگه ندارید. Git history مرجع بازیابی موارد حذف‌شده است و source فعال باید فقط product surface فعلی را نشان دهد.
 
-## Runtime data flow
+## runtime data flow
 
 ```mermaid
 flowchart TD
@@ -73,26 +81,26 @@ flowchart TD
     UPQ --> API
 ```
 
-React Query owns runtime monitoring server state. The page itself owns only layout-customization state.
+React Query مالک server state مربوط به runtime monitoring است. خود صفحه فقط layout-customization state را مدیریت می‌کند.
 
-## API and refresh map
+## نقشه‌ی API و refresh
 
-| Data | Query key | Endpoint(s) | Refresh behavior |
+| Data | Query key | Endpoint(s) | رفتار refresh |
 | --- | --- | --- | --- |
-| CPU | `['cpu']` | `GET /api/system/cpu/` | 2 seconds while mounted; no background interval. |
-| Memory | `['memory']` | `GET /api/system/memory/` | 2 seconds while mounted; no background interval. |
-| Zpool overview | `['zpool']` | `GET /api/zpool/` | 30 seconds by default. |
-| Network base data | `['network']` | `GET /api/system/network`, then per-interface detail GET | Query lifecycle driven; bandwidth is separate. |
-| Network bandwidth | `['network','bandwidth-snapshots',interfaceNames]` | per-interface `GET /api/system/network/{name}/bandwidth/` | 2 seconds while active. |
-| System uptime | `['system','uptime']` | `GET /api/system/uptime/` | 1 second while mounted. |
-| 3D slot zpool list | `['zpool']` | `GET /api/zpool/` | 30 seconds. |
-| 3D slot mapping | zpool/device slot key family | disk inventory + per-pool device endpoints | 10-second override in `ServerSlots3DWidget`. |
+| CPU | `['cpu']` | `GET /api/system/cpu/` | هر 2 ثانیه در زمان mount بودن؛ بدون background interval |
+| Memory | `['memory']` | `GET /api/system/memory/` | هر 2 ثانیه در زمان mount بودن؛ بدون background interval |
+| Zpool overview | `['zpool']` | `GET /api/zpool/` | به‌صورت پیش‌فرض هر 30 ثانیه |
+| Network base data | `['network']` | `GET /api/system/network` و سپس detail GET برای هر interface | وابسته به query lifecycle؛ bandwidth جدا است |
+| Network bandwidth | `['network','bandwidth-snapshots',interfaceNames]` | برای هر interface، `GET /api/system/network/{name}/bandwidth/` | هر 2 ثانیه در حالت active |
+| System uptime | `['system','uptime']` | `GET /api/system/uptime/` | هر 1 ثانیه در زمان mount بودن |
+| 3D slot zpool list | `['zpool']` | `GET /api/zpool/` | هر 30 ثانیه |
+| 3D slot mapping | خانواده‌ی query key مربوط به zpool/device slot | disk inventory + endpointهای device برای هر pool | override برابر 10 ثانیه در `ServerSlots3DWidget` |
 
-All of these requests are observational. They must not own `save_to_db=true` persistence.
+تمام این requestها observational هستند و نباید مالک persistence با `save_to_db=true` باشند.
 
 ## Dashboard layout state
 
-Layout state contains:
+Layout state شامل ساختار زیر است:
 
 ```ts
 interface LayoutState {
@@ -102,14 +110,14 @@ interface LayoutState {
 }
 ```
 
-The page separates:
+صفحه میان این دو state تفاوت قائل می‌شود:
 
-- `persistedLayout` — last committed user layout;
-- `draftLayout` — active customization draft, or `null` when not customizing.
+- `persistedLayout` — آخرین layout تأیید و commit‌شده‌ی کاربر؛
+- `draftLayout` — draft فعال هنگام customization، یا `null` وقتی customization فعال نیست.
 
-This distinction is intentional. Dragging, hiding, or resizing must not immediately overwrite the stored preference; the operator can cancel safely.
+این تفکیک عمدی است. Drag، hide یا resize نباید بلافاصله preference ذخیره‌شده را overwrite کند؛ operator باید بتواند بدون side effect عملیات را Cancel کند.
 
-## localStorage contract
+## contract مربوط به localStorage
 
 Base key:
 
@@ -123,29 +131,29 @@ Per-user key:
 dashboard-layout.v2:<lowercase-username>
 ```
 
-Fallback when no username exists:
+Fallback در نبود username:
 
 ```text
 dashboard-layout.v2:guest
 ```
 
-This is UI preference storage only. It is unrelated to token storage or StateSync persistence.
+این storage صرفاً برای UI preference است و هیچ ارتباطی با token storage یا StateSync persistence ندارد.
 
-## Layout normalization
+## نرمال‌سازی layout
 
-Persisted browser data is treated as potentially stale because widget definitions can change between releases.
+داده‌ی persist‌شده‌ی مرورگر بالقوه stale در نظر گرفته می‌شود، زیرا تعریف widgetها ممکن است میان releaseها تغییر کند.
 
-Normalization therefore:
+نرمال‌سازی موارد زیر را انجام می‌دهد:
 
-- removes unknown widget ids;
-- removes duplicate ids;
-- appends current widgets missing from older saved layouts;
-- drops hidden ids that no longer exist;
-- keeps only size overrides for current widget ids.
+- حذف widget idهای ناشناخته؛
+- حذف idهای تکراری؛
+- اضافه کردن widgetهای فعلی که در layoutهای قدیمی وجود ندارند؛
+- حذف hidden idهایی که دیگر وجود ندارند؛
+- نگه‌داشتن size override فقط برای widget idهای فعلی.
 
-This compatibility behavior is a maintenance invariant. Adding/removing/renaming widget ids without considering saved layouts can break user customization state.
+این compatibility behavior یک maintenance invariant است. اضافه، حذف یا rename کردن widget id بدون در نظر گرفتن layoutهای ذخیره‌شده می‌تواند customization state کاربر را خراب کند.
 
-## Customization flow
+## جریان customization
 
 ```mermaid
 stateDiagram-v2
@@ -157,139 +165,139 @@ stateDiagram-v2
     Viewing --> [*]
 ```
 
-When customization starts, the page clones the committed layout into a draft.
+هنگام شروع customization، صفحه committed layout را در یک draft clone می‌کند.
 
-On Save:
+در Save:
 
-1. normalize the draft against the active widget registry;
-2. copy it to committed/persisted state;
-3. exit customization mode;
-4. persistence effect writes the committed preference to `localStorage`.
+1. draft نسبت به widget registry فعال normalize می‌شود؛
+2. نتیجه به committed/persisted state منتقل می‌شود؛
+3. customization mode پایان می‌یابد؛
+4. persistence effect، preference تأییدشده را در `localStorage` می‌نویسد.
 
-On Cancel, the draft is discarded.
+در Cancel، draft discard می‌شود.
 
-## Drag-and-drop rule
+## قانون drag-and-drop
 
-Only visible widgets participate in sortable interaction.
+فقط widgetهای visible در sortable interaction شرکت می‌کنند.
 
-Reordering visible widgets must preserve hidden widget ids inside the complete saved ordering so hidden widgets can later be restored predictably.
+Reorder کردن widgetهای visible باید hidden widget idها را در ordering کامل حفظ کند تا widgetهای مخفی بعداً به شکل قابل پیش‌بینی restore شوند.
 
-That is why drag handling does not simply replace the complete `order` array with the visible DnD result.
+به همین دلیل drag handler نباید کل آرایه‌ی `order` را صرفاً با نتیجه‌ی visible DnD جایگزین کند.
 
-## Layout presets
+## layout presetها
 
-Widgets can define:
+Widgetها می‌توانند موارد زیر را تعریف کنند:
 
-- responsive column spans;
-- row spans;
-- minimum height;
-- optional named layout presets.
+- responsive column span؛
+- row span؛
+- minimum height؛
+- named layout preset اختیاری.
 
-The page synthesizes a `default` preset from base configuration. Selecting default removes a redundant size override instead of storing another copy of default layout data.
+صفحه یک preset با نام `default` را از base configuration می‌سازد. انتخاب default به‌جای ذخیره‌ی کپی دیگری از default layout data، size override اضافی را حذف می‌کند.
 
-Responsive spans are clamped before CSS grid declarations are generated.
+Responsive spanها پیش از تولید CSS grid declaration clamp می‌شوند.
 
 ## Server 3D widget
 
-`ServerSlots3DWidget` combines:
+`ServerSlots3DWidget` داده‌ها و stateهای زیر را ترکیب می‌کند:
 
-- current zpool list;
-- pool-device membership;
-- global disk inventory;
-- physical slot metadata;
-- local selected-slot state;
-- reboot/poweroff actions from `SystemPowerActionsContext`.
+- zpool list فعلی؛
+- pool-device membership؛
+- global disk inventory؛
+- physical slot metadata؛
+- local selected-slot state؛
+- actionهای reboot/poweroff از `SystemPowerActionsContext`.
 
-Slot mapping intentionally uses a 10-second refresh interval, faster than the ordinary 30-second pool-device cadence.
+Slot mapping عمداً با interval برابر 10 ثانیه refresh می‌شود که از cadence عادی 30 ثانیه‌ای pool-device سریع‌تر است.
 
-Per-pool device failures can remain isolated so successful pools/slots continue rendering.
+Failure در resolve کردن deviceهای یک pool باید isolated باقی بماند تا pool/slotهای موفق همچنان render شوند.
 
-## System power actions
+## system power actionها
 
-The 3D/server UI can request:
+UI سه‌بعدی سرور می‌تواند از طریق shared system power-action context درخواست‌های زیر را انجام دهد:
 
 ```text
 reboot
 poweroff
 ```
 
-through the shared system power-action context.
+Backend فعلی این actionها را به شکل GET با side effect ارائه می‌کند. این endpointها نباید prefetch شوند، نباید با فرض safe read به‌صورت خودکار retry شوند و نباید telemetry عادی تلقی شوند.
 
-The backend currently exposes these as GET requests with side effects. They must not be prefetched, automatically retried as safe reads, or treated as ordinary telemetry.
+جزئیات در:
 
-See [`../06-api/endpoint-map.md`](../06-api/endpoint-map.md).
+[`../06-api/endpoint-map.md`](../06-api/endpoint-map.md)
 
-## Uptime formatting
+## فرمت uptime
 
-The compact uptime badge expects backend numeric format:
+Uptime badge فشرده انتظار format عددی زیر را از backend دارد:
 
 ```text
 YY/MM/DD-HH:MM:SS
 ```
 
-The formatter preserves non-zero year/month parts rather than guessing month/year conversion into days. Backend `human_readable` content is explanatory tooltip text when available.
+Formatter بخش‌های non-zero مربوط به year/month را حفظ می‌کند و آن‌ها را با حدس به day تبدیل نمی‌کند. مقدار `human_readable` backend، در صورت وجود، به‌عنوان tooltip توضیحی استفاده می‌شود.
 
-## Error handling
+## مدیریت خطا
 
-Each widget owns its loading/error state through its hook/component boundary.
+هر widget loading/error state خودش را در boundary مربوط به hook/component مدیریت می‌کند.
 
-The Dashboard should not collapse all widget errors into one page failure because independent telemetry resources have independent availability.
+Dashboard نباید تمام خطاهای widgetها را به یک page-level failure تبدیل کند، چون telemetry resourceهای مختلف availability مستقل دارند.
 
-The 3D widget likewise preserves successful slot data when individual pool-device resolution fails.
+Widget سه‌بعدی نیز باید در صورت failure برخی pool-device resolutionها، slot data موفق را حفظ کند.
 
-## Important architecture rules
+## قواعد مهم معماری
 
-- Dashboard customization is a browser UI preference, not managed-system state.
-- Layout persistence is scoped by normalized username.
-- Only committed layouts are written to `localStorage`.
-- Saved layouts are normalized against the current registry.
-- Monitoring GETs are observational and must not trigger database snapshots.
-- High-frequency telemetry polling stops in a hidden tab.
-- Widgets should reuse domain hooks/query keys instead of creating dashboard-only API implementations.
-- The 3D server view consumes storage/disk state; it is not a second source of truth.
-- Removed widgets belong in Git history, not commented production registry code.
+- Dashboard customization یک browser UI preference است، نه managed-system state.
+- Layout persistence بر اساس username نرمال‌شده scope می‌شود.
+- فقط layoutهای commit‌شده در `localStorage` نوشته می‌شوند.
+- Layoutهای ذخیره‌شده نسبت به registry فعلی normalize می‌شوند.
+- Monitoring GETها observational هستند و نباید database snapshot ایجاد کنند.
+- High-frequency telemetry polling در tab مخفی متوقف می‌شود.
+- Widgetها باید domain hook/query keyهای موجود را reuse کنند و Dashboard-specific API implementation جدید نسازند.
+- نمای سه‌بعدی سرور consumer داده‌های storage/disk است، نه source of truth دوم.
+- Widgetهای حذف‌شده باید در Git history بمانند، نه در commented production code.
 
-## Common failure scenarios
+## failure scenarioهای رایج
 
-### Saved layout looks corrupted after registry change
+### layout ذخیره‌شده بعد از تغییر registry خراب به نظر می‌رسد
 
-Inspect current widget ids and layout normalization. A renamed id is effectively a persisted-schema migration; without explicit migration, the old id is discarded.
+Widget idهای فعلی و layout normalization را بررسی کنید. Rename یک id عملاً persisted-schema migration محسوب می‌شود؛ بدون migration صریح، id قدیمی discard می‌شود.
 
-### Dashboard changes persist before Save
+### تغییرات Dashboard قبل از Save persist می‌شوند
 
-Handlers should mutate `draftLayout`, not committed layout state.
+Handlerها باید `draftLayout` را تغییر دهند، نه committed layout state را.
 
-### Cancel does not restore prior layout
+### Cancel layout قبلی را برنمی‌گرداند
 
-Verify customization starts from a clone of committed layout and nested arrays/objects are not mutated in place.
+بررسی کنید customization از clone مربوط به committed layout شروع شده باشد و nested array/objectها in-place mutate نشده باشند.
 
-### Duplicate telemetry requests appear
+### telemetry requestهای تکراری دیده می‌شوند
 
-Verify query-key reuse before changing polling. The same domain resource should normally share React Query state.
+پیش از تغییر polling، query-key reuse را بررسی کنید. یک domain resource معمولاً باید React Query state مشترک داشته باشد.
 
-### 3D slots are stale while zpool cards are fresh
+### slotهای سه‌بعدی stale هستند ولی zpool cardها fresh هستند
 
-The resources intentionally use different refresh cadences. Inspect `usePoolDeviceSlots`, enablement, and the 10-second 3D override.
+این resourceها عمداً cadence متفاوتی دارند. `usePoolDeviceSlots`، enablement و override ده‌ثانیه‌ای نمای سه‌بعدی را بررسی کنید.
 
-## Extension guide
+## راهنمای توسعه
 
-### Adding a widget
+### افزودن widget
 
-1. Implement/reuse the feature component and domain hook outside the Dashboard where practical.
-2. Add one stable id to the active `dashboardWidgets` registry.
-3. Define sensible responsive spans.
-4. Add layout presets only for real operator use cases.
-5. Verify old `localStorage` layouts normalize correctly.
-6. If the widget polls, update polling documentation.
-7. Never add `save_to_db=true` to dashboard reads.
+1. در صورت امکان feature component و domain hook را خارج از Dashboard پیاده‌سازی یا reuse کنید.
+2. یک id پایدار به `dashboardWidgets` registry فعال اضافه کنید.
+3. responsive spanهای منطقی تعریف کنید.
+4. Layout preset را فقط برای use case واقعی operator اضافه کنید.
+5. بررسی کنید layoutهای قدیمی `localStorage` همچنان درست normalize شوند.
+6. اگر widget polling دارد، مستندات polling را به‌روزرسانی کنید.
+7. هرگز `save_to_db=true` را به Dashboard readها اضافه نکنید.
 
-### Renaming/removing a widget
+### rename یا حذف widget
 
-Treat widget ids as persisted schema identifiers. A rename discards old preference state for that id unless explicit migration is added.
+Widget id را persisted schema identifier در نظر بگیرید. Rename باعث از دست رفتن preference قدیمی آن id می‌شود مگر اینکه migration صریح اضافه شود.
 
-Remove obsolete definitions from source rather than commenting them out.
+تعریف obsolete را از source حذف کنید و آن را به commented code تبدیل نکنید.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/pages/Dashboard.tsx`
 - `src/components/Cpu.tsx`
@@ -307,7 +315,7 @@ Remove obsolete definitions from source rather than commenting them out.
 - `src/hooks/usePoolDeviceSlots.ts`
 - `src/hooks/useSystemUptime.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
 - [`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md)
