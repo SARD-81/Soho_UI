@@ -1,291 +1,291 @@
-# Project Scope
+# Scope پروژه
 
-This document defines what the SOHO UI repository is responsible for, what it deliberately delegates to backend/system layers, and which product areas are currently implemented.
+این سند مشخص می‌کند repository مربوط به SOHO UI مسئول چه بخش‌هایی است، چه مسئولیت‌هایی را عمداً به backend/system layer واگذار می‌کند و کدام بخش‌های محصول در حال حاضر پیاده‌سازی شده‌اند.
 
-The scope boundary matters because this frontend performs high-impact administration actions, but it is not the authoritative implementation of storage, operating-system, authentication, or persistence rules.
+مرز Scope اهمیت زیادی دارد، زیرا این frontend عملیات مدیریتی با اثر بالا انجام می‌دهد، اما پیاده‌سازی authoritative مربوط به Storage، سیستم‌عامل، authentication یا ruleهای persistence نیست.
 
-## Product role
+## نقش محصول
 
-SOHO UI is the browser-based administrative frontend for the StoreX storage management system.
+SOHO UI، frontend مدیریتی مبتنی بر مرورگر برای سامانه‌ی مدیریت Storage با نام StoreX است.
 
-Its job is to let an authenticated operator observe and initiate supported management workflows through backend APIs.
+وظیفه‌ی آن این است که به Operator احراز هویت‌شده اجازه دهد workflowهای مدیریتی پشتیبانی‌شده را از طریق APIهای backend مشاهده و آغاز کند.
 
-The repository contains frontend application code, client-side state management, API integration, presentation logic, and engineering documentation.
+این repository شامل frontend application code، client-side state management، API integration، presentation logic و مستندات مهندسی است.
 
-It does not contain the backend service implementation or managed-system operating-system/storage code.
+پیاده‌سازی backend service یا کد مربوط به operating-system/storage در managed system داخل این repository قرار ندارد.
 
-## In scope
+## موارد داخل Scope
 
-### Authentication/session UX
+### Authentication/Session UX
 
-The frontend owns:
+Frontend مالک موارد زیر است:
 
-- login form and submission;
-- client-side authenticated state;
-- access-token attachment to API requests;
-- refresh-token based session recovery;
-- single-flight 401 recovery;
-- protected routes;
-- idle-timeout behavior;
+- login form و submit آن؛
+- authenticated state در سمت client؛
+- اضافه‌کردن access token به API requestها؛
+- session recovery مبتنی بر refresh token؛
+- single-flight recovery برای 401؛
+- protected routeها؛
+- idle-timeout behavior؛
 - local-first logout UX.
 
-The backend still owns credential validation, token issuance, token validity, authorization, and server-side token invalidation.
+Backend همچنان مسئول credential validation، token issuance، token validity، authorization و server-side token invalidation است.
 
-### System monitoring
+### System Monitoring
 
-The frontend presents supported monitoring data such as:
+Frontend داده‌های monitoring پشتیبانی‌شده را نمایش می‌دهد، از جمله:
 
-- CPU;
-- memory;
-- network/interface telemetry;
-- system uptime;
-- storage pool health/capacity;
-- disk/slot information;
-- service runtime state.
+- CPU؛
+- memory؛
+- network/interface telemetry؛
+- system uptime؛
+- health/capacity مربوط به storage pool؛
+- اطلاعات disk/slot؛
+- runtime state مربوط به serviceها.
 
-Polling cadence and cache behavior are frontend responsibilities; metric truth is backend/system-owned.
+Polling cadence و cache behavior مسئولیت frontend هستند؛ مقدار واقعی metricها توسط backend/system تعیین می‌شود.
 
-### Storage administration
+### Storage Administration
 
-Supported UI areas include:
+بخش‌های UI پشتیبانی‌شده شامل موارد زیر هستند:
 
-- physical disk inspection and cleanup;
-- integrated/ZFS-like pool lifecycle;
-- block Volume lifecycle;
-- filesystem lifecycle and properties;
-- mount/unmount/canmount;
-- supported encryption-key/passphrase operations.
+- مشاهده و cleanup مربوط به physical disk؛
+- lifecycle مربوط به integrated/ZFS-like pool؛
+- lifecycle مربوط به block Volume؛
+- lifecycle و propertyهای filesystem؛
+- mount/unmount/canmount؛
+- عملیات پشتیبانی‌شده مربوط به encryption key/passphrase.
 
-Frontend validation and confirmation improve safety but do not replace backend storage-integrity checks.
+Validation و confirmation در frontend ایمنی را افزایش می‌دهند، اما جای storage-integrity checkهای backend را نمی‌گیرند.
 
-### File-sharing administration
+### File-sharing Administration
 
-Supported domains include:
+Domainهای پشتیبانی‌شده شامل موارد زیر هستند:
 
-- Samba shares;
-- Samba users;
-- Samba groups;
-- Samba access membership;
-- NFS shares;
-- Web Share creation/deletion/permission workflow.
+- Samba share؛
+- Samba user؛
+- Samba group؛
+- Samba access membership؛
+- NFS share؛
+- workflow مربوط به create/delete/permission در Web Share.
 
-Some workflows span multiple resources and are explicitly non-atomic at frontend level.
+برخی workflowها چند resource را درگیر می‌کنند و در سطح frontend به‌صورت صریح non-atomic هستند.
 
-### User administration
+### User Administration
 
-Current frontend user domains are distinct:
+Domainهای فعلی user در frontend از یکدیگر مستقل‌اند:
 
-- OS users;
-- Samba users;
-- Web/UI users.
+- OS user؛
+- Samba user؛
+- Web/UI user.
 
-Do not treat these as one identity store simply because workflows can link them.
+صرف این‌که بعضی workflowها این identityها را به هم مرتبط می‌کنند به این معنی نیست که باید آن‌ها را یک identity store واحد در نظر گرفت.
 
-### System configuration
+### System Configuration
 
-Supported settings include:
+تنظیمات پشتیبانی‌شده شامل موارد زیر هستند:
 
-- hostname;
-- timezone;
-- NTP;
-- manual time;
-- hardware clock operations;
-- system version display;
-- network interface configuration;
-- Web/UI user management;
-- SNMP configuration and diagnostics.
+- hostname؛
+- timezone؛
+- NTP؛
+- manual time؛
+- hardware clock operations؛
+- نمایش system version؛
+- network interface configuration؛
+- Web/UI user management؛
+- SNMP configuration و diagnosticها.
 
-### System service/power actions
+### System Service/Power Actions
 
-The frontend exposes supported service controls and system power actions through backend APIs.
+Frontend، service controlها و system power actionهای پشتیبانی‌شده را از طریق APIهای backend در اختیار Operator قرار می‌دهد.
 
-These are operator-triggered system operations; backend authorization and execution remain authoritative.
+این موارد system operationهایی هستند که توسط Operator آغاز می‌شوند؛ authorization و execution authoritative همچنان بر عهده‌ی backend است.
 
-### Server-state cache and refresh
+### Server-state Cache و Refresh
 
-The frontend owns:
+Frontend مالک موارد زیر است:
 
-- React Query cache identity;
-- stale time;
-- polling intervals;
-- mutation invalidation;
-- manual refetch UX;
+- React Query cache identity؛
+- stale time؛
+- polling intervalها؛
+- mutation invalidation؛
+- manual refetch UX؛
 - conditional query enablement.
 
-### Canonical frontend-requested snapshots
+### Canonical Snapshotهای درخواست‌شده از Frontend
 
-The frontend owns the **coordination policy** for canonical `save_to_db=true` snapshot requests through `StateSyncManager`.
+Frontend مالک **coordination policy** مربوط به canonical snapshot requestهای `save_to_db=true` از طریق `StateSyncManager` است.
 
-It does not own the backend database or how the backend persists the snapshot internally.
+Frontend مالک database در backend یا نحوه‌ی persistence داخلی snapshot توسط backend نیست.
 
-### UI preferences/state
+### UI Preference/State
 
-The frontend owns browser-local presentation state such as:
+Frontend مالک presentation stateهای browser-local است، از جمله:
 
-- Dashboard layout preferences;
-- modal state;
-- selected/pinned detail panels;
-- theme state;
-- temporary form drafts.
+- Dashboard layout preferenceها؛
+- modal state؛
+- selected/pinned detail panelها؛
+- theme state؛
+- temporary form draftها.
 
-These must not be confused with authoritative managed-system state.
+این موارد نباید با authoritative state مربوط به managed system اشتباه گرفته شوند.
 
-### Build artifact
+### Build Artifact
 
-The repository owns the Vite production build contract that creates:
+Repository مالک Vite production build contract است که خروجی زیر را ایجاد می‌کند:
 
 ```text
 dist/
 ```
 
-Operations can serve this static artifact through Nginx or another appropriate static web server.
+Operations می‌تواند این static artifact را از طریق Nginx یا static web server مناسب دیگری serve کند.
 
-## Current routed product surface
+## سطح فعلی Product بر اساس Routeها
 
-| Route | Area | Current status |
+| Route | بخش | وضعیت فعلی |
 | --- | --- | --- |
-| `/login` | Authentication | Implemented |
-| `/dashboard` | Monitoring dashboard | Implemented |
-| `/disks` | Physical disks | Implemented |
-| `/Integrated-space` | Integrated/Zpool storage | Implemented |
-| `/block-space` | Block storage/Volumes | Implemented |
-| `/file-system` | Filesystems | Implemented |
-| `/services` | System services | Implemented |
-| `/users` | OS/Samba user bridge | Partially implemented; “Other Users” tab is placeholder |
-| `/settings` | General/network/Web-user settings | Implemented |
-| `/share` | Samba administration | Implemented |
-| `/share-nfs` | NFS administration | Implemented |
-| `/web-share` | Web Share | Implemented |
-| `/history` | History | Placeholder only |
-| `/snmp-service` | SNMP | Implemented |
+| `/login` | Authentication | پیاده‌سازی شده |
+| `/dashboard` | Monitoring dashboard | پیاده‌سازی شده |
+| `/disks` | Physical diskها | پیاده‌سازی شده |
+| `/Integrated-space` | Integrated/Zpool storage | پیاده‌سازی شده |
+| `/block-space` | Block storage/Volumeها | پیاده‌سازی شده |
+| `/file-system` | Filesystemها | پیاده‌سازی شده |
+| `/services` | System serviceها | پیاده‌سازی شده |
+| `/users` | ارتباط OS/Samba user | بخشی پیاده‌سازی شده؛ tab مربوط به “Other Users” placeholder است |
+| `/settings` | General/network/Web-user settings | پیاده‌سازی شده |
+| `/share` | Samba administration | پیاده‌سازی شده |
+| `/share-nfs` | NFS administration | پیاده‌سازی شده |
+| `/web-share` | Web Share | پیاده‌سازی شده |
+| `/history` | History | فقط placeholder |
+| `/snmp-service` | SNMP | پیاده‌سازی شده |
 
-Every implemented route has a corresponding feature document under [`../05-features/`](../05-features/).
+برای هر route پیاده‌سازی‌شده، feature document متناظر در [`../05-features/`](../05-features/) وجود دارد.
 
-## Explicitly out of scope for this frontend
+## موارد صراحتاً خارج از Scope این Frontend
 
-### Backend implementation
+### Backend Implementation
 
-This repository does not own:
+این repository مالک موارد زیر نیست:
 
-- Django/other backend views/controllers;
-- backend serializers/models;
-- database migrations;
-- storage-management shell/system commands;
-- systemd implementation;
-- ZFS implementation;
-- Samba/NFS server configuration internals beyond API requests;
+- Django یا سایر backend view/controllerها؛
+- backend serializer/modelها؛
+- database migrationها؛
+- storage-management shell/system commandها؛
+- پیاده‌سازی systemd؛
+- پیاده‌سازی ZFS؛
+- جزئیات داخلی Samba/NFS server configuration فراتر از API requestها؛
 - backend job scheduling.
 
-### Authorization enforcement
+### Authorization Enforcement
 
-Frontend route protection and disabled buttons are not security boundaries.
+Protected route در frontend و disabled buttonها security boundary نیستند.
 
-The backend must enforce:
+Backend باید موارد زیر را enforce کند:
 
-- authentication;
-- authorization;
-- role/permission policy;
-- destructive-operation access;
-- resource ownership/dependency rules.
+- authentication؛
+- authorization؛
+- role/permission policy؛
+- دسترسی به destructive operationها؛
+- ruleهای مربوط به resource ownership/dependency.
 
-### Storage integrity
+### Storage Integrity
 
-The frontend must not be considered authoritative for:
+Frontend نباید برای موارد زیر authoritative در نظر گرفته شود:
 
-- whether a disk is actually safe to wipe;
-- whether a pool can be destroyed;
-- whether a filesystem/share can be deleted;
-- whether a resource name is globally unique;
-- concurrent administration conflicts.
+- این‌که یک disk واقعاً برای wipe ایمن است یا خیر؛
+- این‌که یک pool قابل destroy شدن است یا خیر؛
+- این‌که یک filesystem/share قابل حذف است یا خیر؛
+- این‌که نام یک resource در کل سیستم unique است یا خیر؛
+- conflictهای ناشی از administration هم‌زمان.
 
-The UI can prevent obvious mistakes using current data, but the backend must revalidate.
+UI می‌تواند با استفاده از داده‌ی فعلی جلوی خطاهای واضح را بگیرد، اما backend باید دوباره validate کند.
 
-### Transactionality across endpoints
+### Transactionality بین Endpointها
 
-The frontend does not provide database/distributed transactions for multi-request workflows.
+Frontend برای workflowهای چند-requestی، database/distributed transaction فراهم نمی‌کند.
 
-A sequence of requests can partially succeed.
+یک sequence از requestها می‌تواند partial success داشته باشد.
 
-Where atomicity is required, prefer a backend endpoint that owns the complete transaction/recovery behavior.
+هرجا atomicity لازم است، ترجیحاً باید endpointای در backend وجود داشته باشد که کل transaction/recovery behavior را مالک باشد.
 
-### Secret storage
+### Secret Storage
 
-Frontend configuration must not contain confidential server secrets.
+Frontend configuration نباید حاوی secretهای محرمانه‌ی server باشد.
 
-`VITE_*` values are browser-visible.
+مقادیر `VITE_*` در browser قابل مشاهده‌اند.
 
-Backend/database/SSH/signing credentials are out of scope for frontend configuration.
+Credentialهای backend/database/SSH/signing خارج از Scope تنظیمات frontend هستند.
 
-### Backend snapshot implementation
+### Backend Snapshot Implementation
 
-`StateSyncManager` decides **when** the frontend requests canonical snapshots and which domains are affected.
+`StateSyncManager` مشخص می‌کند **چه زمانی** frontend باید canonical snapshot درخواست کند و کدام domainها تحت تأثیر قرار گرفته‌اند.
 
-The backend owns:
+Backend مالک موارد زیر است:
 
-- actual persistence storage;
-- transaction handling;
-- schema;
-- retention;
+- persistence storage واقعی؛
+- transaction handling؛
+- schema؛
+- retention؛
 - database consistency.
 
-### Production infrastructure ownership
+### Production Infrastructure Ownership
 
-This repository currently does not contain a complete CI/CD or infrastructure-as-code solution.
+این repository در حال حاضر یک workflow مربوط به frontend validation در GitHub Actions دارد، اما یک راهکار کامل CI/CD یا Infrastructure as Code در آن نگهداری نمی‌شود.
 
-The frontend documentation defines the build/deployment contract, but server provisioning, TLS, firewalling, monitoring, backups, and backend operations belong to the deployment/infrastructure environment.
+مستندات frontend، build/deployment contract را تعریف می‌کنند؛ ولی server provisioning، TLS، firewall، monitoring، backup و عملیات backend به deployment/infrastructure environment تعلق دارند.
 
-## Product limitations currently documented
+## محدودیت‌های فعلی محصول که مستند شده‌اند
 
-### Automated tests
+### Automated Tests
 
-There is currently no automated `test` script/test runner in `package.json`.
+در حال حاضر `package.json` فاقد automated `test` script/test runner است.
 
-See [`../03-development/testing.md`](../03-development/testing.md).
+به [`../03-development/testing.md`](../03-development/testing.md) مراجعه کنید.
 
-### History page
+### History Page
 
-`/history` is currently a placeholder and must not be described as a completed audit/history subsystem.
+`/history` در حال حاضر placeholder است و نباید به‌عنوان یک audit/history subsystem کامل توصیف شود.
 
-### Users “Other Users” tab
+### Tab مربوط به “Other Users” در Users
 
-The secondary tab in `/users` is currently a placeholder.
+Tab دوم در `/users` در حال حاضر placeholder است.
 
 ### Volume StateSync
 
-Volumes are not currently represented by a frontend StateSync domain.
+Volumeها در حال حاضر توسط هیچ StateSync domain در frontend نمایش داده نمی‌شوند.
 
-### General settings / network / OS users / Web users StateSync
+### StateSync در General Settings / Network / OS Users / Web Users
 
-These areas currently rely on backend mutation + query refresh without a frontend canonical snapshot domain.
+این بخش‌ها در حال حاضر بدون frontend canonical snapshot domain و با اتکا به backend mutation + query refresh کار می‌کنند.
 
-### NFS service-apply behavior
+### NFS Service-Apply Behavior
 
-Current create flow requests `nfs-server.service` restart before submitting NFS create; edit does not use the same restart path. This is documented current behavior requiring backend/system-contract clarification before redesign.
+در create flow فعلی، پیش از submit کردن NFS create درخواست restart برای `nfs-server.service` ارسال می‌شود؛ edit flow همان restart path را استفاده نمی‌کند. این behavior فعلی مستند شده و پیش از redesign نیازمند روشن‌شدن contract بین backend/system است.
 
-### Node version pinning
+### Node Version Pinning
 
-The project currently recommends a supported Node LTS but does not pin an exact version in repository metadata.
+پروژه در حال حاضر استفاده از Node LTS پشتیبانی‌شده را توصیه می‌کند، اما version دقیق Node در repository metadata pin نشده است.
 
 ### CI/CD
 
-No `.github/workflows/`, Dockerfile, or repository-managed deployment script currently exists.
+فایل `.github/workflows/frontend-validation.yml` برای validation مربوط به frontend وجود دارد، اما Dockerfile یا repository-managed deployment script در repository موجود نیست. بنابراین repository دارای validation CI است، ولی deployment pipeline کامل ندارد.
 
-## Change-boundary questions
+## پرسش‌های مرزبندی هنگام Change
 
-Before implementing a new capability, answer:
+پیش از پیاده‌سازی capability جدید، به این پرسش‌ها پاسخ دهید:
 
-1. Is this a frontend presentation/cache concern or a backend integrity/security concern?
-2. What backend resource is authoritative?
-3. Does an existing query key already represent that resource?
-4. Does the operation change a persisted StateSync domain?
-5. Is it diagnostic/observational despite using POST/PUT?
-6. Can the workflow partially succeed?
-7. Is destructive confirmation required?
-8. Does the backend need a new transactional endpoint rather than multiple frontend requests?
-9. Is the feature currently in product scope or merely visible as a placeholder?
-10. Which existing architecture/feature/API documents need updating?
+1. آیا این موضوع concern مربوط به presentation/cache در frontend است یا concern مربوط به integrity/security در backend؟
+2. کدام backend resource authoritative است؟
+3. آیا query key موجودی از قبل همان resource را نمایش می‌دهد؟
+4. آیا این operation یک persisted StateSync domain را تغییر می‌دهد؟
+5. آیا با وجود استفاده از POST/PUT، operation در واقع diagnostic/observational است؟
+6. آیا workflow می‌تواند partial success داشته باشد؟
+7. آیا destructive confirmation لازم است؟
+8. آیا به‌جای چند request در frontend، backend باید یک transactional endpoint جدید داشته باشد؟
+9. آیا feature واقعاً داخل Product Scope فعلی است یا فقط به‌صورت placeholder دیده می‌شود؟
+10. کدام documentهای architecture/feature/API موجود باید به‌روزرسانی شوند؟
 
-## Related documentation
+## مستندات مرتبط
 
 - [`project-overview.md`](./project-overview.md)
 - [`glossary.md`](./glossary.md)
