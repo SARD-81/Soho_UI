@@ -1,9 +1,11 @@
-# State synchronization and `save_to_db`
+# State Synchronization و `save_to_db`
 
-This document has moved.
+این سند به مسیر جدید منتقل شده است.
 
-The canonical, maintained documentation is now:
+Canonical documentation نگهداری‌شده در حال حاضر این فایل است:
 
 - [`04-core-flows/state-sync-save-to-db.md`](./04-core-flows/state-sync-save-to-db.md)
 
-This compatibility file is intentionally kept so older links do not break. Do not add new implementation details here; update the canonical document instead.
+این compatibility file عمداً نگه داشته شده تا linkهای قدیمی break نشوند.
+
+Implementation detail جدید را در این فایل اضافه نکنید؛ در عوض canonical document را update کنید.
