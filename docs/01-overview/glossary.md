@@ -164,6 +164,8 @@ Frontend collection key:
 ['samba-users']
 ```
 
+این query key یک cache identity در React Query است و نباید با StateSync domain اشتباه گرفته شود.
+
 ### Samba Group
 
 یک Samba group که برای access membership استفاده می‌شود.
@@ -173,6 +175,8 @@ Frontend collection key:
 ```text
 ['samba-groups']
 ```
+
+این query key نیز به معنی وجود persisted StateSync domain مستقل برای Samba Group نیست.
 
 ### Account Flags
 
@@ -394,19 +398,18 @@ src/lib/stateSyncManager.ts
 
 یک persisted resource family منطقی که برای `StateSyncManager` شناخته‌شده است.
 
-Domainهای فعلی شامل موارد زیر هستند:
+بر اساس `stateSyncManager.ts` صحیح در GitLab، domainهای فعلی عبارت‌اند از:
 
 ```text
 zpool
 filesystem
 disk
 nfs
-samba-users
-samba-groups
 samba-shares
 webshare
-snmp
 ```
+
+`Samba User`، `Samba Group` و `SNMP` در runtime فعلی StateSync domain مستقل نیستند، حتی اگر برای data/query خودشان React Query key مستقل داشته باشند.
 
 ### Canonical snapshot
 
@@ -423,8 +426,10 @@ Frontend فقط snapshot را درخواست می‌کند؛ persistence واق�
 ```text
 zpool mutation      -> zpool + disk
 filesystem mutation -> filesystem + zpool
-Samba user mutation -> samba-users + samba-groups
+disk mutation       -> disk + zpool
 ```
+
+برای Samba، mutationهای `/api/samba/sharepoints...` و در resolver فعلی GitLab سایر `/api/samba...` mutationها به `samba-shares` map می‌شوند؛ `samba-users` و `samba-groups` persisted domain مستقل نیستند.
 
 ## اصطلاحات UI/State
 
