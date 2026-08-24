@@ -18,8 +18,6 @@ const OsUsersTable = ({
   users,
   isLoading,
   error,
-  isSambaStatusLoading,
-  onCreateSambaUser,
 }: OsUsersTableProps) => {
   const columns: DataTableColumn<OsUserTableItem>[] = useMemo(
     () => [
@@ -154,7 +152,7 @@ const OsUsersTable = ({
         ),
       },
     ],
-    [isSambaStatusLoading, onCreateSambaUser]
+    []
   );
 
   return (

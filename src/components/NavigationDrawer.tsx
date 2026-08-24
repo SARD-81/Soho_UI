@@ -112,16 +112,23 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     }
   };
 
-  const isItemActive = (item: NavigationItem): boolean => {
-    const matchesCurrentPath =
-      location.pathname === item.path ||
-      location.pathname.startsWith(`${item.path}/`);
+  const isItemActive = React.useCallback(
+  (item: NavigationItem): boolean => {
+    const checkItemActive = (currentItem: NavigationItem): boolean => {
+      const matchesCurrentPath =
+        location.pathname === currentItem.path ||
+        location.pathname.startsWith(`${currentItem.path}/`);
 
-    return (
-      matchesCurrentPath ||
-      (item.children?.some((child) => isItemActive(child)) ?? false)
-    );
-  };
+      return (
+        matchesCurrentPath ||
+        (currentItem.children?.some(checkItemActive) ?? false)
+      );
+    };
+
+    return checkItemActive(item);
+  },
+  [location.pathname]
+);
 
   React.useEffect(() => {
   setExpandedItems((prev) => {
@@ -130,7 +137,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     const ensureActiveParentsExpanded = (items: NavigationItem[]) => {
       items.forEach((item) => {
         if (item.children?.length) {
-          const itemKey = getItemKey(item); // استفاده از تابع getItemKey
+          const itemKey = getItemKey(item);
           if (isItemActive(item) && next[itemKey] === undefined) {
             next[itemKey] = true;
           }
@@ -143,10 +150,10 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
     return next;
   });
-}, [location.pathname]);
+  }, [isItemActive]);
 
   const getItemKey = (item: NavigationItem): string => {
-    return item.path || item.text; // اگر path وجود داشت از آن استفاده کن، در غیر این صورت از text
+    return item.path || item.text;
   };
 
   const renderNavItems = (

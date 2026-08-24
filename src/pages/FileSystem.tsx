@@ -125,16 +125,15 @@ const FileSystem = () => {
     [poolData?.pools]
   );
 
-  const filesystemEntries = data?.filesystems ?? [];
   const filesystems = useMemo(
-    () =>
-      [...filesystemEntries].sort((a, b) =>
-        a.filesystemName.localeCompare(b.filesystemName, 'en', {
-          sensitivity: 'base',
-        })
-      ),
-    [filesystemEntries]
-  );
+  () =>
+    [...(data?.filesystems ?? [])].sort((a, b) =>
+      a.filesystemName.localeCompare(b.filesystemName, 'en', {
+        sensitivity: 'base',
+      })
+    ),
+  [data?.filesystems]
+);
 
   const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
     selectDetailViewState(FILESYSTEM_DETAIL_VIEW_ID)

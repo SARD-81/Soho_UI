@@ -90,7 +90,7 @@ const fetchDiskIsUnpartitioned = async (
       throw new Error(message);
     }
 
-    return !Boolean(data.data?.has_partitions);
+    return !data.data?.has_partitions;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       return false;

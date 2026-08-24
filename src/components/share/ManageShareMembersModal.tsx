@@ -151,7 +151,10 @@ const ManageShareMembersModal = ({
     enabled: open && Boolean(shareName),
   });
 
-  const currentAccessMembers = membersQuery.data ?? [];
+  const currentAccessMembers = useMemo(
+  () => membersQuery.data ?? [],
+  [membersQuery.data]
+);
 
   const currentUsers = useMemo(
     () => getShareUserMembers(currentAccessMembers),

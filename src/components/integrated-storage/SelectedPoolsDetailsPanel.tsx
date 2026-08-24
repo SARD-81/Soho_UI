@@ -138,15 +138,11 @@ const SelectedPoolsDetailsPanel = ({
       ]
     : comparisonColumns.map(({ values }) => values);
 
-  const attributeSort = useMemo(
-    () =>
-      createPriorityAwareComparatorFromRecords(
-        comparisonValues,
-        'fa-IR',
-        comparisonPriority
-      ),
-    [comparisonPriority, comparisonValues]
-  );
+  const attributeSort = createPriorityAwareComparatorFromRecords(
+  comparisonValues,
+  'fa-IR',
+  comparisonPriority
+);
 
   if (shouldShowSingle && activeItem) {
     return (
