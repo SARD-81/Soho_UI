@@ -1,28 +1,28 @@
 # Block Storage
 
-## Purpose
+## هدف
 
-Block Storage is the SOHO UI feature for listing, creating, refreshing, and deleting backend Volume resources associated with storage pools.
+Block Storage، feature مربوط به SOHO UI برای list کردن، ساخت، refresh و حذف backend Volume resourceهایی است که به storage poolها مرتبط‌اند.
 
 Route: `/block-space`
 
 Entry point: `src/pages/BlockStorage.tsx`
 
-Compared with Integrated Storage, this feature has a deliberately smaller orchestration surface: the page reads the Volume collection, reads zpools only to build the Create modal's pool choices, and delegates create/delete behavior to dedicated hooks.
+در مقایسه با Integrated Storage، این feature orchestration surface کوچک‌تری دارد: page، Volume collection را می‌خواند، zpoolها را فقط برای ساخت pool optionهای Create modal می‌خواند و create/delete behavior را به hookهای اختصاصی واگذار می‌کند.
 
-## Main responsibilities
+## مسئولیت‌های اصلی
 
-The page coordinates:
+Page موارد زیر را هماهنگ می‌کند:
 
-- reading the current Volume collection;
-- deriving dynamic table columns from returned Volume attributes;
-- manually refreshing Volume state;
-- building sorted pool options from the canonical zpool query;
-- creating a Volume in a selected pool;
-- deleting a Volume behind a confirmation flow;
-- surfacing create/delete outcomes through toast notifications.
+- خواندن current Volume collection؛
+- derive کردن dynamic table columnها از Volume attributeهای برگشتی؛
+- manual refresh مربوط به Volume state؛
+- ساخت sorted pool option از canonical zpool query؛
+- ساخت Volume داخل selected pool؛
+- حذف Volume پشت confirmation flow؛
+- نمایش نتیجه‌ی create/delete از طریق toast notification.
 
-## Runtime flow
+## Runtime Flow
 
 ```mermaid
 flowchart TD
@@ -42,7 +42,7 @@ flowchart TD
     DELETE --> INV
 ```
 
-## Volume query
+## Volume Query
 
 Hook: `useVolumes()`
 
@@ -58,57 +58,57 @@ Endpoint:
 GET /api/volume/
 ```
 
-The hook does not configure continuous polling. It follows the normal React Query lifecycle and can also be explicitly refreshed by the page header.
+Hook continuous polling configure نمی‌کند. از lifecycle عادی React Query پیروی می‌کند و page header نیز می‌تواند صریحاً آن را refresh کند.
 
-The page's Refresh action calls the query's `refetch()` directly and disables itself while a refetch is in progress.
+Refresh action مربوط به page مستقیماً `refetch()` را call می‌کند و هنگام refetch شدن disabled است.
 
-## Volume response normalization
+## Volume Response Normalization
 
-The backend `data` payload is accepted in two shapes:
+Backend `data` payload در دو shape پذیرفته می‌شود:
 
-- an array of raw Volume objects;
-- an object keyed by full Volume name.
+- array از raw Volume objectها؛
+- objectای که با full Volume name key شده است.
 
-Each item is normalized into a `VolumeEntry` containing:
+هر item به `VolumeEntry` normalize می‌شود که شامل موارد زیر است:
 
-- `id` / `fullName`;
-- `poolName`;
-- `volumeName`;
-- a flat `attributes` list;
-- an `attributeMap` lookup;
-- the original enriched raw object.
+- `id` / `fullName`؛
+- `poolName`؛
+- `volumeName`؛
+- flat `attributes` list؛
+- `attributeMap` lookup؛
+- original enriched raw object.
 
-The expected logical name format is:
+Expected logical name format:
 
 ```text
 pool/volume
 ```
 
-If the backend does not expose a usable name, the normalizer creates a fallback name such as `volume-1` so the frontend can still render a stable entry.
+اگر backend usable name ارائه نکند، normalizer fallback nameای مانند `volume-1` می‌سازد تا frontend همچنان stable entry برای render داشته باشد.
 
-Entries are sorted first by pool and then by Volume name.
+Entryها ابتدا بر اساس pool و سپس Volume name sort می‌شوند.
 
-## Dynamic table attributes
+## Dynamic Table Attributeها
 
-`BlockStorage.tsx` inspects every normalized Volume and builds a union of attribute keys, excluding `name`.
+`BlockStorage.tsx` تمام normalized Volumeها را inspect می‌کند و unionای از attribute keyها می‌سازد و `name` را exclude می‌کند.
 
-This allows `VolumesTable` to render backend-provided Volume properties without the page hard-coding the complete attribute schema.
+در نتیجه `VolumesTable` می‌تواند backend-provided Volume propertyها را بدون hard-code کردن کل attribute schema در page render کند.
 
-When adding backend attributes, verify whether they should appear automatically or whether the table should intentionally suppress/localize them.
+هنگام اضافه‌شدن backend attribute جدید، verify کنید باید خودکار نمایش داده شود یا table باید عمداً آن را suppress/localize کند.
 
-## Pool options
+## Pool Optionها
 
-Create-Volume pool choices come from the canonical zpool hook:
+Create-Volume pool optionها از canonical zpool hook می‌آیند:
 
 ```text
 ['zpool']
 ```
 
-This means the Block Storage page itself does not maintain a second pool list implementation.
+بنابراین Block Storage page یک implementation جداگانه برای pool list نگه نمی‌دارد.
 
-The zpool query currently uses its ordinary 30-second cadence while mounted, even though the Volume query itself has no continuous interval.
+Zpool query هنگام mounted بودن از cadence عادی 30 ثانیه‌ای استفاده می‌کند، در حالی که خود Volume query continuous interval ندارد.
 
-## Create Volume
+## ساخت Volume
 
 Hook: `useCreateVolume()`
 
@@ -125,20 +125,20 @@ volume_name
 volsize
 ```
 
-The submitted full name is built as:
+Full name ارسالی به‌شکل زیر ساخته می‌شود:
 
 ```text
 <pool>/<volume>
 ```
 
-Whitespace is removed before mutation.
+Whitespace پیش از mutation حذف می‌شود.
 
-The size is submitted with a backend suffix:
+Size با backend suffix ارسال می‌شود:
 
 - UI `GB` → `G`
 - UI `TB` → `T`
 
-Example:
+مثال:
 
 ```json
 {
@@ -147,28 +147,28 @@ Example:
 }
 ```
 
-### Frontend validation
+### Frontend Validation
 
-Before submitting, the hook requires:
+پیش از submit، hook موارد زیر را require می‌کند:
 
-- a selected pool;
-- a non-empty Volume name;
-- a non-empty numeric size;
-- size greater than zero.
+- selected pool؛
+- Volume name غیرخالی؛
+- numeric size غیرخالی؛
+- size بزرگ‌تر از صفر.
 
-The modal removes Persian characters from the name input and temporarily shows an explanatory validation message when Persian characters are entered.
+Modal، characterهای فارسی را از name input حذف می‌کند و هنگام واردشدن Persian character، validation message توضیحی کوتاه نمایش می‌دهد.
 
-These checks improve operator UX. Backend validation remains authoritative.
+این checkها Operator UX را بهتر می‌کنند. Backend validation همچنان authoritative است.
 
-### Success behavior
+### Success Behavior
 
-After a successful create:
+پس از create موفق:
 
-1. invalidate `['volumes']`;
-2. close/reset the Create modal;
-3. show the page-level success toast.
+1. `['volumes']` invalidate می‌شود؛
+2. Create modal بسته/reset می‌شود؛
+3. page-level success toast نمایش داده می‌شود.
 
-## Delete Volume
+## حذف Volume
 
 Hook: `useDeleteVolume()`
 
@@ -186,31 +186,31 @@ Axios request body:
 }
 ```
 
-Deletion is confirmation-driven. `requestDelete()` stores the target entry, which opens `ConfirmDeleteVolumeModal`; only `confirmDelete()` starts the mutation.
+Deletion confirmation-driven است. `requestDelete()` target entry را ذخیره می‌کند و `ConfirmDeleteVolumeModal` را باز می‌کند؛ فقط `confirmDelete()` mutation را شروع می‌کند.
 
-### Success behavior
+### Success Behavior
 
-The hook first removes the deleted item from the existing `['volumes']` cache with `setQueryData()` and then invalidates the query.
+Hook ابتدا item حذف‌شده را با `setQueryData()` از cache فعلی `['volumes']` حذف می‌کند و سپس query را invalidate می‌کند.
 
-This gives immediate UI feedback while still asking the backend for authoritative post-mutation state.
+این کار feedback فوری در UI می‌دهد، ولی authoritative post-mutation state را دوباره از backend می‌گیرد.
 
-## Error handling
+## Error Handling
 
-Create errors are normalized from common API fields:
+Create errorها از common API fieldهای زیر normalize می‌شوند:
 
-- `detail`;
-- `message`;
+- `detail`؛
+- `message`؛
 - `errors`.
 
-Delete errors currently use the Error returned by the Axios mutation path and are exposed inside the confirmation controller as `errorMessage` as well as through the page toast callback.
+Delete errorها در حال حاضر از Error برگشتی Axios mutation path استفاده می‌کنند و هم به‌صورت `errorMessage` در confirmation controller و هم از طریق page toast callback expose می‌شوند.
 
-A failed create/delete must not close its modal as though the operation succeeded.
+Create/delete failشده نباید modal را طوری ببندد که انگار operation موفق بوده است.
 
-## StateSync boundary
+## StateSync Boundary
 
-The current `StateSyncManager` does **not** define a `volume` domain and does not map `/api/volume/*` mutations to a canonical `save_to_db=true` snapshot.
+`StateSyncManager` فعلی **domain مربوط به `volume` ندارد** و mutationهای `/api/volume/*` را به canonical `save_to_db=true` snapshot map نمی‌کند.
 
-Therefore the current frontend behavior for Volume mutations is:
+بنابراین behavior فعلی frontend برای Volume mutation:
 
 ```text
 Volume mutation
@@ -220,64 +220,64 @@ Volume mutation
   → no volume-specific StateSync snapshot
 ```
 
-Do not silently add an ad-hoc `save_to_db=true` flag to Volume hooks to compensate for this.
+برای جبران این موضوع به‌صورت ad-hoc `save_to_db=true` به Volume hookها اضافه نکنید.
 
-If Volume state is expected to be persisted into the backend's snapshot database, first confirm the backend persistence contract and then extend the centralized StateSync architecture deliberately.
+اگر Volume state باید در snapshot database مربوط به backend persist شود، ابتدا backend persistence contract را تأیید کنید و سپس centralized StateSync architecture را آگاهانه extend کنید.
 
-This is an architectural boundary requiring backend/product confirmation, not something a feature component should decide locally.
+این یک architectural boundary است که به backend/product confirmation نیاز دارد و feature component نباید local درباره‌ی آن تصمیم بگیرد.
 
-## Important invariants
+## Invariantهای مهم
 
-- `['volumes']` is the canonical client cache key for the Volume collection.
-- Pool choices reuse `useZpool()` rather than maintaining duplicate pool state.
-- Manual refresh is observational and must not trigger persistence side effects.
-- Delete remains confirmation-driven.
-- Optimistic cache removal after delete is followed by invalidation so the backend remains authoritative.
-- Volume persistence is currently outside the defined StateSync domains; do not work around that inside UI components.
+- `['volumes']` canonical client cache key برای Volume collection است.
+- Pool optionها `useZpool()` را reuse می‌کنند و duplicate pool state نگه نمی‌دارند.
+- Manual refresh observational است و نباید persistence side effect ایجاد کند.
+- Delete confirmation-driven باقی می‌ماند.
+- Optimistic cache removal پس از delete با invalidation دنبال می‌شود تا backend authoritative باقی بماند.
+- Volume persistence در حال حاضر خارج از StateSync domainهای تعریف‌شده است؛ داخل UI component workaround نسازید.
 
-## Common failure scenarios
+## Failure Scenarioهای رایج
 
-### Create modal has no pool options
+### Create Modal هیچ Pool Option ندارد
 
-Inspect the canonical `['zpool']` query and its backend response rather than the Volume query.
+Canonical query یعنی `['zpool']` و backend response آن را بررسی کنید، نه Volume query را.
 
-### A newly created Volume does not appear
+### Volume جدید بعد از Create دیده نمی‌شود
 
-Check:
+بررسی کنید:
 
-1. whether `POST /api/volume/create` succeeded;
-2. whether `['volumes']` was invalidated;
-3. the response from `GET /api/volume/`;
-4. response normalization if the backend changed its `data` shape.
+1. `POST /api/volume/create` موفق بوده یا خیر؛
+2. `['volumes']` invalidate شده یا خیر؛
+3. response مربوط به `GET /api/volume/`؛
+4. response normalization در صورتی که backend shape مربوط به `data` را تغییر داده باشد.
 
-### Deleted Volume briefly disappears then returns
+### Volume حذف‌شده لحظه‌ای ناپدید می‌شود و برمی‌گردد
 
-The optimistic cache removal worked, but the authoritative refetch still returned the Volume. Investigate the backend delete operation rather than suppressing the refetch.
+Optimistic cache removal کار کرده، اما authoritative refetch همچنان Volume را برگردانده است. Backend delete operation را بررسی کنید و refetch را suppress نکنید.
 
-### Volume attributes disappear from the table
+### Volume Attributeها از Table ناپدید شده‌اند
 
-Check the raw backend attribute names and the dynamic union built by `BlockStorage.tsx`. The page excludes only `name` from the dynamic attribute list.
+Raw backend attribute nameها و dynamic union ساخته‌شده در `BlockStorage.tsx` را بررسی کنید. Page فقط `name` را از dynamic attribute list exclude می‌کند.
 
-### Backend snapshot does not contain Volume changes
+### Backend Snapshot شامل Volume Change نیست
 
-Do not debug React Query first. The frontend currently has no Volume StateSync domain. Confirm whether Volume snapshot persistence is part of the backend contract.
+ابتدا React Query را debug نکنید. Frontend در حال حاضر Volume StateSync domain ندارد. تأیید کنید Volume snapshot persistence واقعاً بخشی از backend contract هست یا خیر.
 
-## Extension guide
+## راهنمای Extension
 
-### Adding a Volume mutation
+### اضافه‌کردن Volume Mutation
 
-1. place the backend call in a dedicated hook/lib function;
-2. validate operator input before mutation;
-3. invalidate `['volumes']` on success;
-4. keep confirmation around destructive operations;
-5. confirm whether the operation requires a new centralized StateSync domain rather than adding persistence flags locally;
-6. document any non-atomic/multi-step backend semantics.
+1. backend call را در hook/lib function اختصاصی قرار دهید؛
+2. پیش از mutation، Operator input را validate کنید؛
+3. پس از success، `['volumes']` را invalidate کنید؛
+4. destructive operation را پشت confirmation نگه دارید؛
+5. به‌جای local persistence flag، بررسی کنید operation به centralized StateSync domain جدید نیاز دارد یا خیر؛
+6. هر non-atomic/multi-step backend semantic را مستند کنید.
 
-### Adding a fixed table property
+### اضافه‌کردن Fixed Table Property
 
-If a backend attribute needs special formatting or business meaning, prefer an explicit table column instead of relying only on the dynamic attribute union.
+اگر backend attribute نیازمند formatting خاص یا business meaning است، explicit table column را به اتکای صرف به dynamic attribute union ترجیح دهید.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/pages/BlockStorage.tsx`
 - `src/components/block-storage/VolumesTable.tsx`
@@ -288,7 +288,7 @@ If a backend attribute needs special formatting or business meaning, prefer an e
 - `src/hooks/useDeleteVolume.ts`
 - `src/hooks/useZpool.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
 - [`../04-core-flows/api-request-lifecycle.md`](../04-core-flows/api-request-lifecycle.md)
