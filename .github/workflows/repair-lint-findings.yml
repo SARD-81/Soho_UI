@@ -1,0 +1,193 @@
+name: Repair Lint Findings
+
+on:
+  push:
+    branches:
+      - agent/project-documentation-audit
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: agent/project-documentation-audit
+
+      - name: Apply guarded lint repairs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path_str: str, old: str, new: str) -> None:
+              path = Path(path_str)
+              text = path.read_text(encoding='utf-8')
+              if old not in text:
+                  raise RuntimeError(f'Expected snippet not found in {path_str}: {old[:80]!r}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          replace_once(
+              'src/hooks/useDisk.ts',
+              '    return !Boolean(data.data?.has_partitions);',
+              '    return !data.data?.has_partitions;',
+          )
+
+          replace_once(
+              'src/main.tsx',
+              '  let client: QueryClient;\n\n  const mutationCache = new MutationCache({',
+              '  const mutationCache = new MutationCache({',
+          )
+          replace_once(
+              'src/main.tsx',
+              '  client = new QueryClient({',
+              '  const client = new QueryClient({',
+          )
+
+          replace_once(
+              'src/components/integrated-storage/PoolsTable.tsx',
+              '      onDelete,\n      onEdit,\n      onAddDevices,',
+              '      onDelete,\n      onAddDevices,',
+          )
+
+          replace_once(
+              'src/components/integrated-storage/SelectedPoolsDetailsPanel.tsx',
+              """  const attributeSort = useMemo(
+              () =>
+                createPriorityAwareComparatorFromRecords(
+                  comparisonValues,
+                  'fa-IR',
+                  comparisonPriority
+                ),
+              [comparisonPriority, comparisonValues]
+            );""",
+              """  const attributeSort = createPriorityAwareComparatorFromRecords(
+              comparisonValues,
+              'fa-IR',
+              comparisonPriority
+            );""",
+          )
+
+          replace_once(
+              'src/components/share/ManageShareMembersModal.tsx',
+              '  const currentAccessMembers = membersQuery.data ?? [];',
+              """  const currentAccessMembers = useMemo(
+              () => membersQuery.data ?? [],
+              [membersQuery.data]
+            );""",
+          )
+
+          replace_once(
+              'src/components/users/OsUsersTable.tsx',
+              """const OsUsersTable = ({
+              users,
+              isLoading,
+              error,
+              isSambaStatusLoading,
+              onCreateSambaUser,
+            }: OsUsersTableProps) => {""",
+              """const OsUsersTable = ({
+              users,
+              isLoading,
+              error,
+            }: OsUsersTableProps) => {""",
+          )
+          replace_once(
+              'src/components/users/OsUsersTable.tsx',
+              '    [isSambaStatusLoading, onCreateSambaUser]\n',
+              '    []\n',
+          )
+
+          replace_once(
+              'src/pages/FileSystem.tsx',
+              """  const filesystemEntries = data?.filesystems ?? [];
+            const filesystems = useMemo(
+              () =>
+                [...filesystemEntries].sort((a, b) =>
+                  a.filesystemName.localeCompare(b.filesystemName, 'en', {
+                    sensitivity: 'base',
+                  })
+                ),
+              [filesystemEntries]
+            );""",
+              """  const filesystems = useMemo(
+              () =>
+                [...(data?.filesystems ?? [])].sort((a, b) =>
+                  a.filesystemName.localeCompare(b.filesystemName, 'en', {
+                    sensitivity: 'base',
+                  })
+                ),
+              [data?.filesystems]
+            );""",
+          )
+
+          replace_once(
+              'src/components/NavigationDrawer.tsx',
+              """  const isItemActive = (item: NavigationItem): boolean => {
+                const matchesCurrentPath =
+                  location.pathname === item.path ||
+                  location.pathname.startsWith(`${item.path}/`);
+
+                return (
+                  matchesCurrentPath ||
+                  (item.children?.some((child) => isItemActive(child)) ?? false)
+                );
+              };""",
+              """  const isItemActive = React.useCallback(
+                (item: NavigationItem): boolean => {
+                  const checkItemActive = (currentItem: NavigationItem): boolean => {
+                    const matchesCurrentPath =
+                      location.pathname === currentItem.path ||
+                      location.pathname.startsWith(`${currentItem.path}/`);
+
+                    return (
+                      matchesCurrentPath ||
+                      (currentItem.children?.some(checkItemActive) ?? false)
+                    );
+                  };
+
+                  return checkItemActive(item);
+                },
+                [location.pathname]
+              );""",
+          )
+          replace_once(
+              'src/components/NavigationDrawer.tsx',
+              '}, [location.pathname]);',
+              '  }, [isItemActive]);',
+          )
+          replace_once(
+              'src/components/NavigationDrawer.tsx',
+              '          const itemKey = getItemKey(item); // استفاده از تابع getItemKey',
+              '          const itemKey = getItemKey(item);',
+          )
+          replace_once(
+              'src/components/NavigationDrawer.tsx',
+              '    return item.path || item.text; // اگر path وجود داشت از آن استفاده کن، در غیر این صورت از text',
+              '    return item.path || item.text;',
+          )
+          PY
+
+      - name: Commit repairs when needed
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/hooks/useDisk.ts \
+            src/main.tsx \
+            src/components/NavigationDrawer.tsx \
+            src/components/integrated-storage/PoolsTable.tsx \
+            src/components/integrated-storage/SelectedPoolsDetailsPanel.tsx \
+            src/components/share/ManageShareMembersModal.tsx \
+            src/components/users/OsUsersTable.tsx \
+            src/pages/FileSystem.tsx
+          git commit -m "fix: resolve frontend lint findings"
+          git push origin HEAD:agent/project-documentation-audit
