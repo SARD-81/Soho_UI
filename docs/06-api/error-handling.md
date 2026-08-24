@@ -1,12 +1,12 @@
 # API Error Handling
 
-This document defines how SOHO UI currently detects, normalizes, logs, and presents API failures.
+این سند مشخص می‌کند SOHO UI در حال حاضر API failureها را چگونه detect، normalize، log و در UI نمایش می‌دهد.
 
-The frontend must preserve enough error context for operators and maintainers without coupling every component to every backend response shape.
+Frontend باید context کافی برای operator و maintainer حفظ کند، بدون اینکه هر component به تمام backend response shapeها tightly coupled شود.
 
-## Error-handling layers
+## لایه‌های error handling
 
-Current API failures can be handled at several layers:
+API failure می‌تواند در چند layer handle شود:
 
 ```text
 backend response
@@ -20,23 +20,23 @@ React Query query or mutation
 page/modal/table presentation
 ```
 
-Each layer has a different responsibility.
+هر layer مسئولیت متفاوتی دارد.
 
 ## Shared Axios response interceptor
 
-The shared application client logs failed Axios responses through:
+Shared application client، failed Axios responseها را ابتدا از طریق helper زیر log می‌کند:
 
 ```text
 logApiErrorDetails(error)
 ```
 
-before applying special 401 recovery logic.
+و سپس special 401 recovery logic را اعمال می‌کند.
 
-Non-401 errors are rejected back to the owning query/mutation.
+Non-401 errorها دوباره به owning query/mutation reject می‌شوند.
 
-The interceptor must not convert every error into a generic toast because presentation belongs to the feature that knows the operator context.
+Interceptor نباید هر error را به generic toast تبدیل کند، چون presentation باید در feature‌ای انجام شود که operator context لازم را دارد.
 
-## Central error-message helper
+## helper مرکزی error message
 
 Shared helper:
 
@@ -44,7 +44,7 @@ Shared helper:
 extractApiErrorMessage(error, fallback)
 ```
 
-Current lookup order for Axios response objects includes:
+Lookup order فعلی برای Axios response objectها شامل موارد زیر است:
 
 ```text
 detail
@@ -53,35 +53,35 @@ error.message
 error.detail
 ```
 
-If no recognized response field exists:
+اگر response field شناخته‌شده وجود نداشته باشد:
 
-1. use `Error.message` when available;
-2. otherwise use the supplied stable fallback.
+1. اگر `Error.message` موجود است از آن استفاده می‌شود؛
+2. در غیر این صورت stable fallback ارائه‌شده استفاده می‌شود.
 
-The helper should be preferred for ordinary feature mutations rather than duplicating response-shape parsing.
+برای mutationهای معمولی feature، این helper باید به parserهای تکراری response shape ترجیح داده شود.
 
-## Error codes and development logging
+## Error code و development logging
 
-`logApiErrorDetails()` also attempts to extract an error code from:
+`logApiErrorDetails()` همچنین تلاش می‌کند error code را از fieldهای زیر extract کند:
 
 ```text
 code
 error.code
 ```
 
-and logs a normalized console message:
+و normalized console message زیر را log می‌کند:
 
 ```text
 [API Error] code: <code>, message: <message>
 ```
 
-This is diagnostic logging, not operator-facing UX.
+این diagnostic logging است، نه operator-facing UX.
 
-Do not expose raw internal codes to end users unless they have a documented support/troubleshooting purpose.
+Raw internal code را به user نمایش ندهید مگر اینکه support/troubleshooting purpose مستند داشته باشد.
 
-## Feature-specific legacy error shapes
+## feature-specific legacy error shapeها
 
-Some endpoints currently return additional shapes such as:
+برخی endpointها فعلاً shapeهای اضافه‌ای مانند موارد زیر برمی‌گردانند:
 
 ```text
 errors: string
@@ -89,17 +89,17 @@ errors: string[]
 error: string
 ```
 
-Features including Web Share, Volume creation, NFS, and Samba create flows contain compatibility extractors for these response forms.
+Featureهایی مثل Web Share، Volume creation، NFS و Samba create flow compatibility extractor مخصوص این shapeها دارند.
 
-This is acceptable while backend contracts remain heterogeneous, but new code should not proliferate new one-off parsers unnecessarily.
+تا زمانی که backend contractها heterogeneous هستند این کار قابل قبول است، اما code جدید نباید one-off parserهای تازه را بی‌دلیل زیاد کند.
 
-Long-term direction should be a consistent backend error envelope.
+جهت‌گیری long-term بهتر است backend error envelope یکسان باشد.
 
-## Logical failure inside HTTP success
+## Logical failure داخل HTTP success
 
-Several API helpers cannot rely on HTTP status alone.
+برخی API helperها نمی‌توانند فقط به HTTP status متکی باشند.
 
-Some backend responses can return:
+بعضی backend responseها ممکن است داخل response از نوع 2xx این shape را برگردانند:
 
 ```json
 {
@@ -108,20 +108,18 @@ Some backend responses can return:
 }
 ```
 
-inside a 2xx response.
+نمونه‌هایی از frontend code که این pattern را صریحاً handle می‌کنند:
 
-Examples of frontend code that explicitly handles this pattern include:
+- disk inventory/detail؛
+- disk partition count؛
+- pool-device readها؛
+- general system settings response assertionها.
 
-- disk inventory/detail;
-- disk partition count;
-- pool-device reads;
-- general system settings response assertions.
+وقتی endpoint contract فعلی `ok:false` را پشتیبانی می‌کند، API helper باید آن را به `Error`/rejected query تبدیل کند و نگذارد UI آن را empty success در نظر بگیرد.
 
-When an endpoint's current contract supports `ok:false`, API helpers must convert it into an Error/rejected query rather than letting the UI treat it as successful empty data.
+## 401 یک حالت خاص است
 
-## 401 is special
-
-An HTTP 401 from a normal application request enters centralized token recovery when:
+HTTP 401 مربوط به normal application request وارد centralized token recovery می‌شود، به شرط اینکه:
 
 ```text
 originalRequest exists
@@ -131,53 +129,55 @@ originalRequest._retry is not already true
 
 Recovery sequence:
 
-1. obtain refresh token;
-2. clear the session immediately if no refresh token exists;
-3. if another refresh is active, queue the failed request;
-4. otherwise start one refresh request;
-5. save the new access token;
-6. replay queued requests;
-7. replay the original request.
+1. refresh token دریافت می‌شود؛
+2. اگر refresh token وجود نداشته باشد session فوراً clear می‌شود؛
+3. اگر refresh دیگری active است، failed request queue می‌شود؛
+4. در غیر این صورت یک refresh request شروع می‌شود؛
+5. access token جدید ذخیره می‌شود؛
+6. queued requestها replay می‌شوند؛
+7. original request replay می‌شود.
 
-If refresh fails, all queued requests fail and the authenticated frontend session is cleared.
+اگر refresh fail شود، تمام queued requestها fail می‌شوند و authenticated frontend session clear می‌شود.
 
-See [`authentication-api.md`](./authentication-api.md).
+جزئیات:
 
-## Do not retry every error centrally
+[`authentication-api.md`](./authentication-api.md)
 
-The global React Query defaults currently disable automatic retries.
+## همه‌ی errorها را مرکزی retry نکنید
 
-This is intentional for an administration UI where mutations and operational actions may not be safe to replay blindly.
+Global default فعلی React Query، automatic retry را disable کرده است.
 
-Do not add broad transport-level retries for:
+این تصمیم برای administration UI عمدی است، چون mutation و operational action ممکن است safe برای replay کورکورانه نباشند.
 
-- create/delete mutations;
-- disk wipe/cleanup;
-- service control;
-- system settings changes;
-- network reconfiguration;
-- credential/password changes.
+Broad transport-level retry برای موارد زیر اضافه نکنید:
 
-If a particular observational GET should retry, make that behavior explicit in its query with documented rationale.
+- create/delete mutation؛
+- disk wipe/cleanup؛
+- service control؛
+- system settings change؛
+- network reconfiguration؛
+- credential/password change.
 
-## Query errors
+اگر observational GET خاصی باید retry شود، behavior را در همان query صریح و همراه rationale مستند کنید.
 
-Independent server-state resources should fail independently.
+## Query errorها
 
-Examples:
+Server-state resourceهای مستقل باید مستقل fail شوند.
 
-- one Dashboard telemetry widget failing must not blank the whole Dashboard;
-- one selected disk detail failing must not hide the complete inventory;
-- one pool-device slot lookup failing must not erase successful pools;
-- one general Settings query failing should not necessarily disable every unrelated settings section.
+مثال:
 
-Prefer resource-local error state over one global page failure when resources have independent lifecycles.
+- failure یک Dashboard telemetry widget نباید کل Dashboard را blank کند؛
+- failure detail یک selected disk نباید کل inventory را مخفی کند؛
+- failure یک pool-device slot lookup نباید result موفق poolهای دیگر را پاک کند؛
+- failure یک General Settings query نباید لزوماً تمام settings sectionهای نامرتبط را disable کند.
 
-## Mutation errors
+وقتی resourceها lifecycle مستقل دارند، resource-local error state را به global page failure ترجیح دهید.
 
-A mutation failure must not close/reset the owning modal as though success occurred.
+## Mutation errorها
 
-Typical pattern:
+Mutation failure نباید owning modal را مثل success close/reset کند.
+
+Pattern معمول:
 
 ```text
 submit
@@ -188,26 +188,26 @@ mutation pending
  failure -> preserve form/target + expose error + retry/recovery option
 ```
 
-This is especially important when the operator entered complex configuration that should not be lost after a backend validation failure.
+این رفتار مخصوصاً زمانی مهم است که operator configuration پیچیده‌ای وارد کرده و نباید بعد از backend validation failure آن را از دست بدهد.
 
-## Toast versus inline/modal error
+## Toast در برابر inline/modal error
 
-Use transient toast feedback for concise operation results.
+برای operation result کوتاه از transient toast feedback استفاده کنید.
 
-Use inline/modal state when the error affects the form or confirmation context and the user needs it while deciding what to change.
+وقتی error به form یا confirmation context مربوط است و user برای تصمیم بعدی باید آن را ببیند، inline/modal state مناسب‌تر است.
 
-Several current flows intentionally do both:
+چند flow فعلی عمداً هر دو را دارند:
 
-- modal retains the backend failure;
-- toast gives immediate global feedback.
+- modal backend failure را نگه می‌دارد؛
+- toast immediate global feedback می‌دهد.
 
-Avoid showing the same long raw error in several redundant surfaces.
+یک raw error طولانی را در چند surface تکراری نمایش ندهید.
 
-## Partial-failure workflows
+## partial-failure workflowها
 
-A frontend workflow can report failure after earlier backend steps have already succeeded.
+یک frontend workflow می‌تواند error گزارش دهد در حالی که stepهای قبلی backend قبلاً success شده‌اند.
 
-Important current examples:
+نمونه‌های مهم فعلی:
 
 ### Pool delete
 
@@ -219,7 +219,7 @@ destroy pool
 clear/wipe former disks
 ```
 
-If disk cleanup fails after destroy, the pool can already be gone.
+اگر disk cleanup پس از destroy fail شود، pool ممکن است از قبل حذف شده باشد.
 
 ### Web Share create
 
@@ -231,7 +231,7 @@ create Web Share
 set permission 777
 ```
 
-Permission failure does not roll back the created Web Share.
+Permission failure، Web Share ایجادشده را rollback نمی‌کند.
 
 ### Samba group create
 
@@ -243,128 +243,128 @@ create group
 add users one-by-one
 ```
 
-Membership failure does not delete the newly created group.
+Membership failure باعث delete شدن group تازه ایجادشده نمی‌شود.
 
 ### Samba membership batch
 
-Each username is a separate PUT. Earlier successful changes are not rolled back if a later username fails.
+برای هر username یک PUT جدا ارسال می‌شود. اگر username بعدی fail شود، change موفق قبلی rollback نمی‌شود.
 
-### Web-user -> OS-user creation
+### Web-user → OS-user creation
 
-Web user can remain even if subsequent OS-user creation fails.
+Web user می‌تواند در صورت failure بعدی OS-user creation باقی بماند.
 
-### OS-user -> Samba-user creation
+### OS-user → Samba-user creation
 
-OS user can remain even if subsequent Samba-user creation fails.
+OS user می‌تواند در صورت failure بعدی Samba-user creation باقی بماند.
 
-Error copy and troubleshooting documentation must describe the actual partial state instead of implying a transaction rolled back.
+Error copy و troubleshooting document باید actual partial state را توضیح دهند و نباید القا کنند transaction rollback شده است.
 
-## Best-effort sub-steps
+## best-effort sub-stepها
 
-Some workflows intentionally continue after a failed sub-step.
+برخی workflowها عمداً بعد از failure یک sub-step ادامه می‌دهند.
 
-Current example:
+نمونه‌ی فعلی:
 
 ```text
 disk cleanup
 ```
 
-`clear-zfs` is best-effort; the subsequent wipe is still attempted.
+`clear-zfs` best-effort است و wipe بعدی همچنان attempt می‌شود.
 
-A successful final workflow can therefore include a non-fatal sub-step failure.
+در نتیجه final workflow موفق می‌تواند یک non-fatal sub-step failure هم داشته باشد.
 
-When introducing best-effort steps, return enough structured information for the caller to decide whether a warning should be shown.
+هنگام اضافه کردن best-effort step، structured information کافی برگردانید تا caller بتواند تصمیم بگیرد warning لازم است یا خیر.
 
-## Dependency errors
+## Dependency errorها
 
-Some backend failures represent domain dependencies rather than generic transport problems.
+بعضی backend failureها domain dependency هستند، نه generic transport problem.
 
-Current UI examples include:
+نمونه‌های فعلی UI:
 
-- filesystem delete blocked by share configuration;
-- zpool delete blocked by dependent filesystem/share state;
-- Samba-user delete blocked because the user is used by active shares.
+- filesystem delete به‌دلیل share configuration block شده؛
+- zpool delete به‌دلیل dependent filesystem/share state block شده؛
+- Samba-user delete به‌دلیل استفاده شدن user در active share block شده.
 
-The frontend may translate known backend context into operator-friendly guidance, but the backend must remain the authoritative integrity check.
+Frontend می‌تواند backend context شناخته‌شده را به operator guidance مناسب تبدیل کند، اما backend باید authoritative integrity check باقی بماند.
 
-Do not reproduce complex dependency rules purely in frontend validation.
+Complex dependency rule را صرفاً در frontend validation بازسازی نکنید.
 
-## Validation errors
+## Validation errorها
 
-Frontend validation should prevent obvious invalid requests and improve UX, but must not be treated as integrity enforcement.
+Frontend validation باید obvious invalid request را قبل از ارسال بگیرد و UX را بهتر کند، اما integrity enforcement نیست.
 
-Examples:
+مثال:
 
-- duplicate usernames/names from currently loaded lists;
-- pool/vdev disk count;
-- filesystem naming/quota;
-- SNMP IP validation;
-- hostname/NTP validation;
+- duplicate username/name بر اساس list فعلی؛
+- pool/vdev disk count؛
+- filesystem naming/quota؛
+- SNMP IP validation؛
+- hostname/NTP validation؛
 - NFS client/path validation.
 
-Client state can be stale and concurrent operators can change backend state. Backend validation remains mandatory.
+Client state می‌تواند stale باشد و operatorهای concurrent می‌توانند backend state را تغییر دهند. Backend validation الزامی باقی می‌ماند.
 
-## Network and unavailable-backend failures
+## Network و unavailable-backend failureها
 
-When there is no response payload, `extractApiErrorMessage()` falls back to the Axios/Error message and then to the feature fallback.
+وقتی response payload وجود ندارد، `extractApiErrorMessage()` ابتدا Axios/Error message و سپس feature fallback را استفاده می‌کند.
 
-Feature code should provide fallback messages that tell the operator what operation failed, for example:
+Feature code باید fallback message مشخص‌کننده‌ی operation داشته باشد، مثل:
 
 ```text
 امکان دریافت اطلاعات دیسک‌ها وجود ندارد.
 ```
 
-rather than a context-free message such as:
+نه پیام بدون context مثل:
 
 ```text
 خطا رخ داد.
 ```
 
-## Cancellation is not an operator error
+## Cancellation یک operator error نیست
 
-Query cancellation caused by navigation/disablement should not normally be surfaced as an application failure toast.
+Query cancellation ناشی از navigation/disablement معمولاً نباید به application failure toast تبدیل شود.
 
-Pass React Query's `AbortSignal` to Axios read helpers where supported so obsolete requests can end cleanly.
+در read helperهایی که پشتیبانی می‌کنند، React Query `AbortSignal` را به Axios بدهید تا obsolete requestها تمیز terminate شوند.
 
-## Diagnostic actions
+## Diagnostic actionها
 
-A diagnostic result can be unsuccessful without being a transport error.
+Diagnostic result می‌تواند unsuccessful باشد بدون اینکه transport error رخ داده باشد.
 
-SNMP test is the clearest example:
+SNMP test مثال واضح است:
 
 ```text
 HTTP request succeeds
 connection_success = false
 ```
 
-The UI converts that into a structured failed diagnostic result rather than treating it as a configuration mutation error.
+UI این حالت را به structured failed diagnostic result تبدیل می‌کند، نه configuration mutation error.
 
-Keep transport success and domain/diagnostic success distinct.
+Transport success و domain/diagnostic success را جدا نگه دارید.
 
-## Error-handling checklist for new API work
+## checklist برای error handling در API جدید
 
-For every new request, define:
+برای هر request جدید این موارد را مشخص کنید:
 
-1. What HTTP statuses are expected?
-2. Can `2xx` contain `ok:false` or equivalent logical failure?
-3. What response fields carry human-readable errors?
-4. Is the operation safe to retry?
-5. Does failure leave a partial backend state?
-6. Should the modal remain open?
-7. Is toast feedback useful?
-8. Does the error indicate a dependency/business rule that needs clearer operator guidance?
-9. Is cancellation possible and should it remain silent?
-10. Does 401 belong to central auth recovery rather than feature-level handling?
-11. Does the backend return sensitive information that must not be shown directly?
-12. Is the fallback message specific enough to identify the failed operation?
+1. چه HTTP statusهایی expected هستند؟
+2. آیا `2xx` می‌تواند `ok:false` یا logical failure معادل داشته باشد؟
+3. کدام response fieldها human-readable error دارند؟
+4. آیا operation safe برای retry است؟
+5. Failure می‌تواند partial backend state باقی بگذارد؟
+6. Modal باید باز بماند؟
+7. Toast feedback مفید است؟
+8. Error یک dependency/business rule است که operator guidance واضح‌تر لازم دارد؟
+9. Cancellation ممکن است و باید silent بماند؟
+10. آیا 401 باید به central auth recovery واگذار شود و feature-level handling نداشته باشد؟
+11. Backend ممکن است sensitive information برگرداند که نباید مستقیم نمایش داده شود؟
+12. Fallback message به‌اندازه کافی operation failure را مشخص می‌کند؟
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/utils/apiError.ts`
 - `src/lib/axiosInstance.ts`
 - `src/lib/authApi.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`api-conventions.md`](./api-conventions.md)
 - [`authentication-api.md`](./authentication-api.md)
