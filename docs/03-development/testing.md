@@ -1,10 +1,10 @@
 # Testing
 
-This document describes the current quality-assurance state of SOHO UI and the target direction for automated behavioral coverage.
+این سند وضعیت فعلی Quality Assurance در SOHO UI و مسیر هدف برای automated behavioral coverage را توضیح می‌دهد.
 
-## Current status
+## وضعیت فعلی
 
-`package.json` currently defines:
+`package.json` در حال حاضر scriptهای زیر را تعریف می‌کند:
 
 ```text
 dev
@@ -13,20 +13,20 @@ lint
 preview
 ```
 
-There is still no `test` script and no adopted unit, integration, or end-to-end test runner. The project must therefore not claim automated behavioral test coverage that does not exist.
+هنوز `test` script وجود ندارد و هیچ unit، integration یا end-to-end test runner به‌عنوان test stack پروژه adopt نشده است. بنابراین پروژه نباید ادعای automated behavioral test coverage داشته باشد در حالی که چنین coverageای وجود ندارد.
 
-The repository **does now have an executable CI quality gate**:
+Repository **در حال حاضر یک CI quality gate اجرایی دارد**:
 
 ```text
 .github/workflows/frontend-validation.yml
 ```
 
-The workflow runs on:
+Workflow در موارد زیر اجرا می‌شود:
 
-- pushes to `agent/project-documentation-audit` while this audit branch is active;
-- pull requests targeting `main`.
+- push روی `agent/project-documentation-audit` تا زمانی که این audit branch فعال باشد؛
+- pull requestهایی که target آن‌ها `main` است.
 
-It uses Node.js 22 and executes:
+این workflow از Node.js 22 استفاده می‌کند و commandهای زیر را اجرا می‌کند:
 
 ```text
 npm ci
@@ -34,44 +34,44 @@ npm run lint
 npm run build
 ```
 
-The workflow also publishes a `frontend-validation` commit status so the lint/build result is visible as release/PR evidence.
+Workflow همچنین commit status با نام `frontend-validation` publish می‌کند تا نتیجه‌ی lint/build به‌عنوان evidence مربوط به release/PR قابل مشاهده باشد.
 
-CI proves that the repository installs, lints, type-checks, and bundles successfully in its CI environment. It does **not** prove that product workflows or backend integrations behave correctly.
+CI ثابت می‌کند repository در environment مربوط به CI با موفقیت dependencyها را install می‌کند، lint و type-check می‌شود و bundle تولید می‌کند. CI **ثابت نمی‌کند** product workflowها یا backend integrationها از نظر behavior صحیح هستند.
 
-## What the current quality checks provide
+## Quality Checkهای فعلی چه چیزی را پوشش می‌دهند؟
 
-### Dependency installation
+### Dependency Installation
 
-CI uses:
+CI command زیر را اجرا می‌کند:
 
 ```bash
 npm ci
 ```
 
-against the committed `package-lock.json`.
+و از `package-lock.json` commitشده استفاده می‌کند.
 
-This catches lockfile/package metadata inconsistencies and avoids opportunistic dependency resolution during validation.
+این کار inconsistency بین lockfile و package metadata را شناسایی می‌کند و از opportunistic dependency resolution هنگام validation جلوگیری می‌کند.
 
-### TypeScript / production build
+### TypeScript / Production Build
 
 ```bash
 npm run build
 ```
 
-runs:
+Command زیر را اجرا می‌کند:
 
 ```text
 tsc -b && vite build
 ```
 
-This catches:
+این مرحله موارد زیر را شناسایی می‌کند:
 
-- many static type errors;
-- unused locals/parameters configured by TypeScript;
-- invalid imports/module-resolution problems;
-- production bundle failures.
+- بسیاری از static type errorها؛
+- unused local/parameterهایی که TypeScript برای آن‌ها check فعال دارد؛
+- invalid import یا module-resolution problem؛
+- failure در production bundle.
 
-It does not prove that feature behavior is correct.
+اما صحیح بودن feature behavior را ثابت نمی‌کند.
 
 ### ESLint
 
@@ -79,25 +79,25 @@ It does not prove that feature behavior is correct.
 npm run lint
 ```
 
-checks configured TypeScript, React, Hook, and general lint rules.
+Ruleهای configureشده‌ی TypeScript، React، Hook و lint عمومی را بررسی می‌کند.
 
-Lint does not validate backend semantics or user workflows.
+Lint، semantics مربوط به backend یا user workflow را validate نمی‌کند.
 
-### Manual verification
+### Manual Verification
 
-Until automated behavioral tests are introduced, behavior-changing work still requires targeted manual verification of the affected flows.
+تا زمانی که automated behavioral testها اضافه نشده‌اند، هر change مربوط به behavior همچنان نیازمند manual verification هدفمند روی flowهای تحت تأثیر است.
 
-Manual verification should be explicit in PR descriptions rather than described only as “tested”.
+Manual verification باید در توضیحات PR صریح باشد و صرفاً با عبارت کلی «tested» توصیف نشود.
 
-## CI workflow contract
+## Contract مربوط به CI Workflow
 
-Canonical file:
+فایل canonical:
 
 ```text
 .github/workflows/frontend-validation.yml
 ```
 
-Current job sequence:
+ترتیب job فعلی:
 
 ```text
 checkout
@@ -109,7 +109,7 @@ checkout
 → publish final frontend-validation status
 ```
 
-The final status is one of:
+Final status یکی از موارد زیر است:
 
 ```text
 success
@@ -117,196 +117,197 @@ failure
 error
 ```
 
-A failed CI run is a merge blocker until its lint/build cause is understood and corrected.
+CI failشده تا زمانی که علت lint/build آن درک و اصلاح نشده، blocker برای merge است.
 
-Do not weaken or bypass the normal project commands merely to make CI green.
+صرفاً برای سبزکردن CI، commandهای اصلی پروژه را تضعیف یا bypass نکنید.
 
-## Minimum manual regression checklist
+## حداقل Manual Regression Checklist
 
-Choose the relevant items for the change.
+موارد مرتبط با change را انتخاب کنید.
 
 ### Authentication
 
-- login success/failure;
-- refresh/session restore;
-- protected-route redirect;
-- logout;
-- idle-timeout behavior where affected.
+- login success/failure؛
+- refresh/session restore؛
+- protected-route redirect؛
+- logout؛
+- idle-timeout behavior در صورت تأثیرپذیری.
 
 ### API / StateSync
 
-- normal request carries observational persistence behavior;
-- successful mutation refreshes expected UI data;
-- persisted domains schedule their canonical snapshot;
-- diagnostic/non-mutating POST actions do not create persistence side effects;
-- failed mutation does not schedule success-only persistence.
+- request عادی observational persistence behavior داشته باشد؛
+- mutation موفق، UI data مورد انتظار را refresh کند؛
+- persisted domainهای mapشده canonical snapshot خود را schedule کنند؛
+- diagnostic/non-mutating POST actionها persistence side effect ایجاد نکنند؛
+- mutation failشده success-only persistence را schedule نکند.
 
 ### Storage
 
-- list/load state;
-- create/update/delete relevant resource where safe;
-- confirmation flows for destructive actions;
-- affected cross-domain refreshes;
-- modal pending/error state;
-- partial-failure messaging for multi-stage workflows.
+- state مربوط به list/load؛
+- create/update/delete resource مرتبط در صورت ایمن بودن؛
+- confirmation flow برای destructive actionها؛
+- cross-domain refreshهای تحت تأثیر؛
+- pending/error state مربوط به modal؛
+- partial-failure messaging در workflowهای چندمرحله‌ای.
 
-### Shares / users
+### Share / User
 
-- duplicate-name validation;
-- membership add/remove;
-- dependency errors;
-- user/group/share query refresh;
-- multi-request partial-failure state when relevant.
+- duplicate-name validation؛
+- membership add/remove؛
+- dependency errorها؛
+- refresh مربوط به user/group/share query؛
+- multi-request partial-failure state در صورت مرتبط بودن.
 
 ### Settings
 
-- dirty form state is not overwritten;
-- confirmation dialogs fire before system-impacting changes;
-- correct network endpoint is used for DHCP/static;
-- Web-user/OS-user partial-failure behavior is understood;
-- Persian/RTL copy remains readable after source edits.
+- dirty form state overwrite نشود؛
+- confirmation dialog پیش از changeهای اثرگذار روی سیستم اجرا شود؛
+- endpoint صحیح network برای DHCP/static استفاده شود؛
+- partial-failure behavior مربوط به Web-user/OS-user درک شده باشد؛
+- متن فارسی/RTL بعد از source edit همچنان خوانا باشد.
 
-## Recommended automated testing layers
+## Layerهای پیشنهادی برای Automated Testing
 
-When test infrastructure is introduced, use more than one layer.
+وقتی test infrastructure اضافه شد، فقط به یک layer متکی نباشید.
 
-### 1. Unit tests
+### 1. Unit Test
 
-Best candidates include pure or mostly pure helpers such as:
+Candidateهای مناسب شامل helperهای pure یا mostly-pure هستند، مانند:
 
-- normalization utilities;
-- NFS option translation;
-- Samba member parsing/merging;
-- Web Share normalization;
-- hostname/NTP validation;
-- notification threshold/fingerprint helpers;
-- StateSync URL-to-domain mapping;
+- normalization utilityها؛
+- NFS option translation؛
+- Samba member parsing/merging؛
+- Web Share normalization؛
+- hostname/NTP validation؛
+- notification threshold/fingerprint helperها؛
+- StateSync URL-to-domain mapping؛
 - service/SNMP boolean normalization.
 
-These tests should be fast and deterministic.
+این testها باید سریع و deterministic باشند.
 
-### 2. Hook/data-layer tests
+### 2. Hook/Data-layer Test
 
-Test important query/mutation contracts with mocked network boundaries:
+Contractهای مهم query/mutation را با network boundary mockشده test کنید:
 
-- query key shape;
-- endpoint/method/payload mapping;
-- success invalidation;
-- compatibility response normalization;
-- abort/enable behavior where meaningful.
+- query key shape؛
+- mapping مربوط به endpoint/method/payload؛
+- invalidation پس از success؛
+- compatibility response normalization؛
+- abort/enable behavior در محل‌های معنادار.
 
-Avoid tests that simply reproduce implementation details.
+از testهایی که فقط implementation detail را تکرار می‌کنند خودداری کنید.
 
-### 3. Component integration tests
+### 3. Component Integration Test
 
-Useful flows include:
+Flowهای مفید شامل موارد زیر هستند:
 
-- create/edit modals;
-- destructive confirmation;
-- form validation;
-- pending/error states;
-- membership editors;
+- create/edit modalها؛
+- destructive confirmation؛
+- form validation؛
+- pending/error stateها؛
+- membership editorها؛
 - settings dirty-state behavior.
 
-Prefer user-visible behavior over checking internal React state.
+User-visible behavior را به check کردن internal React state ترجیح دهید.
 
-### 4. End-to-end tests
+### 4. End-to-End Test
 
-High-value E2E scenarios include:
+E2E scenarioهای باارزش شامل موارد زیر هستند:
 
-- authentication/session lifecycle;
-- representative storage-resource create/delete against a controlled environment;
-- Samba/NFS/Web Share workflows;
-- network/system settings in a safe test appliance;
-- StateSync persistence after a mutation.
+- authentication/session lifecycle؛
+- create/delete نمونه‌ای از storage resource در environment کنترل‌شده؛
+- Samba/NFS/Web Share workflowها؛
+- network/system settings روی test appliance ایمن؛
+- StateSync persistence پس از mutation.
 
-System-administration E2E tests require an isolated backend/environment because many operations are destructive or host-level.
+E2E testهای system administration نیازمند backend/environment ایزوله هستند، چون بسیاری از operationها destructive یا host-level هستند.
 
-## Suggested tooling direction
+## مسیر پیشنهادی Tooling
 
-No behavioral test tool is mandated yet because the repository has not adopted a test stack.
+هنوز behavioral test tool مشخصی اجباری نشده، چون repository یک test stack رسمی adopt نکرده است.
 
-A reasonable future React/Vite setup could include:
+یک setup منطقی در آینده برای React/Vite می‌تواند شامل موارد زیر باشد:
 
-- Vitest for unit/hook tests;
-- React Testing Library for component behavior;
-- MSW or controlled Axios mocks for API boundaries;
-- Playwright for end-to-end browser flows.
+- Vitest برای unit/hook test؛
+- React Testing Library برای component behavior؛
+- MSW یا Axios mock کنترل‌شده برای API boundary؛
+- Playwright برای end-to-end browser flow.
 
-Treat this as a recommendation, not current installed infrastructure.
+این موارد recommendation هستند، نه infrastructure نصب‌شده‌ی فعلی.
 
-Before adding a test stack, record the decision with:
+پیش از اضافه‌کردن test stack، تصمیم مربوطه باید شامل موارد زیر ثبت شود:
 
-- selected tools;
-- why they fit this project;
-- test directory conventions;
-- API mocking strategy;
-- CI commands;
-- destructive test isolation requirements.
+- toolهای انتخاب‌شده؛
+- دلیل تناسب آن‌ها با پروژه؛
+- convention مربوط به test directory؛
+- API mocking strategy؛
+- CI commandها؛
+- نیازمندی isolation برای destructive testها.
 
-## Highest-priority future tests
+## Testهای آینده با بالاترین Priority
 
-### StateSync URL mapping
+### StateSync URL Mapping
 
-Test that:
+بر اساس contract فعلی GitLab، test کنید که:
 
-- zpool mutations map to zpool + disk;
-- filesystem maps to filesystem + zpool;
-- disk maps to disk + zpool;
-- Samba user/group relationships map cross-domain;
-- Web Share and NFS map correctly;
-- SNMP config maps to SNMP;
-- SNMP diagnostic test connection does **not** map to persistence.
+- mutationهای zpool به `zpool + disk` map شوند؛
+- filesystem به `filesystem + zpool` map شود؛
+- disk به `disk + zpool` map شود؛
+- NFS به domain مربوط به `nfs` map شود؛
+- Samba sharepoint به `samba-shares` map شود؛
+- Web Share به `webshare` map شود؛
+- Samba user/group در contract فعلی StateSync domain مستقل ندارند؛
+- SNMP در contract فعلی StateSync domain ندارد و requestهای SNMP نباید persistence snapshot از طریق frontend StateSync schedule کنند.
 
-### Axios persistence policy
+### Axios Persistence Policy
 
-Test that:
+Test کنید که:
 
-- normal `/api/` traffic gets `save_to_db=false`;
-- caller-level stale body flags are neutralized;
-- StateSync internal requests get true;
-- auth endpoints are excluded;
-- the internal StateSync header is not leaked to the backend.
+- API traffic عادی زیر `/api/` مقدار `save_to_db=false` دریافت کند؛
+- body flagهای stale در سطح caller neutralize شوند؛
+- internal requestهای StateSync مقدار true دریافت کنند؛
+- auth endpointها exclude شوند؛
+- internal StateSync header به backend leak نشود.
 
-### Authentication refresh queue
+### Authentication Refresh Queue
 
-Test:
+Test کنید:
 
-- multiple simultaneous 401 responses cause one refresh;
-- queued requests replay after success;
-- refresh failure clears session and rejects queued calls.
+- چند response هم‌زمان 401 فقط یک refresh ایجاد کنند؛
+- requestهای queueشده پس از success replay شوند؛
+- failure در refresh باعث clear شدن session و reject شدن callهای queueشده شود.
 
-### StateSync coalescing
+### StateSync Coalescing
 
-Test:
+Test کنید:
 
-- rapid mutations coalesce;
-- mutation during an in-flight sync schedules exactly one follow-up;
-- session reset clears pending timers/baseline state.
+- mutationهای سریع coalesce شوند؛
+- mutation هنگام sync در حال اجرا دقیقاً یک follow-up schedule کند؛
+- session reset، pending timer/baseline state را clear کند.
 
-### Multi-stage workflows
+### Multi-stage Workflowها
 
-Test partial failures for:
+Partial failure را برای موارد زیر test کنید:
 
-- OS user → Samba user;
-- Web user → OS user;
-- Web Share → permission update;
-- Samba group → initial member adds.
+- OS user → Samba user؛
+- Web user → OS user؛
+- Web Share → permission update؛
+- Samba group → initial member addها.
 
-## Tests, comments, and documentation
+## ارتباط Test، Comment و Documentation
 
-Do not use comments as a substitute for tests when an invariant is executable and stable.
+وقتی یک invariant قابل اجرا و پایدار است، از comment به‌عنوان جایگزین test استفاده نکنید.
 
-The intended relationship is:
+رابطه‌ی مورد انتظار:
 
-- tests prove behavior;
-- CI proves the executable validation commands passed;
-- comments explain why non-obvious behavior exists;
-- documentation explains ownership, workflow, and maintenance consequences.
+- test، behavior را اثبات می‌کند؛
+- CI اثبات می‌کند commandهای executable validation پاس شده‌اند؛
+- comment توضیح می‌دهد behavior غیرآشکار چرا وجود دارد؛
+- documentation، ownership، workflow و consequenceهای maintenance را توضیح می‌دهد.
 
-## CI expectation after test adoption
+## انتظار CI پس از اضافه‌شدن Test
 
-Once automated tests exist, extend the merge gate to include the adopted test command, for example:
+وقتی automated test وجود داشت، merge gate را با command adoptشده‌ی test توسعه دهید؛ برای مثال:
 
 ```text
 npm ci
@@ -315,19 +316,19 @@ npm run test
 npm run build
 ```
 
-Today CI intentionally runs only the repository-defined lint/build quality gates because no `test` script exists.
+در وضعیت فعلی، CI عمداً فقط quality gateهای lint/build تعریف‌شده در repository را اجرا می‌کند، چون `test` script وجود ندارد.
 
 ## Definition of Done
 
-A behavior change is complete only when:
+یک behavior change زمانی complete است که:
 
-1. relevant docs are updated;
-2. `frontend-validation` passes;
-3. the affected flow is manually verified when behavioral validation is required;
-4. partial-failure/error paths are considered;
-5. the final diff is reviewed for accidental changes.
+1. مستندات مرتبط به‌روزرسانی شده باشند؛
+2. `frontend-validation` پاس شود؛
+3. اگر behavioral validation لازم است، flow تحت تأثیر دستی verify شده باشد؛
+4. partial-failure/error pathها بررسی شده باشند؛
+5. final diff از نظر changeهای تصادفی review شده باشد.
 
-## Related files
+## فایل‌های مرتبط
 
 - `.github/workflows/frontend-validation.yml`
 - `package.json`
@@ -335,7 +336,7 @@ A behavior change is complete only when:
 - `tsconfig.app.json`
 - `eslint.config.js`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`getting-started.md`](./getting-started.md)
 - [`coding-conventions.md`](./coding-conventions.md)
