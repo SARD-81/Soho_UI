@@ -1,11 +1,13 @@
-# Notifications and data refresh
+# Notifications و Data Refresh
 
-This historical note has been superseded by the maintained core-flow documentation.
+این یادداشت تاریخی با core-flow documentation نگهداری‌شده‌ی فعلی جایگزین شده است.
 
-Use:
+از اسناد زیر به‌عنوان source of truth استفاده کنید:
 
 - [`04-core-flows/notifications.md`](./04-core-flows/notifications.md)
 - [`04-core-flows/polling-and-data-refresh.md`](./04-core-flows/polling-and-data-refresh.md)
 - [`04-core-flows/server-state-and-cache.md`](./04-core-flows/server-state-and-cache.md)
 
-The previous content contained point-in-time polling and invalidation details that no longer match the current implementation. This compatibility file is intentionally kept so older links do not break. Do not add new behavior documentation here.
+محتوای قبلی شامل جزئیات polling و invalidation مربوط به یک مقطع زمانی بوده که دیگر با implementation فعلی هم‌خوان نیست.
+
+این compatibility file عمداً نگه داشته شده تا linkهای قدیمی break نشوند. Behavior جدید را در این فایل مستند نکنید و سند canonical مرتبط را update کنید.
