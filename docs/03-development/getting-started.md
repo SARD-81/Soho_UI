@@ -1,139 +1,139 @@
-# Getting Started
+# شروع کار
 
-This guide describes the verified local-development workflow for SOHO UI.
+این راهنما workflow تأییدشده‌ی توسعه‌ی local برای SOHO UI را توضیح می‌دهد.
 
-It intentionally documents only tooling and commands that exist in the repository today.
+در این سند عمداً فقط tooling و commandهایی مستند شده‌اند که در وضعیت فعلی repository واقعاً وجود دارند.
 
-## Prerequisites
+## پیش‌نیازها
 
-Use a maintained Node.js LTS release with npm.
+از یک release پشتیبانی‌شده‌ی Node.js LTS به‌همراه npm استفاده کنید.
 
-The repository does not currently pin Node.js through `.nvmrc`, `.node-version`, or the `engines` field in `package.json`, so developers must keep their local Node version reasonably current and compatible with Vite 7 and the installed dependency set.
+Repository در حال حاضر version مربوط به Node.js را از طریق `.nvmrc`، `.node-version` یا فیلد `engines` در `package.json` pin نمی‌کند؛ بنابراین توسعه‌دهنده باید version محلی Node را reasonably up-to-date و سازگار با Vite 7 و dependencyهای نصب‌شده نگه دارد.
 
-Verify the runtime before installing dependencies:
+پیش از نصب dependencyها، runtime را بررسی کنید:
 
 ```bash
 node --version
 npm --version
 ```
 
-## Install dependencies
+## نصب Dependencyها
 
-From the repository root:
+از root مربوط به repository اجرا کنید:
 
 ```bash
 npm install
 ```
 
-`package-lock.json` is committed and should remain synchronized with `package.json`.
+فایل `package-lock.json` داخل repository commit شده و باید با `package.json` همگام باقی بماند.
 
-For reproducible CI/deployment installs, `npm ci` is preferable when the lockfile is trusted and unchanged.
+برای installهای reproducible در CI/deployment، زمانی که lockfile معتبر و بدون تغییر است استفاده از `npm ci` ترجیح دارد.
 
 ## Environment
 
-At minimum, normal backend-connected development needs:
+برای development معمول که به backend متصل است، حداقل مقدار زیر لازم است:
 
 ```env
 VITE_API_BASE_URL=https://backend.example.com
 ```
 
-Development-only flags currently recognized by source code include:
+Flagهای development-only که در حال حاضر توسط سورس‌کد شناخته می‌شوند عبارت‌اند از:
 
 ```env
 VITE_USE_MOCKS=true
 VITE_AUTH_BYPASS=true
 ```
 
-`VITE_AUTH_BYPASS` is additionally guarded by `import.meta.env.DEV`, so production builds cannot activate the bypass solely because the environment variable is present.
+`VITE_AUTH_BYPASS` علاوه بر environment variable توسط `import.meta.env.DEV` نیز guard شده است؛ بنابراین production build صرفاً به دلیل وجود این environment variable نمی‌تواند bypass را فعال کند.
 
-See [`configuration.md`](./configuration.md) before adding new frontend environment variables.
+پیش از اضافه‌کردن environment variable جدید به frontend، [`configuration.md`](./configuration.md) را مطالعه کنید.
 
-## Start development server
+## اجرای Development Server
 
 ```bash
 npm run dev
 ```
 
-Current Vite server configuration:
+Vite server configuration فعلی:
 
 ```text
 host: 0.0.0.0
 port: 5173
 ```
 
-Binding to `0.0.0.0` allows access from other hosts on the reachable network. Treat development machines accordingly and do not expose the dev server to untrusted networks unnecessarily.
+Bind شدن روی `0.0.0.0` باعث می‌شود server از hostهای دیگر در network قابل دسترسی باشد. بنابراین development machine را متناسب با این موضوع ایمن نگه دارید و dev server را بدون ضرورت در معرض networkهای untrusted قرار ندهید.
 
-## Vite base path
+## Vite Base Path
 
-The project uses:
+پروژه از configuration زیر استفاده می‌کند:
 
 ```ts
 base: './'
 ```
 
-This produces relative asset paths in the generated bundle and is relevant when serving the build below a non-root filesystem/web-server location.
+این مقدار باعث تولید relative asset path در bundle نهایی می‌شود و هنگام serve کردن build در یک filesystem/web-server location غیر از root اهمیت دارد.
 
-Do not change `base` casually; verify production routing and static asset resolution when doing so.
+مقدار `base` را بدون بررسی تغییر ندهید؛ پس از تغییر آن باید production routing و static asset resolution را verify کنید.
 
-## Run lint
+## اجرای Lint
 
 ```bash
 npm run lint
 ```
 
-Current lint scope is the repository through ESLint flat config, with `dist/` ignored.
+Lint scope فعلی، کل repository از طریق ESLint flat config است و `dist/` ignore می‌شود.
 
-The TypeScript/React config includes:
+Configuration مربوط به TypeScript/React شامل موارد زیر است:
 
-- ESLint recommended JavaScript rules;
-- TypeScript ESLint recommended rules;
-- React Hooks recommended-latest rules;
+- ESLint recommended JavaScript rules؛
+- TypeScript ESLint recommended rules؛
+- React Hooks recommended-latest rules؛
 - React Refresh Vite rules.
 
-`react-refresh/only-export-components` is explicitly disabled.
+Rule مربوط به `react-refresh/only-export-components` به‌صورت صریح disable شده است.
 
-## Run production build
+## اجرای Production Build
 
 ```bash
 npm run build
 ```
 
-The script is:
+Script مربوطه:
 
 ```text
 tsc -b && vite build
 ```
 
-This means build success requires both:
+بنابراین موفق بودن build نیازمند موفق بودن هر دو مرحله‌ی زیر است:
 
-1. TypeScript project compilation/type checking;
+1. TypeScript project compilation/type checking؛
 2. Vite production bundling.
 
-Generated output is placed in:
+خروجی تولیدشده در مسیر زیر قرار می‌گیرد:
 
 ```text
 dist/
 ```
 
-## Preview build
+## Preview گرفتن از Build
 
 ```bash
 npm run preview
 ```
 
-Use preview only as a local check of the generated Vite build. Production deployment should use the intended static web server/reverse-proxy configuration.
+از preview فقط برای بررسی local مربوط به Vite build تولیدشده استفاده کنید. Production deployment باید از static web server/reverse-proxy configuration موردنظر استفاده کند.
 
-## Automated tests
+## Automated Testها
 
-There is currently no `test` script in `package.json` and no verified application test runner in the documented toolchain.
+در حال حاضر `package.json` فاقد `test` script است و test runner تأییدشده‌ای برای application در toolchain مستندشده وجود ندارد.
 
-A successful `npm run build` or `npm run lint` is not equivalent to automated behavioral test coverage.
+موفق بودن `npm run build` یا `npm run lint` معادل داشتن automated behavioral test coverage نیست.
 
-See [`testing.md`](./testing.md).
+به [`testing.md`](./testing.md) مراجعه کنید.
 
 ## Formatting
 
-The repository has Prettier configuration with:
+Repository دارای Prettier configuration زیر است:
 
 ```text
 singleQuote: true
@@ -142,16 +142,16 @@ tabWidth: 2
 semi: true
 ```
 
-It also loads:
+Pluginهای زیر نیز load می‌شوند:
 
-- `prettier-plugin-organize-imports`;
+- `prettier-plugin-organize-imports`؛
 - `prettier-plugin-tailwindcss`.
 
-There is currently no dedicated npm `format` script. If formatting is run manually, avoid generating unrelated repository-wide formatting churn inside a focused feature change.
+در حال حاضر npm script اختصاصی با نام `format` وجود ندارد. اگر formatting را دستی اجرا می‌کنید، داخل یک feature change محدود از ایجاد repository-wide formatting churn غیرمرتبط خودداری کنید.
 
-## TypeScript strictness
+## TypeScript Strictness
 
-The application TypeScript configuration enables strict mode and several maintenance-oriented checks, including:
+Application TypeScript configuration، strict mode و چند check مربوط به maintainability را فعال می‌کند، از جمله:
 
 ```text
 strict
@@ -161,36 +161,36 @@ noFallthroughCasesInSwitch
 noUncheckedSideEffectImports
 ```
 
-The application uses bundler module resolution, `react-jsx`, and `noEmit`.
+Application از bundler module resolution، `react-jsx` و `noEmit` استفاده می‌کند.
 
-Treat new TypeScript warnings/errors as change blockers rather than suppressing them with broad casts or ignore directives.
+Warning/errorهای جدید TypeScript را blocker برای change در نظر بگیرید؛ نه این‌که آن‌ها را با castهای گسترده یا ignore directiveها suppress کنید.
 
-## Recommended change workflow
+## Workflow پیشنهادی برای Change
 
-For a normal change:
+برای یک change معمول:
 
-1. read the relevant feature/core-flow document;
-2. identify query/API/state ownership before editing;
-3. make the smallest coherent code change;
-4. update documentation when a documented contract changes;
-5. run lint;
-6. run build;
-7. manually verify affected UI flows until automated coverage exists;
-8. inspect the final Git diff for unrelated formatting/dead code;
-9. commit with a focused message.
+1. مستند feature/core-flow مرتبط را بخوانید؛
+2. پیش از edit، ownership مربوط به query/API/state را مشخص کنید؛
+3. کوچک‌ترین code change منسجم را اعمال کنید؛
+4. اگر contract مستندشده تغییر کرد، documentation را نیز به‌روزرسانی کنید؛
+5. lint را اجرا کنید؛
+6. build را اجرا کنید؛
+7. تا زمانی که automated coverage وجود ندارد، UI flowهای تحت تأثیر را دستی verify کنید؛
+8. Git diff نهایی را از نظر formatting/dead code غیرمرتبط بررسی کنید؛
+9. با یک commit message متمرکز commit کنید.
 
-## Before changing infrastructure code
+## پیش از تغییر Infrastructure Code
 
-Read the corresponding documents before modifying:
+پیش از تغییر بخش‌های زیر، document متناظر را بخوانید:
 
 - auth/session → [`../04-core-flows/authentication.md`](../04-core-flows/authentication.md)
-- Axios/interceptors → [`../04-core-flows/api-request-lifecycle.md`](../04-core-flows/api-request-lifecycle.md)
+- Axios/interceptorها → [`../04-core-flows/api-request-lifecycle.md`](../04-core-flows/api-request-lifecycle.md)
 - React Query → [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
 - `save_to_db` / StateSync → [`../04-core-flows/state-sync-save-to-db.md`](../04-core-flows/state-sync-save-to-db.md)
 - polling → [`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md)
-- notifications → [`../04-core-flows/notifications.md`](../04-core-flows/notifications.md)
+- notificationها → [`../04-core-flows/notifications.md`](../04-core-flows/notifications.md)
 
-## Related files
+## فایل‌های مرتبط
 
 - `package.json`
 - `package-lock.json`
