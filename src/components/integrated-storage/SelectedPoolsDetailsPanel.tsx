@@ -1,18 +1,21 @@
+import { isValidElement, useMemo } from 'react';
+import { isNestedDetailTableData } from '../../@types/detailComparison';
+import { POOL_DETAIL_LAYOUT } from '../../config/detailLayouts';
+import {
+  selectDetailViewState,
+  useDetailSplitViewStore,
+} from '../../stores/detailSplitViewStore';
+import { translateDetailKey } from '../../utils/detailLabels';
+import { filterDetailValuesByLayout } from '../../utils/detailLayouts';
+import formatDetailValue from '../../utils/formatDetailValue';
+import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
+import { POOL_DISK_ATTRIBUTE_SORT } from '../../utils/poolDetails';
 import DetailComparisonPanel, {
   type DetailComparisonColumn,
   type DetailComparisonStatus,
 } from '../common/DetailComparisonPanel';
 import SingleDetailView from '../common/SingleDetailView';
 import TinyComparisonTable from '../common/TinyComparisonTable';
-import { isNestedDetailTableData } from '../../@types/detailComparison';
-import formatDetailValue from '../../utils/formatDetailValue';
-import { POOL_DISK_ATTRIBUTE_SORT } from '../../utils/poolDetails';
-import { createPriorityAwareComparatorFromRecords } from '../../utils/keySort';
-import { isValidElement, useMemo } from 'react';
-import { POOL_DETAIL_LAYOUT } from '../../config/detailLayouts';
-import { translateDetailKey } from '../../utils/detailLabels';
-import { selectDetailViewState, useDetailSplitViewStore } from '../../stores/detailSplitViewStore';
-import { filterDetailValuesByLayout } from '../../utils/detailLayouts';
 
 interface PoolDetailItem {
   poolName: string;
@@ -33,26 +36,30 @@ const SelectedPoolsDetailsPanel = ({
   viewId,
 }: SelectedPoolsDetailsPanelProps) => {
   const formatValue = useMemo(
-    () =>
-      (value: unknown) => {
-        if (isNestedDetailTableData(value)) {
-          return <TinyComparisonTable data={value} attributeSort={POOL_DISK_ATTRIBUTE_SORT} />;
-        }
+    () => (value: unknown) => {
+      if (isNestedDetailTableData(value)) {
+        return (
+          <TinyComparisonTable
+            data={value}
+            attributeSort={POOL_DISK_ATTRIBUTE_SORT}
+          />
+        );
+      }
 
-        if (isValidElement(value)) {
-          return value;
-        }
+      if (isValidElement(value)) {
+        return value;
+      }
 
-        const formatted = formatDetailValue(value);
+      const formatted = formatDetailValue(value);
 
-        if (typeof formatted === 'string' && formatted.includes('\n')) {
-          return formatted
-            .split('\n')
-            .map((line, index) => <span key={`${line}-${index}`}>{line}</span>);
-        }
+      if (typeof formatted === 'string' && formatted.includes('\n')) {
+        return formatted
+          .split('\n')
+          .map((line, index) => <span key={`${line}-${index}`}>{line}</span>);
+      }
 
-        return formatted;
-      },
+      return formatted;
+    },
     []
   );
 
@@ -73,7 +80,9 @@ const SelectedPoolsDetailsPanel = ({
   const { activeItemId, pinnedItemIds } = useDetailSplitViewStore(
     selectDetailViewState(viewId)
   );
-  const togglePinnedItem = useDetailSplitViewStore((state) => state.togglePinnedItem);
+  const togglePinnedItem = useDetailSplitViewStore(
+    (state) => state.togglePinnedItem
+  );
   const itemLookup = useMemo(
     () => new Map(items.map((item) => [item.poolName, item])),
     [items]
@@ -98,10 +107,7 @@ const SelectedPoolsDetailsPanel = ({
       id: poolName,
       title: poolName,
       onRemove: isPinned ? () => onRemove(poolName) : undefined,
-      values: filterDetailValuesByLayout(
-  detail ?? {},
-  POOL_DETAIL_LAYOUT
-),
+      values: filterDetailValuesByLayout(detail ?? {}, POOL_DETAIL_LAYOUT),
       status,
       pinToggle: {
         isPinned,
@@ -119,33 +125,35 @@ const SelectedPoolsDetailsPanel = ({
   const activeItem = activeItemId ? itemLookup.get(activeItemId) : null;
   const comparisonColumns: DetailComparisonColumn[] = [];
 
-  if (!shouldShowSingle && activeItem && !pinnedItemIds.includes(activeItem.poolName)) {
+  if (
+    !shouldShowSingle &&
+    activeItem &&
+    !pinnedItemIds.includes(activeItem.poolName)
+  ) {
     comparisonColumns.push(buildColumn(activeItem, false));
   }
 
   comparisonColumns.push(...pinnedColumns);
 
   const title =
-    pinnedColumns.length > 1 ? 'مقایسه جزئیات فضاهای یکپارچه' : 'جزئیات فضاهای یکپارچه';
+    pinnedColumns.length > 1
+      ? 'مقایسه جزئیات فضاهای یکپارچه'
+      : 'جزئیات فضاهای یکپارچه';
 
   const comparisonValues =
-  shouldShowSingle && activeItem
-    ? [
-        filterDetailValuesByLayout(
-          activeItem.detail ?? {},
-          POOL_DETAIL_LAYOUT
-        ),
-      ]
-    : comparisonColumns.map(({ values }) => values);
+    shouldShowSingle && activeItem
+      ? [
+          filterDetailValuesByLayout(
+            activeItem.detail ?? {},
+            POOL_DETAIL_LAYOUT
+          ),
+        ]
+      : comparisonColumns.map(({ values }) => values);
 
-  const attributeSort = useMemo(
-    () =>
-      createPriorityAwareComparatorFromRecords(
-        comparisonValues,
-        'fa-IR',
-        comparisonPriority
-      ),
-    [comparisonPriority, comparisonValues]
+  const attributeSort = createPriorityAwareComparatorFromRecords(
+    comparisonValues,
+    'fa-IR',
+    comparisonPriority
   );
 
   if (shouldShowSingle && activeItem) {
@@ -154,9 +162,9 @@ const SelectedPoolsDetailsPanel = ({
         title={title}
         sections={sections}
         values={filterDetailValuesByLayout(
-  activeItem.detail ?? {},
-  POOL_DETAIL_LAYOUT
-)}
+          activeItem.detail ?? {},
+          POOL_DETAIL_LAYOUT
+        )}
         status={buildColumn(activeItem, false).status}
         formatValue={formatValue}
         emptyStateMessage="اطلاعاتی برای نمایش وجود ندارد."

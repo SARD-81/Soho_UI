@@ -101,6 +101,8 @@ const createDiskSnapshotItem = (
     return null;
   }
 
+  // Prefer hardware identifiers over the display name so replacing a physical
+  // disk in the same slot does not look like a status transition on the old disk.
   const entityId =
     normalizeName(disk.details?.wwn) ??
     normalizeName(disk.details?.wwid) ??
@@ -230,6 +232,8 @@ export const useResourceStatusChangeNotifications = (
       const currentSnapshot = buildCurrentSnapshot();
       const previousSnapshot = loadResourceStatusSnapshot(userKey);
 
+      // The first valid observation establishes a baseline. Treating it as a
+      // transition would generate false alerts for every resource after login.
       if (previousSnapshot == null) {
         saveResourceStatusSnapshot(currentSnapshot.items, userKey);
         setLastCheckAt(new Date().toISOString());
@@ -271,6 +275,8 @@ export const useResourceStatusChangeNotifications = (
         generatedCount += 1;
       });
 
+      // A failed query means "unknown", not "all resources disappeared". Keep
+      // that family's previous baseline until a successful observation replaces it.
       const retainedUnavailableItems = previousSnapshot.items.filter(
         (item) => !currentSnapshot.availableEntityTypes.has(item.entityType)
       );

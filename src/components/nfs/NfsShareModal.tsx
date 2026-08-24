@@ -8,11 +8,13 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'react-hot-toast';
 import type {
   NfsShareEntry,
   NfsShareOptionKey,
   NfsSharePayload,
 } from '../../@types/nfs';
+import { useServiceAction } from '../../hooks/useServiceAction';
 import { translateDetailKey } from '../../utils/detailLabels';
 import {
   NFS_OPTION_DEFAULTS,
@@ -23,8 +25,6 @@ import BlurModal from '../BlurModal';
 import ToggleBtn from '../ToggleBtn';
 import IPv4AddressInput from '../common/IPv4AddressInput';
 import ModalActionButtons from '../common/ModalActionButtons';
-import { useServiceAction } from '../../hooks/useServiceAction';
-import { toast } from 'react-hot-toast';
 
 const DISPLAY_OPTIONS = NFS_OPTION_KEYS.filter(
   (key) => key !== 'root_squash' && key !== 'no_subtree_check'
@@ -152,19 +152,13 @@ const NfsShareModal = ({
   };
 
   const serviceAction = useServiceAction({
-    onSuccess: () => {},
     onError: (message, { service }) => {
       toast.error(`راه‌اندازی مجدد ${service} با خطا مواجه شد: ${message}`);
     },
   });
 
   const handleRestartNFS = useCallback(() => {
-    serviceAction.mutate(
-      { service: 'nfs-server.service', action: 'restart' },
-      {
-        onSettled: () => {},
-      }
-    );
+    serviceAction.mutate({ service: 'nfs-server.service', action: 'restart' });
   }, [serviceAction]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -185,21 +179,14 @@ const NfsShareModal = ({
       handleRestartNFS();
     }
 
-    // Clean payload construction
-    const basePayload = {
+    onSubmit({
       path: path.trim(),
       clients: client.trim(),
-      save_to_db: !isEditMode,
       ...optionValues,
-    };
-
-    onSubmit(basePayload);
+    });
   };
 
-  const isConfirmDisabled =
-    isSubmitting ||
-    !path.trim() ||
-    !client.trim();
+  const isConfirmDisabled = isSubmitting || !path.trim() || !client.trim();
 
   return (
     <BlurModal
@@ -309,13 +296,16 @@ const NfsShareModal = ({
                   <ToggleBtn
                     id={`nfs-option-${optionKey}`}
                     checked={optionValues[optionKey]}
-                    onChange={(checked) => handleToggleOption(optionKey, checked)}
+                    onChange={(checked) =>
+                      handleToggleOption(optionKey, checked)
+                    }
                   />
                   <Typography
                     variant="caption"
                     sx={{
                       color: optionValues[optionKey]
-                        ? 'var(--color-success)' : 'var(--color-error)',
+                        ? 'var(--color-success)'
+                        : 'var(--color-error)',
                       fontWeight: 700,
                     }}
                   >

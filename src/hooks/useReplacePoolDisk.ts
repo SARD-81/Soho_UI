@@ -12,7 +12,6 @@ interface ApiErrorResponse {
 export interface ReplaceDevicePayload {
   old_device: string;
   new_device: string;
-  save_to_db: boolean;
 }
 
 interface ReplacePoolDeviceParams {
@@ -74,8 +73,14 @@ export const useReplacePoolDisk = (
       },
       onSuccess: (_data, variables) => {
         queryClient.invalidateQueries({ queryKey: ['zpool'] });
-        queryClient.invalidateQueries({ queryKey: ['zpool', 'devices'], exact: false });
-        queryClient.invalidateQueries({ queryKey: ['zpool', 'devices', 'slots'], exact: false });
+        queryClient.invalidateQueries({
+          queryKey: ['zpool', 'devices'],
+          exact: false,
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['zpool', 'devices', 'slots'],
+          exact: false,
+        });
         queryClient.invalidateQueries({ queryKey: ['disk', 'partitioned'] });
         options.onSuccess?.(variables.poolName);
       },

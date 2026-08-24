@@ -27,7 +27,6 @@ export type NfsShareOptionKey =
 export type NfsShareOptionValues = Record<NfsShareOptionKey, boolean>;
 
 export interface NfsSharePayload extends NfsShareOptionValues {
-  save_to_db: boolean;
   path: string;
   clients: string;
 }

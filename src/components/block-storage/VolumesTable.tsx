@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import { useMemo } from 'react';
 import { MdDeleteOutline } from 'react-icons/md';
-import type { DataTableColumn } from '../../@types/dataTable.ts';
+import type { DataTableColumn } from '../../@types/dataTable';
 import type { VolumeEntry } from '../../@types/volume';
 import DataTable from '../DataTable';
 
@@ -24,14 +24,6 @@ const valueTypographySx = {
   fontWeight: 600,
   color: 'var(--color-text)',
 } as const;
-
-const numericValueTypographySx = {
-  ...valueTypographySx,
-  display: 'block',
-  textAlign: 'right' as const,
-  direction: 'ltr' as const,
-  fontVariantNumeric: 'tabular-nums',
-};
 
 const VolumesTable = ({
   volumes,
@@ -78,21 +70,11 @@ const VolumesTable = ({
         id: `attribute-${key}`,
         header: key,
         align: 'left',
-        renderCell: (volume) => {
-          const rawValue = volume.attributeMap[key];
-          const isNumericValue =
-            typeof rawValue === 'number' && Number.isFinite(rawValue);
-
-          return (
-            <Typography
-              sx={isNumericValue ? numericValueTypographySx : valueTypographySx}
-            >
-              {isNumericValue
-                ? new Intl.NumberFormat('en-US').format(rawValue)
-                : (rawValue ?? '—')}
-            </Typography>
-          );
-        },
+        renderCell: (volume) => (
+          <Typography sx={valueTypographySx}>
+            {volume.attributeMap[key] ?? '—'}
+          </Typography>
+        ),
       })
     );
 

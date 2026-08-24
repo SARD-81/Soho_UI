@@ -39,7 +39,6 @@ export interface CreateSambaSharepointPayload {
   create_mask: string;
   directory_mask: string;
   inherit_permissions: boolean;
-  save_to_db: boolean;
 }
 
 export type RawSambaUserDetails = Record<string, unknown>;
@@ -72,7 +71,6 @@ export interface SambaUserTableItem {
 export interface CreateSambaUserPayload {
   username: string;
   password: string;
-  save_to_db?: boolean;
 }
 
 export type SambaUserUpdateAction = 'enable' | 'disable' | 'change_password';
@@ -81,7 +79,6 @@ export interface UpdateSambaUserPayload {
   username: string;
   action: SambaUserUpdateAction;
   new_password?: string;
-  save_to_db?: boolean;
 }
 
 export type UpdateSambaUserPasswordPayload = Pick<

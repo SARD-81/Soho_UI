@@ -16,7 +16,13 @@ import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useUpdateSharepoint } from '../../hooks/useUpdateSharepoint';
 import axiosInstance from '../../lib/axiosInstance';
-import { getShareGroupMembers, getShareUserMembers, mergeShareAccessMembers, parseDelimitedList, uniqueSortedList } from '../../utils/samba';
+import {
+  getShareGroupMembers,
+  getShareUserMembers,
+  mergeShareAccessMembers,
+  parseDelimitedList,
+  uniqueSortedList,
+} from '../../utils/samba';
 import BlurModal from '../BlurModal';
 import ModalActionButtons from '../common/ModalActionButtons';
 
@@ -90,11 +96,6 @@ const modalCopy: Record<
   },
 };
 
-const membersProperty: Record<ManageShareMembersType, string> = {
-  users: 'valid users',
-  groups: 'valid groups',
-};
-
 const memberPanelBaseSx = {
   flex: 1,
   width: '100%',
@@ -124,44 +125,51 @@ const ManageShareMembersModal = ({
   type,
   onClose,
 }: ManageShareMembersModalProps) => {
-  const propertyKey = membersProperty[type];
   const updateSharepoint = useUpdateSharepoint();
   const queryClient = useQueryClient();
-
   const [stagedMembers, setStagedMembers] = useState<string[]>([]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
+  // Samba encodes both user and @group access entries in the same `valid users`
+  // property. The modal splits that canonical list for editing and merges the
+  // untouched member type back before submitting an update.
   const membersQuery = useQuery<string[]>({
-  queryKey: ['samba', 'sharepoints', shareName, SHARE_ACCESS_PROPERTY],
-  queryFn: async () => {
-    if (!shareName) return [];
+    queryKey: ['samba', 'sharepoints', shareName, SHARE_ACCESS_PROPERTY],
+    queryFn: async () => {
+      if (!shareName) return [];
 
-    const encodedName = encodeURIComponent(shareName);
-    const response = await axiosInstance.get(
-      `/api/samba/sharepoints/${encodedName}/`,
-      {
-        params: { only_active: false, property: SHARE_ACCESS_PROPERTY },
-      }
-    );
+      const encodedName = encodeURIComponent(shareName);
+      const response = await axiosInstance.get(
+        `/api/samba/sharepoints/${encodedName}/`,
+        {
+          params: { only_active: false, property: SHARE_ACCESS_PROPERTY },
+        }
+      );
 
-    return parseDelimitedList(response.data?.data?.[SHARE_ACCESS_PROPERTY]);
-  },
-  enabled: open && Boolean(shareName),
-});
+      return parseDelimitedList(response.data?.data?.[SHARE_ACCESS_PROPERTY]);
+    },
+    enabled: open && Boolean(shareName),
+  });
 
-const currentAccessMembers = membersQuery.data ?? [];
+  const currentAccessMembers = useMemo(
+    () => membersQuery.data ?? [],
+    [membersQuery.data]
+  );
 
-const currentUsers = useMemo(
-  () => getShareUserMembers(currentAccessMembers),
-  [currentAccessMembers]
-);
+  const currentUsers = useMemo(
+    () => getShareUserMembers(currentAccessMembers),
+    [currentAccessMembers]
+  );
 
-const currentGroups = useMemo(
-  () => getShareGroupMembers(currentAccessMembers),
-  [currentAccessMembers]
-);
+  const currentGroups = useMemo(
+    () => getShareGroupMembers(currentAccessMembers),
+    [currentAccessMembers]
+  );
 
-const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
+  const currentTypedMembers = useMemo(
+    () => (type === 'users' ? currentUsers : currentGroups),
+    [currentGroups, currentUsers, type]
+  );
 
   const availableQuery = useQuery<string[]>({
     queryKey: [
@@ -214,15 +222,14 @@ const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
   const availableCandidates = useMemo(() => {
     const available = availableQuery.data ?? [];
     const memberSet = new Set(stagedMembers);
-
     return available.filter((candidate) => !memberSet.has(candidate));
   }, [availableQuery.data, stagedMembers]);
 
   useEffect(() => {
-    if (open && membersQuery.data) {
-      setStagedMembers(uniqueSortedList(membersQuery.data));
+    if (open) {
+      setStagedMembers(uniqueSortedList(currentTypedMembers));
     }
-  }, [membersQuery.data, open]);
+  }, [currentTypedMembers, open]);
 
   useEffect(() => {
     if (!open) {
@@ -230,25 +237,18 @@ const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
     }
   }, [open]);
 
-  useEffect(() => {
-  if (open) {
-    setStagedMembers(uniqueSortedList(currentTypedMembers));
-  }
-}, [currentTypedMembers, open]);
-
   const isSubmitting = updateSharepoint.isPending;
   const hasMembers = stagedMembers.length > 0;
   const hasRemovableMembers = stagedMembers.length > 1;
 
   const hasChanges = useMemo(() => {
-    const currentMembers = membersQuery.data ?? [];
-    if (currentMembers.length !== stagedMembers.length) return true;
+    if (currentTypedMembers.length !== stagedMembers.length) return true;
 
-    const currentSorted = [...currentMembers].sort();
+    const currentSorted = [...currentTypedMembers].sort();
     const stagedSorted = [...stagedMembers].sort();
 
     return currentSorted.some((value, index) => value !== stagedSorted[index]);
-  }, [membersQuery.data, stagedMembers]);
+  }, [currentTypedMembers, stagedMembers]);
 
   const handleAddMember = (member: string) => {
     if (!shareName || isSubmitting) return;
@@ -279,8 +279,7 @@ const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
     if (!rawData) return null;
 
     try {
-      const data = JSON.parse(rawData) as DragPayload;
-      return data;
+      return JSON.parse(rawData) as DragPayload;
     } catch {
       return null;
     }
@@ -289,22 +288,16 @@ const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
   const handleDropToMembers = (event: React.DragEvent) => {
     event.preventDefault();
     const payload = parseDragPayload(event);
-    if (!payload) return;
-
-    const { member, source } = payload;
-    if (source === 'available') {
-      handleAddMember(member);
+    if (payload?.source === 'available') {
+      handleAddMember(payload.member);
     }
   };
 
   const handleDropToAvailable = (event: React.DragEvent) => {
     event.preventDefault();
     const payload = parseDragPayload(event);
-    if (!payload) return;
-
-    const { member, source } = payload;
-    if (source === 'members') {
-      handleRemoveMember(member);
+    if (payload?.source === 'members') {
+      handleRemoveMember(payload.member);
     }
   };
 
@@ -325,20 +318,24 @@ const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
     }
 
     const nextValidUsers = mergeShareAccessMembers({
-  users: type === 'users' ? stagedMembers : currentUsers,
-  groups: type === 'groups' ? stagedMembers : currentGroups,
-});
+      users: type === 'users' ? stagedMembers : currentUsers,
+      groups: type === 'groups' ? stagedMembers : currentGroups,
+    });
 
     updateSharepoint.mutate(
       {
-    shareName,
-    updates: { [SHARE_ACCESS_PROPERTY]: nextValidUsers },
-    saveToDb: true,
-  },
+        shareName,
+        updates: { [SHARE_ACCESS_PROPERTY]: nextValidUsers },
+      },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({
-            queryKey: ['samba', 'sharepoints', shareName, propertyKey],
+            queryKey: [
+              'samba',
+              'sharepoints',
+              shareName,
+              SHARE_ACCESS_PROPERTY,
+            ],
           });
           queryClient.invalidateQueries({
             queryKey: [
@@ -379,7 +376,13 @@ const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
       }
     >
       <Stack spacing={2} sx={{ mt: 1 }}>
-        <Typography sx={{ color: 'var(--color-primary)', fontWeight: 900, fontSize: '1.02rem' }}>
+        <Typography
+          sx={{
+            color: 'var(--color-primary)',
+            fontWeight: 900,
+            fontSize: '1.02rem',
+          }}
+        >
           {copy.title}
         </Typography>
         {updateSharepoint.isError ? (
@@ -402,13 +405,20 @@ const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
               spacing={1.25}
               onDragOver={(event) => event.preventDefault()}
               onDrop={handleDropToMembers}
-              sx={{
-                ...currentPanelSx,
-                order: { xs: 1, md: 1 },
-              }}
+              sx={{ ...currentPanelSx, order: { xs: 1, md: 1 } }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
-                <Typography sx={{ color: 'var(--color-primary)', fontWeight: 900 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <Typography
+                  sx={{ color: 'var(--color-primary)', fontWeight: 900 }}
+                >
                   {copy.currentTitle}
                 </Typography>
                 <Chip
@@ -422,11 +432,26 @@ const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
                   }}
                 />
               </Box>
-              <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 500, fontSize: '0.82rem' }}>
+              <Typography
+                sx={{
+                  color: 'var(--color-secondary)',
+                  fontWeight: 500,
+                  fontSize: '0.82rem',
+                }}
+              >
                 {copy.currentHelper}
               </Typography>
               <Divider sx={{ borderColor: 'rgba(0, 198, 169, 0.2)' }} />
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 260, overflowY: 'auto', alignContent: 'flex-start' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                  maxHeight: 260,
+                  overflowY: 'auto',
+                  alignContent: 'flex-start',
+                }}
+              >
                 {hasMembers ? (
                   stagedMembers.map((member) => (
                     <Chip
@@ -439,7 +464,9 @@ const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
                         color: 'var(--color-text)',
                         backgroundColor: 'var(--color-card-bg)',
                         border: '1px solid rgba(0, 198, 169, 0.22)',
-                        '& .MuiChip-deleteIcon': { color: 'var(--color-error)' },
+                        '& .MuiChip-deleteIcon': {
+                          color: 'var(--color-error)',
+                        },
                       }}
                       draggable
                       onDragStart={(event) =>
@@ -448,35 +475,71 @@ const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
                     />
                   ))
                 ) : (
-                  <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
+                  <Typography
+                    sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}
+                  >
                     {copy.empty}
                   </Typography>
                 )}
               </Box>
             </Stack>
 
-            <Divider flexItem orientation="vertical" sx={{ display: { xs: 'none', md: 'block' } }} />
+            <Divider
+              flexItem
+              orientation="vertical"
+              sx={{ display: { xs: 'none', md: 'block' } }}
+            />
 
             <Stack
               spacing={1.25}
               onDragOver={(event) => event.preventDefault()}
               onDrop={handleDropToAvailable}
-              sx={{
-                ...availablePanelSx,
-                order: { xs: 2, md: 2 },
-              }}
+              sx={{ ...availablePanelSx, order: { xs: 2, md: 2 } }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
-                <Typography sx={{ color: 'var(--color-text)', fontWeight: 800 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <Typography
+                  sx={{ color: 'var(--color-text)', fontWeight: 800 }}
+                >
                   {copy.addLabel}
                 </Typography>
-                <Chip label={`${availableCandidates.length} ${copy.currentUnit}`} size="small" sx={{ fontWeight: 700, border: '1px solid rgba(148, 163, 184, 0.25)' }} />
+                <Chip
+                  label={`${availableCandidates.length} ${copy.currentUnit}`}
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    border: '1px solid rgba(148, 163, 184, 0.25)',
+                  }}
+                />
               </Box>
-              <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 500, fontSize: '0.82rem' }}>
+              <Typography
+                sx={{
+                  color: 'var(--color-secondary)',
+                  fontWeight: 500,
+                  fontSize: '0.82rem',
+                }}
+              >
                 {copy.availableHelper}
               </Typography>
               <Divider sx={{ borderColor: 'rgba(148, 163, 184, 0.24)' }} />
-              <Box sx={{ display: 'flex', flexWrap: 'nowrap', flexDirection: 'column', gap: 1, alignItems: 'stretch', maxHeight: 260, overflowY: 'auto' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'nowrap',
+                  flexDirection: 'column',
+                  gap: 1,
+                  alignItems: 'stretch',
+                  maxHeight: 260,
+                  overflowY: 'auto',
+                }}
+              >
                 {availableCandidates.length ? (
                   availableCandidates.map((candidate) => (
                     <Chip
@@ -485,13 +548,24 @@ const currentTypedMembers = type === 'users' ? currentUsers : currentGroups;
                       clickable
                       onClick={() => handleAddMember(candidate)}
                       disabled={isSubmitting}
-                      sx={{ ...chipStyles.add, width: '100%', justifyContent: 'flex-start' }}
+                      sx={{
+                        ...chipStyles.add,
+                        width: '100%',
+                        justifyContent: 'flex-start',
+                      }}
                       draggable
-                      onDragStart={(event) => handleDragStart(event, { member: candidate, source: 'available' })}
+                      onDragStart={(event) =>
+                        handleDragStart(event, {
+                          member: candidate,
+                          source: 'available',
+                        })
+                      }
                     />
                   ))
                 ) : (
-                  <Typography sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}>
+                  <Typography
+                    sx={{ color: 'var(--color-secondary)', fontWeight: 600 }}
+                  >
                     گزینه‌ای برای افزودن وجود ندارد.
                   </Typography>
                 )}

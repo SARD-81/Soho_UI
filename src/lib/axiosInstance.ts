@@ -228,6 +228,11 @@ type FailedRequest = {
   resolve: (value: unknown) => void;
 };
 
+/**
+ * Token refresh is single-flight: the first 401 starts one refresh request and
+ * later 401s wait in failedQueue. This prevents refresh storms and ensures all
+ * queued requests are replayed with the same newly issued access token.
+ */
 let isRefreshing = false;
 const failedQueue: FailedRequest[] = [];
 

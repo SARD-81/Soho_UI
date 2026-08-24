@@ -14,7 +14,6 @@ export const fetchZpoolDetails = async (
 ): Promise<ZpoolDetailEntry | null> => {
   const endpoint = `/api/zpool/${encodeURIComponent(poolName)}/`;
   const { data } = await axiosInstance.get<ZpoolDetailResponse>(endpoint, {
-    params: { save_to_db: false },
     signal,
   });
 

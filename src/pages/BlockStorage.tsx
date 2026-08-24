@@ -26,7 +26,9 @@ const BlockStorage = () => {
       toast.success(`Volume ${volumeName} با موفقیت حذف شد.`);
     },
     onError: (error, volumeName) => {
-      toast.error(`حذف Volume ${volumeName} با خطا مواجه شد: ${error.message}`);
+      toast.error(
+        `حذف Volume ${volumeName} با خطا مواجه شد: ${error.message}`
+      );
     },
   });
 
@@ -81,7 +83,6 @@ const BlockStorage = () => {
     <PageContainer>
       <TablePageHeader
         title="فضای بلاکی"
-        // subtitle="مدیریت Volumeها و فضای بلاکی روی Poolهای ذخیره‌سازی"
         refreshAction={{
           onClick: () => void refetch(),
           disabled: isFetching,

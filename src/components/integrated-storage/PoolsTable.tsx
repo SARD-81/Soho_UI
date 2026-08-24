@@ -404,7 +404,6 @@ const PoolsTable = ({
       isDeleteDisabled,
       isSlotLoading,
       onDelete,
-      onEdit,
       onAddDevices,
       onExport,
       onReplace,

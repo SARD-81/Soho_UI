@@ -197,7 +197,6 @@ const SnmpConfigModal = ({
       sys_name: trimmedSysName,
       port: trimmedPort,
       bind_ip: initialSnapshot.bindIp || DEFAULT_BIND_IP,
-      save_to_db: true,
     });
   };
 

@@ -121,6 +121,13 @@ export const resolveStateDomainsForMutation = (
     return ['webshare'];
   }
 
+  // Connection testing is a diagnostic POST and does not change SNMP config.
+  // Excluding it prevents a read-only diagnostic action from scheduling a
+  // canonical persistence snapshot solely because it uses a mutation method.
+  if (path.includes('/api/snmp/test-connection')) {
+    return [];
+  }
+
   if (path.includes('/api/snmp')) {
     return ['snmp'];
   }

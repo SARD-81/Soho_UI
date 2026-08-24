@@ -120,7 +120,6 @@ const ShareNfs = () => {
     <PageContainer>
       <TablePageHeader
         title="اشتراک‌های NFS"
-        // subtitle="مدیریت مسیرهای اشتراک‌گذاری و کلاینت‌های مجاز"
         refreshAction={{
           onClick: () => void refetch(),
           disabled: isFetching,
@@ -166,8 +165,6 @@ const ShareNfs = () => {
           pendingPath={deleteShare.pendingPath}
           isDeleting={deleteShare.isDeleting}
         />
-
-        {/* <SelectedNfsSharesDetailsPanel items={shares} viewId={NFS_DETAIL_VIEW_ID} /> */}
       </Box>
 
       <ConfirmDeleteNfsShareModal controller={deleteShare} />

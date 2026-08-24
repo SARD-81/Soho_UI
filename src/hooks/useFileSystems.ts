@@ -11,13 +11,23 @@ const FILESYSTEM_LIST_ENDPOINT = '/api/filesystem/';
 const FILESYSTEM_DETAIL_ENDPOINT = '/api/filesystem/detail/';
 
 const formatAttributeValue = (value: unknown): string => {
-  if (value == null) return '—';
+  if (value == null) {
+    return '—';
+  }
+
   if (typeof value === 'string') {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : '—';
   }
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) return value.map(formatAttributeValue).join('، ');
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(formatAttributeValue).join('، ');
+  }
+
   if (typeof value === 'object') {
     try {
       return JSON.stringify(value);
@@ -25,6 +35,7 @@ const formatAttributeValue = (value: unknown): string => {
       return '[object]';
     }
   }
+
   return String(value);
 };
 
@@ -32,12 +43,14 @@ const ensureObject = (raw: unknown): FileSystemRawEntry => {
   if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
     return raw as FileSystemRawEntry;
   }
+
   return {};
 };
 
 const deriveNameParts = (fullName: string, index: number) => {
   const fallbackName = `filesystem-${index + 1}`;
-  const fullNameSource = fullName.trim().length > 0 ? fullName.trim() : fallbackName;
+  const fullNameSource =
+    fullName.trim().length > 0 ? fullName.trim() : fallbackName;
   const [poolPart, ...rest] = fullNameSource.split('/');
   const poolName = poolPart?.trim() ? poolPart.trim() : 'نامشخص';
   const filesystemNameSource = rest.length > 0 ? rest.join('/') : poolPart;
@@ -45,24 +58,37 @@ const deriveNameParts = (fullName: string, index: number) => {
     filesystemNameSource && filesystemNameSource.trim().length > 0
       ? filesystemNameSource.trim()
       : fallbackName;
-  return { fullName: `${poolName}/${filesystemName}`, poolName, filesystemName };
+
+  return {
+    fullName: `${poolName}/${filesystemName}`,
+    poolName,
+    filesystemName,
+  };
 };
 
 const normalizeAttributes = (raw: FileSystemRawEntry, fullName: string) => {
   const normalized = { ...raw };
-  if (typeof normalized.name !== 'string' || normalized.name.trim().length === 0) {
+  if (
+    typeof normalized.name !== 'string' ||
+    normalized.name.trim().length === 0
+  ) {
     normalized.name = fullName;
   }
+
   const entries = Object.entries(normalized).map(([key, value]) => ({
     key,
     value: formatAttributeValue(value),
   }));
-  const attributeMap = entries.reduce<Record<string, string>>((acc, attribute) => {
-    const k = attribute.key.trim();
-    acc[k] = attribute.value;
-    acc[k.toLowerCase()] = attribute.value;
-    return acc;
-  }, {});
+  const attributeMap = entries.reduce<Record<string, string>>(
+    (acc, attribute) => {
+      const key = attribute.key.trim();
+      acc[key] = attribute.value;
+      acc[key.toLowerCase()] = attribute.value;
+      return acc;
+    },
+    {}
+  );
+
   return { entries, attributeMap };
 };
 
@@ -71,23 +97,31 @@ const extractMountpoint = (
   attributeMap: Record<string, string>
 ) => {
   const rawMountpoint = raw.mountpoint;
-  if (typeof rawMountpoint === 'string' && rawMountpoint.trim().length > 0) {
+  if (
+    typeof rawMountpoint === 'string' &&
+    rawMountpoint.trim().length > 0
+  ) {
     return rawMountpoint.trim();
   }
-  const attr = attributeMap.mountpoint;
-  if (typeof attr === 'string' && attr.trim().length > 0) return attr.trim();
+
+  const attributeMountpoint = attributeMap.mountpoint;
+  if (
+    typeof attributeMountpoint === 'string' &&
+    attributeMountpoint.trim().length > 0
+  ) {
+    return attributeMountpoint.trim();
+  }
+
   return '—';
 };
 
-// New real backend list endpoint
 export const fetchFileSystems = async (
   signal?: AbortSignal
 ): Promise<FileSystemQueryResult> => {
-  // Try to get full details in one call if backend supports detail=true
   const listResponse = await axiosInstance.get<FileSystemApiResponse>(
     FILESYSTEM_LIST_ENDPOINT,
     {
-      params: { detail: true, save_to_db: false },
+      params: { detail: true },
       signal,
     }
   );
@@ -98,16 +132,15 @@ export const fetchFileSystems = async (
   if (Array.isArray(payload?.data)) {
     rawList = payload.data;
   } else if (payload?.data && typeof payload.data === 'object') {
-    // fallback if data is object
     rawList = Object.values(payload.data);
   }
 
-  const filesystems: FileSystemEntry[] = rawList
-    .map((item, index) => {
+  const filesystems = rawList
+    .map((item, index): FileSystemEntry | null => {
       if (typeof item === 'string') {
-        // If only names returned, we still need detail call (rare now)
         return null;
       }
+
       const rawItem = ensureObject(item);
       const itemFullName = rawItem.fullName;
       const itemName = rawItem.name;
@@ -118,7 +151,9 @@ export const fetchFileSystems = async (
         (typeof itemFullName === 'string' &&
           itemFullName.trim().length > 0 &&
           itemFullName) ||
-        (typeof itemName === 'string' && itemName.trim().length > 0 && itemName) ||
+        (typeof itemName === 'string' &&
+          itemName.trim().length > 0 &&
+          itemName) ||
         `${
           typeof itemPoolName === 'string'
             ? itemPoolName
@@ -133,62 +168,66 @@ export const fetchFileSystems = async (
               : index
         }`;
       const { poolName, filesystemName } = deriveNameParts(fullName, index);
-
-      const rawDetail = rawItem;
-      const { entries, attributeMap } = normalizeAttributes(rawDetail, fullName);
-      const mountpoint = extractMountpoint(rawDetail, attributeMap);
+      const { entries, attributeMap } = normalizeAttributes(rawItem, fullName);
 
       return {
         id: fullName,
         fullName,
         poolName,
         filesystemName,
-        mountpoint,
+        mountpoint: extractMountpoint(rawItem, attributeMap),
         attributes: entries,
         attributeMap,
-        raw: rawDetail,
+        raw: rawItem,
       };
     })
-    .filter(Boolean) as FileSystemEntry[];
+    .filter((item): item is FileSystemEntry => item !== null);
 
-  // If list only returned names (old behavior), fallback to detail calls
+  // Compatibility path for older backends that return only filesystem names.
   if (
     filesystems.length === 0 &&
     Array.isArray(payload?.data) &&
     typeof payload.data[0] === 'string'
   ) {
-    const names = payload.data.filter((x): x is string => typeof x === 'string');
+    const names = payload.data.filter(
+      (item): item is string => typeof item === 'string'
+    );
     const detailResults = await Promise.all(
-      names.map(async (name, idx) => {
+      names.map(async (name, index) => {
         try {
-          const detailRes = await axiosInstance.get<FileSystemApiResponse>(
-            FILESYSTEM_DETAIL_ENDPOINT,
-            {
-              params: { name, save_to_db: false },
-              signal,
-            }
-          );
-          const raw = ensureObject(detailRes.data?.data);
+          const detailResponse =
+            await axiosInstance.get<FileSystemApiResponse>(
+              FILESYSTEM_DETAIL_ENDPOINT,
+              {
+                params: { name },
+                signal,
+              }
+            );
+          const raw = ensureObject(detailResponse.data?.data);
           const { entries, attributeMap } = normalizeAttributes(raw, name);
-          const mountpoint = extractMountpoint(raw, attributeMap);
-          const { poolName, filesystemName } = deriveNameParts(name, idx);
+          const { poolName, filesystemName } = deriveNameParts(name, index);
+
           return {
             id: name,
             fullName: name,
             poolName,
             filesystemName,
-            mountpoint,
+            mountpoint: extractMountpoint(raw, attributeMap),
             attributes: entries,
             attributeMap,
             raw,
-          };
+          } satisfies FileSystemEntry;
         } catch {
+          // One legacy detail failure must not discard successfully loaded filesystems.
           return null;
         }
       })
     );
+
     return {
-      filesystems: detailResults.filter(Boolean) as FileSystemEntry[],
+      filesystems: detailResults.filter(
+        (item): item is FileSystemEntry => item !== null
+      ),
     };
   }
 
@@ -199,7 +238,7 @@ export const useFileSystems = () =>
   useQuery<FileSystemQueryResult, Error>({
     queryKey: ['filesystems'],
     queryFn: ({ signal }) => fetchFileSystems(signal),
-    staleTime: 15000,
+    staleTime: 15_000,
   });
 
 export type UseFileSystemsReturn = ReturnType<typeof useFileSystems>;

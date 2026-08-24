@@ -26,6 +26,9 @@ const ensureAuthSuffix = (url: string) => {
   return `${normalized}/api/auth`;
 };
 
+// Token issuance, verification, and refresh deliberately bypass axiosInstance.
+// Sending refresh through the normal 401 interceptor could make a failed refresh
+// recursively enter the same recovery path it is supposed to resolve.
 const authClient: AxiosInstance = axios.create({
   baseURL: resolveBaseUrl(),
   headers: {
@@ -72,6 +75,8 @@ export const verifyAccessToken = async (token: string): Promise<void> => {
   await authClient.post('token/verify/', { token });
 };
 
+// Logout is an authenticated application endpoint, so it intentionally uses the
+// shared client and its current Bearer token instead of the isolated authClient.
 export const logout = async (refresh: string): Promise<void> => {
   await axiosInstance.post('/api/system/ui-user/logout/', { refresh });
 };

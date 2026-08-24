@@ -13,13 +13,16 @@ interface UseSetCanmountOptions {
   onError?: (error: Error, name: string) => void;
 }
 
-export const useSetCanmount = ({ onSuccess, onError }: UseSetCanmountOptions = {}) => {
+export const useSetCanmount = ({
+  onSuccess,
+  onError,
+}: UseSetCanmountOptions = {}) => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<unknown, Error, SetCanmountPayload>({
     mutationFn: async ({ poolName, filesystemName, state }) => {
       await axiosInstance.post('/api/filesystem/set-canmount/', null, {
-        params: { name: `${poolName}/${filesystemName}`, state, save_to_db: false },
+        params: { name: `${poolName}/${filesystemName}`, state },
       });
     },
     onSuccess: (_data, variables) => {
@@ -31,9 +34,12 @@ export const useSetCanmount = ({ onSuccess, onError }: UseSetCanmountOptions = {
     },
   });
 
-  const setCanmount = useCallback((poolName: string, filesystemName: string, state: 'on' | 'off') => {
-    mutation.mutate({ poolName, filesystemName, state });
-  }, [mutation]);
+  const setCanmount = useCallback(
+    (poolName: string, filesystemName: string, state: 'on' | 'off') => {
+      mutation.mutate({ poolName, filesystemName, state });
+    },
+    [mutation]
+  );
 
   return {
     setCanmount,

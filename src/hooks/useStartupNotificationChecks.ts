@@ -17,6 +17,8 @@ import { fetchZpools } from './useZpool';
 export const CAPACITY_CHECK_INTERVAL_MS = 60_000;
 export const CHECK_INTERVAL_MS = CAPACITY_CHECK_INTERVAL_MS;
 
+// Notification-specific keys give capacity monitoring an independent 60-second
+// lifecycle instead of coupling its cadence to page-level zpool/filesystem queries.
 const CAPACITY_ZPOOL_QUERY_KEY = [
   'notifications',
   'capacity',
@@ -228,6 +230,9 @@ export const useStartupNotificationChecks = (
   const [isChecking, setIsChecking] = useState(false);
   const [lastCheckAt, setLastCheckAt] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
+
+  // The two queries can complete at different times. Track the last completed
+  // pair so re-renders or a single-query update cannot process one pair twice.
   const processedCompleteFetchAtRef = useRef(0);
 
   const storageKey = useMemo(
@@ -250,6 +255,8 @@ export const useStartupNotificationChecks = (
     const lastCheckTime =
       lastCheckValue == null ? null : Number(lastCheckValue);
 
+    // Query revalidation and notification-rule evaluation are separate. Keep the
+    // per-user timestamp authoritative for the minimum capacity-check cadence.
     if (
       lastCheckTime != null &&
       Number.isFinite(lastCheckTime) &&

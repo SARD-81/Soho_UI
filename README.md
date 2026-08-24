@@ -13,8 +13,12 @@ The maintained engineering documentation starts at:
 - [`docs/02-architecture/frontend-architecture.md`](./docs/02-architecture/frontend-architecture.md) — frontend architecture and ownership boundaries
 - [`docs/03-development/project-structure.md`](./docs/03-development/project-structure.md) — repository navigation and change entry points
 - [`docs/03-development/code-commenting-guidelines.md`](./docs/03-development/code-commenting-guidelines.md) — Clean Code rules for useful source comments
+- [`docs/04-core-flows/server-state-and-cache.md`](./docs/04-core-flows/server-state-and-cache.md) — React Query server-state ownership, cache, and invalidation
+- [`docs/04-core-flows/state-sync-save-to-db.md`](./docs/04-core-flows/state-sync-save-to-db.md) — canonical backend snapshot persistence contract
+- [`docs/04-core-flows/polling-and-data-refresh.md`](./docs/04-core-flows/polling-and-data-refresh.md) — maintained polling and refresh inventory
+- [`docs/04-core-flows/notifications.md`](./docs/04-core-flows/notifications.md) — notification observation, baselines, and duplicate suppression
 
-Existing detailed runtime notes are preserved under `docs/`, including state synchronization, API polling, notifications/data refresh, and general settings.
+See [`docs/index.md`](./docs/index.md) for the complete reading order and documentation map.
 
 ## Tech stack
 
@@ -24,7 +28,7 @@ See `package.json` for the exact dependency versions.
 
 ## Prerequisites
 
-Use a supported Node.js LTS release with npm.
+Use a supported Node.js LTS release with npm. The repository CI currently validates with Node.js 22.
 
 On Debian/Ubuntu systems, one way to install Node.js through NodeSource is:
 
@@ -47,6 +51,12 @@ Install project dependencies from the repository root:
 
 ```bash
 npm install
+```
+
+For clean release/CI validation, use the committed lockfile with:
+
+```bash
+npm ci
 ```
 
 ## Environment configuration
@@ -77,7 +87,23 @@ Run ESLint:
 npm run lint
 ```
 
-A dedicated automated test script is not currently defined in `package.json`. Do not treat a successful build as a substitute for future test coverage.
+Run the production type-check/build gate:
+
+```bash
+npm run build
+```
+
+The repository also maintains `.github/workflows/frontend-validation.yml`, which validates pull requests to `main` with:
+
+```text
+npm ci
+npm run lint
+npm run build
+```
+
+A dedicated automated behavioral test script is not currently defined in `package.json`. Do not treat a successful lint/build pipeline as a substitute for future test coverage.
+
+See [`docs/03-development/testing.md`](./docs/03-development/testing.md) for the current quality model and testing roadmap.
 
 ## Production build
 
@@ -99,13 +125,15 @@ npm run preview
 
 This repository builds to static frontend assets. A production web server such as Nginx should serve the generated `dist/` directory.
 
-Deployment-specific server configuration belongs in operations documentation rather than application source code.
+Deployment-specific server configuration and release/rollback guidance are documented under [`docs/07-operations/`](./docs/07-operations/).
 
 ## Important maintenance contracts
 
-Before modifying authentication, Axios interceptors, token storage, React Query global defaults, state persistence, or polling behavior, read the corresponding documents under `docs/`.
+Before modifying authentication, Axios interceptors, token storage, React Query global defaults, state persistence, polling, or notification behavior, read the corresponding documents under `docs/04-core-flows/`.
 
-In particular, normal API requests and mutations do not own database snapshot persistence. Canonical persisted snapshots are coordinated by `StateSyncManager`; see [`docs/state-sync-save-to-db.md`](./docs/state-sync-save-to-db.md).
+In particular, normal API requests and mutations do not own database snapshot persistence. Canonical persisted snapshots are coordinated by `StateSyncManager`; see [`docs/04-core-flows/state-sync-save-to-db.md`](./docs/04-core-flows/state-sync-save-to-db.md).
+
+UI freshness is a separate concern owned by React Query; see [`docs/04-core-flows/server-state-and-cache.md`](./docs/04-core-flows/server-state-and-cache.md).
 
 ## Source comments
 

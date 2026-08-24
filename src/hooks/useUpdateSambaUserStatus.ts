@@ -22,8 +22,7 @@ export const useUpdateSambaUserStatus = ({
     AxiosError,
     { username: string; action: SambaUserUpdateAction }
   >({
-    mutationFn: ({ username, action }) =>
-      updateSambaUser({ username, action, save_to_db: false }),
+    mutationFn: ({ username, action }) => updateSambaUser({ username, action }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sambaUsersQueryKey });
       queryClient.invalidateQueries({

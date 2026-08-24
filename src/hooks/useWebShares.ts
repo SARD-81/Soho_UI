@@ -142,8 +142,12 @@ const normalizeWebShareItem = (
     parseTargetName(targetNameCandidate).poolName;
 
   const fsName =
-    readStringField(record, ['fs_name', 'fsName', 'filesystem', 'filesystem_name']) ??
-    parseTargetName(targetNameCandidate).fsName;
+    readStringField(record, [
+      'fs_name',
+      'fsName',
+      'filesystem',
+      'filesystem_name',
+    ]) ?? parseTargetName(targetNameCandidate).fsName;
 
   const targetName =
     targetNameCandidate.includes('_') || !poolName || !fsName
@@ -178,7 +182,9 @@ const normalizeWebShareItem = (
   };
 };
 
-export const normalizeWebShares = (payload: WebShareApiResponse): WebShareEntry[] => {
+export const normalizeWebShares = (
+  payload: WebShareApiResponse
+): WebShareEntry[] => {
   const source = payload.data ?? [];
   const items: WebShareEntry[] = [];
 
@@ -190,20 +196,29 @@ export const normalizeWebShares = (payload: WebShareApiResponse): WebShareEntry[
       }
     });
   } else if (source && typeof source === 'object') {
-    Object.entries(source as Record<string, unknown>).forEach(([key, value], index) => {
-      const recordValue = asRecord(value);
-      const normalized = normalizeWebShareItem(
-        recordValue ? { ...recordValue, target_name: recordValue.target_name ?? key } : value,
-        index,
-        key
-      );
-      if (normalized) {
-        items.push(normalized);
+    Object.entries(source as Record<string, unknown>).forEach(
+      ([key, value], index) => {
+        const recordValue = asRecord(value);
+        const normalized = normalizeWebShareItem(
+          recordValue
+            ? {
+                ...recordValue,
+                target_name: recordValue.target_name ?? key,
+              }
+            : value,
+          index,
+          key
+        );
+        if (normalized) {
+          items.push(normalized);
+        }
       }
-    });
+    );
   }
 
-  return items.sort((a, b) => a.targetName.localeCompare(b.targetName, 'fa-IR'));
+  return items.sort((a, b) =>
+    a.targetName.localeCompare(b.targetName, 'fa-IR')
+  );
 };
 
 export const extractWebShareErrorMessage = (
@@ -249,9 +264,10 @@ export const extractWebShareErrorMessage = (
 };
 
 const fetchWebShares = async (): Promise<WebShareApiResponse> => {
-  const { data } = await axiosInstance.get<WebShareApiResponse>(WEB_SHARE_ENDPOINT, {
-    params: { detail: true, save_to_db: false },
-  });
+  const { data } = await axiosInstance.get<WebShareApiResponse>(
+    WEB_SHARE_ENDPOINT,
+    { params: { detail: true } }
+  );
 
   return data;
 };
@@ -267,12 +283,13 @@ export const useWebShares = () =>
 export const useCreateWebShare = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, AxiosError<ApiErrorResponse>, WebShareCreatePayload>({
+  return useMutation<
+    unknown,
+    AxiosError<ApiErrorResponse>,
+    WebShareCreatePayload
+  >({
     mutationFn: async (payload) => {
-      await axiosInstance.post(WEB_SHARE_ENDPOINT, {
-        ...payload,
-        save_to_db: false,
-      });
+      await axiosInstance.post(WEB_SHARE_ENDPOINT, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: webSharesQueryKey });
@@ -283,14 +300,13 @@ export const useCreateWebShare = () => {
 export const useDeleteWebShare = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, AxiosError<ApiErrorResponse>, WebShareDeleteParams>({
+  return useMutation<
+    unknown,
+    AxiosError<ApiErrorResponse>,
+    WebShareDeleteParams
+  >({
     mutationFn: async (params) => {
-      await axiosInstance.delete(WEB_SHARE_DELETE_ENDPOINT, {
-        params: {
-          ...params,
-          save_to_db: false,
-        },
-      });
+      await axiosInstance.delete(WEB_SHARE_DELETE_ENDPOINT, { params });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: webSharesQueryKey });
@@ -301,7 +317,11 @@ export const useDeleteWebShare = () => {
 export const useSetWebSharePermission = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, AxiosError<ApiErrorResponse>, WebSharePermissionPayload>({
+  return useMutation<
+    unknown,
+    AxiosError<ApiErrorResponse>,
+    WebSharePermissionPayload
+  >({
     mutationFn: async (payload) => {
       await axiosInstance.post(WEB_SHARE_PERMISSION_ENDPOINT, payload);
     },

@@ -13,8 +13,6 @@ import './index.css';
 import { rtlCache } from './rtl-cache';
 
 const createAppQueryClient = () => {
-  let client: QueryClient;
-
   const mutationCache = new MutationCache({
     onSuccess: async () => {
       // Refresh active UI data only after a mutation actually succeeded.
@@ -24,7 +22,7 @@ const createAppQueryClient = () => {
     },
   });
 
-  client = new QueryClient({
+  const client = new QueryClient({
     mutationCache,
     defaultOptions: {
       queries: {

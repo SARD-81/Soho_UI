@@ -293,7 +293,7 @@ const GeneralSettingsPanel = () => {
       payload: { hostname: validation.value },
       title: 'تغییر نام میزبان سامانه',
       description:
-        'نام میزبان بخشی از هویت شبکه‌ای سامانه است. بعد از اعمال تغییر، برخی سرویس‌ها یا کلاینت‌ها ممکن است برای شناسایی نام جدید به راه‌اندازی مجدد یا بروزرسانی تنطیمات خود نیاز داشته باشند.',
+        'نام میزبان بخشی از هویت شبکه‌ای سامانه است. بعد از اعمال تغییر، برخی سرویس‌ها یا کلاینت‌ها ممکن است برای شناسایی نام جدید به راه‌اندازی مجدد یا بروزرسانی تنظیمات خود نیاز داشته باشند.',
       confirmLabel: 'تغییر نام میزبان',
       severity: 'warning',
     });
@@ -398,7 +398,7 @@ const GeneralSettingsPanel = () => {
         : 'غیرفعال‌سازی همگام‌سازی خودکار زمان',
       description: ntpEnabled
         ? 'پس از تایید، ساعت سیستم به‌صورت خودکار با سرورهای معرفی‌شده همگام می‌شود. صحت نام سرورها و دسترسی شبکه‌ای به آن‌ها را بررسی کنید.'
-        : 'با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود و مس����ولیت تنطیم صحی�� ساعت سیستم بر عهده مدی�� سامانه خواهد بود.',
+        : 'با غیرفعال کردن این قابلیت، همگام‌سازی خودکار زمان متوقف می‌شود و مسئولیت تنظیم صحیح ساعت سیستم بر عهده مدیر سامانه خواهد بود.',
       confirmLabel: ntpEnabled
         ? 'فعال‌سازی همگام‌سازی'
         : 'غیرفعال‌سازی همگام‌سازی',
@@ -416,7 +416,7 @@ const GeneralSettingsPanel = () => {
 
     if (isNtpActive && ntpEnabled) {
       setManualTimeError(
-        'برای تنطیم دستی زمان، ابتدا همگام‌سازی خودکار را غیرفعال کنید.'
+        'برای تنظیم دستی زمان، ابتدا همگام‌سازی خودکار را غیرفعال کنید.'
       );
       return;
     }
@@ -434,11 +434,11 @@ const GeneralSettingsPanel = () => {
       type: 'manual-time',
       payload: { time: validation.value },
       disableNtpFirst: shouldDisableNtpFirst,
-      title: 'تنطیم دستی زمان سیستم',
+      title: 'تنظیم دستی زمان سیستم',
       description: shouldDisableNtpFirst
-        ? 'ابتدا همگام‌سازی خودکار زمان غیرفعال می‌شود و سپس زمان انتخابی روی سیستم تنطیم می‌گردد. تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد.'
+        ? 'ابتدا همگام‌سازی خودکار زمان غیرفعال می‌شود و سپس زمان انتخابی روی سیستم تنظیم می‌گردد. تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد.'
         : 'تغییر ساعت سیستم می‌تواند روی اعتبار نشست‌ها، زمان لاگ‌ها، گواهی‌های TLS و اجرای وظایف زمان‌بندی‌شده اثر بگذارد. قبل از ادامه از درستی تاریخ، ساعت و منطقه زمانی اطمینان حاصل کنید.',
-      confirmLabel: 'تنطیم زمان سیستم',
+      confirmLabel: 'تنظیم زمان سیستم',
       severity: 'error',
     });
   };
@@ -458,7 +458,7 @@ const GeneralSettingsPanel = () => {
       toast.success(result.message);
     } catch (error) {
       toast.error(
-        extractApiErrorMessage(error, 'تنطیم زمان مادربرد با خطا مواجه شد.')
+        extractApiErrorMessage(error, 'تنظیم زمان مادربرد با خطا مواجه شد.')
       );
     }
   };
@@ -513,7 +513,7 @@ const GeneralSettingsPanel = () => {
       setEditor(null);
     } catch (error) {
       toast.error(
-        extractApiErrorMessage(error, 'اعمال تنطیمات سیستم با خطا مواجه شد.')
+        extractApiErrorMessage(error, 'اعمال تنظیمات سیستم با خطا مواجه شد.')
       );
     }
   };
@@ -646,7 +646,7 @@ const GeneralSettingsPanel = () => {
       hostnameQuery.refetch(),
       versionQuery.refetch(),
     ]);
-    toast.success('اطلاعات تنطیمات عمومی بروزرسانی شد.');
+    toast.success('اطلاعات تنظیمات عمومی بروزرسانی شد.');
   };
 
   const closeEditor = () => setEditor(null);
@@ -823,7 +823,7 @@ const GeneralSettingsPanel = () => {
             }}
           />
         }
-        label="تنطیم برابر زمان کلاینت"
+        label="تنظیم برابر زمان کلاینت"
       />
 
       {useClientTime ? (
@@ -1120,7 +1120,7 @@ const GeneralSettingsPanel = () => {
                 ),
                 valueAdornment: (
                   <>
-                    {renderEditAction('تنطیمات زمان و همگام‌سازی', () => {
+                    {renderEditAction('تنظیمات زمان و همگام‌سازی', () => {
                       setNtpFormError(null);
                       setManualTimeError(null);
                       setEditor('time-settings');
@@ -1136,7 +1136,7 @@ const GeneralSettingsPanel = () => {
                       arrow
                       title={
                         isClockDrifting
-                          ? 'برای تنطیم زمان مادربرد برابر زمان سیستم کلیک کنید'
+                          ? 'برای تنظیم زمان مادربرد برابر زمان سیستم کلیک کنید'
                           : 'اختلاف زمانی بین RTC و سیستم برحسب زمان محلی'
                       }
                     >
@@ -1269,14 +1269,14 @@ const GeneralSettingsPanel = () => {
         onClose={closeEditor}
         onSubmit={handleRequestManualTime}
         isSubmitting={setManualTimeMutation.isPending}
-        submitLabel="تنطیم زمان سیستم"
+        submitLabel="تنظیم زمان سیستم"
         icon={<MdMemory />}
         title="تغییر زمان سرور"
       >
         {renderManualTimeFields()}
       </SettingEditModal>
 
-      {/* ── تمام تنطیمات زمان (از طریق آیکون ویرایش) ── */}
+      {/* ── تمام تنظیمات زمان (از طریق آیکون ویرایش) ── */}
       <SettingEditModal
         open={editor === 'time-settings'}
         onClose={closeEditor}
@@ -1284,7 +1284,7 @@ const GeneralSettingsPanel = () => {
         hideSubmit
         isSubmitting={isMutationPending}
         icon={<MdAccessTime />}
-        title="تنطیمات زمان"
+        title="تنظیمات زمان"
       >
         {renderModalSectionTitle('همگام‌سازی خودکار (NTP)')}
         {renderNtpFields()}
@@ -1299,7 +1299,7 @@ const GeneralSettingsPanel = () => {
               }}
             />
 
-            {renderModalSectionTitle('تنطیم دستی زمان')}
+            {renderModalSectionTitle('تنظیم دستی زمان')}
             {renderManualTimeFields()}
             <Button
               onClick={handleRequestManualTime}
@@ -1307,7 +1307,7 @@ const GeneralSettingsPanel = () => {
               variant="contained"
               sx={{ ...primaryButtonSx, alignSelf: 'flex-start' }}
             >
-              تنطیم زمان سیستم
+              تنظیم زمان سیستم
             </Button>
           </>
         ) : null}

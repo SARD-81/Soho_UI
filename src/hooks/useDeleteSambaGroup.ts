@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteSambaGroup } from '../lib/sambaGroupService';
-import { sambaGroupsQueryKey } from './/useSambaGroups';
+import { sambaGroupsQueryKey } from './useSambaGroups';
 
 interface UseDeleteSambaGroupOptions {
   onSuccess?: (groupname: string) => void;

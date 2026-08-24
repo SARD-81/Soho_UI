@@ -2,9 +2,11 @@
 
 ## Purpose
 
-SOHO UI is the browser-based administrative frontend for the StoreX storage management system. It gives operators a single interface for observing system health and managing storage, sharing, users, services, network-related settings, and selected system operations.
+SOHO UI is the browser-based administrative frontend for the StoreX storage management system. It gives operators a single interface for observing system health and managing storage, sharing, users, services, network/system settings, SNMP, and selected system operations.
 
-This repository contains the frontend only. It does not own the underlying storage or operating-system state; it communicates with backend APIs that perform or report those operations.
+This repository contains the frontend only. It does not own the underlying storage, operating-system, authentication, or database implementation; it communicates with backend APIs that perform or report those operations.
+
+Detailed responsibility boundaries are defined in [`scope.md`](./scope.md).
 
 ## Primary responsibilities
 
@@ -15,10 +17,10 @@ The frontend is responsible for:
 - presenting system and storage state returned by backend APIs;
 - initiating administrative mutations through the API layer;
 - managing client-side server-state caching and refresh behavior;
-- coordinating canonical state snapshots after successful mutations;
+- coordinating canonical state snapshots after successful mapped mutations;
 - presenting notifications and global loading/error feedback;
 - providing Persian/RTL administrative UI with light/dark theme support;
-- preventing unsafe duplicate or stale client-side behavior where the frontend owns the lifecycle.
+- preserving safe/non-obvious frontend lifecycle behavior around destructive, concurrent, or multi-step operations.
 
 The frontend is not the source of truth for persisted infrastructure state. Backend/system state remains authoritative.
 
@@ -26,24 +28,26 @@ The frontend is not the source of truth for persisted infrastructure state. Back
 
 The route configuration currently exposes these application areas:
 
-| Area | Route | Primary purpose |
-| --- | --- | --- |
-| Login | `/login` | Authenticate the operator |
-| Dashboard | `/dashboard` | High-level system and storage monitoring |
-| Disks | `/disks` | Inspect and manage disk-related state |
-| Integrated Storage | `/Integrated-space` | Manage integrated/ZFS pool storage |
-| Block Storage | `/block-space` | Manage block-storage volumes |
-| File System | `/file-system` | Manage filesystems and related properties |
-| Services | `/services` | Inspect and control system services |
-| Users | `/users` | Manage supported user domains |
-| Settings | `/settings` | Configure system-level frontend-supported settings |
-| SMB Share | `/share` | Manage Samba/SMB sharing |
-| NFS Share | `/share-nfs` | Manage NFS shares |
-| Web Share | `/web-share` | Manage web-share functionality |
-| History | `/history` | Display historical/audit-oriented UI |
-| SNMP | `/snmp-service` | Inspect and configure SNMP behavior |
+| Area | Route | Primary purpose | Status |
+| --- | --- | --- | --- |
+| Login | `/login` | Authenticate the operator | Implemented |
+| Dashboard | `/dashboard` | High-level system and storage monitoring | Implemented |
+| Disks | `/disks` | Inspect and manage disk-related state | Implemented |
+| Integrated Storage | `/Integrated-space` | Manage integrated/ZFS pool storage | Implemented |
+| Block Storage | `/block-space` | Manage block-storage Volumes | Implemented |
+| File System | `/file-system` | Manage filesystems and related properties | Implemented |
+| Services | `/services` | Inspect and control system services | Implemented |
+| Users | `/users` | Manage OS/Samba user bridge | Implemented with one placeholder tab |
+| Settings | `/settings` | General/network/Web-user configuration | Implemented |
+| SMB Share | `/share` | Manage Samba/SMB sharing | Implemented |
+| NFS Share | `/share-nfs` | Manage NFS shares | Implemented |
+| Web Share | `/web-share` | Manage Web Share functionality | Implemented |
+| History | `/history` | Historical/audit-oriented UI | Placeholder only |
+| SNMP | `/snmp-service` | Inspect/configure/test SNMP | Implemented |
 
 All application routes except `/login` are mounted below a protected layout.
+
+Every routed area has a feature document under [`../05-features/`](../05-features/); History explicitly documents its placeholder state rather than inventing unimplemented behavior.
 
 ## Technology stack
 
@@ -64,11 +68,11 @@ The current frontend stack includes:
 - Three.js with React Three Fiber and Drei
 - react-hot-toast
 
-The presence of a dependency does not imply that it is the preferred solution for every new feature. Follow the patterns already established in the relevant feature area unless an architectural change is intentional and documented.
+See `package.json` for exact dependency versions.
+
+The presence of a dependency does not imply that it is the preferred solution for every new feature. Follow the established ownership patterns unless an architectural change is intentional and documented.
 
 ## Runtime ownership model
-
-At runtime, responsibilities are roughly divided as follows:
 
 ```mermaid
 flowchart TD
@@ -85,11 +89,15 @@ flowchart TD
     Theme[Theme + RTL Providers] --> UI
 ```
 
-The diagram is intentionally high level. Detailed ownership is documented in the architecture and core-flow documents.
+Detailed runtime/data ownership:
+
+- [`../02-architecture/frontend-architecture.md`](../02-architecture/frontend-architecture.md)
+- [`../02-architecture/runtime-flow.md`](../02-architecture/runtime-flow.md)
+- [`../02-architecture/data-flow.md`](../02-architecture/data-flow.md)
 
 ## Application bootstrap
 
-`src/main.tsx` initializes the application-wide providers in this order:
+`src/main.tsx` initializes application-wide providers in this order:
 
 ```text
 StrictMode
@@ -102,81 +110,136 @@ StrictMode
 
 `App` then connects the MUI theme, global toaster, global loader, and router.
 
-This provider structure matters because authentication, query caching, RTL styling, and theme state are cross-cutting concerns used by many otherwise independent feature modules.
+This provider structure matters because authentication, query caching, RTL styling, and theme state are cross-cutting concerns used by otherwise independent feature modules.
 
 ## Authentication and session model
 
-Authentication is coordinated through `AuthProvider`, `axiosInstance`, `authApi`, `authEvents`, `tokenStorage`, and the session-activity timeout hook.
+Authentication is coordinated through `AuthProvider`, `axiosInstance`, `authApi`, `authEvents`, `tokenStorage`, and session-activity logic.
 
-Important current contracts:
+Important contracts:
 
-- the access token is kept in memory rather than persisted to browser storage;
-- the refresh token and username are scoped to `sessionStorage` when available;
+- access token is kept in memory rather than persisted to browser storage;
+- refresh token and username are scoped to `sessionStorage` when available;
 - legacy persisted access-token values are proactively removed;
-- an existing access token is verified before an unnecessary refresh is attempted;
-- if the access token cannot be restored but a refresh token exists, the frontend attempts token refresh;
-- 401 handling in the Axios response interceptor serializes refresh behavior so simultaneous failed requests do not start independent refresh storms;
+- existing access state is verified/restored before unnecessary refresh where applicable;
+- if access state cannot be restored but refresh token exists, frontend attempts token refresh;
+- 401 recovery serializes refresh so simultaneous failed requests do not create refresh storms;
 - authenticated sessions use an idle-activity timeout;
-- protected routes wait for authentication initialization before redirecting;
-- authentication bypass is allowed only in development when the dedicated environment flag is enabled.
+- protected routes wait for auth initialization before redirecting;
+- authentication bypass is allowed only in development with the dedicated flag.
 
-These are security- and lifecycle-sensitive behaviors. Changes require review of the authentication flow documentation and relevant in-code comments.
+Canonical references:
+
+- [`../04-core-flows/authentication.md`](../04-core-flows/authentication.md)
+- [`../06-api/authentication-api.md`](../06-api/authentication-api.md)
 
 ## Server state and React Query
 
-TanStack React Query owns cached server-state used by the UI.
+TanStack React Query owns authoritative backend state cached for the UI.
 
 Current global query defaults include:
 
 - no automatic retry;
 - refetch on mount;
-- no refetch on window focus;
-- no refetch on reconnect;
+- no global refetch on window focus;
+- no global refetch on reconnect;
 - a short stale window;
 - finite query garbage-collection time.
 
-Successful mutations trigger invalidation of active queries at the global mutation-cache level. Failed mutations do not trigger global invalidation.
+Feature hooks can define more specific polling, stale-time, focus, or invalidation behavior.
 
-Feature hooks may define more specific polling or invalidation behavior. The polling audit is the current detailed reference for those exceptions.
+Canonical references:
+
+- [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
+- [`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md)
 
 ## Persistence and canonical state synchronization
 
-One of the most important project-specific contracts is the separation between normal API traffic and persisted state snapshots.
+One of the most important project-specific contracts is the separation between ordinary API traffic and persisted state snapshots.
 
-Normal reads, polling requests, route-driven refetches, and mutations are not allowed to directly request database state persistence. They are normalized to `save_to_db=false` by the transport layer.
+Normal reads, polling requests, route-driven refetches, and ordinary mutations are not allowed to directly request database snapshot persistence. The transport layer normalizes normal `/api/` traffic to `save_to_db=false`.
 
-`StateSyncManager` is the single owner of canonical persisted snapshots. After a successful mutation, the affected state domain or domains are resolved and a canonical GET snapshot is scheduled. These internal snapshot requests are the only requests that are converted to `save_to_db=true`.
+`StateSyncManager` is the single frontend owner of canonical persisted snapshot requests. After a successful mapped mutation, affected domains are resolved and canonical GET snapshots are scheduled. Those internally marked snapshot requests are the only frontend requests converted to `save_to_db=true`.
 
-This design ensures that the database is updated from authoritative post-operation state rather than from an optimistic or incomplete mutation payload.
+This ensures persistence is based on authoritative post-operation state instead of an optimistic/incomplete mutation payload.
 
-The full contract is documented in [`../state-sync-save-to-db.md`](../state-sync-save-to-db.md).
+Canonical reference:
+
+[`../04-core-flows/state-sync-save-to-db.md`](../04-core-flows/state-sync-save-to-db.md)
+
+## API integration
+
+Shared API behavior is documented centrally:
+
+- [`../06-api/api-conventions.md`](../06-api/api-conventions.md)
+- [`../06-api/endpoint-map.md`](../06-api/endpoint-map.md)
+- [`../06-api/error-handling.md`](../06-api/error-handling.md)
+
+Feature code should use these conventions rather than introducing parallel transport/persistence/error models.
 
 ## Polling and refresh behavior
 
-Polling is intentionally selective. Live metrics such as CPU, memory, network bandwidth, and selected storage-health data may poll while their observers are mounted and the tab is visible. Administrative lists that do not need live updates are generally refreshed on mount or after mutation invalidation instead of polling continuously.
+Polling is selective. Live telemetry such as CPU, memory, network bandwidth, service state, and selected storage-health resources can poll while required. Administrative collections without live-update requirements generally rely on mount/refetch/mutation invalidation instead of continuous polling.
 
-The current detailed inventory is documented in [`../api-polling-audit.md`](../api-polling-audit.md).
+Canonical inventory:
+
+[`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md)
 
 ## UI language and direction
 
-The application is primarily a Persian administrative interface and uses RTL styling support. Source-code identifiers and engineering comments should remain in English so code, library conventions, and technical documentation stay consistent.
+The application is primarily a Persian administrative interface and uses RTL styling support.
 
-User-facing copy may remain Persian where appropriate.
+Source-code identifiers and engineering comments remain English so code/library conventions stay consistent. User-facing copy can remain Persian where appropriate.
+
+See ADR-005 for RTL design rationale:
+
+[`../02-architecture/decisions/ADR-005-rtl-emotion-cache.md`](../02-architecture/decisions/ADR-005-rtl-emotion-cache.md)
+
+## Build and deployment model
+
+The repository builds to a static Vite artifact:
+
+```text
+dist/
+```
+
+A production static web server such as Nginx can serve the artifact with SPA fallback for browser-history routes.
+
+Current repository does not contain CI/CD workflows, Dockerfile, or Nginx config; operations documentation records the deployment contract without claiming automation that does not exist.
+
+References:
+
+- [`../07-operations/build.md`](../07-operations/build.md)
+- [`../07-operations/deployment.md`](../07-operations/deployment.md)
+- [`../07-operations/troubleshooting.md`](../07-operations/troubleshooting.md)
 
 ## High-risk areas for future changes
 
-A developer returning to the project should take extra care when modifying:
+Take extra care when modifying:
 
-- `src/lib/axiosInstance.ts` — authentication refresh, transport policy, error handling, state-sync scheduling;
+- `src/lib/axiosInstance.ts` — authentication refresh, transport policy, error handling, StateSync scheduling;
 - `src/lib/stateSyncManager.ts` — persistence ownership, cross-domain dependencies, coalescing, race protection;
 - `src/contexts/AuthContext.tsx` — session restoration, logout behavior, token lifecycle;
 - `src/lib/tokenStorage.ts` — security-sensitive token-storage policy;
 - `src/hooks/useSessionActivityTimeout.ts` — session expiry across reload/focus/visibility changes;
-- global React Query configuration in `src/main.tsx` — cache and refetch behavior across the entire UI;
-- feature mutation hooks that may contain historical/legacy request fields or duplicate invalidation logic.
+- global React Query configuration in `src/main.tsx` — cache/refetch behavior across the UI;
+- multi-request workflows with partial-success semantics;
+- service/power/network/system mutations that affect availability.
 
-Before changing one of these areas, read the relevant core-flow documentation and inspect callers rather than treating the file as isolated code.
+Read the relevant architecture/core-flow/API/feature document and inspect callers before treating any high-risk file as isolated code.
 
-## Current documentation status
+## Documentation status
 
-This documentation set is being built incrementally from the current codebase. Existing operational/runtime notes are preserved rather than rewritten prematurely. When a new document supersedes an existing note, the old document should either be migrated with history preserved or replaced by an explicit link to the new source of truth.
+The main documentation structure is now populated across:
+
+```text
+01-overview
+02-architecture
+03-development
+04-core-flows
+05-features
+06-api
+07-operations
+```
+
+Remaining work should focus on final consistency/source audit, executable validation, and keeping documentation synchronized with future behavior changes rather than creating a second competing documentation structure.

@@ -49,7 +49,7 @@ const SettingsRowsTable = ({
       },
       {
         id: "title",
-        header: "تنطیم",
+        header: "تنظیم",
         width: "30%",
         cellSx: { fontWeight: 700 },
         renderCell: (row) =>
