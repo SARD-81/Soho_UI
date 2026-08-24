@@ -1,30 +1,38 @@
 # Services
 
-## Purpose
+## هدف
 
-The Services feature is the operational control surface for backend system services. It presents runtime state, boot-time enablement, and operator actions while continuously refreshing service information.
+Feature مربوط به Services، سطح عملیاتی کنترل backend system serviceها است. این صفحه runtime state، boot-time enablement و actionهای operator را نمایش می‌دهد و اطلاعات service را به‌صورت پیوسته refresh می‌کند.
 
-Route: `/services`
+Route:
 
-Entry point: `src/pages/Services.tsx`
+```text
+/services
+```
 
-## Main responsibilities
+Entry point:
 
-The feature coordinates:
+```text
+src/pages/Services.tsx
+```
 
-- reading the service list every five seconds;
-- reading per-unit status every five seconds;
-- merging the more specific per-unit `enabled` state into list data;
-- deriving a stable UI runtime status from several possible backend fields;
-- starting and stopping services;
-- enabling and disabling services at system startup;
-- preventing start while a service is masked;
-- requiring confirmation before Stop;
-- refreshing both list and per-unit status queries after a successful control action.
+## مسئولیت‌های اصلی
 
-The underlying action type also supports `restart`, `reload`, `mask`, and `unmask`, but the current table UI primarily exposes Start/Stop and boot-time Enable/Disable.
+این feature موارد زیر را coordinate می‌کند:
 
-## Runtime flow
+- خواندن service list هر 5 ثانیه؛
+- خواندن per-unit status هر 5 ثانیه؛
+- merge کردن `enabled` state دقیق‌تر مربوط به per-unit response در list data؛
+- derive کردن UI runtime status پایدار از چند backend field ممکن؛
+- start و stop کردن serviceها؛
+- enable و disable کردن serviceها در startup سیستم؛
+- جلوگیری از Start وقتی service در حالت masked است؛
+- الزام confirmation پیش از Stop؛
+- refresh کردن هم list query و هم per-unit status query پس از control action موفق.
+
+Action type زیرساخت همچنین `restart`، `reload`، `mask` و `unmask` را پشتیبانی می‌کند، اما table فعلی در UI عمدتاً Start/Stop و boot-time Enable/Disable را expose می‌کند.
+
+## runtime flow
 
 ```mermaid
 flowchart TD
@@ -43,7 +51,11 @@ flowchart TD
 
 ## Service list
 
-Hook: `useServices()`
+Hook:
+
+```text
+useServices()
+```
 
 Query key:
 
@@ -63,15 +75,19 @@ Refresh policy:
 5 seconds
 ```
 
-Background polling and window-focus refetch are disabled.
+Background polling و window-focus refetch غیرفعال‌اند.
 
-The list query provides the base service objects used by the page and by status-change notification monitoring elsewhere in the application.
+List query base service objectهای مورد استفاده صفحه و status-change notification monitoring در سایر قسمت‌های application را فراهم می‌کند.
 
-## Per-service status queries
+## per-service status queryها
 
-Hook: `useServiceStatuses(services)`
+Hook:
 
-For every service returned by the list, the hook creates a separate query:
+```text
+useServiceStatuses(services)
+```
+
+برای هر service برگشتی از list، یک query جدا ساخته می‌شود:
 
 ```text
 ['services', 'status', service.unit]
@@ -83,9 +99,9 @@ Endpoint:
 GET /api/system/service/{encoded-unit}/
 ```
 
-Each query refreshes every five seconds while mounted.
+هر query در زمان mount بودن هر 5 ثانیه refresh می‌شود.
 
-The hook extracts the boot-time `enabled` flag from several possible response shapes:
+Hook، boot-time `enabled` flag را از چند response shape ممکن استخراج می‌کند:
 
 ```text
 data.status.enabled
@@ -94,30 +110,30 @@ status.enabled
 enabled
 ```
 
-The page then overlays this more specific value onto the corresponding service's list details.
+صفحه سپس این value دقیق‌تر را روی list detail همان service overlay می‌کند.
 
-## Backend-load characteristic
+## مشخصه‌ی backend load
 
-The feature currently performs:
+Feature فعلی در هر polling cycle این requestها را اجرا می‌کند:
 
-- one service-list request every five seconds;
-- plus one status request per displayed service every five seconds.
+- یک service-list request هر 5 ثانیه؛
+- به‌علاوه یک status request به ازای هر service نمایش‌داده‌شده، هر 5 ثانیه.
 
-Therefore network/API load grows approximately with the number of services:
+بنابراین API/network load تقریباً با تعداد serviceها رشد می‌کند:
 
 ```text
 1 + N service requests per polling cycle
 ```
 
-where `N` is the number of service units.
+که `N` تعداد service unitها است.
 
-This is current architecture, not a React Query duplication bug: the list query and each per-unit status query use intentionally different query keys/endpoints.
+این رفتار architecture فعلی است و React Query duplication bug نیست؛ list query و هر per-unit status query عمداً query key و endpoint متفاوت دارند.
 
-If backend load becomes a concern, the preferred solution is a backend/list contract that exposes all required status fields or a batch status endpoint—not arbitrary suppression of necessary queries.
+اگر backend load مسئله شود، راه‌حل preferred این است که list contract تمام status fieldهای مورد نیاز را برگرداند یا batch status endpoint ایجاد شود؛ نه اینکه queryهای ضروری به‌صورت arbitrary suppress شوند.
 
 ## Row model
 
-The page maps each backend service into:
+صفحه هر backend service را به ساختار زیر map می‌کند:
 
 ```ts
 {
@@ -127,15 +143,15 @@ The page maps each backend service into:
 }
 ```
 
-`getServiceLabel()` converts known unit names/descriptions into operator-friendly labels while preserving the raw service unit for backend identity.
+`getServiceLabel()` unit name/descriptionهای شناخته‌شده را به label مناسب operator تبدیل می‌کند و raw service unit را برای backend identity حفظ می‌کند.
 
-The raw unit name remains the mutation/query identity and is shown as secondary text.
+Raw unit name همچنان mutation/query identity است و به‌عنوان secondary text نمایش داده می‌شود.
 
-## Runtime status derivation
+## derive کردن runtime status
 
-`ServicesTable` derives a UI status from multiple backend fields because service-manager responses can represent state in different ways.
+`ServicesTable` از چند backend field برای derive کردن UI status استفاده می‌کند، چون service-manager response ممکن است state را به شکل‌های مختلف نمایش دهد.
 
-Possible UI statuses are:
+UI statusهای ممکن:
 
 ```text
 running
@@ -147,32 +163,32 @@ masked
 
 ### Masked
 
-A service is considered masked when `masked` or `mask` normalizes to true.
+Service وقتی masked محسوب می‌شود که `masked` یا `mask` به true normalize شود.
 
 ### Error
 
-`failed` in the status token or active state maps to Error.
+وجود `failed` در status token یا active state به Error map می‌شود.
 
 ### Running
 
-Running is recognized when either:
+Running زمانی تشخیص داده می‌شود که یکی از این شرایط برقرار باشد:
 
-- active state is `active` and sub-state is `running`, `exited`, or `listening`;
-- status token is `running` or `active`.
+- active state برابر `active` و sub-state یکی از `running`، `exited` یا `listening` باشد؛
+- status token برابر `running` یا `active` باشد.
 
 ### Transitioning
 
-While a runtime action is pending for the row, the UI temporarily renders `transitioning` instead of trusting the previous backend status.
+وقتی runtime action مربوط به row pending است، UI موقتاً `transitioning` نشان می‌دهد و به backend status قبلی اعتماد نمی‌کند.
 
 ### Stopped
 
-Anything not matching the states above falls back to Stopped.
+هر state دیگری که با موارد بالا match نشود fallback به Stopped است.
 
-## Boolean-like service flags
+## boolean-like service flagها
 
-Boot-time enabled state may arrive as boolean, number, or string.
+Boot-time enabled state ممکن است boolean، number یا string باشد.
 
-Truthy values include:
+Truthy valueها:
 
 ```text
 true
@@ -183,7 +199,7 @@ enabled
 active
 ```
 
-Falsy values include:
+Falsy valueها:
 
 ```text
 false
@@ -194,11 +210,15 @@ disabled
 inactive
 ```
 
-If the value cannot be normalized, the startup switch is shown disabled with an explanatory tooltip rather than guessing a state.
+اگر value قابل normalize نباشد، startup switch disabled و همراه tooltip توضیحی نمایش داده می‌شود؛ UI نباید state را حدس بزند.
 
-## Service actions
+## Service actionها
 
-Hook: `useServiceAction()`
+Hook:
+
+```text
+useServiceAction()
+```
 
 Endpoint pattern:
 
@@ -206,9 +226,9 @@ Endpoint pattern:
 PUT /api/system/service/{service}/control/?action={action}
 ```
 
-The service unit and action are URL encoded.
+Service unit و action URL encode می‌شوند.
 
-Supported action type values in the frontend model are:
+Action typeهای پشتیبانی‌شده در frontend model:
 
 ```text
 start
@@ -221,7 +241,7 @@ mask
 unmask
 ```
 
-### Actions currently exposed by the table
+### actionهای فعلاً قابل دسترس در table
 
 Runtime button:
 
@@ -233,31 +253,31 @@ Boot-time switch:
 - Enabled → Disable
 - Disabled → Enable
 
-The other action types remain supported by the hook/type contract but are not currently presented as direct controls in `ServicesTable`.
+Action typeهای دیگر در hook/type contract وجود دارند ولی در `ServicesTable` فعلی direct control ندارند.
 
 ## Stop confirmation
 
-Starting a service executes immediately from the action button.
+Start مستقیم از action button اجرا می‌شود.
 
-Stopping is different: the table first opens a confirmation modal warning that stopping a service may interrupt user access.
+Stop متفاوت است: table ابتدا confirmation modal باز می‌کند و هشدار می‌دهد stopping service ممکن است دسترسی کاربر را مختل کند.
 
-Only confirmation calls the Stop mutation.
+فقط confirmation باعث اجرای Stop mutation می‌شود.
 
-Preserve this distinction unless product requirements explicitly change the destructive/availability-risk UX.
+این تفاوت را حفظ کنید مگر product requirement صریحاً destructive/availability-risk UX را تغییر دهد.
 
-## Masked service rule
+## قانون masked service
 
-When the derived status is `masked`, Start is disabled and the tooltip tells the operator the mask must be removed first.
+وقتی derived status برابر `masked` باشد، Start disabled است و tooltip توضیح می‌دهد ابتدا mask باید برداشته شود.
 
-The current table does not expose an Unmask button, even though `unmask` exists in `ServiceActionType`.
+Table فعلی Unmask button ندارد، هرچند `unmask` در `ServiceActionType` وجود دارد.
 
-Therefore a masked service may require another management path/API client before it can be started from this page. This is an important current-product limitation.
+در نتیجه ممکن است برای recover کردن masked service به management path/API client دیگری نیاز باشد. این یک current-product limitation مهم است.
 
-## Pending action behavior
+## رفتار pending action
 
-`useServiceAction()` is one mutation instance for the page.
+`useServiceAction()` یک mutation instance برای کل صفحه است.
 
-The page passes:
+صفحه این valueها را به table می‌دهد:
 
 ```text
 isActionLoading
@@ -265,117 +285,112 @@ activeServiceName
 activeAction
 ```
 
-into the table.
+Table از آن‌ها برای نمایش per-row transition/loading UI مربوط به mutation فعال استفاده می‌کند.
 
-The table uses those values to show per-row transition/loading UI for the active mutation.
+Pending state مربوط به runtime Start/Stop از semantics بصری Boot Enable/Disable جدا نگه داشته می‌شود تا toggle کردن startup enablement باعث نمایش runtime status به شکل transitioning نشود.
 
-Runtime Start/Stop pending state is kept separate from boot Enable/Disable visual semantics so toggling startup enablement does not make the runtime status appear as transitioning.
+## refresh پس از action
 
-## Post-action refresh
-
-After any successful control action, the hook invalidates:
+پس از هر control action موفق، hook این query را invalidate می‌کند:
 
 ```text
 ['services']
 ```
 
-and every query whose key begins with:
+و تمام queryهایی که key آن‌ها با pattern زیر شروع می‌شود:
 
 ```text
 ['services', 'status', ...]
 ```
 
-This refreshes both:
+در نتیجه هم base service list و هم تمام mounted unit-status queryها refresh می‌شوند.
 
-- the base service list;
-- all mounted unit-status queries.
+Feature پس از action موفق منتظر interval پنج‌ثانیه‌ای بعدی نمی‌ماند.
 
-The feature does not wait for the next five-second interval after a successful operator action.
+## مدیریت خطا
 
-## Error handling
+Mutation backend error payloadهای رایج زیر را normalize می‌کند:
 
-The mutation normalizes common backend error payloads:
-
-- plain string response;
-- `detail`;
-- `message`;
-- `error`;
-- `errors` string/array;
+- plain string response؛
+- `detail`؛
+- `message`؛
+- `error`؛
+- `errors` به شکل string/array؛
 - Axios fallback message.
 
-The page then shows an action-specific toast including the target service.
+صفحه سپس action-specific toast با target service نمایش می‌دهد.
 
-A failed action does not invalidate the service queries through the hook's `onSuccess` path.
+Action ناموفق از مسیر `onSuccess` باعث invalidate شدن service queryها نمی‌شود.
 
 ## StateSync boundary
 
-System service control is not one of the frontend's persisted StateSync domains.
+System service control جزو persisted StateSync domainهای frontend نیست.
 
-Service operations therefore remain operational system-control actions rather than managed storage snapshot mutations.
+بنابراین service operationها operational system-control action هستند، نه managed storage snapshot mutation.
 
-Do not add `save_to_db` flags to service-control calls.
+`save_to_db` flag به service-control callها اضافه نکنید.
 
-## Notifications relationship
+## ارتباط با Notifications
 
-The notification subsystem's resource-status observer also calls `useServices()`.
+Resource-status observer مربوط به notification subsystem نیز `useServices()` را فراخوانی می‌کند.
 
-Because it uses the same canonical `['services']` key, React Query can share the ordinary service-list query lifecycle when both consumers are mounted.
+چون همان canonical key یعنی `['services']` استفاده می‌شود، React Query می‌تواند ordinary service-list lifecycle را وقتی هر دو consumer mount هستند به اشتراک بگذارد.
 
-The per-service status queries used by the Services page are separate entries and are not the same thing as notification baseline storage.
+Per-service status queryهای صفحه‌ی Services entryهای جدا هستند و با notification baseline storage یکی نیستند.
 
-## Important invariants
+## invariantهای مهم
 
-- `['services']` is the canonical service-list key.
-- Per-unit enabled-state keys are `['services','status', unit]`.
-- Both list and per-unit queries poll every five seconds while mounted.
-- Per-unit query count scales with the number of services.
-- Successful actions invalidate both list and per-unit status query families.
-- Stop remains confirmation-driven.
-- A masked service cannot be started from the current table.
-- Unknown enabled state must not be guessed.
-- Service control is not a StateSync persistence domain.
+- `['services']` canonical service-list key است.
+- Per-unit enabled-state key برابر `['services','status', unit]` است.
+- List و per-unit queryها هر دو در زمان mount بودن هر 5 ثانیه polling می‌کنند.
+- تعداد per-unit query با تعداد serviceها رشد می‌کند.
+- Action موفق هم list و هم per-unit status query family را invalidate می‌کند.
+- Stop باید confirmation-driven باقی بماند.
+- Masked service از table فعلی قابل Start نیست.
+- Unknown enabled state نباید حدس زده شود.
+- Service control یک StateSync persistence domain نیست.
 
-## Common failure scenarios
+## failure scenarioهای رایج
 
-### Startup switch shows disabled/unknown
+### Startup switch disabled/unknown دیده می‌شود
 
-Inspect the per-unit status response. `useServiceStatuses()` looks for enabled state in several nested shapes; if none normalize to boolean-like data, the UI intentionally refuses to guess.
+Per-unit status response را بررسی کنید. `useServiceStatuses()` enabled state را در چند nested shape جست‌وجو می‌کند؛ اگر هیچ‌کدام boolean-like data نداشته باشند UI عمداً state را حدس نمی‌زند.
 
-### Too many service requests appear in DevTools
+### در DevTools تعداد زیادی service request دیده می‌شود
 
-Count the service rows. The page intentionally runs one list request plus one status query per service every five seconds.
+تعداد service rowها را بشمارید. صفحه عمداً یک list request و به ازای هر service یک status query هر 5 ثانیه اجرا می‌کند.
 
-### Start button is disabled although the service is stopped
+### Start button disabled است در حالی که service stopped است
 
-Check whether the service derives as `masked`. A masked service cannot be started until unmasked.
+بررسی کنید derived state برابر `masked` نباشد. Masked service تا unmask شدن قابل Start نیست.
 
-### A successful action does not update immediately
+### Action موفق فوراً UI را update نمی‌کند
 
-Verify both invalidation paths in `useServiceAction()` and check that the affected unit name exactly matches the query-key identity.
+هر دو invalidation path در `useServiceAction()` و تطابق دقیق unit name با query-key identity را بررسی کنید.
 
-### Runtime status looks wrong
+### Runtime status اشتباه است
 
-Inspect backend `active`, `active_state`, `sub`, `sub_state`, `status`, and mask fields. The table derives status from all of them rather than a single property.
+Backend fieldهای `active`، `active_state`، `sub`، `sub_state`، `status` و mask fieldها را بررسی کنید. Table status را از مجموعه‌ی این fieldها derive می‌کند، نه فقط یک property.
 
-### A masked service cannot be recovered from the page
+### Masked service از داخل صفحه قابل recover نیست
 
-That is a current UI limitation: `unmask` exists in the action type/hook contract but no direct Unmask control is rendered in `ServicesTable`.
+این limitation فعلی UI است: `unmask` در action type/hook contract وجود دارد ولی `ServicesTable` direct Unmask control ندارد.
 
-## Extension guide
+## راهنمای توسعه
 
-### Exposing Restart/Reload/Mask/Unmask
+### expose کردن Restart/Reload/Mask/Unmask
 
-1. confirm product permissions and operator-risk UX;
-2. reuse `useServiceAction()` rather than creating a second transport path;
-3. add confirmation for disruptive operations where appropriate;
-4. ensure status derivation/loading state remains correct;
-5. keep invalidation on the canonical service query families.
+1. product permission و operator-risk UX را confirm کنید.
+2. به‌جای transport path دوم، `useServiceAction()` را reuse کنید.
+3. برای disruptive operationها در صورت نیاز confirmation اضافه کنید.
+4. صحت status derivation/loading state را حفظ کنید.
+5. invalidation را روی canonical service query familyها نگه دارید.
 
-### Reducing polling traffic
+### کاهش polling traffic
 
-Do not simply increase intervals without understanding operational requirements. Prefer consolidating backend status data or adding a batch endpoint if request fan-out becomes expensive.
+Intervalها را بدون فهم operational requirement صرفاً افزایش ندهید. اگر fan-out گران شد، backend status data را consolidate کنید یا batch endpoint بسازید.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/pages/Services.tsx`
 - `src/components/services/ServicesTable.tsx`
@@ -385,7 +400,7 @@ Do not simply increase intervals without understanding operational requirements.
 - `src/hooks/useServiceAction.ts`
 - `src/@types/service.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
 - [`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md)
