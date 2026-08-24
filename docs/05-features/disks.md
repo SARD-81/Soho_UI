@@ -1,23 +1,31 @@
 # Disks
 
-## Purpose
+## هدف
 
-The Disks feature is the operational inventory and maintenance surface for physical disks known to the SOHO backend.
+Feature مربوط به Disks، سطح عملیاتی inventory و maintenance برای diskهای فیزیکی شناخته‌شده توسط SOHO backend است.
 
-It supports:
+این feature موارد زیر را پشتیبانی می‌کند:
 
-- reading the current disk inventory;
-- opening one or more disk detail views;
-- showing slot, capacity, WWN, state, and partition information;
-- identifying disks already owned by a zpool;
-- preventing unsafe wipe actions for disks that are not eligible;
-- running the disk cleanup flow behind an explicit confirmation modal.
+- خواندن disk inventory فعلی؛
+- باز کردن یک یا چند نمای detail برای diskها؛
+- نمایش slot، capacity، WWN، state و اطلاعات partition؛
+- تشخیص diskهایی که در حال حاضر توسط یک zpool استفاده می‌شوند؛
+- جلوگیری از wipe ناامن برای diskهایی که شرایط لازم را ندارند؛
+- اجرای جریان disk cleanup پشت یک confirmation modal صریح.
 
-Route: `/disks`
+Route:
 
-Entry point: `src/pages/Disks.tsx`
+```text
+/disks
+```
 
-## Runtime flow
+Entry point:
+
+```text
+src/pages/Disks.tsx
+```
+
+## runtime flow
 
 ```mermaid
 flowchart TD
@@ -39,11 +47,15 @@ flowchart TD
     CLEAN --> WIPE[wipe]
 ```
 
-## Main server-state queries
+## queryهای اصلی server state
 
 ### Disk inventory
 
-Hook: `useDiskInventory()`
+Hook:
+
+```text
+useDiskInventory()
+```
 
 Query key:
 
@@ -57,15 +69,19 @@ Endpoint:
 GET /api/disk/
 ```
 
-The hook sorts returned disks by disk name and enables refetch on window focus.
+این hook diskهای برگشتی را بر اساس disk name sort می‌کند و refetch روی window focus را فعال نگه می‌دارد.
 
-The backend response is normalized in `src/lib/diskApi.ts`. If `ok === false`, the frontend throws a normalized Error rather than returning an empty success result.
+Backend response در `src/lib/diskApi.ts` normalize می‌شود. اگر `ok === false` باشد، frontend به‌جای بازگرداندن empty success result یک `Error` نرمال‌شده throw می‌کند.
 
 ### Disk detail
 
-Hook: `useDiskDetails(diskNames)`
+Hook:
 
-Each selected/pinned disk gets its own query:
+```text
+useDiskDetails(diskNames)
+```
+
+برای هر disk انتخاب‌شده یا pinned یک query مستقل ایجاد می‌شود:
 
 ```text
 ['disk', 'detail', diskName]
@@ -77,111 +93,119 @@ Endpoint:
 GET /api/disk/{diskName}/
 ```
 
-Detail queries use a 10-second stale time and refetch on window focus.
+Detail queryها `staleTime` ده‌ثانیه‌ای دارند و روی window focus نیز refetch می‌شوند.
 
-### Pool-owned disk names
+### disk nameهای متعلق به pool
 
-Hook: `usePoolDeviceNames()`
+Hook:
 
-The hook first reads the current zpool list, then loads device membership for each pool. The resulting unique disk-name list is used to mark disks that are already in use by integrated storage.
+```text
+usePoolDeviceNames()
+```
 
-The query key includes the current pool names:
+این hook ابتدا zpool list فعلی را می‌خواند و سپس device membership هر pool را load می‌کند. لیست unique از disk nameها برای مشخص کردن diskهایی استفاده می‌شود که در حال حاضر توسط Integrated Storage در حال استفاده‌اند.
+
+Query key شامل pool nameهای فعلی است:
 
 ```text
 ['zpool', 'devices', ...poolNames]
 ```
 
-This data is not only informational: it participates in the wipe-safety decision.
+این data صرفاً informational نیست و در تصمیم‌گیری مربوط به wipe safety نیز نقش دارد.
 
-### Partition counts
+### Partition countها
 
-Hook: `useDiskPartitionCounts(diskNames)`
+Hook:
 
-One query is created per unique disk:
+```text
+useDiskPartitionCounts(diskNames)
+```
+
+برای هر disk unique یک query ایجاد می‌شود:
 
 ```text
 ['disk', 'partition-count', diskName]
 ```
 
-Partition-count data has a 30-second stale time.
+Partition-count data دارای `staleTime` برابر 30 ثانیه است.
 
-The page converts the hook result into a lookup so the table can decide whether a destructive action should be available.
+صفحه نتیجه‌ی hook را به یک lookup تبدیل می‌کند تا table بتواند تشخیص دهد destructive action باید در دسترس باشد یا خیر.
 
-## Detail split-view state
+## detail split-view state
 
-The page uses `useDetailSplitViewStore` with view id:
+صفحه از `useDetailSplitViewStore` با view id زیر استفاده می‌کند:
 
 ```text
 disks
 ```
 
-The store owns:
+Store مالک موارد زیر است:
 
-- `activeItemId`;
-- pinned item ids;
-- active-item changes;
-- unpin operations;
-- per-view cleanup.
+- `activeItemId`؛
+- pinned item idها؛
+- تغییر active item؛
+- unpin operationها؛
+- cleanup به ازای هر view.
 
-The page builds `detailIds` as the union of the active disk and pinned disks, then loads details for that set.
+صفحه `detailIds` را از union میان active disk و pinned diskها می‌سازد و سپس detail همین مجموعه را load می‌کند.
 
-When the disk inventory changes, ids that no longer exist are removed from the detail state. This prevents stale pinned panels from surviving after the backend no longer reports the disk.
+وقتی disk inventory تغییر می‌کند، idهایی که دیگر وجود ندارند از detail state حذف می‌شوند. این کار مانع باقی ماندن pinned panelهای stale پس از حذف disk از backend response می‌شود.
 
-The view is also cleared when the Disks page mounts/unmounts so selection from another visit does not leak unintentionally into a new session of the page.
+View هنگام mount/unmount شدن صفحه‌ی Disks نیز clear می‌شود تا selection مربوط به بازدید قبلی ناخواسته وارد session بعدی صفحه نشود.
 
-## Wipe eligibility rules
+## قوانین wipe eligibility
 
-A wipe is intentionally unavailable unless the disk is eligible.
+Wipe عمداً تا زمانی که disk eligible نباشد در دسترس قرار نمی‌گیرد.
 
-The table combines several inputs:
+Table چند ورودی را با هم ترکیب می‌کند:
 
-- whether pool-device ownership is still loading;
-- whether the disk is currently a member of a zpool;
-- whether a wipe is already in progress for that disk;
-- whether partition-count data is still loading;
-- whether the disk currently has partitions;
-- whether the caller supplied a wipe handler.
+- آیا pool-device ownership هنوز loading است؛
+- آیا disk در حال حاضر member یک zpool است؛
+- آیا wipe برای همان disk در حال اجراست؛
+- آیا partition-count data هنوز loading است؛
+- آیا disk در حال حاضر partition دارد؛
+- آیا caller اصلاً wipe handler ارائه کرده است یا خیر.
 
-The current action states are effectively:
+وضعیت actionها در عمل به شکل زیر است:
 
-### Disk belongs to a pool and has partitions
+### Disk داخل pool است و partition دارد
 
-The action is disabled and the table shows `در حال استفاده`.
+Action disabled است و table مقدار `در حال استفاده` را نمایش می‌دهد.
 
-### Disk has no partitions
+### Disk هیچ partitionی ندارد
 
-The action is disabled and the table shows `آزاد`.
+Action disabled است و table مقدار `آزاد` را نمایش می‌دهد.
 
-### Partition state is not ready
+### وضعیت partition هنوز آماده نیست
 
-The action remains disabled until the safety decision can be made.
+Action تا زمانی که safety decision قابل انجام نباشد disabled می‌ماند.
 
-### Eligible partitioned disk not currently owned by a pool
+### Disk partitioned است ولی در حال حاضر متعلق به pool نیست
 
-The wipe action becomes available.
+Wipe action در دسترس قرار می‌گیرد.
 
-These checks are frontend safety UX. The backend must still enforce its own authorization and storage-integrity rules.
+این checkها frontend safety UX هستند. Backend همچنان باید authorization و storage-integrity ruleهای خودش را enforce کند.
 
-## Destructive cleanup flow
+## destructive cleanup flow
 
-The page never starts cleanup directly from a row click. The wipe icon first stores the target disk in `wipeTargetDisk`, which opens `ConfirmWipeDiskModal`.
+صفحه هیچ‌وقت cleanup را مستقیم از row click شروع نمی‌کند. Wipe icon ابتدا target disk را در `wipeTargetDisk` قرار می‌دهد و این state باعث باز شدن `ConfirmWipeDiskModal` می‌شود.
 
-Only the confirmation action calls:
+فقط action مربوط به confirmation تابع زیر را فراخوانی می‌کند:
 
 ```ts
 cleanupDisk(diskName)
 ```
 
-`cleanupDisk()` performs two operations in sequence:
+`cleanupDisk()` دو عملیات را به ترتیب اجرا می‌کند:
 
 1. `POST /api/disk/{diskName}/clear-zfs/`
 2. `POST /api/disk/{diskName}/wipe/`
 
-The first step is best-effort. If `clear-zfs` fails, the error is captured but the wipe step is still attempted.
+مرحله‌ی اول best-effort است. اگر `clear-zfs` fail شود، error capture می‌شود ولی wipe همچنان اجرا می‌شود.
 
-The wipe step is mandatory: if it fails, the overall cleanup rejects.
+مرحله‌ی wipe اجباری است؛ اگر این مرحله fail شود، cleanup کلی reject می‌شود.
 
-The return value records whether clear-ZFS succeeded:
+Return value مشخص می‌کند clear-ZFS موفق بوده است یا خیر:
 
 ```ts
 interface CleanupDiskResult {
@@ -190,94 +214,94 @@ interface CleanupDiskResult {
 }
 ```
 
-The current page only treats the overall resolved cleanup as success; it does not expose a separate warning when `clear-zfs` failed but the wipe succeeded.
+صفحه‌ی فعلی فقط cleanup resolve‌شده را success در نظر می‌گیرد و در حال حاضر warning جداگانه‌ای برای حالت «`clear-zfs` fail شده ولی wipe موفق بوده» نمایش نمی‌دهد.
 
-## Mutation refresh behavior
+## رفتار refresh پس از mutation
 
-After a successful cleanup, the page invalidates:
+بعد از cleanup موفق، صفحه queryهای زیر را invalidate می‌کند:
 
 ```text
 ['disk', 'inventory']
 ['disk', 'partition-count', diskName]
 ```
 
-The Axios success interceptor may separately schedule StateSync work for persisted domains. The page must not add `save_to_db=true` to the cleanup calls.
+Axios success interceptor ممکن است مستقل از این کار، StateSync مربوط به persisted domainها را schedule کند. صفحه نباید `save_to_db=true` را به cleanup callها اضافه کند.
 
-## Loading and operation state
+## loading و operation state
 
-`wipingDisks` is a map keyed by disk name so the UI can track destructive operations per disk rather than using one global boolean.
+`wipingDisks` یک map بر اساس disk name است تا UI بتواند destructive operation را به ازای هر disk track کند، نه با یک global boolean.
 
-This prevents one active wipe from losing the identity of the disk being processed and allows the table to disable the correct action.
+این ساختار مانع گم شدن identity دیسک هنگام wipe فعال می‌شود و اجازه می‌دهد table فقط action مربوط به همان disk را disable کند.
 
-The confirmation modal remains tied to `wipeTargetDisk` and is cleared after success or explicit close.
+Confirmation modal به `wipeTargetDisk` متصل است و بعد از success یا close صریح clear می‌شود.
 
-## Error handling
+## مدیریت خطا
 
-The feature has several independent error surfaces:
+این feature چند error surface مستقل دارد:
 
-- inventory query error;
-- pool-device lookup error;
-- disk-detail query error per selected disk;
-- partition-count query state per disk;
+- inventory query error؛
+- pool-device lookup error؛
+- disk-detail query error برای هر disk انتخاب‌شده؛
+- partition-count query state به ازای هر disk؛
 - cleanup mutation error.
 
-Pool-device lookup failures are surfaced through a toast from the page.
+Pool-device lookup failure از طریق toast در صفحه نمایش داده می‌شود.
 
-Cleanup errors are normalized through `extractApiErrorMessage()` and shown in the existing loading toast.
+Cleanup error با `extractApiErrorMessage()` normalize شده و داخل loading toast موجود نمایش داده می‌شود.
 
-A detail failure should not make the complete disk inventory unusable.
+Failure یک detail query نباید کل disk inventory را unusable کند.
 
-## Important invariants
+## invariantهای مهم
 
-- Never enable wipe solely from `disk.has_partition`; prefer the dedicated partition-count result when it is available.
-- Do not allow a disk reported as part of a zpool to become wipe-enabled through frontend state drift.
-- Destructive cleanup must stay behind explicit confirmation.
-- Disk names are used as row ids and query identity; normalize/encode them before putting them into endpoints.
-- Detail-view ids must be pruned when inventory items disappear.
-- React Query cache freshness is separate from StateSync persistence.
-- A failed `clear-zfs` currently does not prevent the subsequent wipe attempt.
+- هرگز wipe را فقط بر اساس `disk.has_partition` فعال نکنید؛ در صورت موجود بودن، dedicated partition-count result اولویت دارد.
+- diskی که backend آن را member یک zpool گزارش می‌کند نباید به‌دلیل drift در frontend state wipe-enabled شود.
+- destructive cleanup باید پشت confirmation صریح باقی بماند.
+- Disk name برای row id و query identity استفاده می‌شود؛ پیش از قرار دادن در endpoint آن را normalize/encode کنید.
+- وقتی inventory item حذف می‌شود، detail-view id مربوط به آن باید prune شود.
+- React Query cache freshness مستقل از StateSync persistence است.
+- Failure در `clear-zfs` فعلاً مانع اجرای مرحله‌ی بعدی wipe نمی‌شود.
 
-## Common failure scenarios
+## failure scenarioهای رایج
 
-### Wipe button is unexpectedly disabled
+### Wipe button به‌شکل غیرمنتظره disabled است
 
-Check, in order:
+به‌ترتیب این موارد را بررسی کنید:
 
-1. pool-device lookup loading/error state;
-2. whether the disk name is in the pool-owned set;
-3. partition-count loading state;
-4. returned partition count versus `disk.has_partition` fallback;
-5. whether the disk is already in `wipingDisks`.
+1. loading/error state مربوط به pool-device lookup؛
+2. آیا disk name در pool-owned set قرار دارد؛
+3. partition-count loading state؛
+4. partition count برگشتی در مقابل fallback یعنی `disk.has_partition`؛
+5. آیا disk از قبل در `wipingDisks` قرار دارد.
 
-### A disk remains pinned after disappearing from the backend
+### Disk بعد از ناپدید شدن از backend همچنان pinned مانده
 
-Check the inventory reconciliation effect in `Disks.tsx` and the exact row id used by the table/store.
+Inventory reconciliation effect در `Disks.tsx` و row id دقیق استفاده‌شده توسط table/store را بررسی کنید.
 
-### Inventory refreshes but partition state looks stale
+### Inventory refresh می‌شود ولی partition state stale به نظر می‌رسد
 
-The inventory and partition counts use different query keys. Successful cleanup explicitly invalidates both relevant keys.
+Inventory و partition count از query keyهای متفاوت استفاده می‌کنند. Cleanup موفق هر دو key مرتبط را صریحاً invalidate می‌کند.
 
-### Disk cleanup reports failure after the pool was changed
+### Disk cleanup پس از تغییر pool failure گزارش می‌دهد
 
-Inspect both cleanup steps. Pool destruction/other operations may succeed while a later disk wipe fails; multi-step storage operations must not be mentally treated as atomic unless the backend provides that guarantee.
+هر دو مرحله‌ی cleanup را بررسی کنید. Pool destruction یا operationهای دیگر ممکن است موفق باشند ولی wipe بعدی fail شود؛ multi-step storage operation را atomic در نظر نگیرید مگر backend این guarantee را ارائه کند.
 
-## Extension guide
+## راهنمای توسعه
 
-### Adding a new disk column
+### افزودن column جدید برای disk
 
-Prefer normalized data from `DiskInventoryItem`. If the field requires another backend request, do not put request logic inside `renderCell`; add a hook/query layer and provide prepared data to the table.
+ترجیحاً از data نرمال‌شده‌ی `DiskInventoryItem` استفاده کنید. اگر field جدید به backend request جدا نیاز دارد، request logic را داخل `renderCell` قرار ندهید؛ یک hook/query layer ایجاد کنید و data آماده را به table بدهید.
 
-### Adding a new destructive disk action
+### افزودن destructive disk action جدید
 
-1. define backend eligibility rules;
-2. mirror useful safety constraints in the frontend;
-3. require explicit confirmation;
-4. centralize the API operation under `src/lib` or a dedicated mutation hook;
-5. invalidate only the affected query families on success;
-6. document whether the operation is atomic or multi-step;
-7. never use frontend-only checks as the security boundary.
+1. backend eligibility ruleها را مشخص کنید.
+2. safety constraintهای مفید را در frontend نیز mirror کنید.
+3. confirmation صریح الزامی باشد.
+4. API operation را در `src/lib` یا mutation hook اختصاصی centralize کنید.
+5. بعد از success فقط query familyهای متاثر را invalidate کنید.
+6. atomic یا multi-step بودن operation را مستند کنید.
+7. frontend-only checkها را security boundary در نظر نگیرید.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/pages/Disks.tsx`
 - `src/components/disks/DisksTable.tsx`
@@ -292,7 +316,7 @@ Prefer normalized data from `DiskInventoryItem`. If the field requires another b
 - `src/lib/poolDevices.ts`
 - `src/stores/detailSplitViewStore.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
 - [`../04-core-flows/api-request-lifecycle.md`](../04-core-flows/api-request-lifecycle.md)
