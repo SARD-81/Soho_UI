@@ -1,47 +1,47 @@
 # Configuration
 
-This document defines the verified frontend configuration surface of SOHO UI.
+این سند، surface تأییدشده‌ی configuration در frontend مربوط به SOHO UI را تعریف می‌کند.
 
-Frontend configuration should remain explicit and minimal. Environment variables are compiled into the Vite application and must not contain secrets that must remain confidential from browser users.
+Frontend configuration باید صریح و حداقلی باقی بماند. Environment variableها داخل application ساخته‌شده با Vite compile می‌شوند و نباید حاوی secretهایی باشند که لازم است از browser user مخفی بمانند.
 
-## Vite environment variables
+## Vite Environment Variableها
 
-The following variables are confirmed by current source code.
+Variableهای زیر با سورس‌کد فعلی تأیید شده‌اند.
 
 ### `VITE_API_BASE_URL`
 
-Consumed by `src/lib/axiosInstance.ts` as the shared application Axios `baseURL`.
+در `src/lib/axiosInstance.ts` به‌عنوان shared application Axios `baseURL` استفاده می‌شود.
 
-Example:
+مثال:
 
 ```env
 VITE_API_BASE_URL=https://storage-api.example.com
 ```
 
-All relative application API paths used through the shared Axios instance are resolved against this value.
+تمام relative application API pathهایی که از shared Axios instance استفاده می‌کنند، نسبت به این مقدار resolve می‌شوند.
 
-Operational considerations:
+ملاحظات عملیاتی:
 
-- use the backend origin/path appropriate for the deployment environment;
-- keep browser CORS/network topology in mind when frontend and backend origins differ;
-- do not add trailing/duplicated path segments that make existing `/api/...` requests resolve incorrectly;
-- validate authentication token/network behavior through the actual deployed origin.
+- از backend origin/path متناسب با deployment environment استفاده کنید؛
+- وقتی origin مربوط به frontend و backend متفاوت است، CORS و network topology مرورگر را در نظر بگیرید؛
+- path segmentهای trailing/duplicated اضافه نکنید که باعث resolve اشتباه requestهای موجود `/api/...` شوند؛
+- authentication token/network behavior را از طریق origin واقعی deployment verify کنید.
 
 ### `VITE_AUTH_API_BASE_URL`
 
-Optional base URL for the isolated authentication client in `src/lib/authApi.ts`.
+Base URL اختیاری برای authentication client ایزوله‌شده در `src/lib/authApi.ts`.
 
-When explicitly configured, token issue/refresh/verify requests are resolved directly against this value.
+وقتی به‌صورت صریح configure شود، requestهای token issue/refresh/verify مستقیماً نسبت به همین مقدار resolve می‌شوند.
 
-Example:
+مثال:
 
 ```env
 VITE_AUTH_API_BASE_URL=https://storage-api.example.com/api/auth/
 ```
 
-When this variable is absent or blank, the auth client falls back to `VITE_API_BASE_URL` and derives an authentication base ending in `/api/auth/`.
+اگر این variable وجود نداشته باشد یا مقدار آن خالی باشد، auth client به `VITE_API_BASE_URL` fallback می‌کند و یک authentication base با انتهای `/api/auth/` می‌سازد.
 
-For example:
+مثال:
 
 ```text
 VITE_API_BASE_URL=https://storage-api.example.com
@@ -49,15 +49,15 @@ VITE_API_BASE_URL=https://storage-api.example.com
 auth base=https://storage-api.example.com/api/auth/
 ```
 
-The auth base is normalized to a trailing slash so relative requests such as `token/`, `token/refresh/`, and `token/verify/` resolve predictably.
+Auth base به trailing slash normalize می‌شود تا relative requestهایی مثل `token/`، `token/refresh/` و `token/verify/` به‌شکل قابل پیش‌بینی resolve شوند.
 
-Use `VITE_AUTH_API_BASE_URL` only when authentication is deliberately hosted at a different origin/path from the normal application API. In the ordinary single-backend deployment, prefer the fallback derived from `VITE_API_BASE_URL` so there is only one endpoint setting to maintain.
+فقط زمانی از `VITE_AUTH_API_BASE_URL` استفاده کنید که authentication عمداً روی origin/path متفاوتی نسبت به application API عادی host شده باشد. در deployment معمول با یک backend واحد، fallback مبتنی بر `VITE_API_BASE_URL` ترجیح دارد تا فقط یک endpoint setting نیاز به نگهداری داشته باشد.
 
 ### `VITE_USE_MOCKS`
 
-Development/testing-oriented flag consumed by `axiosInstance`.
+Flag مربوط به development/testing که توسط `axiosInstance` استفاده می‌شود.
 
-Truthy forms currently accepted:
+Truthy formهای قابل قبول فعلی:
 
 ```text
 1
@@ -66,21 +66,21 @@ yes
 on
 ```
 
-When truthy, `setupAxiosMockAdapter(axiosInstance)` is registered.
+اگر مقدار truthy باشد، `setupAxiosMockAdapter(axiosInstance)` register می‌شود.
 
-Default when missing:
+مقدار default در صورت نبودن variable:
 
 ```text
 false
 ```
 
-Do not enable mock mode in a production deployment unless the deployment is intentionally a demonstration environment and that behavior has been reviewed.
+Mock mode را در production deployment فعال نکنید، مگر این‌که محیط عمداً demonstration environment باشد و این behavior بررسی و تأیید شده باشد.
 
 ### `VITE_AUTH_BYPASS`
 
-Development-only route-authentication bypass.
+Bypass مربوط به route authentication که فقط برای development در نظر گرفته شده است.
 
-Truthy forms currently accepted:
+Truthy formهای قابل قبول فعلی:
 
 ```text
 1
@@ -89,44 +89,44 @@ yes
 on
 ```
 
-The runtime guard is:
+Runtime guard به‌شکل زیر است:
 
 ```text
 import.meta.env.DEV && VITE_AUTH_BYPASS is truthy
 ```
 
-Therefore a production build cannot activate the bypass merely by receiving `VITE_AUTH_BYPASS=true`.
+بنابراین production build صرفاً با دریافت `VITE_AUTH_BYPASS=true` نمی‌تواند bypass را فعال کند.
 
-This double guard is a security invariant. Do not weaken it.
+این double guard یک security invariant است و نباید تضعیف شود.
 
-## Vite built-in values
+## مقادیر Built-in در Vite
 
-The code also relies on Vite-provided values such as:
+کد همچنین به مقادیر ارائه‌شده توسط خود Vite متکی است، مانند:
 
 ```text
 import.meta.env.DEV
 ```
 
-These are build/runtime-mode indicators, not custom deployment configuration.
+این مقادیر build/runtime-mode indicator هستند و custom deployment configuration محسوب نمی‌شوند.
 
-## Client-side environment values are public
+## Environment Valueهای سمت Client عمومی هستند
 
-Any `VITE_*` variable used by Vite can become part of the browser bundle.
+هر variable با prefix `VITE_*` که توسط Vite استفاده شود می‌تواند بخشی از browser bundle شود.
 
-Never place values such as these in frontend Vite configuration:
+هیچ‌گاه موارد زیر را داخل Vite configuration در frontend قرار ندهید:
 
-- private API keys;
-- backend database credentials;
-- SSH credentials;
-- signing secrets;
-- long-lived privileged service tokens;
-- passwords.
+- private API key؛
+- credential مربوط به backend database؛
+- SSH credential؛
+- signing secret؛
+- long-lived privileged service token؛
+- password.
 
-If the browser needs authenticated access, use the application's supported authentication/session mechanism rather than embedding a secret at build time.
+اگر browser به authenticated access نیاز دارد، از مکانیزم authentication/session پشتیبانی‌شده‌ی application استفاده کنید؛ نه از secret جاسازی‌شده در build-time.
 
-## Vite configuration
+## Vite Configuration
 
-Current `vite.config.ts` defines:
+`vite.config.ts` فعلی موارد زیر را تعریف می‌کند:
 
 ```text
 base: ./
@@ -138,62 +138,62 @@ server.port: 5173
 
 ### `base: './'`
 
-The relative base is relevant to generated static asset URLs.
+Relative base روی URLهای static asset تولیدشده اثر می‌گذارد.
 
-When changing deployment location or history routing behavior, verify:
+هنگام تغییر deployment location یا history routing behavior، موارد زیر را verify کنید:
 
-- JS/CSS asset resolution;
-- fonts;
-- direct navigation/refresh behavior;
-- Nginx static-file fallback rules.
+- JS/CSS asset resolution؛
+- fontها؛
+- behavior مربوط به direct navigation/refresh؛
+- Nginx static-file fallback ruleها.
 
-### `/fonts` alias
+### `/fonts` Alias
 
-Vite resolves `/fonts` to:
+Vite، مسیر `/fonts` را به مسیر زیر resolve می‌کند:
 
 ```text
 public/fonts
 ```
 
-Do not move the font asset directory without updating the alias and verifying all CSS/font references.
+Font asset directory را بدون به‌روزرسانی alias و verify کردن تمام CSS/font referenceها جابه‌جا نکنید.
 
-## Runtime versus build-time configuration
+## Runtime Configuration در برابر Build-time Configuration
 
-Vite environment variables are substituted at build time.
+Vite environment variableها در build-time جایگزین می‌شوند.
 
-That means changing a deployment environment value normally requires rebuilding the frontend unless the application introduces a separate runtime configuration mechanism.
+در نتیجه تغییر یک deployment environment value معمولاً نیازمند rebuild کردن frontend است، مگر این‌که application یک runtime configuration mechanism مستقل معرفی کند.
 
-Do not assume that editing the server environment after `dist/` has already been built changes values embedded in the existing static JavaScript bundle.
+فرض نکنید تغییر server environment بعد از ساخته‌شدن `dist/` باعث تغییر valueهایی می‌شود که از قبل داخل static JavaScript bundle قرار گرفته‌اند.
 
-## Configuration ownership
+## Configuration Ownership
 
-Use these ownership rules:
+از ownership ruleهای زیر استفاده کنید:
 
-- normal backend base URL → `VITE_API_BASE_URL`;
-- optional separate authentication base URL → `VITE_AUTH_API_BASE_URL`;
-- dev mock/auth flags → environment configuration;
-- feature business rules → source/domain logic, not env variables unless deployment-specific by design;
-- query intervals → hook/feature code and polling documentation;
-- design tokens/theme → theme/CSS source;
-- backend persistence semantics → StateSync/Axios architecture;
-- secrets → backend/server-side secret management, never Vite client env.
+- normal backend base URL → `VITE_API_BASE_URL`؛
+- optional separate authentication base URL → `VITE_AUTH_API_BASE_URL`؛
+- dev mock/auth flagها → environment configuration؛
+- feature business ruleها → source/domain logic، نه env variable مگر این‌که عمداً deployment-specific باشند؛
+- query intervalها → hook/feature code و polling documentation؛
+- design token/theme → theme/CSS source؛
+- backend persistence semantics → معماری StateSync/Axios؛
+- secretها → server-side/backend secret management، و هرگز Vite client env.
 
-## Adding a new environment variable
+## اضافه‌کردن Environment Variable جدید
 
-Before adding a new `VITE_*` setting:
+پیش از اضافه‌کردن `VITE_*` جدید:
 
-1. verify the value is safe to expose to every browser user;
-2. confirm it is genuinely deployment-specific rather than a product/business constant;
-3. choose an explicit name;
-4. define the missing/default behavior;
-5. validate and normalize string/boolean values centrally;
-6. document the setting here;
-7. add it to deployment handoff documentation;
-8. test both absent and configured cases.
+1. مطمئن شوید value می‌تواند بدون ریسک در اختیار تمام browser userها قرار گیرد؛
+2. تأیید کنید واقعاً deployment-specific است و product/business constant نیست؛
+3. یک نام صریح انتخاب کنید؛
+4. behavior مربوط به missing/default value را تعریف کنید؛
+5. string/boolean valueها را به‌صورت مرکزی validate و normalize کنید؛
+6. setting را در همین سند مستند کنید؛
+7. آن را به deployment handoff documentation اضافه کنید؛
+8. هر دو حالت absent و configured را test کنید.
 
-Avoid scattered ad-hoc `import.meta.env` reads when one configuration module would better express ownership.
+اگر یک configuration module می‌تواند ownership را بهتر بیان کند، از `import.meta.env` readهای پراکنده و ad-hoc خودداری کنید.
 
-## Example development environment
+## نمونه‌ی Development Environment
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
@@ -203,9 +203,9 @@ VITE_USE_MOCKS=false
 VITE_AUTH_BYPASS=false
 ```
 
-The exact backend URL is environment-specific; the example is not a production recommendation.
+Backend URL دقیق، environment-specific است؛ این مثال recommendation برای production نیست.
 
-## Related files
+## فایل‌های مرتبط
 
 - `vite.config.ts`
 - `src/lib/axiosInstance.ts`
@@ -213,7 +213,7 @@ The exact backend URL is environment-specific; the example is not a production r
 - `src/routes/ProtectedRoute.tsx`
 - `src/mocks/setupMocks.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`getting-started.md`](./getting-started.md)
 - [`../04-core-flows/authentication.md`](../04-core-flows/authentication.md)
