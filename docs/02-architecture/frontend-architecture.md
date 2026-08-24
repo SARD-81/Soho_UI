@@ -1,12 +1,12 @@
-# Frontend Architecture
+# معماری Frontend
 
-## Architectural intent
+## هدف معماری
 
-SOHO UI is organized around a React application shell, route-level feature pages, reusable components, feature/data hooks, a centralized HTTP transport, and a small number of cross-cutting providers and managers.
+SOHO UI حول یک React application shell، route-level feature pageها، reusable componentها، feature/data hookها، HTTP transport متمرکز و تعداد محدودی provider/manager از نوع cross-cutting سازمان‌دهی شده است.
 
-The most important architectural rule is ownership: each class of state or side effect should have one clear owner. Future changes should preserve that ownership unless an intentional architecture decision replaces it.
+مهم‌ترین rule معماری، ownership است: هر class از state یا side effect باید یک owner روشن داشته باشد. Changeهای آینده باید این ownership را حفظ کنند، مگر این‌که یک architecture decision آگاهانه جایگزین آن شود.
 
-## Runtime layers
+## Runtime Layerها
 
 ```mermaid
 flowchart TB
@@ -63,63 +63,63 @@ flowchart TB
     Axios --> Backend
 ```
 
-## Bootstrap and global providers
+## Bootstrap و Global Providerها
 
-`src/main.tsx` creates the application-wide React Query client and mounts the provider chain.
+`src/main.tsx` application-wide React Query client را ایجاد می‌کند و provider chain را mount می‌کند.
 
-The global QueryClient currently establishes shared defaults for query retry/refetch/staleness behavior. Its `MutationCache` invalidates active queries only after successful mutations.
+Global `QueryClient` در وضعیت فعلی shared defaultهای مربوط به query retry/refetch/staleness behavior را تعیین می‌کند. `MutationCache` آن فقط پس از mutation موفق، active queryها را invalidate می‌کند.
 
-Because this configuration affects every feature, changes to it should be treated as architectural rather than local optimization.
+چون این configuration روی همه‌ی featureها اثر دارد، تغییر آن باید architectural change در نظر گرفته شود، نه local optimization.
 
-`src/App.tsx` is intentionally small. It derives the MUI theme from the custom theme context and mounts global UI infrastructure (`AppToaster`, `GlobalLoader`) before the router.
+`src/App.tsx` عمداً کوچک نگه داشته شده است. این فایل MUI theme را از custom theme context استخراج می‌کند و پیش از router، global UI infrastructure شامل `AppToaster` و `GlobalLoader` را mount می‌کند.
 
-## Routing and application shell
+## Routing و Application Shell
 
-`src/routes/Routes.tsx` is the route map.
+`src/routes/Routes.tsx` همان route map است.
 
-`/login` is public. The rest of the application is mounted beneath `ProtectedRoute` and `MainLayout`.
+`/login` عمومی است. بقیه‌ی application زیر `ProtectedRoute` و `MainLayout` mount می‌شود.
 
-`ProtectedRoute` has three responsibilities:
+`ProtectedRoute` سه مسئولیت دارد:
 
-1. allow a development-only explicit auth bypass;
-2. avoid redirecting while authentication restoration is still running;
-3. redirect unauthenticated users to `/login`.
+1. اجازه‌دادن به auth bypass صریح و development-only؛
+2. جلوگیری از redirect تا زمانی که authentication restoration هنوز در حال اجراست؛
+3. redirect کردن userهای unauthenticated به `/login`.
 
-`MainLayout` is more than visual chrome. It currently owns or coordinates several application-shell behaviors, including:
+`MainLayout` فقط visual chrome نیست. این component در حال حاضر چند application-shell behavior را مالک یا هماهنگ می‌کند، از جمله:
 
-- navigation drawer state;
-- session idle timeout handling;
-- notification bootstrap;
-- theme controls;
-- user menu/logout interaction;
-- reboot/shutdown confirmation and countdown flow;
+- navigation drawer state؛
+- session idle timeout handling؛
+- notification bootstrap؛
+- theme controlها؛
+- user menu/logout interaction؛
+- reboot/shutdown confirmation و countdown flow؛
 - route outlet rendering.
 
-When adding new global behavior, first decide whether it truly belongs in the application shell. Feature-specific behavior should remain closer to the feature.
+هنگام اضافه‌کردن global behavior جدید ابتدا مشخص کنید آیا واقعاً به application shell تعلق دارد یا خیر. Feature-specific behavior باید نزدیک feature باقی بماند.
 
-## Authentication architecture
+## معماری Authentication
 
-Authentication spans several modules rather than one component:
+Authentication بین چند module تقسیم شده و فقط متعلق به یک component نیست:
 
-| Module | Responsibility |
+| Module | مسئولیت |
 | --- | --- |
-| `src/contexts/AuthContext.tsx` | authenticated React state, session restoration, login/logout orchestration |
-| `src/lib/authApi.ts` | authentication API calls |
-| `src/lib/axiosInstance.ts` | bearer attachment, 401 handling, refresh serialization |
-| `src/lib/authEvents.ts` | communication from transport-level auth events back to React state |
-| `src/lib/tokenStorage.ts` | token/username storage policy |
-| `src/hooks/useSessionActivityTimeout.ts` | inactivity-based session expiry |
-| `src/routes/ProtectedRoute.tsx` | route access decision |
+| `src/contexts/AuthContext.tsx` | authenticated React state، session restoration و login/logout orchestration |
+| `src/lib/authApi.ts` | authentication API callها |
+| `src/lib/axiosInstance.ts` | Bearer attachment، 401 handling و refresh serialization |
+| `src/lib/authEvents.ts` | انتقال transport-level auth eventها به React state |
+| `src/lib/tokenStorage.ts` | policy مربوط به token/username storage |
+| `src/hooks/useSessionActivityTimeout.ts` | session expiry مبتنی بر inactivity |
+| `src/routes/ProtectedRoute.tsx` | تصمیم مربوط به route access |
 
-### Token ownership
+### Token Ownership
 
-The access token is deliberately memory-only. The refresh token and username may live in `sessionStorage`.
+Access token عمداً فقط در memory نگهداری می‌شود. Refresh token و username می‌توانند در `sessionStorage` قرار بگیرند.
 
-This division is a security policy, not an incidental implementation detail. Do not move the access token to persistent browser storage merely to simplify reload behavior.
+این تقسیم‌بندی یک security policy است، نه implementation detail اتفاقی. صرفاً برای ساده‌کردن behavior بعد از reload، access token را به persistent browser storage منتقل نکنید.
 
-### Session restoration
+### Session Restoration
 
-At startup, `AuthProvider` attempts to restore an existing browser session. In simplified form:
+در startup، `AuthProvider` تلاش می‌کند browser session موجود را restore کند. فرم ساده‌شده‌ی flow:
 
 ```mermaid
 flowchart TD
@@ -137,35 +137,35 @@ flowchart TD
     Authenticated --> Baseline[Start one session baseline state sync]
 ```
 
-### Concurrent 401 handling
+### Concurrent 401 Handling
 
-`axiosInstance` serializes access-token refresh. While one refresh request is running, other failed requests are queued. A successful refresh replays the queue with the new access token; a failed refresh clears the session and rejects queued work.
+`axiosInstance`، access-token refresh را serialize می‌کند. تا زمانی که یک refresh request در حال اجراست، requestهای failشده‌ی دیگر queue می‌شوند. Refresh موفق، queue را با access token جدید replay می‌کند؛ refresh ناموفق session را clear کرده و queued work را reject می‌کند.
 
-This prevents simultaneous 401 responses from creating a refresh-request storm.
+این design مانع ایجاد refresh-request storm در اثر چند response هم‌زمان 401 می‌شود.
 
-## HTTP transport architecture
+## معماری HTTP Transport
 
-`src/lib/axiosInstance.ts` is the shared transport boundary for application API requests.
+`src/lib/axiosInstance.ts` shared transport boundary برای application API requestها است.
 
-Its responsibilities currently include:
+مسئولیت‌های فعلی آن شامل موارد زیر است:
 
-- API base URL configuration;
-- common JSON headers;
-- optional mock-adapter setup;
-- bearer-token injection;
-- persistence-transport policy (`save_to_db`);
-- successful mutation detection for state synchronization;
-- error logging;
-- 401 refresh/retry behavior;
-- registration of the StateSyncManager HTTP executor.
+- API base URL configuration؛
+- common JSON headerها؛
+- optional mock-adapter setup؛
+- Bearer-token injection؛
+- persistence-transport policy مربوط به `save_to_db`؛
+- تشخیص mutation موفق برای state synchronization؛
+- error logging؛
+- 401 refresh/retry behavior؛
+- register کردن HTTP executor مربوط به StateSyncManager.
 
-Because this file combines several global contracts, comments should explain policy and ordering constraints rather than restating individual Axios calls.
+چون این فایل چند global contract را هم‌زمان نگه می‌دارد، commentها باید policy و ordering constraintها را توضیح دهند، نه Axios callهای منفرد را تکرار کنند.
 
-## Server-state ownership
+## Ownership مربوط به Server State
 
-TanStack React Query is the primary owner of remote/server state presented by the UI.
+TanStack React Query owner اصلی remote/server stateای است که در UI نمایش داده می‌شود.
 
-Typical feature flow:
+Feature flow معمول:
 
 ```mermaid
 flowchart LR
@@ -176,39 +176,39 @@ flowchart LR
     Backend --> API --> Query --> Page
 ```
 
-Feature hooks should define query keys and feature-specific polling/invalidations. Components should avoid building independent request lifecycles when an existing hook already owns the same data.
+Feature hookها باید query key و polling/invalidation اختصاصی feature را تعریف کنند. وقتی یک hook موجود همان data را مالک است، component نباید request lifecycle مستقلی بسازد.
 
-## Client/UI state ownership
+## Ownership مربوط به Client/UI State
 
-Local component state remains appropriate for transient UI state such as modal visibility, form fields, selected rows, countdowns, and temporary errors.
+Local component state برای transient UI stateهایی مثل modal visibility، form field، selected row، countdown و temporary error مناسب است.
 
-Zustand is currently used selectively rather than as a universal state container. `src/stores/detailSplitViewStore.ts` is an example of shared UI state that benefits from surviving across related component boundaries.
+Zustand در پروژه به‌صورت selective استفاده می‌شود، نه به‌عنوان universal state container. `src/stores/detailSplitViewStore.ts` نمونه‌ای از shared UI state است که از باقی‌ماندن بین component boundaryهای مرتبط سود می‌برد.
 
-Do not move server state into Zustand merely because multiple components consume it; React Query already owns that category of state.
+صرفاً چون چند component server state مشابهی را مصرف می‌کنند آن را به Zustand منتقل نکنید؛ React Query از قبل owner این class از state است.
 
-## Persistence state synchronization
+## Persistence State Synchronization
 
-Persistence synchronization is deliberately separated from normal fetching and mutation code.
+Persistence synchronization عمداً از normal fetching و mutation code جدا شده است.
 
-### Why
+### چرا؟
 
-The backend database should receive a snapshot of the authoritative post-operation system state rather than a mutation payload that may be partial, normalized differently by the backend, or followed by secondary system changes.
+Database در backend باید snapshotی از authoritative post-operation system state دریافت کند، نه mutation payloadی که ممکن است partial باشد، backend آن را متفاوت normalize کند یا بعد از آن secondary system change رخ دهد.
 
 ### Ownership
 
-`src/lib/stateSyncManager.ts` owns:
+`src/lib/stateSyncManager.ts` مسئول موارد زیر است:
 
-- the set of persisted state domains;
-- each domain's canonical GET snapshot endpoint;
-- mutation URL to affected-domain mapping;
-- mutation coalescing delay;
-- per-domain in-flight protection;
-- one follow-up sync when a new mutation occurs during an active snapshot;
-- one baseline sync per authenticated session.
+- مجموعه‌ی persisted state domainهای فعلی؛
+- canonical GET snapshot endpoint هر domain؛
+- mapping بین mutation URL و domainهای تحت تأثیر؛
+- mutation coalescing delay؛
+- per-domain in-flight protection؛
+- schedule کردن دقیقاً یک follow-up sync وقتی mutation جدید هنگام snapshot فعال رخ می‌دهد؛
+- یک baseline sync در هر authenticated session.
 
-`axiosInstance` owns enforcing the transport-level rule that normal API requests use `save_to_db=false` and only internal canonical state-sync requests can become `save_to_db=true`.
+`axiosInstance` مسئول enforce کردن transport-level rule است که API requestهای عادی از `save_to_db=false` استفاده کنند و فقط internal canonical state-sync requestها بتوانند به `save_to_db=true` تبدیل شوند.
 
-### Mutation lifecycle
+### Mutation Lifecycle
 
 ```mermaid
 flowchart TD
@@ -223,45 +223,45 @@ flowchart TD
     Snapshot --> Persist[Transport marks snapshot save_to_db=true]
 ```
 
-The React Query refresh path and persistence snapshot path are related but separate responsibilities.
+React Query refresh path و persistence snapshot path به هم مرتبط‌اند، اما مسئولیت‌های جداگانه دارند.
 
-## Polling architecture
+## معماری Polling
 
-Polling is feature-specific and must be justified by the freshness requirement of the data.
+Polling feature-specific است و باید با freshness requirement مربوط به data توجیه شود.
 
-Live operational metrics may poll frequently. Static administrative lists generally should not.
+Live operational metricها می‌توانند با cadence بالا poll شوند. Static administrative listها معمولاً نباید continuous polling داشته باشند.
 
-Polling should normally stop when its observer is unmounted and should not continue in a background tab unless there is a documented reason.
+Polling باید در حالت عادی زمانی که observer آن unmount شده متوقف شود و بدون دلیل مستند در background tab ادامه پیدا نکند.
 
-See [`../api-polling-audit.md`](../api-polling-audit.md) for the current endpoint-level behavior.
+برای endpoint-level behavior فعلی به [`../api-polling-audit.md`](../api-polling-audit.md) مراجعه کنید.
 
-## Error and feedback surfaces
+## Surfaceهای Error و Feedback
 
-The project uses several layers of feedback:
+پروژه چند layer برای feedback دارد:
 
-- transport-level error logging utilities;
-- mutation/query error states inside hooks;
-- global loading UI;
-- toast notifications for user-facing outcomes;
-- feature-specific validation messages.
+- transport-level error logging utilityها؛
+- mutation/query error state داخل hookها؛
+- global loading UI؛
+- toast notification برای user-facing outcomeها؛
+- feature-specific validation messageها.
 
-Do not make the transport layer responsible for every user-facing error message. The layer that has enough business context to explain the failure should own presentation.
+Transport layer را مسئول تمام user-facing error messageها نکنید. Layerای که business context کافی برای توضیح failure دارد باید presentation را مالک باشد.
 
-## RTL and theme architecture
+## معماری RTL و Theme
 
-RTL support is configured through an Emotion cache and the application theme. Theme state is provided through `ThemeContext`, while `App` converts that state into the active MUI theme.
+RTL support از طریق Emotion cache و application theme configure شده است. Theme state از طریق `ThemeContext` ارائه می‌شود و `App` آن state را به active MUI theme تبدیل می‌کند.
 
-This is cross-cutting UI infrastructure. Directional styling fixes should prefer theme/RTL-aware solutions over one-off hardcoded left/right assumptions.
+این بخش cross-cutting UI infrastructure است. Directional styling fixها باید RTL/theme-aware solution را به hardcoded left/right assumptionهای one-off ترجیح دهند.
 
-## Architecture change rule
+## Rule مربوط به Architecture Change
 
-A change should be accompanied by an Architecture Decision Record (ADR) when it intentionally changes a system-level ownership rule or long-lived architectural choice, for example:
+وقتی یک change عمداً system-level ownership rule یا architectural choice بلندمدت را تغییر می‌دهد باید Architecture Decision Record (ADR) همراه آن باشد. برای مثال:
 
-- replacing React Query as server-state owner;
-- changing token persistence policy;
-- moving persistence snapshots out of StateSyncManager;
-- introducing a second HTTP client with different interceptor behavior;
-- changing routing/access-control strategy;
-- adding a new global state-management system.
+- جایگزین‌کردن React Query به‌عنوان server-state owner؛
+- تغییر token persistence policy؛
+- خارج‌کردن persistence snapshotها از StateSyncManager؛
+- معرفی HTTP client دوم با interceptor behavior متفاوت؛
+- تغییر routing/access-control strategy؛
+- اضافه‌کردن global state-management system جدید.
 
-Small implementation changes that preserve existing ownership do not need an ADR.
+Implementation changeهای کوچک که ownership موجود را حفظ می‌کنند نیازی به ADR ندارند.
