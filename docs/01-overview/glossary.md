@@ -1,40 +1,40 @@
-# Glossary
+# واژه‌نامه
 
-This glossary defines project-specific terms used across SOHO UI source code and engineering documentation.
+این واژه‌نامه اصطلاحات اختصاصی پروژه را که در سورس‌کد SOHO UI و مستندات مهندسی استفاده می‌شوند تعریف می‌کند.
 
-Use these meanings consistently. When a backend/product term changes, update this glossary and the affected feature/API documents together.
+این معانی باید در سراسر پروژه به‌صورت یکسان استفاده شوند. هر زمان یک اصطلاح در backend یا محصول تغییر کرد، این واژه‌نامه و مستندات feature/API مرتبط نیز باید هم‌زمان به‌روزرسانی شوند.
 
-## Application and product terms
+## اصطلاحات Application و محصول
 
 ### SOHO UI
 
-The React/TypeScript browser frontend in this repository.
+Frontend مبتنی بر React/TypeScript این repository که در مرورگر اجرا می‌شود.
 
-It is the administrative UI for the StoreX storage-management system and communicates with backend APIs for authoritative system state and mutations.
+این بخش، UI مدیریتی سامانه‌ی مدیریت Storage با نام StoreX است و برای دریافت state معتبر سیستم و اجرای mutationها با APIهای backend ارتباط برقرار می‌کند.
 
 ### StoreX
 
-The broader storage-management product/system that SOHO UI is part of.
+محصول/سامانه‌ی جامع‌تر مدیریت Storage که SOHO UI بخشی از آن است.
 
-This repository contains only the frontend application, not the complete StoreX backend/infrastructure implementation.
+این repository فقط application مربوط به frontend را دربر می‌گیرد و شامل پیاده‌سازی کامل backend یا زیرساخت StoreX نیست.
 
 ### Operator
 
-An authenticated person using SOHO UI to inspect or administer the managed system.
+کاربر احراز هویت‌شده‌ای که از SOHO UI برای مشاهده یا مدیریت سیستم تحت کنترل استفاده می‌کند.
 
-Frontend references to an operator do not imply a specific backend role/permission model; backend authorization remains authoritative.
+اشاره به Operator در frontend به معنی وجود یک role یا permission model مشخص در backend نیست؛ مرجع نهایی authorization همچنان backend است.
 
-## Storage terms
+## اصطلاحات Storage
 
 ### Disk
 
-A physical/block device reported by the backend disk APIs.
+یک device فیزیکی/block که توسط APIهای مربوط به disk در backend گزارش می‌شود.
 
-The frontend can display inventory/detail/slot/partition information and can initiate approved cleanup operations.
+Frontend می‌تواند اطلاعات inventory، جزئیات، slot و partition را نمایش دهد و عملیات cleanup مجاز را آغاز کند.
 
 ### Disk inventory
 
-Canonical frontend collection of physical disks, normally represented by React Query key:
+مجموعه‌ی canonical دیسک‌های فیزیکی در frontend که معمولاً با React Query key زیر نمایش داده می‌شود:
 
 ```text
 ['disk','inventory']
@@ -42,13 +42,13 @@ Canonical frontend collection of physical disks, normally represented by React Q
 
 ### Partition count
 
-The dedicated backend-derived number of partitions for one disk.
+تعداد partitionهای یک disk که به‌صورت مستقل از backend دریافت می‌شود.
 
-The Disks page uses this as part of wipe-safety UX instead of relying only on a possibly less precise inventory flag.
+صفحه‌ی Disks از این مقدار به‌عنوان بخشی از UX ایمنی عملیات wipe استفاده می‌کند و فقط به inventory flag که ممکن است دقت کمتری داشته باشد متکی نیست.
 
 ### Integrated Storage
 
-The user-facing feature name for pool-based/ZFS-like storage management.
+نام feature قابل مشاهده برای کاربر جهت مدیریت Storage مبتنی بر pool/ZFS-like.
 
 Route:
 
@@ -56,11 +56,11 @@ Route:
 /Integrated-space
 ```
 
-In source code and APIs, this domain is primarily represented as `zpool`.
+در سورس‌کد و APIها، این domain عمدتاً با `zpool` نمایش داده می‌شود.
 
 ### Zpool / pool
 
-The backend storage-pool resource managed through `/api/zpool/...` endpoints.
+resource مربوط به storage pool در backend که از طریق endpointهای `/api/zpool/...` مدیریت می‌شود.
 
 Frontend canonical collection key:
 
@@ -70,27 +70,27 @@ Frontend canonical collection key:
 
 ### Vdev
 
-A ZFS/pool virtual-device grouping/type used to validate how disks are arranged when creating or extending a pool.
+نوع/grouping مربوط به virtual device در ZFS/pool که برای اعتبارسنجی نحوه‌ی چینش diskها هنگام ساخت یا توسعه‌ی یک pool استفاده می‌شود.
 
 ### Pool device
 
-A disk/device currently associated with a pool.
+یک disk/device که در حال حاضر به یک pool متصل است.
 
-Pool-device APIs are also used for vdev type, slot mapping, wipe safety, and replacement/addition workflows.
+APIهای pool-device همچنین در workflowهای مربوط به vdev type، slot mapping، wipe safety و replace/add device استفاده می‌شوند.
 
 ### Volume / Block Storage
 
-A block-storage resource managed under `/api/volume/...` and shown on route:
+resource مربوط به block storage که زیر `/api/volume/...` مدیریت می‌شود و در route زیر نمایش داده می‌شود:
 
 ```text
 /block-space
 ```
 
-The frontend treats Volumes as a separate resource from Filesystems and Zpools.
+Frontend، Volumeها را resourceای مستقل از Filesystemها و Zpoolها در نظر می‌گیرد.
 
 ### Filesystem
 
-A filesystem resource under `/api/filesystem/...`, normally identified by a full logical name:
+یک resource از نوع filesystem زیر `/api/filesystem/...` که معمولاً با یک نام منطقی کامل شناسایی می‌شود:
 
 ```text
 pool/filesystem
@@ -104,35 +104,35 @@ Frontend collection key:
 
 ### Mountpoint
 
-The filesystem path at which a filesystem is mounted/exposed.
+مسیر filesystem که یک filesystem روی آن mount یا expose می‌شود.
 
-Mountpoints are used by File System, NFS, Samba/Web Share eligibility, and related UI.
+Mountpointها در File System، NFS، eligibility مربوط به Samba/Web Share و UIهای مرتبط استفاده می‌شوند.
 
 ### `canmount`
 
-A filesystem property controlling automatic/allowed mount behavior.
+یک property مربوط به filesystem که رفتار mount خودکار/مجاز را کنترل می‌کند.
 
-The UI exposes it as an on/off style control but backend values may use strings such as `on`/`off`.
+UI آن را به‌شکل یک کنترل on/off نمایش می‌دهد، اما مقدار backend ممکن است stringهایی مانند `on`/`off` باشد.
 
 ### Encryption key state
 
-Frontend interpretation of whether an encrypted filesystem's key is loaded/available.
+برداشت frontend از این‌که key مربوط به یک filesystem رمزگذاری‌شده load شده/در دسترس است یا خیر.
 
-This state determines whether load/unload/change-passphrase actions are enabled.
+این state مشخص می‌کند actionهای load/unload/change-passphrase فعال باشند یا نه.
 
 ### Base64 passphrase encoding
 
-The frontend encodes some filesystem passphrases as UTF-8 bytes followed by Base64 before sending them.
+Frontend بعضی passphraseهای filesystem را ابتدا به UTF-8 bytes و سپس به Base64 تبدیل می‌کند و بعد برای backend می‌فرستد.
 
-Base64 is **not encryption**. HTTPS/TLS is required for transport confidentiality.
+Base64 **رمزنگاری نیست**. برای محرمانگی داده در زمان انتقال، HTTPS/TLS الزامی است.
 
-## Sharing terms
+## اصطلاحات Sharing
 
 ### Samba / SMB
 
-The file-sharing domain represented by Samba share, Samba user, and Samba group APIs.
+Domain مربوط به file sharing که با APIهای Samba share، Samba user و Samba group نمایش داده می‌شود.
 
-SOHO UI exposes this under route:
+SOHO UI این بخش را در route زیر ارائه می‌کند:
 
 ```text
 /share
@@ -140,7 +140,7 @@ SOHO UI exposes this under route:
 
 ### Samba Share
 
-A Samba sharepoint resource under:
+resource مربوط به Samba sharepoint زیر:
 
 ```text
 /api/samba/sharepoints/
@@ -154,9 +154,9 @@ Frontend canonical share key:
 
 ### Samba User
 
-A Samba-specific identity used for SMB authentication/access.
+یک identity اختصاصی Samba که برای authentication/access در SMB استفاده می‌شود.
 
-It is distinct from an OS user and a Web/UI user even when usernames are correlated.
+این identity با OS user و Web/UI user متفاوت است، حتی اگر usernameهای آن‌ها با یکدیگر مرتبط باشند.
 
 Frontend collection key:
 
@@ -166,7 +166,7 @@ Frontend collection key:
 
 ### Samba Group
 
-A Samba group used for access membership.
+یک Samba group که برای access membership استفاده می‌شود.
 
 Frontend collection key:
 
@@ -176,9 +176,9 @@ Frontend collection key:
 
 ### Account Flags
 
-A Samba-user property queried per username to derive enabled/disabled state.
+یک property مربوط به Samba user که برای هر username query می‌شود تا enabled/disabled state آن مشخص شود.
 
-Current frontend interpretation includes:
+برداشت فعلی frontend شامل موارد زیر است:
 
 ```text
 D -> disabled
@@ -187,7 +187,7 @@ U -> enabled
 
 ### NFS
 
-Network File System sharing domain managed through:
+Domain مربوط به Network File System sharing که از طریق مسیر زیر مدیریت می‌شود:
 
 ```text
 /api/nfs/shares/
@@ -201,9 +201,9 @@ Frontend collection key:
 
 ### `no_subtree_check`
 
-Frontend NFS option whose backend counterpart is `subtree_check`.
+یک option مربوط به NFS در frontend که counterpart آن در backend، `subtree_check` است.
 
-Current request translation intentionally uses:
+تبدیل فعلی request عمداً به شکل زیر انجام می‌شود:
 
 ```text
 subtree_check = !no_subtree_check
@@ -211,9 +211,9 @@ subtree_check = !no_subtree_check
 
 ### Web Share
 
-A web-serving exposure for an eligible filesystem-backed share.
+یک web-serving exposure برای shareای که شرایط لازم را دارد و بر پایه‌ی filesystem ساخته شده است.
 
-A filesystem is currently considered eligible only when it is already represented through SMB or NFS sharing and does not already have a Web Share.
+در حال حاضر یک filesystem فقط زمانی eligible در نظر گرفته می‌شود که از قبل از طریق SMB یا NFS share شده باشد و هنوز Web Share نداشته باشد.
 
 Frontend collection key:
 
@@ -221,84 +221,84 @@ Frontend collection key:
 ['webshare','shares']
 ```
 
-## User and authentication terms
+## اصطلاحات User و Authentication
 
 ### OS User
 
-An operating-system user resource under `/api/os/user...`.
+resource مربوط به user سیستم‌عامل زیر `/api/os/user...`.
 
-It is distinct from Samba and Web/UI users.
+این user از Samba user و Web/UI user مستقل است.
 
 ### Web User / UI User
 
-An application/backend UI account under:
+account مربوط به application/backend UI زیر:
 
 ```text
 /api/system/ui-user/
 ```
 
-The Settings Users tab manages these accounts.
+تب Users در Settings این accountها را مدیریت می‌کند.
 
-Creating a Web User currently triggers a separate OS-user create afterwards; that workflow is not atomic.
+در workflow فعلی، ساخت Web User پس از آن یک request مستقل برای ساخت OS user اجرا می‌کند؛ این workflow اتمیک نیست.
 
 ### Access token
 
-Short-lived Bearer token attached to normal authenticated API requests.
+Bearer token کوتاه‌عمر که به requestهای معمول authenticated API متصل می‌شود.
 
-Current frontend policy stores it in memory only.
+طبق policy فعلی frontend، این token فقط در memory نگهداری می‌شود.
 
 ### Refresh token
 
-Token used to obtain a new access token.
+Token مورد استفاده برای دریافت access token جدید.
 
-Current frontend policy stores it in `sessionStorage` with an in-memory fallback.
+طبق policy فعلی frontend، این token در `sessionStorage` نگهداری می‌شود و یک fallback در memory نیز دارد.
 
 ### Single-flight refresh
 
-Concurrency pattern in `axiosInstance` where only one token-refresh request runs while multiple simultaneous 401 failures wait in a queue.
+یک concurrency pattern در `axiosInstance` که در آن هنگام وقوع چند خطای هم‌زمان 401 فقط یک request برای token refresh اجرا می‌شود و سایر requestها در queue منتظر می‌مانند.
 
-This prevents refresh storms.
+این الگو از ایجاد refresh storm جلوگیری می‌کند.
 
 ### Protected route
 
-A route that renders application content only after frontend authentication initialization confirms an authenticated session.
+Routeای که محتوای application را فقط بعد از آن render می‌کند که initialization مربوط به authentication در frontend، وجود یک authenticated session را تأیید کرده باشد.
 
-Frontend protection is UX/session control, not backend authorization.
+Protection در frontend برای کنترل UX/session است و جای authorization در backend را نمی‌گیرد.
 
 ### Idle timeout
 
-Frontend inactivity limit that clears/ends the authenticated UI session after the configured inactivity period (currently 30 minutes).
+محدودیت inactivity در frontend که پس از سپری‌شدن مدت مشخص بدون فعالیت، authenticated UI session را پاک/خاتمه می‌دهد (در حال حاضر 30 دقیقه).
 
-## API and data-flow terms
+## اصطلاحات API و Data Flow
 
 ### `axiosInstance`
 
-The shared application Axios client.
+Axios client مشترک application.
 
-It owns cross-cutting behavior such as:
+این client مسئول رفتارهای cross-cutting زیر است:
 
-- application API base URL;
-- Bearer token attachment;
-- `save_to_db` policy;
-- 401 refresh/replay;
-- StateSync scheduling;
-- common API-error logging.
+- application API base URL؛
+- اضافه‌کردن Bearer token؛
+- policy مربوط به `save_to_db`؛
+- refresh/replay در خطای 401؛
+- زمان‌بندی StateSync؛
+- log کردن خطاهای مشترک API.
 
 ### `authClient`
 
-The isolated Axios client in `authApi.ts` used for token issue, refresh, and verification.
+Axios client ایزوله‌شده در `authApi.ts` که برای token issue، refresh و verification استفاده می‌شود.
 
-It deliberately bypasses the shared 401 interceptor.
+این client عمداً shared 401 interceptor را دور می‌زند.
 
 ### React Query / TanStack Query
 
-The library and architectural owner for authoritative backend state cached in the frontend.
+Library و لایه‌ی معماری مسئول state معتبر backend که در frontend cache می‌شود.
 
 ### Query key
 
-Stable array identity used by React Query to represent a backend resource/lifecycle.
+شناسه‌ی array-based و پایدار که React Query برای نمایش lifecycle/resourceهای backend استفاده می‌کند.
 
-Examples:
+نمونه‌ها:
 
 ```text
 ['zpool']
@@ -308,47 +308,47 @@ Examples:
 
 ### Invalidation
 
-Marking a React Query resource stale/eligible for authoritative refetch after a mutation.
+فرآیند stale/eligible کردن یک resource در React Query برای authoritative refetch پس از mutation.
 
-Invalidation controls **UI freshness**, not database snapshot persistence.
+Invalidation، **freshness مربوط به UI** را کنترل می‌کند و مسئول persistence مربوط به database snapshot نیست.
 
 ### `staleTime`
 
-Duration React Query considers cached data fresh before normal lifecycle rules may cause it to refetch.
+مدتی که React Query داده‌ی cacheشده را fresh در نظر می‌گیرد؛ پس از آن lifecycle ruleهای معمول ممکن است باعث refetch شوند.
 
-It is not the same as a polling interval.
+این مقدار با polling interval یکسان نیست.
 
 ### `gcTime`
 
-How long unused React Query cache data can remain before garbage collection.
+مدتی که داده‌ی بدون استفاده در React Query cache می‌تواند پیش از garbage collection باقی بماند.
 
 ### Polling / `refetchInterval`
 
-Periodic re-execution of a query while it is enabled/mounted according to hook policy.
+اجرای دوره‌ای یک query تا زمانی که مطابق policy همان hook، query enabled/mounted باشد.
 
-Polling is observational unless the endpoint itself has side effects (which should generally be avoided).
+Polling یک عملیات observational است، مگر این‌که خود endpoint دارای side effect باشد؛ حالتی که اصولاً باید از آن اجتناب شود.
 
 ### Mutation
 
-An API operation intended to change backend/system state, normally represented by React Query `useMutation`.
+یک عملیات API با هدف تغییر state سیستم/backend که معمولاً با React Query `useMutation` نمایش داده می‌شود.
 
-Some backend actions are operationally mutating despite unusual HTTP methods, so semantics must be checked rather than inferred only from method.
+برخی actionهای backend از نظر عملیاتی mutating هستند، حتی اگر HTTP method غیرمعمولی داشته باشند؛ بنابراین semantics باید بررسی شود و نباید فقط از روی method نتیجه‌گیری کرد.
 
 ### Diagnostic action
 
-An operation that may use POST/PUT but does not change persisted configuration.
+عملیاتی که ممکن است از POST/PUT استفاده کند اما persisted configuration را تغییر نمی‌دهد.
 
-Example:
+مثال:
 
 ```text
 POST /api/snmp/test-connection/
 ```
 
-Diagnostic actions should not trigger persisted StateSync snapshots.
+Diagnostic actionها نباید باعث ایجاد persisted StateSync snapshot شوند.
 
 ### Logical failure
 
-A backend response where HTTP transport may succeed but payload reports failure, for example:
+Responseای از backend که در آن transport در سطح HTTP ممکن است موفق باشد، اما payload شکست عملیات را گزارش می‌کند؛ برای مثال:
 
 ```json
 {
@@ -357,34 +357,34 @@ A backend response where HTTP transport may succeed but payload reports failure,
 }
 ```
 
-Frontend API helpers must reject/throw where that is part of the endpoint contract.
+API helperهای frontend باید در endpointهایی که این رفتار جزئی از contract آن‌هاست، reject/throw کنند.
 
 ### Partial failure
 
-A multi-request workflow where earlier steps can succeed even though a later request fails.
+یک workflow چند-requestی که در آن ممکن است مرحله‌های ابتدایی موفق شوند ولی یک request بعدی fail شود.
 
-Examples include pool delete cleanup, Web Share permission setup, Samba membership batches, and cross-domain user creation.
+نمونه‌ها شامل cleanup پس از pool delete، permission setup برای Web Share، batchهای Samba membership و ساخت user بین چند domain هستند.
 
-## Persistence terms
+## اصطلاحات Persistence
 
 ### `save_to_db`
 
-Backend request parameter used by the SOHO API contract to indicate whether a request should persist a canonical snapshot.
+پارامتر request در backend که طبق SOHO API contract مشخص می‌کند آیا request باید باعث persist شدن یک canonical snapshot شود یا خیر.
 
-Frontend architecture enforces:
+معماری frontend policy زیر را enforce می‌کند:
 
 ```text
 normal API traffic    -> save_to_db=false
 StateSync snapshot    -> save_to_db=true
 ```
 
-Feature code should not own this flag.
+Feature code نباید مالک این flag باشد.
 
 ### StateSyncManager
 
-Frontend coordinator responsible for requesting canonical persisted snapshots after successful mutations in mapped domains.
+Coordinator در frontend که مسئول درخواست canonical persisted snapshot پس از mutationهای موفق در domainهای mapشده است.
 
-File:
+فایل:
 
 ```text
 src/lib/stateSyncManager.ts
@@ -392,9 +392,9 @@ src/lib/stateSyncManager.ts
 
 ### StateSync domain
 
-A logical persisted resource family known to `StateSyncManager`.
+یک persisted resource family منطقی که برای `StateSyncManager` شناخته‌شده است.
 
-Current domains include:
+Domainهای فعلی شامل موارد زیر هستند:
 
 ```text
 zpool
@@ -410,15 +410,15 @@ snmp
 
 ### Canonical snapshot
 
-A backend GET representing authoritative post-mutation domain state, requested by StateSync with `save_to_db=true`.
+یک GET از backend که post-mutation state معتبر یک domain را نمایش می‌دهد و توسط StateSync با `save_to_db=true` درخواست می‌شود.
 
-The frontend requests the snapshot; the backend owns actual database persistence.
+Frontend فقط snapshot را درخواست می‌کند؛ persistence واقعی در database بر عهده‌ی backend است.
 
 ### Cross-domain StateSync
 
-A mutation can affect more than one persisted domain.
+یک mutation می‌تواند بیش از یک persisted domain را تحت تأثیر قرار دهد.
 
-Examples:
+نمونه‌ها:
 
 ```text
 zpool mutation      -> zpool + disk
@@ -426,49 +426,49 @@ filesystem mutation -> filesystem + zpool
 Samba user mutation -> samba-users + samba-groups
 ```
 
-## UI/state terms
+## اصطلاحات UI/State
 
 ### Detail split view
 
-Shared UI pattern/store for an active resource plus pinned comparison/detail resources.
+الگوی مشترک UI/store برای نمایش یک resource فعال به‌همراه resourceهای pinشده جهت comparison/detail.
 
-Examples include Disks, Integrated Storage, File System, and Samba share views.
+نمونه‌های آن در Disks، Integrated Storage، File System و Samba share viewها دیده می‌شوند.
 
 ### Active item
 
-Current primary resource selected in a detail split view.
+resource اصلی که در حال حاضر در یک detail split view انتخاب شده است.
 
 ### Pinned item
 
-Resource kept visible for comparison/detail even when another resource becomes active.
+resourceای که برای comparison/detail همچنان visible نگه داشته می‌شود، حتی زمانی که resource دیگری active می‌شود.
 
 ### Dashboard layout
 
-Per-user browser-local arrangement of Dashboard widgets, including order, hidden widgets, and size overrides.
+چیدمان browser-local مربوط به Dashboard widgetها برای هر user، شامل order، widgetهای hidden و size overrideها.
 
-It is a UI preference, not backend managed-system state.
+این مورد یک UI preference است و managed-system state در backend محسوب نمی‌شود.
 
 ### Draft layout
 
-Temporary Dashboard customization state before the operator chooses Save.
+state موقت customization مربوط به Dashboard پیش از آن‌که Operator گزینه‌ی Save را انتخاب کند.
 
 ### RTL
 
-Right-to-left layout direction used by the Persian UI.
+جهت layout از راست به چپ که در UI فارسی استفاده می‌شود.
 
-The project uses Emotion/Stylis RTL support plus semantic `dir="rtl"` where required.
+پروژه از RTL support در Emotion/Stylis به‌همراه `dir="rtl"` در محل‌های لازم استفاده می‌کند.
 
 ### LTR technical value
 
-Technical strings such as IP addresses, hostnames, service names, or paths may remain left-to-right inside an RTL page for readability.
+مقادیر فنی مانند IP address، hostname، service name یا path ممکن است برای خوانایی در یک صفحه‌ی RTL همچنان به‌صورت چپ‌به‌راست نمایش داده شوند.
 
-## Build and operations terms
+## اصطلاحات Build و Operations
 
 ### Vite
 
-Frontend build/dev tooling.
+Tooling مربوط به build/dev در frontend.
 
-Production command ultimately creates static assets in:
+Command مربوط به production در نهایت static assetها را در مسیر زیر ایجاد می‌کند:
 
 ```text
 dist/
@@ -476,21 +476,21 @@ dist/
 
 ### `VITE_*`
 
-Vite build-time environment variables exposed to client code/bundle.
+Environment variableهای build-time در Vite که در client code/bundle قابل دسترسی هستند.
 
-They must not contain secrets.
+این متغیرها نباید شامل secret باشند.
 
 ### `dist/`
 
-Static production build artifact generated by Vite.
+Static production build artifact که توسط Vite ساخته می‌شود.
 
-This is what a production static web server such as Nginx serves.
+در production، یک static web server مانند Nginx همین خروجی را serve می‌کند.
 
 ### SPA fallback
 
-Web-server behavior that returns `index.html` for unknown client-side routes so browser-history routing works on direct navigation/refresh.
+رفتار web server که برای client-side routeهای ناشناخته `index.html` را برمی‌گرداند تا browser-history routing هنگام direct navigation یا refresh صحیح کار کند.
 
-Typical Nginx pattern:
+الگوی رایج Nginx:
 
 ```nginx
 try_files $uri $uri/ /index.html;
@@ -498,35 +498,35 @@ try_files $uri $uri/ /index.html;
 
 ### Release artifact
 
-Immutable build output associated with an exact source revision and build configuration.
+Build output تغییرناپذیر که به یک source revision و build configuration دقیق وابسته است.
 
 ### Atomic release
 
-Deployment strategy where a new immutable release is prepared first and one pointer/symlink is switched to activate it, enabling rapid rollback.
+Deployment strategy که در آن ابتدا release جدید به‌صورت immutable آماده می‌شود و سپس با تغییر یک pointer/symlink فعال می‌گردد؛ در نتیجه rollback سریع امکان‌پذیر است.
 
-## Documentation terms
+## اصطلاحات Documentation
 
 ### Core flow
 
-Cross-feature runtime mechanism such as authentication, API lifecycle, cache, StateSync, polling, or notifications.
+مکانیزم runtime مشترک بین featureها، مانند authentication، API lifecycle، cache، StateSync، polling یا notificationها.
 
 ### Feature document
 
-Page/domain-specific documentation describing user flow, APIs, state, business rules, failures, and extension guidance.
+مستندات اختصاصی یک page/domain که user flow، APIها، state، business ruleها، failureها و راهنمای extension را توضیح می‌دهد.
 
 ### ADR
 
 Architecture Decision Record.
 
-A short durable record explaining a significant architecture choice, its rationale, consequences, and alternatives/context.
+یک رکورد کوتاه و ماندگار که یک تصمیم معماری مهم، rationale آن، consequenceها و alternative/contextهای مرتبط را توضیح می‌دهد.
 
 ### Source of truth
 
-The single maintained document/module responsible for a particular contract.
+تنها document/module نگهداری‌شده که مسئول یک contract مشخص است.
 
-Documentation should link to the source of truth rather than copying detailed rules into multiple competing documents.
+مستندات باید به source of truth لینک دهند، نه این‌که ruleهای جزئی را در چند document رقیب کپی کنند.
 
-## Related documentation
+## مستندات مرتبط
 
 - [`project-overview.md`](./project-overview.md)
 - [`scope.md`](./scope.md)
