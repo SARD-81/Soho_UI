@@ -1,86 +1,86 @@
-# ADR-002: Centralize API Transport in `axiosInstance`
+# ADR-002: متمرکزکردن API Transport در `axiosInstance`
 
-- Status: Accepted
-- Scope: Authenticated API transport, request/response interceptors, persistence transport policy
+- وضعیت: Accepted
+- Scope: Authenticated API transport، request/response interceptorها و persistence transport policy
 
 ## Context
 
-SOHO UI sends many backend requests across storage, system, sharing, users, settings, and monitoring features.
+SOHO UI تعداد زیادی backend request در featureهای Storage، System، Sharing، User، Settings و Monitoring ارسال می‌کند.
 
-Several behaviors must be identical regardless of which feature makes the request:
+چند behavior باید مستقل از این‌که کدام feature request را ایجاد کرده کاملاً یکسان باشند:
 
-- backend base URL;
-- JSON headers;
-- Bearer access token injection;
-- 401 refresh/replay behavior;
-- optional mock adapter registration;
-- `save_to_db` transport policy;
-- successful-mutation StateSync scheduling;
-- common API error diagnostics.
+- backend base URL؛
+- JSON headerها؛
+- Bearer access token injection؛
+- behavior مربوط به 401 refresh/replay؛
+- optional mock adapter registration؛
+- `save_to_db` transport policy؛
+- StateSync scheduling پس از mutation موفق؛
+- common API error diagnosticها.
 
-Implementing these independently in feature hooks would create security and consistency drift.
+پیاده‌سازی مستقل این موارد داخل feature hookها باعث drift در security و consistency می‌شود.
 
 ## Decision
 
-Use a shared Axios instance in `src/lib/axiosInstance.ts` for normal application API traffic.
+برای API traffic عادی application از shared Axios instance در `src/lib/axiosInstance.ts` استفاده می‌شود.
 
-Feature code supplies endpoint-specific method, parameters, and payload. Cross-cutting transport behavior remains centralized.
+Feature code فقط method، parameter و payload اختصاصی endpoint را مشخص می‌کند. Cross-cutting transport behavior متمرکز باقی می‌ماند.
 
-Authentication token endpoints that must not participate in the normal 401-refresh interceptor loop use the dedicated auth API client instead.
+Authentication token endpointهایی که نباید وارد normal 401-refresh interceptor loop شوند، از auth API client اختصاصی استفاده می‌کنند.
 
-## Consequences
+## Consequenceها
 
 ### Positive
 
-- one place controls Authorization header behavior;
-- one refresh queue prevents concurrent refresh storms;
-- persistence policy cannot be bypassed accidentally by ordinary feature hooks;
-- mock API behavior is applied consistently;
-- successful mutation observation can schedule StateSync centrally.
+- behavior مربوط به Authorization header در یک محل کنترل می‌شود؛
+- یک refresh queue واحد از concurrent refresh storm جلوگیری می‌کند؛
+- ordinary feature hook نمی‌تواند persistence policy را به‌صورت تصادفی bypass کند؛
+- mock API behavior به‌شکل یکپارچه اعمال می‌شود؛
+- مشاهده‌ی mutation موفق می‌تواند StateSync را به‌صورت مرکزی schedule کند.
 
-### Tradeoffs
+### Tradeoffها
 
-- interceptors are high-impact infrastructure and require careful review;
-- URL classification logic must distinguish auth, diagnostics, and persisted mutation domains correctly;
-- specialized calls that bypass the shared instance must document why.
+- interceptorها high-impact infrastructure هستند و نیازمند review دقیق‌اند؛
+- URL classification logic باید auth، diagnostic و persisted mutation domainها را درست از هم تفکیک کند؛
+- specialized callهایی که shared instance را bypass می‌کنند باید دلیل آن را مستند کنند.
 
-## Transport invariants
+## Transport Invariantها
 
-1. Normal `/api/` traffic uses `save_to_db=false`.
-2. Only internal StateSync requests may request `save_to_db=true`.
-3. Stale caller-level `save_to_db` flags are normalized rather than trusted.
-4. Access tokens are read from memory-only token storage and added centrally.
-5. Authentication refresh uses a single-flight queue.
-6. Internal StateSync marker headers are removed before transport.
-7. Feature code must not implement its own token refresh loop.
+1. Traffic عادی زیر `/api/` از `save_to_db=false` استفاده می‌کند.
+2. فقط internal StateSync requestها مجازند `save_to_db=true` درخواست کنند.
+3. Caller-level `save_to_db` flagهای stale به‌جای trust شدن normalize می‌شوند.
+4. Access tokenها از memory-only token storage خوانده شده و به‌صورت مرکزی اضافه می‌شوند.
+5. Authentication refresh از single-flight queue استفاده می‌کند.
+6. Internal StateSync marker headerها پیش از transport حذف می‌شوند.
+7. Feature code نباید token refresh loop مستقل پیاده‌سازی کند.
 
-## Auth-client exception
+## Exception مربوط به Auth Client
 
-Login/verify/refresh are handled outside the normal Axios instance because sending refresh through an interceptor that itself reacts to 401 responses can create recursion and refresh loops.
+Login/verify/refresh خارج از normal Axios instance مدیریت می‌شوند، چون عبور refresh request از interceptorای که خودش به 401 واکنش نشان می‌دهد می‌تواند recursion و refresh loop ایجاد کند.
 
-This is an intentional dependency boundary, not duplicated transport by accident.
+این یک dependency boundary آگاهانه است، نه transport duplication تصادفی.
 
-## Alternatives considered
+## Alternativeهای بررسی‌شده
 
-### Raw `fetch`/Axios calls inside each hook
+### استفاده از Raw `fetch`/Axios Call داخل هر Hook
 
-Rejected because token, persistence, error, and refresh behavior would diverge.
+رد شد، چون behavior مربوط به token، persistence، error و refresh بین featureها diverge می‌کند.
 
-### One Axios instance including token refresh endpoints
+### یک Axios Instance شامل Token Refresh Endpointها
 
-Rejected because refresh endpoints require different failure semantics and must not re-enter the normal refresh interceptor path.
+رد شد، چون refresh endpointها failure semantics متفاوت دارند و نباید دوباره وارد normal refresh interceptor path شوند.
 
-### Middleware at every feature service
+### Middleware در هر Feature Service
 
-Rejected as unnecessary duplication of cross-cutting transport concerns.
+به دلیل duplicate کردن cross-cutting transport concernها غیرضروری تشخیص داده شد.
 
-## When to revisit
+## چه زمانی این Decision دوباره بررسی شود؟
 
-Revisit if the frontend changes HTTP library, introduces generated API clients, or moves authentication/persistence transport policy to another architectural layer.
+اگر frontend HTTP library را تغییر داد، generated API client معرفی شد یا authentication/persistence transport policy به architectural layer دیگری منتقل شد، این decision باید revisit شود.
 
-Any replacement must preserve the current security and persistence invariants before feature migration.
+هر جایگزین باید پیش از migration featureها security و persistence invariantهای فعلی را حفظ کند.
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../../04-core-flows/api-request-lifecycle.md`](../../04-core-flows/api-request-lifecycle.md)
 - [`../../04-core-flows/authentication.md`](../../04-core-flows/authentication.md)
