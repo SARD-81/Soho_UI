@@ -1,29 +1,37 @@
 # File System
 
-## Purpose
+## هدف
 
-The File System feature manages filesystem-like storage resources inside integrated storage pools. It combines filesystem CRUD with runtime mount state, automatic-mount configuration, and encryption-key lifecycle operations.
+Feature مربوط به File System، resourceهای filesystem-like داخل Integrated Storage poolها را مدیریت می‌کند. این بخش filesystem CRUD را با runtime mount state، تنظیم automatic mount و lifecycle مربوط به encryption key ترکیب می‌کند.
 
-Route: `/file-system`
+Route:
 
-Entry point: `src/pages/FileSystem.tsx`
+```text
+/file-system
+```
 
-## Main responsibilities
+Entry point:
 
-The page coordinates:
+```text
+src/pages/FileSystem.tsx
+```
 
-- listing and normalizing filesystem state;
-- creating a filesystem inside a selected pool;
-- deleting a filesystem behind confirmation;
-- mounting and unmounting;
-- toggling the `canmount` property;
-- loading and unloading encryption keys;
-- changing encryption passphrases;
-- showing selected/pinned filesystem details;
-- preventing stale detail selections when resources disappear;
-- surfacing operation results through toast notifications.
+## مسئولیت‌های اصلی
 
-## Runtime flow
+صفحه موارد زیر را coordinate می‌کند:
+
+- لیست و normalize کردن filesystem state؛
+- ساخت filesystem داخل pool انتخاب‌شده؛
+- حذف filesystem پشت confirmation؛
+- mount و unmount؛
+- toggle کردن property مربوط به `canmount`؛
+- load و unload کردن encryption key؛
+- تغییر encryption passphrase؛
+- نمایش detail مربوط به filesystemهای selected/pinned؛
+- جلوگیری از باقی ماندن detail selectionهای stale پس از حذف resource؛
+- نمایش نتیجه‌ی operationها از طریق toast notification.
+
+## runtime flow
 
 ```mermaid
 flowchart TD
@@ -51,11 +59,15 @@ flowchart TD
     CAN --> API
 ```
 
-All filesystem mutations invalidate the canonical filesystem collection after success. StateSync independently schedules canonical persisted snapshots for filesystem mutations.
+تمام filesystem mutationها پس از success، canonical filesystem collection را invalidate می‌کنند. StateSync به‌صورت مستقل canonical persisted snapshotهای مربوط به filesystem mutationها را schedule می‌کند.
 
-## Filesystem list
+## filesystem list
 
-Hook: `useFileSystems()`
+Hook:
+
+```text
+useFileSystems()
+```
 
 Query key:
 
@@ -69,68 +81,76 @@ Primary endpoint:
 GET /api/filesystem/?detail=true
 ```
 
-The hook uses a 15-second `staleTime` and does not configure a continuous refetch interval.
+این hook `staleTime` برابر 15 ثانیه دارد و continuous refetch interval تعریف نمی‌کند.
 
 ### Response compatibility
 
-The current fetcher supports two backend generations.
+Fetcher فعلی دو نسل از backend response را پشتیبانی می‌کند.
 
-Preferred behavior is a single detailed list response from `/api/filesystem/?detail=true`.
+حالت preferred یک detailed list response واحد از endpoint زیر است:
 
-If the backend returns only filesystem names, the frontend falls back to one detail request per name:
+```text
+/api/filesystem/?detail=true
+```
+
+اگر backend فقط filesystem nameها را برگرداند، frontend برای هر name یک detail request جدا اجرا می‌کند:
 
 ```text
 GET /api/filesystem/detail/?name=<filesystem>
 ```
 
-A failed legacy detail request returns `null` for that filesystem rather than failing the complete list. This means old-backend fallback mode can produce a partial list.
+Failure یک legacy detail request فقط برای همان filesystem مقدار `null` تولید می‌کند و کل list را fail نمی‌کند. بنابراین در old-backend fallback mode ممکن است partial list دریافت شود.
 
-## Filesystem normalization
+## نرمال‌سازی filesystem
 
-Each normalized `FileSystemEntry` contains:
+هر `FileSystemEntry` نرمال‌شده شامل موارد زیر است:
 
-- `id` / full filesystem name;
-- `poolName`;
-- `filesystemName`;
-- `mountpoint`;
-- display-friendly attribute entries;
-- a case-tolerant `attributeMap`;
+- `id` / full filesystem name؛
+- `poolName`؛
+- `filesystemName`؛
+- `mountpoint`؛
+- attribute entryهای مناسب نمایش؛
+- `attributeMap` با تحمل تفاوت در case؛
 - raw backend data.
 
-The normalizer creates both original-case and lowercase attribute-map keys so feature rendering can tolerate backend property casing differences.
+Normalizer برای attribute-map هم original-case key و هم lowercase key تولید می‌کند تا rendering feature نسبت به تفاوت case در backend propertyها مقاوم باشد.
 
-The logical full-name format is:
+فرمت full name منطقی:
 
 ```text
 pool/filesystem
 ```
 
-## Pool options
+## pool optionها
 
-Create-Filesystem pool choices come from the canonical zpool query rather than a filesystem-specific pool endpoint.
+گزینه‌های pool در Create-Filesystem از canonical zpool query می‌آیند و endpoint مخصوص filesystem برای pool list وجود ندارد.
 
-The page sorts pool names case-insensitively for display.
+صفحه pool nameها را برای نمایش به‌صورت case-insensitive sort می‌کند.
 
-## Detail split view
+## detail split view
 
-The feature uses detail view id:
+این feature از view id زیر استفاده می‌کند:
 
 ```text
 filesystems
 ```
 
-On mount, the page clears any previous filesystem detail state. It also clears the same view on unmount.
+هنگام mount، صفحه filesystem detail state مربوط به بازدید قبلی را clear می‌کند. همان view در unmount نیز clear می‌شود.
 
-While mounted, current filesystem ids are reconciled with active/pinned detail ids:
+در زمان mount بودن، filesystem idهای فعلی با active/pinned detail idها reconcile می‌شوند:
 
-- pinned ids no longer returned by the backend are unpinned;
-- an active id that disappears is cleared.
+- pinned idهایی که دیگر backend برنمی‌گرداند unpin می‌شوند؛
+- active id حذف‌شده clear می‌شود.
 
-This prevents stale detail panels after delete or external backend changes.
+این رفتار مانع باقی ماندن stale detail panel پس از delete یا تغییر خارجی backend می‌شود.
 
 ## Create File System
 
-Hook: `useCreateFileSystem()`
+Hook:
+
+```text
+useCreateFileSystem()
+```
 
 Endpoint:
 
@@ -138,7 +158,7 @@ Endpoint:
 POST /api/filesystem/
 ```
 
-Domain payload fields are:
+Domain payload fieldها:
 
 ```text
 pool_name
@@ -150,59 +170,63 @@ encryption
 passphrase
 ```
 
-The current UI sets `reservation` equal to the submitted quota and generates the mountpoint as:
+UI فعلی مقدار `reservation` را برابر quota ارسالی قرار می‌دهد و mountpoint را با فرمت زیر تولید می‌کند:
 
 ```text
 /<pool>/<filesystem>
 ```
 
-Quota units are submitted as `G` or `T`.
+Quota unitها به شکل `G` یا `T` ارسال می‌شوند.
 
-### Name rules
+### قوانین name
 
-The modal and hook enforce these frontend rules:
+Modal و hook این frontend ruleها را enforce می‌کنند:
 
-- pool must be selected;
-- filesystem name must be non-empty;
-- name must start with an English letter;
-- after the first character, English letters, numbers, `-`, and `_` are allowed;
-- Persian characters are removed from the input;
-- name must not duplicate another filesystem name inside the same pool;
-- filesystem name must not equal the selected pool name.
+- pool باید انتخاب شده باشد؛
+- filesystem name نباید خالی باشد؛
+- name باید با حرف انگلیسی شروع شود؛
+- بعد از character اول فقط حروف انگلیسی، عدد، `-` و `_` مجازند؛
+- characterهای فارسی از input حذف می‌شوند؛
+- name نباید با filesystem دیگری در همان pool duplicate باشد؛
+- filesystem name نباید برابر selected pool name باشد.
 
-The modal performs duplicate/same-as-pool checks using the currently loaded filesystem collection. Backend validation remains authoritative because client state can be stale or another operator can create the same name concurrently.
+Modal duplicate/same-as-pool check را با filesystem collection فعلی انجام می‌دهد. Backend validation همچنان authoritative است، چون client state می‌تواند stale باشد یا operator دیگری هم‌زمان همان name را ایجاد کند.
 
-### Quota rules
+### قوانین quota
 
-Quota must:
+Quota باید:
 
-- be present;
-- parse as a finite number;
-- be greater than zero.
+- وجود داشته باشد؛
+- به finite number parse شود؛
+- بزرگ‌تر از صفر باشد.
 
-The modal accepts decimal-style numeric input and lets the operator select Gigabytes or Terabytes.
+Modal ورودی عددی decimal-style را می‌پذیرد و operator می‌تواند Gigabyte یا Terabyte را انتخاب کند.
 
-## Encryption at creation
+## Encryption هنگام create
 
-Encryption is optional.
+Encryption اختیاری است.
 
-When enabled, the modal currently requires the passphrase to satisfy all of these UI rules:
+وقتی فعال باشد، modal فعلی passphrase را بر اساس ruleهای زیر validate می‌کند:
 
-- non-empty;
-- at least 8 characters;
-- at least one English letter;
-- at least one number or symbol;
-- not composed only of Persian text.
+- non-empty؛
+- حداقل 8 character؛
+- حداقل یک حرف انگلیسی؛
+- حداقل یک عدد یا symbol؛
+- فقط از متن فارسی تشکیل نشده باشد.
 
-Before sending, the passphrase is UTF-8 encoded and then Base64 encoded.
+پیش از ارسال، passphrase ابتدا UTF-8 encode و سپس Base64 encode می‌شود.
 
-Important: **Base64 is transport encoding, not encryption.** The confidentiality of the passphrase still depends on HTTPS/TLS and backend handling. Do not treat Base64 as a security boundary.
+نکته‌ی مهم: **Base64 فقط encoding است، encryption نیست.** Confidentiality مربوط به passphrase همچنان به HTTPS/TLS و handling سمت backend وابسته است. Base64 را security boundary در نظر نگیرید.
 
-When encryption is disabled, the payload sends `encryption: 'off'` and an empty passphrase.
+وقتی encryption غیرفعال است، payload مقدار `encryption: 'off'` و passphrase خالی ارسال می‌کند.
 
 ## Delete File System
 
-Hook: `useDeleteFileSystem()`
+Hook:
+
+```text
+useDeleteFileSystem()
+```
 
 Endpoint:
 
@@ -210,21 +234,25 @@ Endpoint:
 DELETE /api/filesystem/delete/?name=<pool/filesystem>
 ```
 
-Deletion is confirmation-driven.
+Delete پشت confirmation انجام می‌شود.
 
-On success the hook:
+پس از success، hook:
 
-1. removes the deleted filesystem from the current `['filesystems']` cache;
-2. invalidates `['filesystems']` for authoritative refetch;
-3. closes the confirmation modal through the page callback.
+1. filesystem حذف‌شده را از cache فعلی `['filesystems']` حذف می‌کند؛
+2. `['filesystems']` را برای authoritative refetch invalidate می‌کند؛
+3. confirmation modal را از طریق callback صفحه می‌بندد.
 
-The page contains special error handling for backend messages containing `shareConfiguration`: the operator is told to remove related shares before trying to delete the filesystem again.
+صفحه برای backend messageهایی که شامل `shareConfiguration` هستند error handling اختصاصی دارد: operator باید shareهای وابسته را حذف کند و سپس delete filesystem را دوباره امتحان کند.
 
-This dependency rule must remain backend-enforced; frontend messaging is only an explanatory UX layer.
+این dependency rule باید توسط backend enforce شود؛ frontend message فقط explanatory UX است.
 
 ## Mount File System
 
-Hook: `useMountFileSystem()`
+Hook:
+
+```text
+useMountFileSystem()
+```
 
 Endpoint:
 
@@ -232,13 +260,17 @@ Endpoint:
 POST /api/filesystem/mount/?name=<pool/filesystem>
 ```
 
-After success, `['filesystems']` is invalidated.
+پس از success، `['filesystems']` invalidate می‌شود.
 
-The table derives mounted state from backend attributes such as `mounted`, accepting values including `yes`, `on`, `true`, and `mounted`.
+Table mounted state را از backend attributeهایی مثل `mounted` derive می‌کند و valueهایی مانند `yes`، `on`، `true` و `mounted` را truthy در نظر می‌گیرد.
 
 ## Unmount File System
 
-Hook: `useUnmountFileSystem()`
+Hook:
+
+```text
+useUnmountFileSystem()
+```
 
 Endpoint:
 
@@ -246,13 +278,17 @@ Endpoint:
 POST /api/filesystem/unmount/?name=<pool/filesystem>&force=<boolean>
 ```
 
-The hook supports an optional `force` flag; the current page calls it without forcing, so `force=false` is the normal UI behavior.
+Hook یک `force` flag اختیاری دارد؛ صفحه‌ی فعلی آن را بدون force فراخوانی می‌کند، بنابراین `force=false` رفتار عادی UI است.
 
-After success, `['filesystems']` is invalidated.
+پس از success، `['filesystems']` invalidate می‌شود.
 
-## Automatic mount (`canmount`)
+## automatic mount با `canmount`
 
-Hook: `useSetCanmount()`
+Hook:
+
+```text
+useSetCanmount()
+```
 
 Endpoint:
 
@@ -260,15 +296,15 @@ Endpoint:
 POST /api/filesystem/set-canmount/?name=<pool/filesystem>&state=on|off
 ```
 
-The table normalizes truthy `canmount` values from `on`, `yes`, `true`, and `1`.
+Table valueهای `on`، `yes`، `true` و `1` را برای `canmount` به‌عنوان truthy normalize می‌کند.
 
-The table exposes this property as a toggle. While a `canmount` mutation is pending, the current implementation disables all filesystem operation buttons through the shared pending state.
+Table این property را به شکل toggle ارائه می‌کند. وقتی mutation مربوط به `canmount` pending است، implementation فعلی با استفاده از shared pending state تمام filesystem operation buttonها را disable می‌کند.
 
-## Encryption-key actions
+## encryption-key actionها
 
-Encryption actions are shown only when the filesystem's backend attributes indicate encryption is enabled.
+Encryption action فقط زمانی نمایش داده می‌شود که backend attributeها نشان دهند encryption فعال است.
 
-Values interpreted as non-encrypted include:
+Valueهای زیر non-encrypted در نظر گرفته می‌شوند:
 
 ```text
 off
@@ -283,7 +319,11 @@ empty string
 
 ### Load key
 
-Hook: `useLoadKey()`
+Hook:
+
+```text
+useLoadKey()
+```
 
 Endpoint:
 
@@ -299,11 +339,15 @@ Body:
 }
 ```
 
-The UI opens a passphrase modal before calling the mutation.
+UI پیش از mutation یک passphrase modal باز می‌کند.
 
 ### Unload key
 
-Hook: `useUnloadKey()`
+Hook:
+
+```text
+useUnloadKey()
+```
 
 Endpoint:
 
@@ -311,11 +355,15 @@ Endpoint:
 POST /api/filesystem/unload-key/?name=<pool/filesystem>
 ```
 
-No passphrase body is required.
+Passphrase body لازم نیست.
 
 ### Change passphrase
 
-Hook: `useChangeFileSystemPassphrase()`
+Hook:
+
+```text
+useChangeFileSystemPassphrase()
+```
 
 Endpoint:
 
@@ -331,40 +379,40 @@ Body:
 }
 ```
 
-The table only enables the Change Passphrase action while the encryption key appears loaded.
+Table فقط وقتی Change Passphrase را فعال می‌کند که encryption key ظاهراً loaded باشد.
 
-The loaded-key state is derived from the `keystatus` attribute, recognizing values such as `available`, `loaded`, `on`, `yes`, and `true`.
+Loaded-key state از attribute مربوط به `keystatus` derive می‌شود و valueهایی مانند `available`، `loaded`، `on`، `yes` و `true` را recognize می‌کند.
 
-## Action locking behavior
+## رفتار action locking
 
-`FileSystemsTable` currently receives page-level booleans such as:
+`FileSystemsTable` در حال حاضر page-level booleanهایی مانند موارد زیر دریافت می‌کند:
 
-- `isMounting`;
-- `isUnmounting`;
-- `isKeyLoading`;
-- `isKeyUnloading`;
-- `isChangingPassphrase`;
+- `isMounting`؛
+- `isUnmounting`؛
+- `isKeyLoading`؛
+- `isKeyUnloading`؛
+- `isChangingPassphrase`؛
 - `isSettingCanmount`.
 
-It combines them into one `anyPending` value.
+این مقدارها به یک `anyPending` ترکیب می‌شوند.
 
-As a result, while **any** filesystem operational mutation is pending, action controls for **all rows** are disabled.
+در نتیجه وقتی **هر** filesystem operational mutation در حالت pending باشد، action controlهای **تمام rowها** disable می‌شوند.
 
-This is current behavior, not a per-row lock. If future UX requires concurrent operations on independent filesystems, mutation state must be keyed by resource identity rather than changing only the table button conditions.
+این رفتار فعلی است و per-row lock نیست. اگر UX آینده نیاز به concurrent operation روی filesystemهای مستقل داشته باشد، mutation state باید بر اساس resource identity key شود؛ فقط تغییر condition buttonهای table کافی نیست.
 
-## StateSync relationship
+## ارتباط با StateSync
 
-All `/api/filesystem...` mutation URLs map centrally to:
+تمام mutation URLهای زیر namespace `/api/filesystem...` به‌صورت مرکزی map می‌شوند به:
 
 ```text
 filesystem + zpool
 ```
 
-in `resolveStateDomainsForMutation()`.
+در `resolveStateDomainsForMutation()`.
 
-The reason for the cross-domain mapping is that filesystem operations can also change pool-level capacity/state.
+دلیل cross-domain mapping این است که filesystem operation می‌تواند pool-level capacity/state را نیز تغییر دهد.
 
-The intended lifecycle is:
+Lifecycle مورد انتظار:
 
 ```text
 successful filesystem mutation
@@ -375,81 +423,81 @@ successful filesystem mutation
   → canonical GET /api/zpool/ with save_to_db=true
 ```
 
-Feature hooks must not own `save_to_db=true`.
+Feature hookها نباید مالک `save_to_db=true` باشند.
 
-## Error handling
+## مدیریت خطا
 
-Each operational hook reports the affected full filesystem name to its page callback so toast messages identify the failing resource.
+هر operational hook، full filesystem name مربوط به resource را به callback صفحه می‌دهد تا toast message مشخص کند failure مربوط به کدام filesystem بوده است.
 
-Create/Delete maintain modal-specific error state. Mount/key/property actions currently report errors through toast callbacks rather than a persistent row-level error state.
+Create/Delete modal-specific error state دارند. Mount/key/property actionها فعلاً error را از طریق toast callback گزارش می‌کنند و row-level persistent error state ندارند.
 
-One operation failing must not erase the successfully fetched filesystem collection.
+Failure یک operation نباید filesystem collection موفق را پاک کند.
 
-## Important invariants
+## invariantهای مهم
 
-- `['filesystems']` is the canonical ordinary filesystem collection key.
-- The preferred list endpoint is one detailed request; per-name detail fan-out exists only for compatibility with older backend behavior.
-- Filesystem and zpool StateSync are both scheduled after successful filesystem mutations.
-- Frontend duplicate-name validation is helpful but cannot replace backend uniqueness enforcement.
-- Delete remains confirmation-driven and backend dependency errors must remain authoritative.
-- Passphrase Base64 conversion is encoding only, not encryption.
-- Change Passphrase is enabled only when the UI believes the key is loaded.
-- Current operation locking is global to the table, not per filesystem.
-- Detail selections must be reconciled when filesystem entries disappear.
+- `['filesystems']` canonical ordinary filesystem collection key است.
+- Preferred list endpoint یک detailed request واحد است؛ per-name detail fan-out فقط برای compatibility با backend قدیمی وجود دارد.
+- پس از filesystem mutation موفق، هم filesystem و هم zpool StateSync schedule می‌شوند.
+- Frontend duplicate-name validation مفید است ولی جای backend uniqueness enforcement را نمی‌گیرد.
+- Delete باید confirmation-driven بماند و backend dependency errorها authoritative هستند.
+- Base64 کردن passphrase فقط encoding است، نه encryption.
+- Change Passphrase فقط وقتی فعال است که UI key را loaded تشخیص دهد.
+- Operation locking فعلی در سطح کل table است، نه هر filesystem.
+- وقتی filesystem از backend حذف می‌شود، detail selection باید reconcile شود.
 
-## Common failure scenarios
+## failure scenarioهای رایج
 
-### List is unexpectedly empty on an older backend
+### List روی backend قدیمی به‌شکل غیرمنتظره خالی است
 
-Inspect the initial `/api/filesystem/?detail=true` response. If it returns names only, verify the fallback detail endpoint `/api/filesystem/detail/` still accepts the `name` parameter.
+Response اولیه‌ی `/api/filesystem/?detail=true` را بررسی کنید. اگر فقط name برمی‌گرداند، بررسی کنید fallback endpoint یعنی `/api/filesystem/detail/` هنوز parameter مربوط به `name` را می‌پذیرد.
 
-### One filesystem is missing only in legacy fallback mode
+### فقط یک filesystem در legacy fallback mode ناپدید است
 
-The compatibility detail loader catches an individual detail failure and drops that entry. Inspect the per-name detail request.
+Compatibility detail loader failure مربوط به یک detail request را catch کرده و همان entry را حذف می‌کند. Per-name detail request را بررسی کنید.
 
-### Create fails although modal validation passes
+### Create با وجود pass شدن modal validation fail می‌شود
 
-Frontend checks can be stale. Inspect backend uniqueness, capacity, mountpoint, encryption, and naming validation from the API response.
+Frontend checkها می‌توانند stale باشند. Backend response مربوط به uniqueness، capacity، mountpoint، encryption و naming validation را بررسی کنید.
 
-### Delete says related shares exist
+### Delete می‌گوید share وابسته وجود دارد
 
-Remove dependent share configuration using the relevant Share feature, then retry. Do not bypass the backend dependency rule in the frontend.
+Share configuration وابسته را از feature مربوط به Share حذف کنید و سپس دوباره تلاش کنید. Backend dependency rule را در frontend bypass نکنید.
 
-### Change Passphrase action is disabled
+### Change Passphrase disabled است
 
-Check normalized `encryption` and `keystatus` attributes. Encryption actions are hidden for non-encrypted filesystems, and Change Passphrase also requires key-loaded state.
+Attributeهای `encryption` و `keystatus` نرمال‌شده را بررسی کنید. Encryption action برای non-encrypted filesystem مخفی است و Change Passphrase علاوه بر آن نیازمند key-loaded state است.
 
-### All rows become disabled during one operation
+### هنگام یک operation همه rowها disabled می‌شوند
 
-That is current table behavior because operation pending flags are page-global. A per-row concurrency change requires keyed mutation state.
+این رفتار فعلی table است، چون pending flagها page-global هستند. برای per-row concurrency باید keyed mutation state اضافه شود.
 
-### Backend database snapshot appears stale
+### Backend database snapshot stale به نظر می‌رسد
 
-Verify the successful mutation passed through `axiosInstance`, then inspect the centralized filesystem/zpool StateSync schedule. Do not add `save_to_db=true` to the feature hook.
+بررسی کنید mutation موفق از `axiosInstance` عبور کرده باشد و سپس centralized filesystem/zpool StateSync schedule را بررسی کنید. `save_to_db=true` را به feature hook اضافه نکنید.
 
-## Extension guide
+## راهنمای توسعه
 
-### Adding a filesystem mutation
+### افزودن filesystem mutation
 
-1. add a dedicated hook or API function;
-2. use a URL under the filesystem API contract when appropriate so centralized StateSync mapping remains correct;
-3. invalidate `['filesystems']` after success;
-4. add resource-aware confirmation for destructive actions;
-5. document whether the operation changes zpool state or introduces new cross-domain effects;
-6. do not add caller-owned persistence flags.
+1. hook یا API function اختصاصی اضافه کنید.
+2. در صورت مناسب بودن از URL داخل filesystem API contract استفاده کنید تا centralized StateSync mapping درست بماند.
+3. بعد از success، `['filesystems']` را invalidate کنید.
+4. برای destructive action confirmation وابسته به resource اضافه کنید.
+5. مستند کنید operation آیا zpool state را تغییر می‌دهد یا cross-domain effect جدیدی دارد.
+6. caller-owned persistence flag اضافه نکنید.
 
-### Changing encryption handling
+### تغییر encryption handling
 
-Treat passphrase handling as security-sensitive. Confirm:
+Passphrase handling را security-sensitive در نظر بگیرید و این موارد را verify کنید:
 
-- transport security requirements;
-- whether backend still expects Base64 encoding;
-- whether passphrases may be retained in React/browser memory longer than necessary;
-- validation contract between frontend and backend.
+- transport security requirement؛
+- آیا backend هنوز Base64 encoding را انتظار دارد؛
+- آیا passphrase بیش از حد لازم در React/browser memory باقی می‌ماند؛
+- validation contract میان frontend و backend.
 
-Do not describe Base64 as encryption.
+Base64 را encryption معرفی نکنید.
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/pages/FileSystem.tsx`
 - `src/components/file-system/FileSystemsTable.tsx`
@@ -469,7 +517,7 @@ Do not describe Base64 as encryption.
 - `src/lib/stateSyncManager.ts`
 - `src/stores/detailSplitViewStore.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
 - [`../04-core-flows/api-request-lifecycle.md`](../04-core-flows/api-request-lifecycle.md)
