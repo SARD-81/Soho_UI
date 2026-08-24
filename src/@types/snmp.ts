@@ -26,7 +26,6 @@ export interface SnmpConfigPayload {
   sys_name: string;
   port: string;
   bind_ip: string;
-  save_to_db: boolean;
 }
 
 export interface SnmpConfigResponse {
