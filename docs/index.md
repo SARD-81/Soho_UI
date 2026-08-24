@@ -59,12 +59,16 @@ Feature documents describe the actual page-level user flow, query/mutation owner
 - [`05-features/users.md`](./05-features/users.md) — OS-user management, Samba identity linkage, duplicate checks, and non-atomic OS-to-Samba creation.
 - [`05-features/samba-shares.md`](./05-features/samba-shares.md) — Samba shares/users/groups, member management, account-flag fan-out, partial-failure workflows, and StateSync ownership.
 - [`05-features/nfs-shares.md`](./05-features/nfs-shares.md) — NFS CRUD, filesystem mountpoint dependency, option translation, service restart behavior, and NFS StateSync.
+- [`05-features/web-share.md`](./05-features/web-share.md) — filesystem/share eligibility, two-stage Web Share creation, permission handling, and Web Share StateSync.
+- [`05-features/snmp.md`](./05-features/snmp.md) — SNMP configuration, connection diagnostics, response normalization, and persisted-versus-diagnostic boundaries.
+- [`05-features/settings.md`](./05-features/settings.md) — general system settings, network configuration, Web users, and cross-domain user creation.
+- [`05-features/history.md`](./05-features/history.md) — current History placeholder status and implementation checklist.
 
-More feature documents are added incrementally as their implementation is audited.
+Every currently routed product feature now has either a full feature document or, for History, an explicit placeholder-state document.
 
 ### Other maintained notes
 
-- [`general-settings.md`](./general-settings.md)
+- [`general-settings.md`](./general-settings.md) — detailed General Settings API/normalization/UI notes; the higher-level Settings feature document links to this maintained subdocument.
 
 ### Legacy compatibility redirects
 
@@ -139,7 +143,11 @@ docs/
 │   ├── services.md
 │   ├── users.md
 │   ├── samba-shares.md
-│   └── nfs-shares.md
+│   ├── nfs-shares.md
+│   ├── web-share.md
+│   ├── snmp.md
+│   ├── settings.md
+│   └── history.md
 ├── 06-api/
 └── 07-operations/
 ```
