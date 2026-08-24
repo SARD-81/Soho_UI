@@ -4,11 +4,11 @@
 
 The Dashboard is the operator-facing monitoring and overview surface of SOHO UI. It combines live system telemetry, storage health, server-slot visualization, system uptime, and a per-user customizable widget layout.
 
-The page is intentionally an aggregation layer. It does not own backend persistence for monitored resources and it does not duplicate the domain logic implemented by the feature hooks used by each widget.
-
 Route: `/dashboard`
 
 Entry point: `src/pages/Dashboard.tsx`
+
+The page is intentionally an aggregation layer. It does not own backend persistence for monitored resources and it does not duplicate domain logic implemented by the feature hooks used by each widget.
 
 ## Main responsibilities
 
@@ -18,19 +18,19 @@ The Dashboard is responsible for:
 - allowing the operator to reorder, hide, restore, and resize widgets;
 - persisting only the dashboard layout preference in browser `localStorage`;
 - scoping saved layouts by authenticated username;
-- presenting high-frequency telemetry without enabling hidden-tab background polling;
-- exposing the 3D server-slot view and its existing system power-action controls.
+- presenting high-frequency telemetry without hidden-tab background polling;
+- exposing the 3D server-slot view and existing system power-action controls.
 
 It is not responsible for:
 
-- persisting backend state snapshots;
-- deciding authentication/session behavior;
-- owning the implementation of CPU, memory, network, zpool, disk-slot, or uptime APIs;
-- using the dashboard layout as an authoritative server-side user preference.
+- persisted backend state snapshots;
+- authentication/session implementation;
+- duplicating CPU, memory, network, zpool, disk-slot, or uptime API clients;
+- treating layout preferences as authoritative server-side state.
 
 ## Current widget registry
 
-The current active widget registry in `Dashboard.tsx` contains:
+The active registry in `Dashboard.tsx` currently contains exactly these widgets:
 
 | Widget id | Component | Primary purpose |
 | --- | --- | --- |
@@ -40,7 +40,9 @@ The current active widget registry in `Dashboard.tsx` contains:
 | `server-3d-slots` | `ServerSlots3DWidget` | Interactive server chassis and disk-slot visualization. |
 | `network` | `Network` | Network traffic and interface information. |
 
-Older SystemInfo and Disk widget definitions remain commented in the page and are not part of the runtime widget registry.
+Treat widget ids as persisted UI-schema identifiers because saved dashboard layouts reference them.
+
+Do not keep removed widget definitions as commented code. Git history is the source for removed registry entries; active source should describe the current product surface only.
 
 ## Runtime data flow
 
@@ -71,7 +73,7 @@ flowchart TD
     UPQ --> API
 ```
 
-React Query is the server-state owner for all runtime monitoring data. The page itself owns only layout customization state.
+React Query owns runtime monitoring server state. The page itself owns only layout-customization state.
 
 ## API and refresh map
 
@@ -81,16 +83,16 @@ React Query is the server-state owner for all runtime monitoring data. The page 
 | Memory | `['memory']` | `GET /api/system/memory/` | 2 seconds while mounted; no background interval. |
 | Zpool overview | `['zpool']` | `GET /api/zpool/` | 30 seconds by default. |
 | Network base data | `['network']` | `GET /api/system/network`, then per-interface detail GET | Query lifecycle driven; bandwidth is separate. |
-| Network bandwidth | `['network', 'bandwidth-snapshots', interfaceNames]` | per-interface `GET /api/system/network/{name}/bandwidth/` | 2 seconds while active. |
-| System uptime | `['system', 'uptime']` | `GET /api/system/uptime/` | 1 second while mounted. |
+| Network bandwidth | `['network','bandwidth-snapshots',interfaceNames]` | per-interface `GET /api/system/network/{name}/bandwidth/` | 2 seconds while active. |
+| System uptime | `['system','uptime']` | `GET /api/system/uptime/` | 1 second while mounted. |
 | 3D slot zpool list | `['zpool']` | `GET /api/zpool/` | 30 seconds. |
-| 3D slot mapping | `['zpool','devices','slots', ...]` | disk inventory plus per-pool devices endpoints | 10-second override in `ServerSlots3DWidget`. |
+| 3D slot mapping | zpool/device slot key family | disk inventory + per-pool device endpoints | 10-second override in `ServerSlots3DWidget`. |
 
 All of these requests are observational. They must not own `save_to_db=true` persistence.
 
 ## Dashboard layout state
 
-Layout state has three fields:
+Layout state contains:
 
 ```ts
 interface LayoutState {
@@ -100,48 +102,48 @@ interface LayoutState {
 }
 ```
 
-The state is split into:
+The page separates:
 
-- `persistedLayout`: the last committed user layout;
-- `draftLayout`: the active customization draft, or `null` when not customizing.
+- `persistedLayout` — last committed user layout;
+- `draftLayout` — active customization draft, or `null` when not customizing.
 
-This distinction is intentional. Dragging, hiding, or resizing widgets must not immediately overwrite the stored layout. The operator can cancel the draft safely.
+This distinction is intentional. Dragging, hiding, or resizing must not immediately overwrite the stored preference; the operator can cancel safely.
 
 ## localStorage contract
 
-The current base key is:
+Base key:
 
 ```text
 dashboard-layout.v2
 ```
 
-The final key is scoped by normalized username:
+Per-user key:
 
 ```text
 dashboard-layout.v2:<lowercase-username>
 ```
 
-If no username is available, the fallback is:
+Fallback when no username exists:
 
 ```text
 dashboard-layout.v2:guest
 ```
 
-This is UI preference storage only. It is not backend state and must not be confused with authentication token storage or StateSync persistence.
+This is UI preference storage only. It is unrelated to token storage or StateSync persistence.
 
 ## Layout normalization
 
-Persisted layout data is treated as untrusted/stale input because widget definitions can change between releases.
+Persisted browser data is treated as potentially stale because widget definitions can change between releases.
 
-`createNormalizedState()` therefore:
+Normalization therefore:
 
 - removes unknown widget ids;
 - removes duplicate ids;
-- appends newly introduced widgets that are missing from older saved layouts;
+- appends current widgets missing from older saved layouts;
 - drops hidden ids that no longer exist;
-- keeps only size override ids that still exist in the current widget definition.
+- keeps only size overrides for current widget ids.
 
-This compatibility normalization is a maintenance invariant. Without it, adding/removing/renaming widgets could break previously stored user layouts.
+This compatibility behavior is a maintenance invariant. Adding/removing/renaming widget ids without considering saved layouts can break user customization state.
 
 ## Customization flow
 
@@ -155,45 +157,67 @@ stateDiagram-v2
     Viewing --> [*]
 ```
 
-When customization starts, the page clones `persistedLayout` into `draftLayout`.
+When customization starts, the page clones the committed layout into a draft.
 
 On Save:
 
-1. normalize the draft against the current registry;
-2. copy it into `persistedLayout`;
-3. leave customization mode;
-4. the persistence effect writes the committed layout to `localStorage`.
+1. normalize the draft against the active widget registry;
+2. copy it to committed/persisted state;
+3. exit customization mode;
+4. persistence effect writes the committed preference to `localStorage`.
 
-On Cancel, the draft is discarded and no persisted layout change occurs.
+On Cancel, the draft is discarded.
 
 ## Drag-and-drop rule
 
-Only visible widgets participate in the sortable interaction. Reordering visible widgets must preserve the positions of hidden widget ids inside the complete saved ordering so hidden widgets can later be restored predictably.
+Only visible widgets participate in sortable interaction.
 
-This is why `handleDragEnd()` does not simply replace the complete `order` array with the visible array returned by DnD Kit.
+Reordering visible widgets must preserve hidden widget ids inside the complete saved ordering so hidden widgets can later be restored predictably.
+
+That is why drag handling does not simply replace the complete `order` array with the visible DnD result.
 
 ## Layout presets
 
-Each widget can define responsive columns, row spans, minimum height, and optional named layout presets.
+Widgets can define:
 
-The page always synthesizes a `default` preset from the widget's base layout configuration. Choosing the default removes the corresponding entry from `sizeOverrides` rather than storing a redundant override.
+- responsive column spans;
+- row spans;
+- minimum height;
+- optional named layout presets.
 
-Responsive grid spans are clamped to valid values before generating CSS grid declarations.
+The page synthesizes a `default` preset from base configuration. Selecting default removes a redundant size override instead of storing another copy of default layout data.
+
+Responsive spans are clamped before CSS grid declarations are generated.
 
 ## Server 3D widget
 
 `ServerSlots3DWidget` combines:
 
-- the current zpool list;
+- current zpool list;
 - pool-device membership;
 - global disk inventory;
 - physical slot metadata;
-- a local selected-slot state;
-- system reboot/poweroff actions supplied by `SystemPowerActionsContext`.
+- local selected-slot state;
+- reboot/poweroff actions from `SystemPowerActionsContext`.
 
-The slot mapping intentionally uses a 10-second refresh interval, faster than the 30-second default `usePoolDeviceSlots` cadence.
+Slot mapping intentionally uses a 10-second refresh interval, faster than the ordinary 30-second pool-device cadence.
 
-Per-pool device failures are represented in `errorsByPool` so one failed pool lookup does not prevent successful pools from being shown.
+Per-pool device failures can remain isolated so successful pools/slots continue rendering.
+
+## System power actions
+
+The 3D/server UI can request:
+
+```text
+reboot
+poweroff
+```
+
+through the shared system power-action context.
+
+The backend currently exposes these as GET requests with side effects. They must not be prefetched, automatically retried as safe reads, or treated as ordinary telemetry.
+
+See [`../06-api/endpoint-map.md`](../06-api/endpoint-map.md).
 
 ## Uptime formatting
 
@@ -203,62 +227,67 @@ The compact uptime badge expects backend numeric format:
 YY/MM/DD-HH:MM:SS
 ```
 
-The formatter preserves non-zero year and month parts explicitly rather than guessing conversions from months or years into days. The backend `human_readable` field is used as explanatory tooltip content when available.
+The formatter preserves non-zero year/month parts rather than guessing month/year conversion into days. Backend `human_readable` content is explanatory tooltip text when available.
 
 ## Error handling
 
-Each widget handles its own loading/error state through its hook/component boundary. The Dashboard page should not collapse all widget errors into one page-level failure because one telemetry source failing should not make unrelated monitoring data disappear.
+Each widget owns its loading/error state through its hook/component boundary.
 
-The 3D server widget similarly allows partial pool-device errors while keeping successfully resolved slots visible.
+The Dashboard should not collapse all widget errors into one page failure because independent telemetry resources have independent availability.
 
-## Important business and architecture rules
+The 3D widget likewise preserves successful slot data when individual pool-device resolution fails.
+
+## Important architecture rules
 
 - Dashboard customization is a browser UI preference, not managed-system state.
-- Layout persistence is per normalized username.
-- Only committed layouts are written to localStorage.
-- Saved layout data must be normalized against the current widget registry.
+- Layout persistence is scoped by normalized username.
+- Only committed layouts are written to `localStorage`.
+- Saved layouts are normalized against the current registry.
 - Monitoring GETs are observational and must not trigger database snapshots.
 - High-frequency telemetry polling stops in a hidden tab.
-- A widget should reuse the domain hook/query key for the resource it represents instead of creating a dashboard-only API implementation.
-- The 3D server view is a consumer of storage/disk state; it is not a second storage-state source of truth.
+- Widgets should reuse domain hooks/query keys instead of creating dashboard-only API implementations.
+- The 3D server view consumes storage/disk state; it is not a second source of truth.
+- Removed widgets belong in Git history, not commented production registry code.
 
 ## Common failure scenarios
 
-### A saved layout appears corrupted after adding a widget
+### Saved layout looks corrupted after registry change
 
-Check `createNormalizedState()` and the widget registry ids. New widget ids should be appended automatically. Renaming an id is effectively a migration and the old persisted id will be discarded.
+Inspect current widget ids and layout normalization. A renamed id is effectively a persisted-schema migration; without explicit migration, the old id is discarded.
 
-### Dashboard changes are saved immediately instead of after Save
+### Dashboard changes persist before Save
 
-Check that UI actions mutate `draftLayout`, not `persistedLayout`.
+Handlers should mutate `draftLayout`, not committed layout state.
 
-### Cancel does not restore the previous layout
+### Cancel does not restore prior layout
 
-Check that customization started from `cloneLayoutState(persistedLayout)` and that no handler mutated nested arrays/objects in place.
+Verify customization starts from a clone of committed layout and nested arrays/objects are not mutated in place.
 
 ### Duplicate telemetry requests appear
 
-Check query-key reuse before changing polling. The same domain resource should share React Query state where appropriate.
+Verify query-key reuse before changing polling. The same domain resource should normally share React Query state.
 
 ### 3D slots are stale while zpool cards are fresh
 
-The two resources use different refresh cadences. Inspect `usePoolDeviceSlots`, its `enabled` state, and the 10-second override in `ServerSlots3DWidget`.
+The resources intentionally use different refresh cadences. Inspect `usePoolDeviceSlots`, enablement, and the 10-second 3D override.
 
 ## Extension guide
 
-### Adding a dashboard widget
+### Adding a widget
 
-1. Build the feature component and its domain hook outside the Dashboard page when possible.
-2. Add one stable id to `dashboardWidgets`.
-3. Define sensible responsive default spans.
-4. Add layout presets only when they offer a real operator use case.
-5. Confirm old localStorage layouts normalize correctly when the new widget is introduced.
-6. If the widget polls, document its interval in `docs/04-core-flows/polling-and-data-refresh.md`.
-7. Do not add `save_to_db=true` to dashboard reads.
+1. Implement/reuse the feature component and domain hook outside the Dashboard where practical.
+2. Add one stable id to the active `dashboardWidgets` registry.
+3. Define sensible responsive spans.
+4. Add layout presets only for real operator use cases.
+5. Verify old `localStorage` layouts normalize correctly.
+6. If the widget polls, update polling documentation.
+7. Never add `save_to_db=true` to dashboard reads.
 
 ### Renaming/removing a widget
 
-Treat widget ids as persisted schema identifiers. A rename will cause old layout state for that id to be discarded unless an explicit migration is added.
+Treat widget ids as persisted schema identifiers. A rename discards old preference state for that id unless explicit migration is added.
+
+Remove obsolete definitions from source rather than commenting them out.
 
 ## Related files
 
@@ -283,3 +312,4 @@ Treat widget ids as persisted schema identifiers. A rename will cause old layout
 - [`../04-core-flows/server-state-and-cache.md`](../04-core-flows/server-state-and-cache.md)
 - [`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md)
 - [`../04-core-flows/state-sync-save-to-db.md`](../04-core-flows/state-sync-save-to-db.md)
+- [`../06-api/endpoint-map.md`](../06-api/endpoint-map.md)
