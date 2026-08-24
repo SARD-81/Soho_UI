@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: frontend-validation-${{ github.ref }}
@@ -39,3 +40,22 @@ jobs:
 
       - name: Build production bundle
         run: npm run build
+
+      - name: Publish validation status
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          state="$JOB_STATUS"
+          if [ "$state" = "cancelled" ]; then
+            state="error"
+          fi
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            --data "{\"state\":\"$state\",\"context\":\"frontend-validation\",\"description\":\"Frontend lint and build: $JOB_STATUS\"}"
