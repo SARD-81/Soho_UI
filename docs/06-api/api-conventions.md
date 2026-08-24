@@ -1,49 +1,49 @@
 # API Conventions
 
-This document defines the frontend-side API conventions currently enforced by SOHO UI.
+این سند conventionهای فعلی سمت frontend برای API integration در SOHO UI را تعریف می‌کند.
 
-The goal is to make new API integrations behave consistently with authentication, React Query, persistence, error handling, and operational workflows already present in the application.
+هدف این است که integrationهای جدید با authentication، React Query، persistence، error handling و operational workflowهای موجود در application سازگار بمانند.
 
-## Transport ownership
+## مالکیت transport
 
-Normal application traffic must use:
+Normal application traffic باید از این module عبور کند:
 
 ```text
 src/lib/axiosInstance.ts
 ```
 
-The shared Axios client owns cross-cutting behavior including:
+Shared Axios client مالک cross-cutting behaviorهای زیر است:
 
-- `VITE_API_BASE_URL` resolution;
-- JSON request headers;
-- Bearer access-token attachment;
-- centralized `save_to_db` transport policy;
-- 401 recovery and token refresh;
-- failed-request queueing during refresh;
-- successful-mutation StateSync scheduling;
-- optional mock adapter registration;
-- common API-error logging.
+- resolve کردن `VITE_API_BASE_URL`؛
+- JSON request headerها؛
+- attach کردن Bearer access token؛
+- centralized transport policy مربوط به `save_to_db`؛
+- recovery از 401 و token refresh؛
+- queue کردن failed requestها هنگام refresh؛
+- schedule کردن StateSync پس از mutation موفق؛
+- ثبت optional mock adapter؛
+- API-error logging مشترک.
 
-Feature hooks/components should not recreate these responsibilities.
+Feature hook/componentها نباید این مسئولیت‌ها را دوباره پیاده‌سازی کنند.
 
-## Authentication transport exception
+## استثنای authentication transport
 
-Token issue, refresh, and verify deliberately use the isolated auth client in:
+Token issue، refresh و verify عمداً از isolated auth client داخل این فایل استفاده می‌کنند:
 
 ```text
 src/lib/authApi.ts
 ```
 
-This prevents token refresh from recursively entering the normal Axios 401 interceptor.
+این جداسازی مانع آن می‌شود که token refresh به‌صورت recursive وارد Axios 401 interceptor معمولی شود.
 
-Authentication base URL resolution is documented in:
+Authentication base URL resolution در اسناد زیر توضیح داده شده است:
 
 - [`../03-development/configuration.md`](../03-development/configuration.md)
 - [`authentication-api.md`](./authentication-api.md)
 
-Logout is different: it is an authenticated application mutation and therefore uses the normal shared Axios instance.
+Logout متفاوت است: یک authenticated application mutation است و بنابراین از shared Axios instance معمولی استفاده می‌کند.
 
-## Base URLs
+## Base URLها
 
 Normal application API:
 
@@ -51,19 +51,19 @@ Normal application API:
 VITE_API_BASE_URL
 ```
 
-Optional separate authentication API:
+Optional authentication API جدا:
 
 ```text
 VITE_AUTH_API_BASE_URL
 ```
 
-If the authentication-specific value is absent, the auth client derives an `/api/auth/` base from `VITE_API_BASE_URL`.
+اگر مقدار authentication-specific وجود نداشته باشد، auth client یک base با انتهای `/api/auth/` از `VITE_API_BASE_URL` derive می‌کند.
 
-Do not hard-code production origins inside hooks or components.
+Production origin را داخل hook یا component hard-code نکنید.
 
-## URL conventions
+## conventionهای URL
 
-Backend paths are not perfectly uniform. Current APIs include all of these forms:
+Backend pathها کاملاً uniform نیستند. APIهای فعلی شکل‌های مختلفی دارند:
 
 ```text
 /api/zpool/
@@ -73,30 +73,30 @@ Backend paths are not perfectly uniform. Current APIs include all of these forms
 /api/filesystem/delete/?name=...
 ```
 
-Do not normalize endpoint spelling, trailing slashes, or path families based on preference alone. Preserve the verified backend contract.
+Endpoint spelling، trailing slash یا path family را صرفاً بر اساس preference شخصی normalize نکنید. Verified backend contract را حفظ کنید.
 
-Dynamic identifiers must be URL encoded:
+Dynamic identifierها باید URL encode شوند:
 
 ```ts
 encodeURIComponent(resourceName)
 ```
 
-This is especially important for:
+این موضوع مخصوصاً برای موارد زیر مهم است:
 
-- service unit names;
-- disk names;
-- pool names;
-- filesystem full names;
-- usernames;
-- group names;
-- share names;
-- network-interface names.
+- service unit name؛
+- disk name؛
+- pool name؛
+- filesystem full name؛
+- username؛
+- group name؛
+- share name؛
+- network-interface name.
 
-## Query parameters
+## Query parameterها
 
-Use Axios `params` for query parameters when practical rather than manually concatenating arbitrary user values into a URL.
+در صورت امکان برای query parameter از Axios `params` استفاده کنید و arbitrary user value را دستی به URL concatenate نکنید.
 
-Examples include:
+نمونه‌ها:
 
 ```text
 property=all
@@ -106,20 +106,20 @@ action=<service-action>
 include_system=false
 ```
 
-When an endpoint already has a verified inline query pattern, preserve it unless deliberately refactoring the complete request contract.
+اگر endpoint فعلی verified inline query pattern دارد، تا زمانی که کل request contract عمداً refactor نشده آن را حفظ کنید.
 
-## Domain payloads must not contain persistence ownership
+## Domain payload نباید مالک persistence باشد
 
-A central architectural invariant is:
+یکی از invariantهای اصلی architecture این است:
 
 ```text
 normal /api/ request      -> save_to_db=false
 StateSync canonical GET   -> save_to_db=true
 ```
 
-Feature-domain payloads should contain only the operation's business data.
+Feature-domain payload باید فقط business data مربوط به همان operation را داشته باشد.
 
-Do not add fields such as:
+Fieldهایی مثل موارد زیر اضافه نکنید:
 
 ```text
 save_to_db
@@ -128,35 +128,35 @@ persist
 snapshot
 ```
 
-unless the centralized persistence architecture itself is being intentionally changed.
+مگر اینکه centralized persistence architecture عمداً در حال تغییر باشد.
 
-The request interceptor strips/normalizes stale caller-level `save_to_db` values so legacy code cannot accidentally persist a non-canonical response.
+Request interceptor مقدارهای stale مربوط به caller-level `save_to_db` را strip/normalize می‌کند تا legacy code نتواند non-canonical response را ناخواسته persist کند.
 
-Detailed contract:
+Contract کامل:
 
 - [`../04-core-flows/state-sync-save-to-db.md`](../04-core-flows/state-sync-save-to-db.md)
 - [`../02-architecture/decisions/ADR-003-state-sync-persistence.md`](../02-architecture/decisions/ADR-003-state-sync-persistence.md)
 
-## Observational requests versus mutations
+## observational request در برابر mutation
 
-HTTP method alone does not define persistence semantics.
+HTTP method به‌تنهایی persistence semantics را مشخص نمی‌کند.
 
-Examples:
+مثال:
 
-- `GET /api/system/cpu/` is observational.
-- `POST /api/snmp/config/` mutates persisted SNMP configuration.
-- `POST /api/snmp/test-connection/` is diagnostic despite using POST.
-- `POST /api/system/time/hwclock/` can be observational when `action=show`, but mutating for other actions.
+- `GET /api/system/cpu/` observational است.
+- `POST /api/snmp/config/` backend SNMP configuration را تغییر می‌دهد، اما در نسخه‌ی فعلی GitLab یک StateSync domain مستقل برای SNMP وجود ندارد.
+- `POST /api/snmp/test-connection/` با وجود استفاده از POST diagnostic است.
+- `POST /api/system/time/hwclock/` با `action=show` observational است ولی actionهای دیگر می‌توانند mutating باشند.
 
-When adding an endpoint, classify the operation by domain effect rather than by method name alone.
+هنگام اضافه کردن endpoint، operation را بر اساس domain effect طبقه‌بندی کنید، نه فقط method.
 
-If a successful request is a POST/PUT/PATCH/DELETE but does not change a StateSync-owned domain, make sure the StateSync URL resolver does not treat it as a persisted mutation.
+اگر request موفق از نوع POST/PUT/PATCH/DELETE است ولی StateSync-owned domain را تغییر نمی‌دهد، resolver نباید برای آن persisted snapshot اشتباه schedule کند.
 
-## React Query ownership
+## مالکیت React Query
 
-Authoritative backend state belongs in React Query.
+Authoritative backend state باید در React Query نگهداری شود.
 
-A stable query key must represent the backend resource/lifecycle, for example:
+Stable query key باید backend resource/lifecycle را نمایش دهد، برای مثال:
 
 ```text
 ['zpool']
@@ -171,109 +171,111 @@ A stable query key must represent the backend resource/lifecycle, for example:
 ['snmp','info']
 ```
 
-Do not create a new query key merely because the same resource is displayed on another page. Shared resources should normally share cache identity.
+صرفاً چون یک resource در صفحه‌ی دیگری هم نمایش داده می‌شود query key جدید نسازید. Shared resource معمولاً باید cache identity مشترک داشته باشد.
 
-Use a different key when the data source, parameters, lifecycle, or semantic resource is genuinely different.
+Key متفاوت زمانی منطقی است که data source، parameter، lifecycle یا semantic resource واقعاً متفاوت باشد.
 
-## Mutation success behavior
+## رفتار پس از mutation موفق
 
-A typical mutation has two independent post-success concerns:
+یک mutation معمولاً دو concern مستقل بعد از success دارد:
 
-1. **UI freshness** — invalidate/refetch the relevant React Query resource.
-2. **Persistence** — the shared Axios response interceptor asks `StateSyncManager` to schedule canonical snapshots for mapped persisted domains.
+1. **UI freshness** — React Query resource مرتبط invalidate/refetch شود.
+2. **Persistence** — shared Axios response interceptor از `StateSyncManager` می‌خواهد برای persisted domainهای map‌شده canonical snapshot schedule کند.
 
-Feature hooks should own the first concern.
+Feature hook باید concern اول را مدیریت کند.
 
-They should not manually implement the second.
+Concern دوم نباید دستی داخل feature hook پیاده‌سازی شود.
 
 ## StateSync URL mapping
 
-Current persisted domains are:
+بر اساس `stateSyncManager.ts` صحیح در GitLab، persisted domainهای فعلی عبارت‌اند از:
 
 ```text
 zpool
 filesystem
 disk
 nfs
-samba-users
-samba-groups
 samba-shares
 webshare
-snmp
 ```
 
-Examples of cross-domain mapping:
+Cross-domain mappingهای اصلی:
 
 ```text
 /api/zpool...       -> zpool + disk
 /api/filesystem...  -> filesystem + zpool
 /api/disk...        -> disk + zpool
-/api/samba/users... -> samba-users + samba-groups
-/api/samba/groups...-> samba-groups + samba-users
+/api/nfs...         -> nfs
+/api/samba/sharepoints... -> samba-shares
+other /api/samba... -> samba-shares
+/api/webshare...    -> webshare
 ```
 
-Not every backend domain is currently StateSync-owned. Examples currently outside the persisted frontend snapshot map include:
+در نسخه‌ی فعلی، `samba-users`، `samba-groups` و `snmp` StateSync domain مستقل نیستند.
 
-- Volumes;
-- OS users;
-- Web/UI users;
-- system service control;
-- general system settings;
-- network configuration.
+همچنین backend domainهای زیر خارج از persisted frontend snapshot map فعلی هستند:
 
-Do not compensate for an unmapped domain by adding local persistence flags. Confirm the backend persistence contract first.
+- Volumes؛
+- OS users؛
+- Web/UI users؛
+- system service control؛
+- general system settings؛
+- network configuration؛
+- SNMP configuration به‌عنوان domain مستقل.
 
-## Polling conventions
+برای domain بدون mapping، با local persistence flag مسئله را دور نزنید. ابتدا backend persistence contract را confirm کنید.
 
-Polling cadence belongs to the resource hook, not to generic API helpers.
+## conventionهای polling
 
-A component can supply a deliberate override when the same resource requires a different cadence in a specific operational context, such as the 3D slot view.
+Polling cadence متعلق به resource hook است، نه generic API helper.
 
-Polling rules must also be reflected in:
+Component فقط وقتی باید override ارائه کند که همان resource در یک operational context خاص cadence متفاوت لازم داشته باشد؛ مانند 3D slot view.
+
+Polling ruleها باید در این سند canonical نیز منعکس شوند:
 
 [`../04-core-flows/polling-and-data-refresh.md`](../04-core-flows/polling-and-data-refresh.md)
 
-High-frequency polling should normally set:
+High-frequency polling معمولاً باید این behavior را داشته باشد:
 
 ```text
 refetchIntervalInBackground = false
 ```
 
-unless background refresh is a deliberate product requirement.
+مگر اینکه background refresh یک product requirement عمدی باشد.
 
 ## Cancellation
 
-Read helpers should pass React Query's `AbortSignal` to Axios when their hook/query lifecycle supports cancellation.
+Read helperها در lifecycleهایی که cancellation را پشتیبانی می‌کنند باید `AbortSignal` مربوط به React Query را به Axios منتقل کنند.
 
-This is useful for:
+این رفتار برای موارد زیر مفید است:
 
-- page navigation;
-- query disablement;
-- changing resource identity;
-- avoiding obsolete detail requests.
+- page navigation؛
+- query disablement؛
+- تغییر resource identity؛
+- جلوگیری از obsolete detail request.
 
-Do not add custom cancellation mechanisms when React Query + Axios signal support is sufficient.
+وقتی React Query + Axios signal کافی است، custom cancellation mechanism جدید نسازید.
 
 ## Response normalization
 
-Backend compatibility normalization belongs close to the data layer.
+Backend compatibility normalization باید نزدیک data layer انجام شود.
 
-Examples already present include:
+نمونه‌های فعلی:
 
-- disk `ok === false` handling;
-- Web Share multi-shape normalization;
-- Samba boolean/account-flag normalization;
-- SNMP boolean-like test-result normalization;
-- network response alias discovery;
+- handling مربوط به disk `ok === false`؛
+- Web Share multi-shape normalization؛
+- Samba boolean/account-flag normalization؛
+- SNMP boolean-like test-result normalization؛
+- network response alias discovery؛
 - filesystem legacy list/detail compatibility.
 
-Components should receive stable frontend models whenever practical.
+در حد امکان component باید stable frontend model دریافت کند.
 
-Do not scatter backend-version field aliases across JSX tables and modals.
+Backend-version field aliasها را در JSX table/modalهای مختلف پخش نکنید.
 
-## `ok: false` with HTTP success
+## `ok: false` با HTTP success
 
-Several backend endpoints can report logical failure inside a successful HTTP response, for example:
+برخی backend endpointها می‌توانند logical failure را در HTTP success response اعلام کنند:
 
 ```json
 {
@@ -282,19 +284,19 @@ Several backend endpoints can report logical failure inside a successful HTTP re
 }
 ```
 
-Where the current endpoint contract requires it, API helpers must convert this shape into a rejected/failed frontend operation.
+هرجا endpoint contract فعلی نیاز دارد، API helper باید این shape را به failed/rejected frontend operation تبدیل کند.
 
-Do not assume `2xx` automatically means domain success.
+فرض نکنید `2xx` همیشه به معنی domain success است.
 
-## Error messages
+## Error messageها
 
-Prefer the shared helper:
+در صورت امکان از shared helper زیر استفاده کنید:
 
 ```text
 extractApiErrorMessage(error, fallback)
 ```
 
-It currently recognizes common forms including:
+این helper shapeهای رایج زیر را recognize می‌کند:
 
 ```text
 detail
@@ -304,65 +306,67 @@ error.detail
 Error.message
 ```
 
-Some feature-specific APIs accept additional legacy shapes such as `errors`; those compatibility extractors should remain close to the relevant API layer until response contracts are unified.
+بعضی feature-specific APIها legacy shape اضافی مانند `errors` دارند. تا زمانی که response contractها unify نشده‌اند، compatibility extractorهای آن‌ها باید نزدیک API layer مرتبط باقی بمانند.
 
-See [`error-handling.md`](./error-handling.md).
+جزئیات:
 
-## Multi-request workflows
+[`error-handling.md`](./error-handling.md)
 
-Some apparent single user actions actually make multiple backend requests.
+## multi-request workflowها
 
-Examples:
+برخی user actionها ظاهراً یک operation هستند ولی چند backend request اجرا می‌کنند.
 
-- pool delete: destroy pool, then clean former disks;
-- Web Share create: create share, then set permission;
-- Samba group create: create group, then add users one-by-one;
-- Samba group member update: one PUT per username;
-- Settings Web-user create: create Web user, then OS user;
-- Users OS-first Samba creation: create OS user, then Samba user.
+مثال:
 
-These flows are generally **not frontend transactions** and have no automatic rollback.
+- pool delete: destroy pool، سپس cleanup diskهای قبلی؛
+- Web Share create: create share، سپس set permission؛
+- Samba group create: create group، سپس add userها یکی‌یکی؛
+- Samba group member update: یک PUT به ازای هر username؛
+- Settings Web-user create: create Web user، سپس OS user؛
+- Users OS-first Samba creation: create OS user، سپس Samba user.
 
-When implementing another multi-request workflow:
+این flowها معمولاً **frontend transaction نیستند** و automatic rollback ندارند.
 
-1. document request order;
-2. define what happens when request N fails;
-3. do not claim atomicity the backend does not provide;
-4. keep recovery/troubleshooting guidance in the owning feature document.
+هنگام پیاده‌سازی multi-request workflow جدید:
 
-## Destructive operations
+1. ترتیب requestها را مستند کنید.
+2. مشخص کنید failure در request شماره N چه اثری دارد.
+3. atomicityای را که backend guarantee نکرده ادعا نکنید.
+4. recovery/troubleshooting guidance را در feature document مالک workflow نگه دارید.
 
-Delete/wipe/stop operations with meaningful availability or data-loss risk should remain confirmation-driven.
+## destructive operationها
 
-Frontend confirmation is UX protection only. Backend authorization and resource-integrity validation remain authoritative.
+Delete/wipe/stop operationهایی که availability یا data-loss risk معنادار دارند باید confirmation-driven باقی بمانند.
 
-## API changes checklist
+Frontend confirmation فقط UX protection است. Backend authorization و resource-integrity validation authoritative باقی می‌مانند.
 
-When adding or modifying an endpoint integration:
+## checklist تغییر API
 
-1. verify exact method/path/trailing-slash behavior;
-2. identify the owning feature/domain;
-3. URL-encode dynamic path identifiers;
-4. define a stable React Query key for reads;
-5. define success invalidation for mutations;
-6. classify whether the operation really changes persisted state;
-7. update StateSync mapping only when required;
-8. never introduce caller-level `save_to_db` ownership;
-9. normalize backend response aliases at the data boundary;
-10. define logical `ok:false` behavior if applicable;
-11. normalize errors with a stable fallback message;
-12. document partial failures for multi-request flows;
-13. update [`endpoint-map.md`](./endpoint-map.md);
-14. update the relevant feature/core-flow document.
+هنگام add یا modify کردن endpoint integration:
 
-## Related files
+1. method/path/trailing-slash دقیق را verify کنید.
+2. owning feature/domain را مشخص کنید.
+3. dynamic path identifier را URL encode کنید.
+4. برای read یک stable React Query key تعریف کنید.
+5. برای mutation success invalidation را تعریف کنید.
+6. مشخص کنید operation واقعاً persisted state را تغییر می‌دهد یا خیر.
+7. فقط در صورت نیاز StateSync mapping را update کنید.
+8. caller-level ownership برای `save_to_db` ایجاد نکنید.
+9. backend response alias را در data boundary normalize کنید.
+10. در صورت وجود، behavior مربوط به logical `ok:false` را تعریف کنید.
+11. error را با fallback message پایدار normalize کنید.
+12. برای multi-request flow، partial failure را مستند کنید.
+13. [`endpoint-map.md`](./endpoint-map.md) را update کنید.
+14. feature/core-flow document مربوط را update کنید.
+
+## فایل‌های مرتبط
 
 - `src/lib/axiosInstance.ts`
 - `src/lib/authApi.ts`
 - `src/lib/stateSyncManager.ts`
 - `src/utils/apiError.ts`
 
-## Related documentation
+## مستندات مرتبط
 
 - [`authentication-api.md`](./authentication-api.md)
 - [`error-handling.md`](./error-handling.md)
