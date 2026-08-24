@@ -12,7 +12,9 @@ const normalizeMountpoints = (raw: unknown): string[] => {
     .map((entry) => {
       if (typeof entry === 'string') return entry.trim();
       if (entry && typeof entry === 'object') {
-        return (entry.mountpoint || entry.path || entry.name || '').toString().trim();
+        return (entry.mountpoint || entry.path || entry.name || '')
+          .toString()
+          .trim();
       }
       return '';
     })
@@ -25,7 +27,7 @@ const normalizeMountpoints = (raw: unknown): string[] => {
 
 const fetchFilesystemMountpoints = async (): Promise<string[]> => {
   const response = await axiosInstance.get(FILESYSTEM_LIST_ENDPOINT, {
-    params: { detail: true, save_to_db: false },
+    params: { detail: true },
   });
 
   const payload = response.data as { data?: unknown };
