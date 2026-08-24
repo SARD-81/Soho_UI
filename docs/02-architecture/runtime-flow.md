@@ -1,10 +1,10 @@
 # Runtime Flow
 
-This document provides a compact end-to-end view of how SOHO UI starts, restores a session, renders a protected feature, sends API traffic, and reacts to mutations.
+این سند یک نمای فشرده‌ی end-to-end از این موضوع ارائه می‌دهد که SOHO UI چگونه start می‌شود، session را restore می‌کند، protected feature را render می‌کند، API traffic می‌فرستد و به mutationها واکنش نشان می‌دهد.
 
-For detailed contracts, follow the linked core-flow documents.
+برای contractهای دقیق‌تر به core-flow documentهای لینک‌شده مراجعه کنید.
 
-## Application bootstrap
+## Application Bootstrap
 
 ```mermaid
 flowchart TD
@@ -22,13 +22,13 @@ flowchart TD
 
 Bootstrap ownership:
 
-- `main.tsx` creates global providers and React Query policy;
-- `AuthProvider` restores/authenticates the session;
-- RTL Emotion cache owns style transformation for RTL-compatible styles;
-- the router chooses Login or protected application routes;
-- `MainLayout` owns authenticated-layout concerns such as navigation, notifications, idle-session handling, and power actions.
+- `main.tsx` global providerها و React Query policy را ایجاد می‌کند؛
+- `AuthProvider` session را restore/authenticate می‌کند؛
+- RTL Emotion cache مسئول style transformation برای styleهای سازگار با RTL است؛
+- router بین Login و protected application routeها انتخاب می‌کند؛
+- `MainLayout` concernهای authenticated layout مانند navigation، notificationها، idle-session handling و power actionها را مالک است.
 
-## Session restoration before protected routing
+## Session Restoration پیش از Protected Routing
 
 ```mermaid
 sequenceDiagram
@@ -65,9 +65,9 @@ sequenceDiagram
     end
 ```
 
-`ProtectedRoute` waits while `isAuthLoading` is true. This prevents a valid restorable session from being redirected to Login before restoration finishes.
+تا زمانی که `isAuthLoading` برابر true است، `ProtectedRoute` منتظر می‌ماند. این behavior مانع آن می‌شود که یک session معتبر و قابل restore پیش از پایان restoration به Login redirect شود.
 
-## Protected feature runtime
+## Runtime مربوط به Protected Feature
 
 ```mermaid
 flowchart LR
@@ -82,11 +82,11 @@ flowchart LR
     RQ --> Page
 ```
 
-Pages should orchestrate feature state, not reimplement transport/session policy.
+Pageها باید feature state را orchestrate کنند و transport/session policy را دوباره پیاده‌سازی نکنند.
 
-## Request path
+## Request Path
 
-For normal API traffic:
+برای API traffic عادی:
 
 ```text
 feature hook
@@ -97,11 +97,11 @@ feature hook
   -> backend
 ```
 
-Normal `/api/` traffic is normalized to `save_to_db=false`.
+Traffic عادی زیر `/api/` به `save_to_db=false` normalize می‌شود.
 
-Only internal canonical StateSync requests request `save_to_db=true`.
+فقط internal canonical StateSync requestها `save_to_db=true` درخواست می‌کنند.
 
-## 401 recovery
+## Recovery مربوط به 401
 
 ```mermaid
 sequenceDiagram
@@ -126,9 +126,9 @@ sequenceDiagram
     end
 ```
 
-Only one refresh is allowed in flight. This avoids a refresh storm when many mounted queries encounter token expiry together.
+در هر لحظه فقط یک refresh می‌تواند in-flight باشد. این rule از ایجاد refresh storm زمانی جلوگیری می‌کند که چند query mountشده هم‌زمان با token expiry روبه‌رو می‌شوند.
 
-## Successful mutation flow
+## Flow مربوط به Mutation موفق
 
 ```mermaid
 flowchart TD
@@ -145,23 +145,23 @@ flowchart TD
     SNAP --> API
 ```
 
-The UI refresh and persisted snapshot are deliberately separate.
+UI refresh و persisted snapshot عمداً از یکدیگر جدا هستند.
 
-A successful mutation may cause:
+Mutation موفق ممکن است باعث موارد زیر شود:
 
-- targeted feature invalidation;
-- global active-query invalidation;
-- persisted snapshot scheduling for mapped StateSync domains.
+- targeted feature invalidation؛
+- global active-query invalidation؛
+- persisted snapshot scheduling برای StateSync domainهایی که mapping دارند.
 
-A diagnostic POST such as SNMP connection testing must not be treated as a persisted configuration mutation solely because it uses POST.
+Diagnostic POST مانند SNMP connection test نباید فقط به دلیل استفاده از POST به‌عنوان persisted configuration mutation در نظر گرفته شود.
 
-## Polling runtime
+## Polling Runtime
 
-Polling belongs to individual query lifecycles.
+Polling به lifecycle تک‌تک queryها تعلق دارد.
 
-There is no global polling timer.
+Global polling timer وجود ندارد.
 
-Examples:
+نمونه‌ها:
 
 ```text
 uptime          1s
@@ -172,23 +172,23 @@ notification capacity 60s
 configuration-style resources often no interval
 ```
 
-See the canonical polling inventory for exact current behavior.
+برای behavior دقیق فعلی به canonical polling inventory مراجعه کنید.
 
-## Notification bootstrap
+## Notification Bootstrap
 
-Authenticated `MainLayout` mounts `NotificationBootstrapper`, which enables notification observation lifecycles.
+`MainLayout` احراز هویت‌شده، `NotificationBootstrapper` را mount می‌کند و در نتیجه notification observation lifecycleها فعال می‌شوند.
 
-Notification monitoring uses a combination of:
+Notification monitoring ترکیبی از موارد زیر را استفاده می‌کند:
 
-- ordinary shared resource query keys;
-- dedicated notification query keys;
+- ordinary shared resource query keyها؛
+- dedicated notification query keyها؛
 - local persisted notification/baseline bookkeeping.
 
-Notification storage is client bookkeeping, not authoritative backend state.
+Notification storage صرفاً client bookkeeping است و authoritative backend state محسوب نمی‌شود.
 
-## Logout runtime
+## Logout Runtime
 
-Logout intentionally ends local access first:
+Logout عمداً ابتدا local access را خاتمه می‌دهد:
 
 ```text
 user requests logout
@@ -198,47 +198,47 @@ user requests logout
   -> notify backend logout endpoint
 ```
 
-Backend logout latency/failure must not leave protected client routes accessible.
+Latency/failure در backend logout نباید باعث شود protected client routeها همچنان قابل دسترسی بمانند.
 
-## Idle session runtime
+## Idle Session Runtime
 
-Authenticated layout tracks activity and stores the last activity timestamp in session storage.
+Authenticated layout، activity را track می‌کند و last activity timestamp را در session storage نگه می‌دارد.
 
-Reloading the page does not reset idle history.
+Reload کردن page، idle history را reset نمی‌کند.
 
-If elapsed inactivity exceeds the configured 30-minute window, the frontend logs out the session and navigates to Login.
+اگر elapsed inactivity از window تنظیم‌شده‌ی 30 دقیقه بیشتر شود، frontend session را logout می‌کند و به Login می‌رود.
 
-## Where to debug first
+## برای Debug از کجا شروع کنیم؟
 
-### App does not render
+### App Render نمی‌شود
 
-Check:
+موارد زیر را بررسی کنید:
 
-1. `main.tsx` provider bootstrap;
-2. TypeScript/runtime error;
-3. router construction;
-4. auth restoration;
+1. provider bootstrap در `main.tsx`؛
+2. TypeScript/runtime error؛
+3. router construction؛
+4. auth restoration؛
 5. global loader state.
 
-### Protected route unexpectedly redirects
+### Protected Route به‌اشتباه Redirect می‌شود
 
-Check:
+موارد زیر را بررسی کنید:
 
-1. `isAuthLoading` lifecycle;
-2. token storage;
-3. verify/refresh requests;
-4. idle timeout;
-5. Session Cleared auth event.
+1. lifecycle مربوط به `isAuthLoading`؛
+2. token storage؛
+3. verify/refresh requestها؛
+4. idle timeout؛
+5. auth event مربوط به Session Cleared.
 
-### Mutation succeeds but screen is stale
+### Mutation موفق است ولی Screen Stale مانده
 
-Check targeted/global React Query invalidation before touching StateSync.
+پیش از دست‌زدن به StateSync، targeted/global React Query invalidation را بررسی کنید.
 
-### Live UI is correct but persisted backend snapshot is stale
+### Live UI صحیح است ولی Persisted Backend Snapshot قدیمی مانده
 
-Check StateSync URL mapping/scheduling/canonical snapshot rather than React Query.
+به‌جای React Query، StateSync URL mapping/scheduling/canonical snapshot را بررسی کنید.
 
-## Related documentation
+## مستندات مرتبط
 
 - [`frontend-architecture.md`](./frontend-architecture.md)
 - [`data-flow.md`](./data-flow.md)
