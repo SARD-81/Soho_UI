@@ -56,6 +56,9 @@ Feature documents describe the actual page-level user flow, query/mutation owner
 - [`05-features/block-storage.md`](./05-features/block-storage.md) — Volume list/create/delete, manual refresh, dynamic attributes, and the current Volume StateSync boundary.
 - [`05-features/file-system.md`](./05-features/file-system.md) — filesystem CRUD, mount/canmount, encryption key lifecycle, passphrase handling, detail state, and cross-domain StateSync.
 - [`05-features/services.md`](./05-features/services.md) — service list/status polling, Start/Stop, boot enablement, status normalization, and per-unit query fan-out.
+- [`05-features/users.md`](./05-features/users.md) — OS-user management, Samba identity linkage, duplicate checks, and non-atomic OS-to-Samba creation.
+- [`05-features/samba-shares.md`](./05-features/samba-shares.md) — Samba shares/users/groups, member management, account-flag fan-out, partial-failure workflows, and StateSync ownership.
+- [`05-features/nfs-shares.md`](./05-features/nfs-shares.md) — NFS CRUD, filesystem mountpoint dependency, option translation, service restart behavior, and NFS StateSync.
 
 More feature documents are added incrementally as their implementation is audited.
 
@@ -133,7 +136,10 @@ docs/
 │   ├── integrated-storage.md
 │   ├── block-storage.md
 │   ├── file-system.md
-│   └── services.md
+│   ├── services.md
+│   ├── users.md
+│   ├── samba-shares.md
+│   └── nfs-shares.md
 ├── 06-api/
 └── 07-operations/
 ```
