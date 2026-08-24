@@ -1,52 +1,52 @@
 # History
 
-## Purpose
+## هدف
 
 Route: `/history`
 
 Entry point: `src/pages/History.tsx`
 
-The History feature is **not implemented yet**.
+Feature مربوط به History **هنوز پیاده‌سازی نشده است**.
 
-The current page renders only the page title:
+Page فعلی فقط title زیر را render می‌کند:
 
 ```text
 تاریخچه
 ```
 
-There are currently no History-specific:
+در حال حاضر هیچ مورد اختصاصی History از انواع زیر وجود ندارد:
 
-- API calls;
-- React Query keys;
-- mutations;
-- filters;
-- tables;
-- persistence rules;
-- polling intervals;
-- business workflows.
+- API call؛
+- React Query key؛
+- mutation؛
+- filter؛
+- table؛
+- persistence rule؛
+- polling interval؛
+- business workflow.
 
-## Why this document exists
+## چرا این سند وجود دارد؟
 
-A placeholder route is still part of the product surface. Documenting its actual state prevents future maintainers from assuming that missing history behavior is hidden elsewhere in the repository.
+Placeholder route نیز بخشی از product surface است. مستندسازی وضعیت واقعی آن مانع می‌شود maintainer آینده تصور کند History behavior پیاده‌سازی‌شده‌ای در بخش دیگری از repository مخفی شده است.
 
-Do not invent an API contract from the route name alone.
+صرفاً از روی route name، API contract اختراع نکنید.
 
-## Extension guide
+## راهنمای Extension
 
-Before implementing History, define:
+پیش از پیاده‌سازی History موارد زیر را تعریف کنید:
 
-1. what events/history records the product must expose;
-2. whether records come from an audit-log backend, operation history, storage events, or another source;
-3. pagination/filter/search requirements;
-4. authorization and sensitive-data rules;
-5. timestamp/timezone representation;
-6. retention semantics;
-7. whether history is read-only or supports administrative actions;
-8. the canonical query keys;
-9. whether polling is required or explicit refresh is sufficient;
-10. whether any new API belongs to StateSync (normally an audit/history read model should not).
+1. محصول باید چه event/history recordهایی را expose کند؛
+2. recordها از audit-log backend، operation history، storage event یا source دیگری می‌آیند؛
+3. requirementهای pagination/filter/search؛
+4. authorization و sensitive-data ruleها؛
+5. نمایش timestamp/timezone؛
+6. retention semantics؛
+7. History فقط read-only است یا administrative action هم دارد؛
+8. canonical query keyها؛
+9. polling لازم است یا explicit refresh کافی است؛
+10. آیا API جدید به StateSync تعلق دارد یا خیر؛ در حالت معمول audit/history read model نباید StateSync domain باشد.
 
-Once implemented, replace this placeholder document with the normal feature template:
+پس از implementation، این placeholder document را با feature template عادی جایگزین کنید:
 
 ```text
 Purpose
@@ -66,7 +66,7 @@ Extension Guide
 Related Files
 ```
 
-## Related files
+## فایل‌های مرتبط
 
 - `src/pages/History.tsx`
 - `src/routes/Routes.tsx`
