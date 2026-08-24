@@ -1,31 +1,31 @@
-# Code Commenting Guidelines
+# راهنمای Comment‌نویسی در Code
 
-## Purpose
+## هدف
 
-Comments in SOHO UI exist to preserve reasoning that the code alone cannot communicate safely.
+Commentها در SOHO UI برای حفظ reasoningهایی استفاده می‌شوند که خود code به‌تنهایی نمی‌تواند آن‌ها را به‌شکل ایمن منتقل کند.
 
-The project does **not** aim for a high comment count. Clean code should remain readable through naming, structure, types, and small focused functions. A comment is justified when it preserves intent, constraints, risk, or historical context that a future maintainer could otherwise misinterpret.
+هدف پروژه **زیاد بودن تعداد commentها نیست**. Clean code باید از طریق naming، structure، typeها و functionهای کوچک و متمرکز خوانا باقی بماند. Comment زمانی توجیه دارد که intent، constraint، risk یا historical contextای را حفظ کند که maintainer آینده در غیر این صورت ممکن است اشتباه برداشت کند.
 
-The core rule is:
+قاعده‌ی اصلی:
 
-> Code should explain **what** and **how**. Comments should explain **why**, **constraints**, and **surprises**.
+> Code باید **what** و **how** را توضیح دهد. Comment باید **why**، **constraintها** و **نکات غافلگیرکننده** را توضیح دهد.
 
-## Language
+## زبان
 
-Engineering comments in source files should be written in English.
+Engineering commentهای داخل source fileها باید انگلیسی نوشته شوند.
 
-Reasons:
+دلایل:
 
-- source identifiers and library APIs are English;
-- existing high-value comments are already English;
-- one language reduces maintenance friction across the codebase;
-- technical terms do not need repeated translation.
+- source identifierها و library APIها انگلیسی هستند؛
+- high-value commentهای موجود نیز انگلیسی‌اند؛
+- استفاده از یک زبان friction مربوط به maintenance در codebase را کاهش می‌دهد؛
+- termهای فنی نیاز به ترجمه‌ی مکرر ندارند.
 
-User-facing UI text may remain Persian.
+User-facing UI text می‌تواند فارسی باشد.
 
-## The decision process before adding a comment
+## فرایند تصمیم‌گیری پیش از اضافه‌کردن Comment
 
-Before writing a comment, use this sequence:
+پیش از نوشتن comment این sequence را طی کنید:
 
 ```text
 Can the code be understood without a comment?
@@ -43,15 +43,15 @@ Can the code be understood without a comment?
         └── Yes → Add a concise comment.
 ```
 
-A comment must not become a substitute for refactoring.
+Comment نباید جایگزین refactoring شود.
 
-## Good comment categories
+## Categoryهای مناسب برای Comment
 
-### 1. Architectural contracts
+### 1. Architectural Contractها
 
-Use comments to protect global invariants that are not obvious from an individual statement.
+از comment برای محافظت از global invariantهایی استفاده کنید که از روی یک statement منفرد قابل تشخیص نیستند.
 
-Good example from the transport/state-sync design:
+نمونه‌ی خوب از design مربوط به transport/state-sync:
 
 ```ts
 /**
@@ -62,13 +62,13 @@ Good example from the transport/state-sync design:
  */
 ```
 
-This comment is useful because removing or bypassing the behavior would change a system-wide persistence contract.
+این comment مفید است، چون حذف یا bypass کردن behavior مربوطه یک system-wide persistence contract را تغییر می‌دهد.
 
-### 2. Security-sensitive decisions
+### 2. تصمیم‌های حساس به Security
 
-Security behavior often looks simpler if a future developer removes it. Preserve the reason.
+Security behavior اغلب در صورتی که توسعه‌دهنده‌ی آینده بخشی از آن را حذف کند «ساده‌تر» به نظر می‌رسد. دلیل وجود آن را حفظ کنید.
 
-Example:
+مثال:
 
 ```ts
 // Access tokens remain memory-only. Persist only the refresh token for the
@@ -76,13 +76,13 @@ Example:
 // leaving the bearer token in persistent browser storage.
 ```
 
-Do not write a security comment unless the code actually enforces the statement.
+Security comment ننویسید مگر این‌که code واقعاً statement داخل آن را enforce کند.
 
-### 3. Ordering and lifecycle constraints
+### 3. Ordering و Lifecycle Constraintها
 
-Use a comment when order is part of correctness.
+وقتی order بخشی از correctness است comment اضافه کنید.
 
-Example:
+مثال:
 
 ```ts
 // Clear local auth state before notifying the backend so protected routes are
@@ -90,13 +90,13 @@ Example:
 clearAuthState();
 ```
 
-Without the comment, a maintainer might move `clearAuthState()` after the request and unintentionally change failure behavior.
+بدون comment ممکن است maintainer، `clearAuthState()` را بعد از request منتقل کند و ناخواسته failure behavior را تغییر دهد.
 
-### 4. Race-condition and concurrency protection
+### 4. Race Condition و Concurrency Protection
 
-If code exists to prevent duplicate work, stale overwrites, request storms, or re-entrancy, document the invariant rather than every branch.
+اگر code برای جلوگیری از duplicate work، stale overwrite، request storm یا re-entrancy وجود دارد، invariant را مستند کنید؛ نه هر branch را.
 
-Example:
+مثال:
 
 ```ts
 /**
@@ -106,31 +106,31 @@ Example:
  */
 ```
 
-### 5. Business rules whose reason is not obvious
+### 5. Business Ruleهایی که دلیلشان آشکار نیست
 
-Prefer expressive code first. Add a comment only when the rule's origin or reason is not evident.
+اول expressive code را ترجیح دهید. فقط زمانی comment اضافه کنید که origin یا reason مربوط به rule از روی code مشخص نباشد.
 
-Weak:
+ضعیف:
 
 ```ts
 // Mirror requires an even number of disks.
 if (count % 2 !== 0) { ... }
 ```
 
-Better when domain context matters:
+وقتی domain context اهمیت دارد بهتر است:
 
 ```ts
 // The backend models MIRROR vdevs as disk pairs; reject an unmatched device
 // here so the user receives validation before the create request is sent.
 ```
 
-If the rule is already self-explanatory and stable, no comment is needed.
+اگر rule به‌خودی‌خود روشن و پایدار است، comment لازم نیست.
 
-### 6. Compatibility and migration behavior
+### 6. Compatibility و Migration Behavior
 
-Temporary compatibility logic must explain when it can be removed.
+Temporary compatibility logic باید مشخص کند چه زمانی امکان حذف آن وجود دارد.
 
-Example:
+مثال:
 
 ```ts
 // Compatibility: older callers may still include save_to_db in mutation
@@ -138,49 +138,49 @@ Example:
 // removed from all hooks.
 ```
 
-When the compatibility code is removed, the comment must be removed with it.
+هنگام حذف compatibility code، comment مربوط به آن نیز باید حذف شود.
 
-### 7. Non-obvious browser/framework behavior
+### 7. Browser/Framework Behavior غیرآشکار
 
-Document behavior that exists because of React StrictMode, browser lifecycle, storage availability, visibility changes, or library-specific semantics.
+Behaviorهایی را که به دلیل React StrictMode، browser lifecycle، storage availability، visibility change یا semantics خاص یک library وجود دارند مستند کنید.
 
-Example:
+مثال:
 
 ```ts
 // Reuse the same baseline promise so React StrictMode and repeated auth renders
 // cannot start multiple full state snapshots in one authenticated session.
 ```
 
-## Comments that should usually be rejected
+## Commentهایی که معمولاً باید Reject شوند
 
-### Restating the code
+### تکرار چیزی که Code خودش می‌گوید
 
-Bad:
+بد:
 
 ```ts
 // Set authenticated to true.
 setIsAuthenticated(true);
 ```
 
-Bad:
+بد:
 
 ```ts
 // Loop through domains.
 domains.forEach(...);
 ```
 
-Bad:
+بد:
 
 ```ts
 // Return if there is an error.
 if (hasError) return;
 ```
 
-These comments increase noise and become stale easily.
+این commentها noise را زیاد می‌کنند و به‌راحتی stale می‌شوند.
 
-### Decorative section comments
+### Decorative Section Comment
 
-Avoid large files split by comments such as:
+از تقسیم فایل‌های بزرگ با commentهایی مانند نمونه‌ی زیر خودداری کنید:
 
 ```ts
 // =============================
@@ -188,65 +188,65 @@ Avoid large files split by comments such as:
 // =============================
 ```
 
-If a file needs many visual sections, it may be carrying too many responsibilities. Prefer extraction and better naming.
+اگر یک فایل برای خوانایی به تعداد زیادی visual section نیاز دارد، ممکن است مسئولیت‌های بیش از حدی داشته باشد. Extraction و naming بهتر را ترجیح دهید.
 
-### Explaining bad names
+### توضیح‌دادن Name بد
 
-Bad:
+بد:
 
 ```ts
 // x is the number of selected disks.
 const x = selectedDevices.length;
 ```
 
-Fix the code:
+خود code را اصلاح کنید:
 
 ```ts
 const selectedDeviceCount = selectedDevices.length;
 ```
 
-### Explaining dead or commented-out code
+### توضیح Dead یا Commented-out Code
 
-Do not keep old implementations commented out. Git already stores history.
+Implementation قدیمی را به‌شکل commentشده نگه ندارید. Git history را نگه می‌دارد.
 
-Bad:
+بد:
 
 ```ts
 // const oldRequest = ...
 // We used this before the backend change.
 ```
 
-Delete it. If the decision matters long term, record it in an ADR or migration note.
+آن را حذف کنید. اگر تصمیم مربوطه در بلندمدت اهمیت دارد، آن را در ADR یا migration note ثبت کنید.
 
-### Comments that contradict code
+### Commentی که با Code تناقض دارد
 
-A comment is not allowed to make incorrect code appear intentional.
+Comment نباید code اشتباه را intentional جلوه دهد.
 
-For example, if a feature hook still sends a legacy field that the transport layer overrides, do not add:
+برای مثال اگر feature hook هنوز legacy fieldای می‌فرستد که transport layer آن را override می‌کند، این را اضافه نکنید:
 
 ```ts
 // This is true here, but axios changes it to false later.
 save_to_db: true,
 ```
 
-Prefer removing the obsolete field so code and architecture agree.
+بهتر است obsolete field حذف شود تا code و architecture با هم منطبق باشند.
 
-## JSDoc policy
+## Policy مربوط به JSDoc
 
-JSDoc is useful for exported behavior with a non-trivial contract. It is not required for every function.
+JSDoc برای exported behaviorهایی که contract غیرساده دارند مفید است. برای هر function اجباری نیست.
 
-### Good JSDoc targets
+### Targetهای مناسب برای JSDoc
 
-Use JSDoc for:
+از JSDoc برای موارد زیر استفاده کنید:
 
-- exported infrastructure functions with lifecycle guarantees;
-- utilities with non-obvious input/output semantics;
-- functions where callers must respect important constraints;
-- public reusable hooks whose behavior is not clear from the type signature;
-- concurrency/state synchronization functions;
-- functions with meaningful side effects that are easy to miss.
+- exported infrastructure functionهایی با lifecycle guarantee؛
+- utilityهایی با input/output semantics غیرآشکار؛
+- functionهایی که caller باید constraint مهمی را رعایت کند؛
+- public reusable hookهایی که behavior آن‌ها از type signature مشخص نیست؛
+- concurrency/state synchronization functionها؛
+- functionهایی با side effect معنی‌دار و غیرآشکار.
 
-Example:
+مثال:
 
 ```ts
 /**
@@ -256,115 +256,115 @@ Example:
 export const syncAllStateDomainsOnce = () => { ... };
 ```
 
-### Poor JSDoc targets
+### Targetهای نامناسب برای JSDoc
 
-Do not add this:
+این را اضافه نکنید:
 
 ```ts
 /** Returns the normalized path. */
 const normalizePath = (url: string) => ...;
 ```
 
-The name and type already explain it.
+Name و type از قبل مفهوم را توضیح می‌دهند.
 
-Do not generate boilerplate such as `@param` and `@returns` when TypeScript already carries the same information and there is no extra semantic contract.
+Boilerplateهایی مثل `@param` و `@returns` را زمانی که TypeScript همان information را منتقل می‌کند و semantic contract اضافه‌ای وجود ندارد تولید نکنید.
 
-## TODO and FIXME policy
+## Policy مربوط به TODO و FIXME
 
-Unqualified TODOs are not acceptable.
+TODO بدون qualifier قابل قبول نیست.
 
-Bad:
+بد:
 
 ```ts
 // TODO: fix this
 ```
 
-Bad:
+بد:
 
 ```ts
 // TODO later
 ```
 
-A TODO/FIXME must explain:
+TODO/FIXME باید توضیح دهد:
 
-1. what remains to be changed;
-2. why it cannot be done now;
-3. what condition or tracked work allows its removal.
+1. چه چیزی هنوز باید تغییر کند؛
+2. چرا در حال حاضر انجام نمی‌شود؛
+3. چه condition یا tracked workای اجازه‌ی حذف آن را می‌دهد.
 
-Preferred form:
+فرم ترجیحی:
 
 ```ts
 // TODO(#142): Remove this compatibility branch after legacy API responses are
 // no longer supported by the backend.
 ```
 
-If no issue exists, use enough searchable context to make the TODO actionable:
+اگر issue وجود ندارد، context قابل search کافی قرار دهید تا TODO actionable باشد:
 
 ```ts
 // TODO: Remove this legacy payload field after all create-pool requests have
 // migrated to the transport-owned state-sync contract.
 ```
 
-Use `FIXME` only when the current implementation is known to be incorrect or unsafe, not as a stronger synonym for TODO.
+`FIXME` را فقط زمانی استفاده کنید که implementation فعلی واقعاً incorrect یا unsafe شناخته شده است؛ نه به‌عنوان synonym قوی‌تر برای TODO.
 
-## File-level comments
+## File-level Comment
 
-Do not add a file header that merely repeats the filename.
+File headerای که فقط filename را تکرار می‌کند اضافه نکنید.
 
-Bad:
+بد:
 
 ```ts
 // This file handles authentication.
 ```
 
-A file-level comment is justified only when the module has a non-obvious contract that applies to most of its contents.
+File-level comment فقط زمانی توجیه دارد که module یک contract غیرآشکار داشته باشد که به بیشتر محتوای آن مربوط است.
 
-For example, `axiosInstance.ts` may justify a short policy comment around the persistence transport boundary because many helper functions exist solely to enforce that policy.
+برای مثال، `axiosInstance.ts` ممکن است به یک policy comment کوتاه نزدیک persistence transport boundary نیاز داشته باشد، چون چند helper function صرفاً برای enforce کردن همان policy وجود دارند.
 
-## React-specific guidance
+## راهنمای مخصوص React
 
-### Components
+### Componentها
 
-Do not comment JSX layout that is visually obvious.
+JSX layout آشکار را comment نکنید.
 
-Bad:
+بد:
 
 ```tsx
 {/* Header */}
 <AppBar>...</AppBar>
 ```
 
-A comment can be useful when conditional rendering is based on a non-obvious lifecycle or browser constraint.
+Comment زمانی مفید است که conditional rendering به lifecycle یا browser constraint غیرآشکاری وابسته باشد.
 
-### Effects
+### Effectها
 
-A `useEffect` should ideally be understandable from extracted function names and dependencies. Comment the effect when the synchronization reason is not obvious.
+یک `useEffect` در حالت ایده‌آل باید از روی extracted function nameها و dependencyها قابل درک باشد. وقتی دلیل synchronization آشکار نیست، effect را comment کنید.
 
-Good example concept:
+نمونه‌ی مناسب:
 
 ```ts
 // Re-check the persisted idle timestamp when the tab becomes visible because
 // background timer throttling must not let an expired session become active.
 ```
 
-### Refs
+### Refها
 
-Comment a ref when it is being used to enforce lifecycle correctness rather than simply store a DOM node.
+وقتی ref برای enforce کردن lifecycle correctness استفاده می‌شود، نه صرفاً نگهداری DOM node، دلیل آن را comment کنید.
 
-Examples include preventing duplicate timeout execution, storing the latest callback without re-registering listeners, or guarding concurrent work.
+نمونه‌ها شامل جلوگیری از اجرای duplicate timeout، نگهداری latest callback بدون re-register کردن listener و guard کردن concurrent work هستند.
 
 ### React Query
 
-Document unusual query options only when they differ intentionally from project defaults for a domain reason.
+Query option غیرمعمول را فقط زمانی مستند کنید که به دلیل domain-specific عمداً با project default متفاوت است.
 
-Weak:
+ضعیف:
 
 ```ts
 // Poll every 2 seconds.
 refetchInterval: 2000,
 ```
 
-Better:
+بهتر:
 
 ```ts
 // CPU is a live dashboard metric; keep the 2s cadence only while the widget is
@@ -372,26 +372,26 @@ Better:
 refetchInterval: 2000,
 ```
 
-For widespread polling rules, prefer the polling documentation over repeating the same comment in every hook.
+برای polling ruleهای گسترده، polling documentation را به تکرار همان comment در هر hook ترجیح دهید.
 
-## API and mutation hooks
+## API و Mutation Hookها
 
-Mutation hooks deserve comments when they contain ordering, dependency, or compatibility behavior.
+Mutation hookها زمانی ارزش comment دارند که ordering، dependency یا compatibility behavior داشته باشند.
 
-Before adding comments, verify that the hook is not duplicating global responsibilities already owned by:
+پیش از اضافه‌کردن comment بررسی کنید hook مسئولیت globalای را که از قبل توسط بخش‌های زیر مدیریت می‌شود duplicate نکرده باشد:
 
-- `axiosInstance`;
-- the global `MutationCache`;
-- `StateSyncManager`;
-- shared error utilities.
+- `axiosInstance`؛
+- global `MutationCache`؛
+- `StateSyncManager`؛
+- shared error utilityها.
 
-If the hook contains a legacy field that the transport discards or overrides, prefer removing the field over explaining the mismatch.
+اگر hook شامل legacy fieldای است که transport آن را discard یا override می‌کند، حذف field را به توضیح mismatch ترجیح دهید.
 
-## Comment placement
+## محل قرارگیری Comment
 
-Place the comment as close as possible to the code whose intent it protects.
+Comment را تا حد ممکن نزدیک codeای قرار دهید که intent آن را محافظت می‌کند.
 
-Prefer:
+ترجیحاً:
 
 ```ts
 // Clear local state first so route access is revoked even if server logout fails.
@@ -399,46 +399,46 @@ clearAuthState();
 await logoutRequest(refreshToken);
 ```
 
-Over a distant paragraph at the top of a long file.
+نه یک paragraph دور از code در ابتدای فایل طولانی.
 
-For a multi-function module-wide invariant, use one focused block comment near the policy boundary instead of duplicating it at every call site.
+برای invariant مربوط به کل module و چند function، یک block comment متمرکز نزدیک policy boundary قرار دهید و آن را در هر call site تکرار نکنید.
 
-## Comment maintenance rule
+## Rule مربوط به Maintenance Comment
 
-Comments are part of the code.
+Comment بخشی از code است.
 
-When changing the associated behavior:
+هنگام تغییر behavior مرتبط:
 
-- update the comment in the same commit;
-- delete comments that are no longer true;
-- do not leave historical descriptions attached to new logic;
-- verify links/issue references still make sense.
+- comment را در همان commit به‌روزرسانی کنید؛
+- commentهایی را که دیگر true نیستند حذف کنید؛
+- historical description را به logic جدید متصل باقی نگذارید؛
+- بررسی کنید link/issue referenceها هنوز معتبر باشند.
 
-An outdated comment is usually more dangerous than no comment.
+Comment قدیمی و اشتباه معمولاً از نبود comment خطرناک‌تر است.
 
-## Comment review checklist
+## Comment Review Checklist
 
-During review, ask:
+هنگام review از خود بپرسید:
 
-- Does this comment explain something the code cannot express clearly?
-- Does it capture a reason, invariant, constraint, side effect, or risk?
-- Can clearer naming/refactoring remove the need for it?
-- Is it accurate for the current code, not a previous version?
-- Is it located next to the behavior it protects?
-- Will it still be useful to a developer returning in six months?
-- Is a repository document or ADR a better home because the information spans multiple files?
+- آیا این comment چیزی را توضیح می‌دهد که code نمی‌تواند واضح بیان کند؟
+- آیا reason، invariant، constraint، side effect یا risk را ثبت می‌کند؟
+- آیا naming/refactoring بهتر می‌تواند نیاز به آن را از بین ببرد؟
+- آیا برای code فعلی accurate است، نه version قبلی؟
+- آیا کنار behaviorی قرار دارد که از آن محافظت می‌کند؟
+- آیا شش ماه بعد هم برای توسعه‌دهنده مفید خواهد بود؟
+- آیا چون information چند فایل را پوشش می‌دهد، repository document یا ADR محل بهتری است؟
 
-If the answer to the usefulness question is no, remove the comment.
+اگر پاسخ پرسش usefulness منفی است، comment را حذف کنید.
 
-## When to use docs or ADRs instead
+## چه زمانی به‌جای Comment از Docs یا ADR استفاده کنیم؟
 
-Use an in-code comment when the information protects a local implementation decision.
+وقتی information از یک local implementation decision محافظت می‌کند، in-code comment مناسب است.
 
-Use a documentation page when the information explains a flow across multiple modules.
+وقتی information یک flow بین چند module را توضیح می‌دهد، documentation page مناسب‌تر است.
 
-Use an ADR when the information explains why the system chose one long-lived architecture option over alternatives.
+وقتی information توضیح می‌دهد چرا سیستم از میان alternativeها یک architecture option بلندمدت را انتخاب کرده، ADR استفاده کنید.
 
-Example:
+مثال:
 
 ```text
 Why clear auth state before server logout?
@@ -451,11 +451,11 @@ Why are access tokens memory-only instead of localStorage?
 → Security comment + authentication ADR if the decision needs formal history.
 ```
 
-## Definition of done for comments
+## Definition of Done برای Commentها
 
-A source-code change is not complete if it introduces non-obvious policy, security behavior, race protection, compatibility logic, or lifecycle ordering without either:
+یک source-code change کامل نیست اگر policy غیرآشکار، security behavior، race protection، compatibility logic یا lifecycle ordering جدیدی معرفی کند و یکی از دو کار زیر انجام نشده باشد:
 
-- making the intent obvious through code structure; or
-- adding the minimum useful comment that preserves the reason.
+- intent از طریق code structure واضح شده باشد؛ یا
+- حداقل comment مفیدی که reason را حفظ می‌کند اضافه شده باشد.
 
-The reverse is also true: a change is not complete if it leaves obsolete comments behind.
+عکس آن هم صادق است: change کامل نیست اگر obsolete commentها را باقی بگذارد.
